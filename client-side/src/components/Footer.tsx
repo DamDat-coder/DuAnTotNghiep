@@ -17,7 +17,7 @@ export default function Footer() {
         {[
           {
             id: "policies",
-            title: "Policies & Regulations",
+            title: "Chính sách & Quy định",
             content: [
               "Terms & Conditions",
               "Payment Policy",
@@ -28,7 +28,7 @@ export default function Footer() {
           },
           {
             id: "contact",
-            title: "Contact",
+            title: "Liên hệ",
             content: [
               { icon: <MapPin size={16} />, text: "Đ. Tô Ký, Tân Hưng Thuận, Quận 12, HCM" },
               { icon: <Mail size={16} />, text: "dsun.agency@gmail.com" },
@@ -36,8 +36,8 @@ export default function Footer() {
             ],
           },
           {
-            id: "privacy",
-            title: "Privacy Policy",
+            id: "about_us",
+            title: "Về chúng tôi",
             content: [
               "Information Collection Policy",
               "User Data Handling",

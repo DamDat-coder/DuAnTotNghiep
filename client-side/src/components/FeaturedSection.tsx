@@ -1,58 +1,16 @@
 // src/components/FeaturedSection.tsx
 "use client";
 
-import React, { useState, useRef } from "react";
+import React from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
 import { Product } from "../types";
+import "swiper/css"; // CSS cơ bản của Swiper
 
 interface FeaturedSectionProps {
   products: Product[];
 }
 
 export default function FeaturedSection({ products }: FeaturedSectionProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
-
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const slideGap = 16;
-
-  const handleDragStart = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setStartX(e.pageX - translateX);
-    if (sliderRef.current) {
-      sliderRef.current.style.cursor = "grabbing";
-    }
-  };
-
-  const handleDragMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const currentX = e.pageX;
-    const newTranslateX = currentX - startX;
-    setTranslateX(newTranslateX);
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    if (sliderRef.current) {
-      sliderRef.current.style.cursor = "grab";
-    }
-
-    const slideWidth = sliderRef.current?.offsetWidth || 0;
-    const threshold = slideWidth / 3;
-    const maxIndex = products.length - 1;
-
-    const offsetSlides = Math.round(translateX / (slideWidth + slideGap));
-    let newIndex = currentIndex - offsetSlides;
-
-    if (newIndex < 0) newIndex = 0;
-    if (newIndex > maxIndex) newIndex = maxIndex;
-
-    setCurrentIndex(newIndex);
-    setTranslateX(0);
-  };
-
   if (!products || products.length === 0) {
     return (
       <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl px-6 py-4">
@@ -65,41 +23,30 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
 
   return (
     <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl px-6 py-4">
-      <div
-        ref={sliderRef}
-        className="relative overflow-hidden cursor-grab select-none"
-        onMouseDown={handleDragStart}
-        onMouseMove={handleDragMove}
-        onMouseUp={handleDragEnd}
-        onMouseLeave={handleDragEnd}
+            <h1 className="text-[1.5rem] font-bold">Mua Sắm Theo Giới Tính</h1>
+      <Swiper
+        spaceBetween={16} // Tương đương slideGap
+        slidesPerView={1.2} // Hiển thị 1 slide mỗi lần
+        loop={false} // Không quay vòng
+        grabCursor={true} // Hiển thị con trỏ kéo
+        className="select-none"
       >
-        <div
-          className="flex gap-4 transition-transform duration-300 ease-out"
-          style={{
-            transform: `translateX(calc(-${
-              currentIndex * 100
-            }% + ${translateX}px - ${currentIndex * slideGap}px))`,
-            willChange: "transform",
-          }}
-        >
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="flex-shrink-0 w-full flex flex-col items-start gap-5"
-            >
+        {products.map((product) => (
+          <SwiperSlide key={product.id}>
+            <div className="flex flex-col items-start gap-5">
               <img
-                src={`/featured/${product.image}`} // Dùng product.image từ MockAPI
+                src={`/featured/${product.image}`}
                 alt={`Featured ${product.name || "Sản phẩm"}`}
-                className="w-full h-96 object-cover rounded select-none tablet:h-80 desktop:h-96"
+                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:h-96"
                 draggable="false"
               />
-              <button className="featured_action w-32 px-6 py-2 bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors self-start">
+              <button className="featured_action w-32 px-6 py-2 text-[1rem] bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors self-start">
                 Shop {product.category || "Danh mục"}
               </button>
             </div>
-          ))}
-        </div>
-      </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </div>
   );
 }

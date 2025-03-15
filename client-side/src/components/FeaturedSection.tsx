@@ -22,11 +22,11 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
   }
 
   return (
-    <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl px-6 py-4">
-            <h1 className="text-[1.5rem] font-bold">Mua Sắm Theo Giới Tính</h1>
+    <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl">
+      <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1>
       <Swiper
         spaceBetween={16} // Tương đương slideGap
-        slidesPerView={1.2} // Hiển thị 1 slide mỗi lần
+        slidesPerView={1.5} // Hiển thị 1 slide mỗi lần
         loop={false} // Không quay vòng
         grabCursor={true} // Hiển thị con trỏ kéo
         className="select-none"
@@ -35,13 +35,13 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
           <SwiperSlide key={product.id}>
             <div className="flex flex-col items-start gap-5">
               <img
-                src={`/featured/${product.image}`}
+                src={`/featured/${product.banner}`}
                 alt={`Featured ${product.name || "Sản phẩm"}`}
                 className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:h-96"
                 draggable="false"
               />
-              <button className="featured_action w-32 px-6 py-2 text-[1rem] bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors self-start">
-                Shop {product.category || "Danh mục"}
+              <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors">
+                {product.category || "Danh mục"}
               </button>
             </div>
           </SwiperSlide>

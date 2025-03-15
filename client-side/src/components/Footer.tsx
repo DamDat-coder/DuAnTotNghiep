@@ -19,18 +19,21 @@ export default function Footer() {
             id: "policies",
             title: "Chính sách & Quy định",
             content: [
-              "Terms & Conditions",
-              "Payment Policy",
-              "Information Verification Policy",
-              "Frequently Asked Questions (FAQ)",
-              "Cancellation & Refund Policy",
+              "Điều khoản & Điều kiện",
+              "Chính sách thanh toán",
+              "Chính sách xác minh thông tin",
+              "Câu hỏi thường gặp",
+              "Chính sách hủy và hoàn tiền",
             ],
           },
           {
             id: "contact",
             title: "Liên hệ",
             content: [
-              { icon: <MapPin size={16} />, text: "Đ. Tô Ký, Tân Hưng Thuận, Quận 12, HCM" },
+              {
+                icon: <MapPin size={16} />,
+                text: "Đ. Tô Ký, Tân Hưng Thuận, Quận 12, HCM",
+              },
               { icon: <Mail size={16} />, text: "dsun.agency@gmail.com" },
               { icon: <Phone size={16} />, text: "0705 768 791" },
             ],
@@ -39,9 +42,7 @@ export default function Footer() {
             id: "about_us",
             title: "Về chúng tôi",
             content: [
-              "Information Collection Policy",
-              "User Data Handling",
-              "Third-Party Sharing Policy",
+              "GBOX cung cấp dịch vụ thuê nơi chụp với không gian căn hộ sang trọng và view đẹp. Chúng tôi cam kết mang đến cho bạn không gian hoàn hảo để tạo nên những bức ảnh ấn tượng với mức giá hợp lý.",
             ],
           },
         ].map(({ id, title, content }) => (
@@ -65,7 +66,10 @@ export default function Footer() {
             </a>
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: activeSection === id ? "auto" : 0, opacity: activeSection === id ? 1 : 0 }}
+              animate={{
+                height: activeSection === id ? "auto" : 0,
+                opacity: activeSection === id ? 1 : 0,
+              }}
               transition={{ duration: 0.3 }}
               className="overflow-hidden mt-2 text-left text-sm text-[#B0B0B0] space-y-1"
             >
@@ -82,6 +86,7 @@ export default function Footer() {
             </motion.div>
           </div>
         ))}
+        <p className="text-left text-[1rem]">&copy; 2025 Have A Trip. All Rights Reserved.</p>
       </div>
     </footer>
   );

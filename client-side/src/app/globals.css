@@ -1,4 +1,9 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .desc-text {
+    @apply text-[0.875rem] font-normal;
+  }
+}

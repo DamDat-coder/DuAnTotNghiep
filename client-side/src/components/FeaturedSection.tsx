@@ -23,13 +23,14 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
 
   return (
     <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl">
-      <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1>
+      <h1 className="text-[1.5rem] pb-6 font-bold px-6">Mua Sắm Theo Giới Tính</h1>
       <Swiper
         spaceBetween={16} // Tương đương slideGap
-        slidesPerView={1.5} // Hiển thị 1 slide mỗi lần
+        slidesPerView={1.5} // Hiển thị 1.5 slide mỗi lần
         loop={false} // Không quay vòng
         grabCursor={true} // Hiển thị con trỏ kéo
-        className="select-none"
+        className="select-none px-6"
+        wrapperClass="swiper-wrapper" // Đảm bảo wrapper có class đúng
       >
         {products.map((product) => (
           <SwiperSlide key={product.id}>

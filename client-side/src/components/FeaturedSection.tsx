@@ -1,10 +1,9 @@
-// src/components/FeaturedSection.tsx
 "use client";
 
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Product } from "../types";
-import "swiper/css"; // CSS cơ bản của Swiper
+import "swiper/css";
 
 interface FeaturedSectionProps {
   products: Product[];
@@ -13,7 +12,7 @@ interface FeaturedSectionProps {
 export default function FeaturedSection({ products }: FeaturedSectionProps) {
   if (!products || products.length === 0) {
     return (
-      <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl px-6 py-4">
+      <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl py-4"> {/* Xóa px-6 */}
         <p className="text-center text-gray-500">
           Không có sản phẩm nào để hiển thị.
         </p>
@@ -23,14 +22,14 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
 
   return (
     <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl">
-      <h1 className="text-[1.5rem] pb-6 font-bold px-6">Mua Sắm Theo Giới Tính</h1>
+      <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1> {/* Xóa px-6 */}
       <Swiper
-        spaceBetween={16} // Tương đương slideGap
-        slidesPerView={1.5} // Hiển thị 1.5 slide mỗi lần
-        loop={false} // Không quay vòng
-        grabCursor={true} // Hiển thị con trỏ kéo
-        className="select-none px-6"
-        wrapperClass="swiper-wrapper" // Đảm bảo wrapper có class đúng
+        spaceBetween={16}
+        slidesPerView={1.5}
+        loop={false}
+        grabCursor={true}
+        className="select-none" // Xóa px-6
+        wrapperClass="swiper-wrapper"
       >
         {products.map((product) => (
           <SwiperSlide key={product.id}>

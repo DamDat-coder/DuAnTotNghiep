@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-
+import Link from "next/link";
 interface MobileMenuProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -41,7 +41,11 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           strokeWidth={1.5}
           stroke="currentColor"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18 18 6M6 6l12 12"
+          />
         </svg>
       </button>
 
@@ -49,21 +53,21 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
       <div className="flex-1 px-6 pt-16 pb-6 flex flex-col gap-9 overflow-y-auto">
         {/* Danh sách link */}
         <div className="flex flex-col items-start space-y-4">
-          <a
-            href="#"
+          <Link
+            href="/"
             className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded"
             onClick={() => setIsOpen(false)}
           >
             Trang chủ
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/products"
             className="text-2xl font-medium text-black desktop:hover:bg-gray-700 py-2 rounded flex justify-between w-full items-center"
             onClick={() => setIsOpen(false)}
           >
             Sản phẩm
             <img src="/product/angle_left.svg" alt="" />
-          </a>
+          </Link>
           <a
             href="#"
             className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded"

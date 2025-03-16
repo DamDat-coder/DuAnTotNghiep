@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchProducts } from "../services/api";
 import { Product } from "../types";
-
+import Link from "next/link";
 interface LookupMenuProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;

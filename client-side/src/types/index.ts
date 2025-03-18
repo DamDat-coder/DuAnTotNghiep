@@ -13,3 +13,8 @@ export interface MemberBenefit {
   image: string;
   benefit: string;
 }
+
+export interface FilterPopupProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+}

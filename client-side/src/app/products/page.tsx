@@ -7,6 +7,8 @@ import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import Link from "next/link";
 import "swiper/css";
+import NewsSection from "../../components/NewsSection";
+import FilterPopup from "../../components/FilterPopup"; // Import FilterPopup
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -14,11 +16,20 @@ export default function ProductsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // State cho popup filter
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const [likedProducts, setLikedProducts] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   const PRODUCTS_PER_PAGE = 10;
 
   useEffect(() => {
+    const savedLikes = JSON.parse(
+      localStorage.getItem("likedProducts") || "{}"
+    );
+    setLikedProducts(savedLikes);
+
     const loadInitialProducts = async () => {
       setInitialLoading(true);
       const data = await fetchProducts();
@@ -30,6 +41,10 @@ export default function ProductsPage() {
     };
     loadInitialProducts();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("likedProducts", JSON.stringify(likedProducts));
+  }, [likedProducts]);
 
   useEffect(() => {
     if (initialLoading || !hasMore || loading) return;
@@ -60,7 +75,10 @@ export default function ProductsPage() {
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = products.slice(currentLength, currentLength + PRODUCTS_PER_PAGE);
+    const nextProducts = products.slice(
+      currentLength,
+      currentLength + PRODUCTS_PER_PAGE
+    );
 
     console.log("Loading more:", {
       currentLength,
@@ -81,10 +99,20 @@ export default function ProductsPage() {
     return products.length;
   };
 
-  const categories = Array.from(new Set(products.map((product) => product.category)));
+  const toggleLike = (productId: string) => {
+    setLikedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
+  };
+
+  const categories = Array.from(
+    new Set(products.map((product) => product.category))
+  );
 
   const renderProductCard = (product: Product) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
+    const isLiked = likedProducts[product.id] || false;
 
     return (
       <div className="product w-[171px] h-[22rem] flex flex-col bg-white shadow-xl relative">
@@ -100,8 +128,18 @@ export default function ProductsPage() {
         <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
           -{product.discountPercent}%
         </div>
-        <button className="absolute top-[0.5rem] right-[0.5rem]">
-          <img src="/product/product_addToCart.svg" alt="Thêm vào giỏ" />
+        <button
+          className="absolute top-[0.5rem] right-[0.5rem]"
+          onClick={() => toggleLike(product.id)}
+        >
+          <img
+            src={
+              isLiked
+                ? "/product/product_like_active.svg"
+                : "/product/product_like.svg"
+            }
+            alt={isLiked ? "Đã thích" : "Thích"}
+          />
         </button>
         <div className="content flex flex-col p-4">
           <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
@@ -124,11 +162,11 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="py-3 flex flex-col gap-6 min-h-screen">
+    <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen">
       <div className="">
         <h1 className="text-lg font-bold">Shop Nữ</h1>
         <Swiper
-          spaceBetween={16} // Giảm từ 16 xuống 9px
+          spaceBetween={9}
           slidesPerView={3.5}
           breakpoints={{
             768: { slidesPerView: 5 },
@@ -136,7 +174,7 @@ export default function ProductsPage() {
           }}
           loop={false}
           grabCursor={true}
-          className="select-none my-4 border-b-2 border-[#D1D1D1]" // Thêm border-bottom
+          className="select-none my-4 border-b-2 border-[#D1D1D1]"
         >
           {categories.map((category, index) => (
             <SwiperSlide key={index} className="!w-auto">
@@ -150,8 +188,13 @@ export default function ProductsPage() {
           ))}
         </Swiper>
         <div className="flex justify-between items-center">
-          <p className="desc-text text-[#B0B0B0]">{countProducts(products)} Sản phẩm</p>
-          <button className="flex items-center gap-1 py-[0.625rem] px-[0.75rem] text-base font-bold rounded-full border-2">
+          <p className="desc-text text-[#B0B0B0]">
+            {countProducts(products)} Sản phẩm
+          </p>
+          <button
+            className="flex items-center gap-1 py-[0.625rem] px-[0.75rem] text-base font-bold rounded-full border-2"
+            onClick={() => setIsFilterOpen(true)} // Mở popup filter
+          >
             Lọc
             <Image
               src="/product/product_filter.svg"
@@ -161,29 +204,31 @@ export default function ProductsPage() {
             />
           </button>
         </div>
+        {initialLoading ? (
+          <p className="text-center text-gray-500">Đang tải...</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4 justify-center overflow-x-hidden pt-2">
+              {displayedProducts.map((product) => (
+                <div key={product.id} className="flex justify-center">
+                  {renderProductCard(product)}
+                </div>
+              ))}
+            </div>
+            <div
+              ref={observerRef}
+              className={`h-10 ${!hasMore ? "hidden" : ""}`} // Ẩn khi !hasMore
+            >
+              {loading && (
+                <p className="text-center text-gray-500">Đang tải thêm...</p>
+              )}
+            </div>
+           
+          </>
+        )}
       </div>
-
-      {initialLoading ? (
-        <p className="text-center text-gray-500">Đang tải...</p>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4 justify-center">
-            {displayedProducts.map((product) => (
-              <div key={product.id} className="flex justify-center">
-                {renderProductCard(product)}
-              </div>
-            ))}
-          </div>
-          <div ref={observerRef} className="h-10">
-            {loading && (
-              <p className="text-center text-gray-500">Đang tải thêm...</p>
-            )}
-          </div>
-          {!hasMore && displayedProducts.length > 0 && (
-            <p className="text-center text-gray-500">Đã tải hết sản phẩm!</p>
-          )}
-        </>
-      )}
+        <NewsSection />
+        <FilterPopup isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} />
     </div>
   );
 }

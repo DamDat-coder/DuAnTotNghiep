@@ -8,7 +8,7 @@ export default async function Home() {
   const products = await fetchProducts();
 
   return (
-    <div className="py-0 flex flex-col flex-grow gap-[3.375rem] overflow-x-hidden"> {/* Xóa px-6 */}
+    <div className="py-0 flex flex-col flex-grow gap-[3.375rem] overflow-x-hidden">
       {/* Banner đầu */}
       <div className="banner flex flex-col items-start justify-evenly gap-5 max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl">
         <img

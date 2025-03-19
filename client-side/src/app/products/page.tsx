@@ -9,6 +9,7 @@ import Link from "next/link";
 import "swiper/css";
 import NewsSection from "../../components/NewsSection";
 import FilterPopup from "../../components/FilterPopup"; // Import FilterPopup
+import Breadcrumb from "@/components/Breadcrumb";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -115,7 +116,7 @@ export default function ProductsPage() {
     const isLiked = likedProducts[product.id] || false;
 
     return (
-      <div className="product w-[171px] h-[22rem] flex flex-col bg-white shadow-xl relative">
+      <Link href={`/products/${product.id}`} className="product w-[171px] h-[22rem] flex flex-col bg-white shadow-xl relative">
         <Image
           src={`/featured/${product.image}`}
           alt={product.name || "Sản phẩm"}
@@ -157,14 +158,14 @@ export default function ProductsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </Link>
     );
   };
 
   return (
     <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen">
       <div className="">
-        <h1 className="text-lg font-bold">Shop Nữ</h1>
+      <Breadcrumb />
         <Swiper
           spaceBetween={9}
           slidesPerView={3.5}

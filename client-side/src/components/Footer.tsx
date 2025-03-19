@@ -12,7 +12,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="p-4 text-center text-black">
+    <footer className="border-t-2 pt-4 border-[#B0B0B0] text-center text-black">
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
         {[
           {
@@ -49,7 +49,7 @@ export default function Footer() {
           <div key={id}>
             <a
               href="#"
-              className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline"
+              className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline pb-4 border-b-2 border-[#B0B0B0]"
               onClick={(e) => {
                 e.preventDefault();
                 handleClick(id);

@@ -14,7 +14,7 @@ export default function Footer() {
 
   return (
     <footer className="text-center text-black px-4 border-t-2 border-[#B0B0B0]">
-      <div className="w-[80%] mx-auto max-w-[2560px]  pt-4 desktop:px-8">
+      <div className="w-[80%] mx-auto max-w-[2560px] pt-4 desktop:px-8">
         {/* Grid: 1 cột mobile, 2 cột tablet, 3 cột desktop */}
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
           {[
@@ -47,49 +47,69 @@ export default function Footer() {
             },
           ].map(({ id, title, content }) => (
             <div key={id}>
-              <a
-                href="#"
-                className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline desktop:border-t-0 border-t-2 pt-4 border-[#B0B0B0]"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleClick(id);
-                }}
-              >
-                <p className="text-base font-semibold">{title}</p>
-                <motion.img
-                  src="/nav/footer_down.svg"
-                  alt=""
-                  className="h-4 w-auto"
-                  animate={{ rotate: activeSection === id ? 180 : 0 }}
+              {/* Mobile/Tablet: Có mũi tên và accordion */}
+              <div className="desktop:hidden">
+                <a
+                  href="#"
+                  className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline border-t-2 pt-4 border-[#B0B0B0]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleClick(id);
+                  }}
+                >
+                  <p className="text-base font-semibold">{title}</p>
+                  <motion.img
+                    src="/nav/footer_down.svg"
+                    alt=""
+                    className="h-4 w-auto"
+                    animate={{ rotate: activeSection === id ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </a>
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{
+                    height: activeSection === id ? "auto" : 0,
+                    opacity: activeSection === id ? 1 : 0,
+                  }}
                   transition={{ duration: 0.3 }}
-                />
-              </a>
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{
-                  height: activeSection === id ? "auto" : 0,
-                  opacity: activeSection === id ? 1 : 0,
-                }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden mt-2 text-left text-sm text-[#B0B0B0] space-y-1"
-              >
-                {content.map((item, index) =>
-                  typeof item === "string" ? (
-                    <p key={index}>{item}</p>
-                  ) : (
-                    <p key={index} className="flex items-center gap-2">
-                      {item.icon}
-                      {item.text}
-                    </p>
-                  )
-                )}
-              </motion.div>
+                  className="overflow-hidden mt-2 text-left text-sm text-[#B0B0B0] space-y-1"
+                >
+                  {content.map((item, index) =>
+                    typeof item === "string" ? (
+                      <p key={index}>{item}</p>
+                    ) : (
+                      <p key={index} className="flex items-center gap-2">
+                        {item.icon}
+                        {item.text}
+                      </p>
+                    )
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Desktop: Không mũi tên, nội dung hiển thị luôn */}
+              <div className="hidden desktop:block">
+                <p className="text-xl font-medium text-left">{title}</p>
+                <div className="mt-2 text-left text-sm text-[#707070] space-y-1">
+                  {content.map((item, index) =>
+                    typeof item === "string" ? (
+                      <p key={index}>{item}</p>
+                    ) : (
+                      <p key={index} className="flex items-center gap-2">
+                        {item.icon}
+                        {item.text}
+                      </p>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Copyright bên trái, ngoài grid */}
-        <p className="text-left text-[1rem] mt-4">© 2025 Have A Trip. All Rights Reserved.</p>
+        <p className="text-left text-black text-[1rem] mt-4">© 2025 Have A Trip. All Rights Reserved.</p>
       </div>
     </footer>
   );

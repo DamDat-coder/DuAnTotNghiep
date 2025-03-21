@@ -3,6 +3,7 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 interface MobileMenuProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -51,37 +52,107 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
 
       {/* Nội dung menu */}
       <div className="flex-1 px-6 pt-16 pb-6 flex flex-col gap-9 overflow-y-auto">
+        <div className="flex gap-3 items-center ">
+          <Image
+            src={`/nav/nav_user.svg`}
+            alt={"Sản phẩm"}
+            width={32}
+            height={32}
+            className="object-cover"
+            draggable={false}
+            loading="lazy"
+          />
+          <p className="font-medium text-2xl">Hi, Hà</p>
+        </div>
         {/* Danh sách link */}
-        <div className="flex flex-col items-start space-y-4">
+        <div className="flex flex-col items-start gap-4">
           <Link
             href="/"
-            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded"
+            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded flex items-center justify-between"
             onClick={() => setIsOpen(false)}
           >
             Trang chủ
+            <Image
+              src={`/nav/nav_angle_left.svg`}
+              alt={"Sản phẩm"}
+              width={8}
+              height={16}
+              className="object-cover"
+              draggable={false}
+              loading="lazy"
+            />
           </Link>
           <Link
-            href="/products"
-            className="text-2xl font-medium text-black desktop:hover:bg-gray-700 py-2 rounded flex justify-between w-full items-center"
+            href="/"
+            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded flex items-center justify-between"
             onClick={() => setIsOpen(false)}
           >
-            Sản phẩm
-            <img src="/product/angle_left.svg" alt="" />
+            Unisex
+            <Image
+              src={`/nav/nav_angle_left.svg`}
+              alt={"Sản phẩm"}
+              width={8}
+              height={16}
+              className="object-cover"
+              draggable={false}
+              loading="lazy"
+            />
           </Link>
-          <a
-            href="#"
-            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded"
+          <Link
+            href="/"
+            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded flex items-center justify-between"
             onClick={() => setIsOpen(false)}
           >
-            Dịch vụ
-          </a>
-          <a
-            href="#"
-            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded"
+            Nam
+            <Image
+              src={`/nav/nav_angle_left.svg`}
+              alt={"Sản phẩm"}
+              width={8}
+              height={16}
+              className="object-cover"
+              draggable={false}
+              loading="lazy"
+            />
+          </Link>
+          <Link
+            href="/"
+            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded flex items-center justify-between"
             onClick={() => setIsOpen(false)}
           >
-            Về chúng tôi
-          </a>
+            Nữ
+            <Image
+              src={`/nav/nav_angle_left.svg`}
+              alt={"Sản phẩm"}
+              width={8}
+              height={16}
+              className="object-cover"
+              draggable={false}
+              loading="lazy"
+            />
+          </Link>
+          <Link
+            href="/"
+            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded flex items-center justify-between"
+            onClick={() => setIsOpen(false)}
+          >
+            Giảm giá
+            <Image
+              src={`/nav/nav_angle_left.svg`}
+              alt={"Sản phẩm"}
+              width={8}
+              height={16}
+              className="object-cover"
+              draggable={false}
+              loading="lazy"
+            />
+          </Link>
+          <Link
+            href="/"
+            className="text-2xl font-medium w-full text-black desktop:hover:bg-gray-700 py-2 rounded flex items-center justify-between"
+            onClick={() => setIsOpen(false)}
+          >
+            Bài viết
+          </Link>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -96,6 +167,31 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
             <div className="p-3 rounded-full border border-black">
               <a href="#">Đăng nhập</a>
             </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center gap-4">
+            <Image
+              src={`/nav/nav_like.svg`}
+              alt={"Sản phẩm"}
+              width={18}
+              height={18}
+              draggable={false}
+              loading="lazy"
+            />
+            <p className="font-medium text-2xl">Yêu thích</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Image
+              src={`/nav/nav_cart.svg`}
+              alt={"Sản phẩm"}
+              width={24}
+              height={24}
+              draggable={false}
+              loading="lazy"
+            />
+            <p className="font-medium text-2xl">Giỏ hàng</p>
           </div>
         </div>
       </div>

@@ -25,6 +25,7 @@ export default function RootLayout({
       <body className={`${customFont.variable} antialiased flex flex-col min-h-screen`}>
         <Header title="My App" />
         <main className="flex-grow px-4">{children}</main>
+        <br></br>
         <Footer />
       </body>
     </html>

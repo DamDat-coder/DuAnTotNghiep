@@ -12,7 +12,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="border-t-2 pt-4 border-[#B0B0B0] text-center text-black">
+    <footer className=" text-center text-black px-4">
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
         {[
           {
@@ -49,7 +49,7 @@ export default function Footer() {
           <div key={id}>
             <a
               href="#"
-              className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline pb-4 border-b-2 border-[#B0B0B0]"
+              className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline border-t-2 pt-4 border-[#B0B0B0]"
               onClick={(e) => {
                 e.preventDefault();
                 handleClick(id);
@@ -86,7 +86,7 @@ export default function Footer() {
             </motion.div>
           </div>
         ))}
-        <p className="text-left text-[1rem]">&copy; 2025 Have A Trip. All Rights Reserved.</p>
+        <p className="text-left text-[1rem] border-t-2 border-[#B0B0B0]">&copy; 2025 Have A Trip. All Rights Reserved.</p>
       </div>
     </footer>
   );

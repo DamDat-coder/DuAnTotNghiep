@@ -1,6 +1,7 @@
+// src/components/FeaturedSection.tsx
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Product } from "../types";
 import "swiper/css";
@@ -10,9 +11,29 @@ interface FeaturedSectionProps {
 }
 
 export default function FeaturedSection({ products }: FeaturedSectionProps) {
+  const [slidesPerView, setSlidesPerView] = useState(1.5); // Giá trị mặc định
+
+  useEffect(() => {
+    // Cập nhật slidesPerView dựa trên kích thước màn hình
+    const handleResize = () => {
+      if (typeof window !== "undefined") {
+        setSlidesPerView(window.innerWidth >= 1920 ? 3.5 : 1.5);
+      }
+    };
+
+    // Gọi lần đầu khi mount
+    handleResize();
+
+    // Lắng nghe sự kiện resize
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup khi unmount
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   if (!products || products.length === 0) {
     return (
-      <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl py-4"> {/* Xóa px-6 */}
+      <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px] py-4">
         <p className="text-center text-gray-500">
           Không có sản phẩm nào để hiển thị.
         </p>
@@ -21,14 +42,14 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
   }
 
   return (
-    <div className="featured max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl">
-      <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1> {/* Xóa px-6 */}
+    <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
+      <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1>
       <Swiper
-        spaceBetween={16}
-        slidesPerView={1.5}
+        spaceBetween={typeof window !== "undefined" && window.innerWidth >= 1920 ? 109 : 16}
+        slidesPerView={slidesPerView}
         loop={false}
         grabCursor={true}
-        className="select-none" // Xóa px-6
+        className="select-none"
         wrapperClass="swiper-wrapper"
       >
         {products.map((product) => (
@@ -41,7 +62,7 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
                 draggable="false"
               />
               <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors">
-                {product.category || "Danh mục"}
+                Shop {product.category || "Danh mục"}
               </button>
             </div>
           </SwiperSlide>

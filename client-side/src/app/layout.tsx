@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -24,8 +25,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${customFont.variable} antialiased flex flex-col min-h-screen`}>
         <Header title="My App" />
-        <main className="flex-grow px-4">{children}</main>
-        <br></br>
+        <main className="flex-grow px-4 desktop:w-[80%] desktop:mx-auto">{children}</main>
+        <br />
         <Footer />
       </body>
     </html>

@@ -1,3 +1,4 @@
+// src/components/ProductSection.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -57,7 +58,7 @@ export default function ProductSection({ products }: ProductSectionProps) {
 
   if (!products || products.length === 0) {
     return (
-      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl"> {/* Xóa px-4 */}
+      <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
         <p className="text-center text-gray-500">Không có sản phẩm nào để hiển thị.</p>
       </div>
     );
@@ -103,8 +104,9 @@ export default function ProductSection({ products }: ProductSectionProps) {
   };
 
   return (
-    <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl"> {/* Xóa px-4 */}
+    <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
       <h1 className="text-[1.5rem] pb-6 font-bold">Mới Nhất & Tốt Nhất</h1>
+      {/* Mobile: Swiper 1.5 */}
       <div className="block tablet:hidden overflow-x-hidden">
         <div className="max-w-md">
           <Swiper
@@ -122,6 +124,7 @@ export default function ProductSection({ products }: ProductSectionProps) {
           </Swiper>
         </div>
       </div>
+      {/* Tablet: Grid 2 cột */}
       <div className="hidden tablet:block desktop:hidden">
         <div className="grid grid-cols-2 gap-6">
           {displayedProducts.map((product) => (
@@ -129,13 +132,24 @@ export default function ProductSection({ products }: ProductSectionProps) {
           ))}
         </div>
       </div>
+      {/* Desktop: Swiper 4.5 */}
       <div className="hidden desktop:block">
-        <div className="grid grid-cols-3 gap-6">
+        <Swiper
+          spaceBetween={10}
+          slidesPerView={4.5}
+          loop={false}
+          grabCursor={true}
+          className="select-none"
+        >
           {displayedProducts.map((product) => (
-            <div key={product.id}>{renderProductCard(product)}</div>
+            <SwiperSlide key={product.id} className="!w-[16.8125rem]">
+              {renderProductCard(product)}
+            </SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       </div>
+      {/* Observer để load thêm */}
+      {hasMore && <div ref={observerRef} className="h-10" />}
     </div>
   );
 }

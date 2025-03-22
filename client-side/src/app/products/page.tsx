@@ -1,3 +1,4 @@
+// src/app/products/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -8,7 +9,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import Link from "next/link";
 import "swiper/css";
 import NewsSection from "../../components/NewsSection";
-import FilterPopup from "../../components/FilterPopup"; // Import FilterPopup
+import FilterPopup from "../../components/FilterPopup";
 import Breadcrumb from "@/components/Breadcrumb";
 
 export default function ProductsPage() {
@@ -17,18 +18,14 @@ export default function ProductsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [isFilterOpen, setIsFilterOpen] = useState(false); // State cho popup filter
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
-  const [likedProducts, setLikedProducts] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [likedProducts, setLikedProducts] = useState<{ [key: string]: boolean }>({});
 
   const PRODUCTS_PER_PAGE = 10;
 
   useEffect(() => {
-    const savedLikes = JSON.parse(
-      localStorage.getItem("likedProducts") || "{}"
-    );
+    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
     setLikedProducts(savedLikes);
 
     const loadInitialProducts = async () => {
@@ -76,10 +73,7 @@ export default function ProductsPage() {
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = products.slice(
-      currentLength,
-      currentLength + PRODUCTS_PER_PAGE
-    );
+    const nextProducts = products.slice(currentLength, currentLength + PRODUCTS_PER_PAGE);
 
     console.log("Loading more:", {
       currentLength,
@@ -107,53 +101,53 @@ export default function ProductsPage() {
     }));
   };
 
-  const categories = Array.from(
-    new Set(products.map((product) => product.category))
-  );
+  const categories = Array.from(new Set(products.map((product) => product.category)));
 
   const renderProductCard = (product: Product) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
     const isLiked = likedProducts[product.id] || false;
 
     return (
-      <Link href={`/products/${product.id}`} className="product w-[171px] h-[22rem] flex flex-col bg-white shadow-xl relative">
+      <Link
+        href={`/products/${product.id}`}
+        className="product w-[171px] h-[22rem] desktop:w-[23.75rem] desktop:h-auto flex flex-col bg-white shadow-xl relative"
+      >
         <Image
           src={`/featured/${product.image}`}
           alt={product.name || "Sản phẩm"}
           width={171}
           height={269}
-          className="w-[171px] h-[269px] object-cover"
+          className="w-[171px] h-[269px] desktop:w-[23.75rem] desktop:h-[35.625rem] object-cover"
           draggable={false}
           loading="lazy"
         />
-        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
+        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] desktop:text-[0.875rem] font-bold px-2 py-1 rounded">
           -{product.discountPercent}%
         </div>
         <button
           className="absolute top-[0.5rem] right-[0.5rem]"
-          onClick={() => toggleLike(product.id)}
+          onClick={(e) => {
+            e.preventDefault(); // Ngăn chuyển trang khi click "Like"
+            toggleLike(product.id);
+          }}
         >
           <img
-            src={
-              isLiked
-                ? "/product/product_like_active.svg"
-                : "/product/product_like.svg"
-            }
+            src={isLiked ? "/product/product_like_active.svg" : "/product/product_like.svg"}
             alt={isLiked ? "Đã thích" : "Thích"}
           />
         </button>
         <div className="content flex flex-col p-4">
-          <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
+          <div className="name text-lg desktop:text-xl font-bold text-[#374151] pb-2 truncate">
             {product.name || "Sản phẩm"}
           </div>
           <div className="category desc-text text-[#374151] truncate">
             {product.category || "Danh mục"}
           </div>
           <div className="price-container flex items-center gap-3 pt-2">
-            <div className="discountPrice text-[1rem] font-bold text-red-500">
+            <div className="discountPrice text-[1rem] desktop:text-[1.125rem] font-bold text-red-500">
               {discountPrice.toLocaleString("vi-VN")}₫
             </div>
-            <div className="price text-[0.875rem] text-[#374151] line-through">
+            <div className="price text-[0.875rem] desktop:text-[1rem] text-[#374151] line-through">
               {product.price.toLocaleString("vi-VN")}₫
             </div>
           </div>
@@ -164,14 +158,15 @@ export default function ProductsPage() {
 
   return (
     <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen">
-      <div className="">
-      <Breadcrumb />
+      <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[85%] desktop:max-w-[2560px]">
+        <Breadcrumb />
         <Swiper
           spaceBetween={9}
           slidesPerView={3.5}
           breakpoints={{
             768: { slidesPerView: 5 },
             1024: { slidesPerView: 7 },
+            1920: { slidesPerView: 9 },
           }}
           loop={false}
           grabCursor={true}
@@ -194,7 +189,7 @@ export default function ProductsPage() {
           </p>
           <button
             className="flex items-center gap-1 py-[0.625rem] px-[0.75rem] text-base font-bold rounded-full border-2"
-            onClick={() => setIsFilterOpen(true)} // Mở popup filter
+            onClick={() => setIsFilterOpen(true)}
           >
             Lọc
             <Image
@@ -209,27 +204,23 @@ export default function ProductsPage() {
           <p className="text-center text-gray-500">Đang tải...</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4 justify-center overflow-x-hidden pt-2">
+            <div className="grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4 desktop:gap-[1rem] justify-center overflow-x-hidden pt-2">
               {displayedProducts.map((product) => (
                 <div key={product.id} className="flex justify-center">
                   {renderProductCard(product)}
                 </div>
               ))}
             </div>
-            <div
-              ref={observerRef}
-              className={`h-10 ${!hasMore ? "hidden" : ""}`} // Ẩn khi !hasMore
-            >
+            <div ref={observerRef} className={`h-10 ${!hasMore ? "hidden" : ""}`}>
               {loading && (
                 <p className="text-center text-gray-500">Đang tải thêm...</p>
               )}
             </div>
-           
           </>
         )}
       </div>
-        <NewsSection />
-        <FilterPopup isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} />
+      <NewsSection />
+      <FilterPopup isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} />
     </div>
   );
 }

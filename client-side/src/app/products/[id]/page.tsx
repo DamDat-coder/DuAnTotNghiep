@@ -114,7 +114,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[80%] desktop:max-w-[2560px]">
+      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[95%]">
         <Breadcrumb />
         <div className="mt-4 flex flex-col desktop:flex-row desktop:gap-6">
           {/* Mobile/Tablet: Toàn bộ layout gốc */}

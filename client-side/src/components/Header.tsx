@@ -20,7 +20,7 @@ export default function Header({ title }: HeaderProps) {
 
   return (
     <nav className="bg-white text-black">
-      <div className="w-[80%] mx-auto px-4 max-w-[2560px] desktop:px-8">
+      <div className="w-[95%] mx-auto px-4 max-w-[2560px] desktop:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Phần 1: Logo bên trái */}
           <div className="flex items-center">

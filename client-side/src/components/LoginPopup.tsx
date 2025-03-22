@@ -1,4 +1,3 @@
-// src/components/LoginPopup.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -9,7 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenRegister: () => void; // Thêm props để mở RegisterPopup
+  onOpenRegister: () => void;
 }
 
 export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPopupProps) {
@@ -39,7 +38,7 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md desktop:max-w-2xl" // max-w-md cho mobile, max-w-2xl cho desktop
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -106,7 +105,7 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
             <div className="flex justify-between items-center gap-[0.5625rem]">
               <label className="flex items-center gap-2 text-sm">
                 <input
-                  type="checkbox" // Sửa lại thành checkbox như ý định ban đầu
+                  type="checkbox"
                   className="h-4 w-4 accent-black border-black"
                 />
                 Duy trì đăng nhập
@@ -128,8 +127,8 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
               type="button"
               className="text-blue-500 hover:underline"
               onClick={() => {
-                onClose(); // Đóng LoginPopup
-                onOpenRegister(); // Mở RegisterPopup
+                onClose();
+                onOpenRegister();
               }}
             >
               Đăng ký ngay

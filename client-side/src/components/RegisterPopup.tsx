@@ -164,5 +164,7 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
         </div>
       </motion.div>
     </div>
+
+    
   );
 }

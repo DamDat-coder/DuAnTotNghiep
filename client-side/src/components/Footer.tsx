@@ -13,8 +13,8 @@ export default function Footer() {
   };
 
   return (
-    <footer className="text-center text-black px-4 border-t-2 border-[#B0B0B0]">
-      <div className="w-[80%] mx-auto max-w-[2560px] pt-4 desktop:px-8">
+    <footer className="text-center text-black px-4 desktop:border-t-2 border-[#B0B0B0]">
+      <div className="w-[95%] mx-auto max-w-[2560px] pt-4 desktop:px-8">
         {/* Grid: 1 cột mobile, 2 cột tablet, 3 cột desktop */}
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
           {[

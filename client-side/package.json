@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env PORT=3003 next dev --turbopack",
+    "dev": "cross-env PORT=3300 next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -14,6 +14,7 @@
     "next": "15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-select": "^5.10.1",
     "swiper": "^11.2.5"
   },
   "devDependencies": {

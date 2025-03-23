@@ -42,7 +42,7 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
   }
 
   return (
-    <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
+    <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[100%] desktop:max-w-[2560px]">
       <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1>
       <Swiper
         spaceBetween={typeof window !== "undefined" && window.innerWidth >= 1920 ? 109 : 16}
@@ -58,7 +58,7 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
               <img
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.name || "Sản phẩm"}`}
-                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:h-96"
+                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-[28.125rem] desktop:h-auto desktop:object-contain"
                 draggable="false"
               />
               <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors">

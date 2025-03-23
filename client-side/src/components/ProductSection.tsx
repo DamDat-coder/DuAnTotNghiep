@@ -58,7 +58,7 @@ export default function ProductSection({ products }: ProductSectionProps) {
 
   if (!products || products.length === 0) {
     return (
-      <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
+      <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px]">
         <p className="text-center text-gray-500">Không có sản phẩm nào để hiển thị.</p>
       </div>
     );
@@ -68,7 +68,7 @@ export default function ProductSection({ products }: ProductSectionProps) {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <div className="product w-[16.8125rem] h-[23.875rem] flex flex-col bg-white shadow-xl relative">
+      <div className="product w-[16.8125rem] h-[23.875rem] flex flex-col bg-white  relative">
         <Image
           src={`/featured/${product.image}`}
           alt={product.name || "Sản phẩm"}
@@ -104,7 +104,7 @@ export default function ProductSection({ products }: ProductSectionProps) {
   };
 
   return (
-    <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
+    <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px]">
       <h1 className="text-[1.5rem] pb-6 font-bold">Mới Nhất & Tốt Nhất</h1>
       {/* Mobile: Swiper 1.5 */}
       <div className="block tablet:hidden overflow-x-hidden">

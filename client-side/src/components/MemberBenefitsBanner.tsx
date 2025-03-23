@@ -22,7 +22,7 @@ export default function MemberBenefitsBanner() {
     // Cập nhật slidesPerView dựa trên kích thước màn hình
     const handleResize = () => {
       if (typeof window !== "undefined") {
-        setSlidesPerView(window.innerWidth >= 1920 ? 3.5 : 1.5);
+        setSlidesPerView(window.innerWidth >= 1920 ? 3 : 1.5);
       }
     };
 
@@ -62,7 +62,7 @@ export default function MemberBenefitsBanner() {
               <img
                 src={`/memberBenefit/${benefit.image}`}
                 alt={benefit.benefit}
-                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:h-96"
+                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-[25.625rem] desktop:h-auto"
                 draggable="false"
               />
               <div className="absolute inset-0 bg-black/20 rounded"></div>

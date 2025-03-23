@@ -110,7 +110,7 @@ export default function ProductsPage() {
     return (
       <Link
         href={`/products/${product.id}`}
-        className="product w-[171px] h-[22rem] desktop:w-[23.75rem] desktop:h-auto flex flex-col bg-white shadow-xl relative"
+        className="product w-[171px] h-[22rem] desktop:w-[23.75rem] desktop:h-auto flex flex-col bg-white relative"
       >
         <Image
           src={`/featured/${product.image}`}

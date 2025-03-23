@@ -1,3 +1,4 @@
+// src/components/MemberBenefitsBanner.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -8,18 +9,36 @@ import "swiper/css";
 
 export default function MemberBenefitsBanner() {
   const [benefits, setBenefits] = useState<MemberBenefit[]>([]);
+  const [slidesPerView, setSlidesPerView] = useState(1.5); // Giá trị mặc định
 
   useEffect(() => {
+    // Fetch benefits
     async function loadBenefits() {
       const data = await fetchMemberBenefits();
       setBenefits(data);
     }
     loadBenefits();
+
+    // Cập nhật slidesPerView dựa trên kích thước màn hình
+    const handleResize = () => {
+      if (typeof window !== "undefined") {
+        setSlidesPerView(window.innerWidth >= 1920 ? 3 : 1.5);
+      }
+    };
+
+    // Gọi lần đầu khi mount
+    handleResize();
+
+    // Lắng nghe sự kiện resize
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup khi unmount
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   if (!benefits.length) {
     return (
-      <div className="member-benefits max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl py-4"> {/* Xóa px-6 */}
+      <div className="member-benefits w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px] py-4">
         <p className="text-center text-gray-500">
           Không có quyền lợi nào để hiển thị.
         </p>
@@ -28,11 +47,11 @@ export default function MemberBenefitsBanner() {
   }
 
   return (
-    <div className="member-benefits max-w-md mx-auto tablet:max-w-2xl desktop:max-w-4xl">
+    <div className="member-benefits w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
       <h1 className="text-[1.5rem] pb-6 font-bold">Quyền Lợi Thành Viên</h1>
       <Swiper
-        spaceBetween={16}
-        slidesPerView={1.5}
+        spaceBetween={typeof window !== "undefined" && window.innerWidth >= 1920 ? 109 : 16}
+        slidesPerView={slidesPerView}
         loop={false}
         grabCursor={true}
         className="select-none"
@@ -43,7 +62,7 @@ export default function MemberBenefitsBanner() {
               <img
                 src={`/memberBenefit/${benefit.image}`}
                 alt={benefit.benefit}
-                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:h-96"
+                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-[25.625rem] desktop:h-auto"
                 draggable="false"
               />
               <div className="absolute inset-0 bg-black/20 rounded"></div>

@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Select from "react-select";
+import dynamic from "next/dynamic";
+
+// Tắt SSR cho react-select
+const Select = dynamic(() => import("react-select"), { ssr: false });
 
 export default function Checkout() {
   const [orderItems] = useState([
@@ -333,9 +336,9 @@ export default function Checkout() {
       </div>
 
       <div className="mt-8 col-span-full">
-      <h2 className="text-[2.5 rem] font-bold text-left uppercase mb-4">
-                PHƯƠNG THỨC VẬN CHUYỂN
-              </h2>
+        <h2 className="text-[2.5 rem] font-bold text-left uppercase mb-4">
+          PHƯƠNG THỨC VẬN CHUYỂN
+        </h2>
         <div className="space-y-4">
           <label className="flex items-center justify-between cursor-pointer">
             <div className="flex items-center gap-3">
@@ -369,9 +372,9 @@ export default function Checkout() {
       </div>
 
       <div className="mt-8 col-span-full">
-      <h2 className="text-[2.5 rem] font-bold text-left uppercase mb-4">
-                PHƯƠNG THỨC THANH TOÁN
-              </h2>
+        <h2 className="text-[2.5 rem] font-bold text-left uppercase mb-4">
+          PHƯƠNG THỨC THANH TOÁN
+        </h2>
         <div className="space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -461,7 +464,6 @@ export default function Checkout() {
   return (
     <div className="py-8">
       <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[95%]">
-
         {/* Mobile/Tablet */}
         <div className="desktop:hidden mt-4">
           {/* Đơn hàng */}
@@ -543,7 +545,7 @@ export default function Checkout() {
           <div className="w-2/3 flex flex-col gap-6">{renderShippingPaymentSection()}</div>
 
           {/* Container phải */}
-          <div className="w-1/3">
+          <div className="w-1/3 sticky top-0">
             <h1 className="text-lg font-bold">
               ĐƠN HÀNG ({orderItems.length} SẢN PHẨM)
             </h1>
@@ -631,6 +633,5 @@ export default function Checkout() {
         }
       `}</style>
     </div>
-    
   );
 }

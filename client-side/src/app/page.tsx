@@ -34,7 +34,7 @@ export default async function Home() {
         </div>
 
         {/* Desktop: 2 hình với overlay */}
-        <div className="hidden desktop:flex w-full items-center">
+        <div className="hidden desktop:flex desktop:w-screen items-center">
           {/* Container cho cả 2 hình */}
           <div className="relative w-full flex">
             {/* Hình 1 */}
@@ -80,7 +80,9 @@ export default async function Home() {
       <div className="banner mx-auto w-full max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px] desktop:flex desktop:items-center">
         {/* Mobile/Tablet: 1 hình */}
         <div className="desktop:hidden">
-          <h1 className="text-[1.5rem] font-bold">Đừng Bỏ Lỡ</h1>
+          <h1 className="text-[1.5rem] font-bold desktop:text-[1.5rem] desktop:font-bold">
+            Đừng Bỏ Lỡ
+          </h1>
           <img
             src="/product/product_sale.png"
             alt="Áo khoác Gopcore Basic"
@@ -102,9 +104,11 @@ export default async function Home() {
         </div>
 
         {/* Desktop: 2 hình với overlay */}
-        <div className="hidden desktop:flex w-full items-center">
-          {/* Container cho cả 2 hình */}
-          <div className="relative w-full flex">
+        <div className="hidden  desktop:flex w-full max-w-[2560px] mx-auto flex-col">
+          <h1 className="text-[1.5rem] font-bold desktop:text-[1.5rem] desktop:font-bold">
+            Đừng Bỏ Lỡ
+          </h1>
+          <div className="relative w-full flex mt-5">
             {/* Hình 1 */}
             <div className="w-[50%]">
               <img
@@ -116,7 +120,7 @@ export default async function Home() {
             {/* Hình 2 */}
             <div className="w-[50%]">
               <img
-                src="/banner/banner_2.png" // Giữ hình thứ 2 như bạn đã dùng
+                src="/banner/banner_2.png"
                 alt="Áo khoác Gopcore Basic 2"
                 className="w-full h-[50rem] object-cover"
               />
@@ -124,12 +128,15 @@ export default async function Home() {
             {/* Overlay cho toàn bộ hình lớn */}
             <div className="absolute bottom-0 w-full h-[33.33%] bg-gradient-to-b from-transparent to-black flex justify-center items-center">
               <div className="text-white text-center">
-                <div className="banner_status text-base">Cảm giác thoải mái</div>
+                <div className="banner_status text-base">
+                  Cảm giác thoải mái
+                </div>
                 <div className="banner_name text-[1.5rem] font-bold desktop:text-3xl leading-[1.8125rem] line-clamp-1">
                   MLB - Áo khoác phối mũ unisex Gopcore Basic
                 </div>
                 <div className="banner_description desc-text desktop:text-lg">
-                  Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng.
+                  Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn
+                  gàng thoải mái cùng phong cách biểu tượng.
                 </div>
                 <button className="banner_action text-[1rem] px-6 py-2 bg-white text-black font-bold rounded-full hover:opacity-70 transition-colors mt-3">
                   Shop

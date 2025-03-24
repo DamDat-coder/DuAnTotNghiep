@@ -11,15 +11,16 @@ import { Star } from "lucide-react";
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const product = {
     id: 1,
+    category: "Men's Shoes",
     name: "MLB - Áo khoác phối mũ unisex Gopcore Basic",
     price: 5589000,
     discountPercent: 68,
     images: [
-      "/featured/featured_1.jpg",
-      "/featured/featured_2.jpg",
-      "/featured/featured_3.jpg",
-      "/featured/featured_4.jpg",
-      "/featured/featured_5.jpg",
+      "/featured/featured_banner_4.png",
+      "/featured/featured_banner_4.png",
+      "/featured/featured_banner_4.png",
+      "/featured/featured_banner_4.png",
+      "/featured/featured_banner_4.png",
     ],
     sizes: [
       { value: "S", inStock: true },
@@ -33,11 +34,46 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   };
 
   const suggestedProducts = [
-    { id: 2, name: "Áo thun unisex", price: 500000, discountPercent: 20, image: "featured_1.jpg", category: "Áo thun" },
-    { id: 3, name: "Quần jeans slim", price: 800000, discountPercent: 15, image: "featured_2.jpg", category: "Quần jeans" },
-    { id: 4, name: "Giày sneakers trắng", price: 1200000, discountPercent: 10, image: "featured_3.jpg", category: "Giày" },
-    { id: 5, name: "Mũ lưỡi trai đen", price: 300000, discountPercent: 25, image: "featured_4.jpg", category: "Phụ kiện" },
-    { id: 6, name: "Áo khoác bomber", price: 1500000, discountPercent: 30, image: "featured_5.jpg", category: "Áo khoác" },
+    {
+      id: 2,
+      name: "Áo thun unisex",
+      price: 500000,
+      discountPercent: 20,
+      image: "featured_banner_4.png",
+      category: "Áo thun",
+    },
+    {
+      id: 3,
+      name: "Quần jeans slim",
+      price: 800000,
+      discountPercent: 15,
+      image: "featured_banner_4.png",
+      category: "Quần jeans",
+    },
+    {
+      id: 4,
+      name: "Giày sneakers trắng",
+      price: 1200000,
+      discountPercent: 10,
+      image: "featured_banner_4.png",
+      category: "Giày",
+    },
+    {
+      id: 5,
+      name: "Mũ lưỡi trai đen",
+      price: 300000,
+      discountPercent: 25,
+      image: "featured_banner_4.png",
+      category: "Phụ kiện",
+    },
+    {
+      id: 6,
+      name: "Áo khoác bomber",
+      price: 1500000,
+      discountPercent: 30,
+      image: "featured_banner_4.png",
+      category: "Áo khoác",
+    },
   ];
 
   const discountedPrice = product.price * (1 - product.discountPercent / 100);
@@ -73,37 +109,37 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     setActiveSection(activeSection === section ? null : section);
   };
 
-  const renderProductCard = (product: typeof suggestedProducts[0]) => {
+  const renderProductCard = (product: (typeof suggestedProducts)[0]) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <div className="product w-[16.8125rem] h-[23.875rem] desktop:w-[23.75rem] desktop:h-auto flex flex-col bg-white shadow-xl relative">
+      <div className="product w-[22.5rem] h-auto flex flex-col bg-white relative">
         <Image
           src={`/featured/${product.image}`}
           alt={product.name || "Sản phẩm"}
-          width={269}
-          height={269}
-          className="w-[16.8125rem] h-[16.8125rem] desktop:w-[23.75rem] desktop:h-[35.625rem] object-cover"
+          width={363} // 22.6875rem = 363px (1rem = 16px)
+          height={363} // Tỷ lệ 1:1 với width để phù hợp
+          className="w-[22.6875rem] h-[22.6875rem] object-cover"
           draggable={false}
         />
-        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] desktop:text-[0.875rem] font-bold px-2 py-1 rounded">
+        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
           -{product.discountPercent}%
         </div>
         <button className="absolute top-[0.5rem] right-[0.5rem]">
-          <img src="/product/product_addToCart.svg" alt="Thêm vào giỏ hàng" />
+          <img src="/product/product_addToCart.svg" alt="" />
         </button>
         <div className="content flex flex-col p-4">
-          <div className="name text-lg desktop:text-xl font-bold text-[#374151] pb-2 truncate">
+          <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
             {product.name || "Sản phẩm"}
           </div>
           <div className="category desc-text text-[#374151] truncate">
             {product.category || "Danh mục"}
           </div>
           <div className="price-container flex items-center gap-3 pt-2">
-            <div className="discountPrice text-[1rem] desktop:text-[1.125rem] font-bold text-red-500">
+            <div className="discountPrice text-[1rem] font-bold text-red-500">
               {discountPrice.toLocaleString("vi-VN")}₫
             </div>
-            <div className="price text-[0.875rem] desktop:text-[1rem] text-[#374151] line-through">
+            <div className="price text-[0.875rem] text-[#374151] line-through">
               {product.price.toLocaleString("vi-VN")}₫
             </div>
           </div>
@@ -114,7 +150,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[95%]">
+      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-full desktop:w-full">
         <Breadcrumb />
         <div className="mt-4 flex flex-col desktop:flex-row desktop:gap-6">
           {/* Mobile/Tablet: Toàn bộ layout gốc */}
@@ -133,7 +169,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 </div>
               </div>
               <div className="relative mt-4">
-                <Swiper spaceBetween={10} slidesPerView={1} loop={true} className="w-full">
+                <Swiper
+                  spaceBetween={10}
+                  slidesPerView={1}
+                  loop={true}
+                  className="w-full"
+                >
                   {product.images.map((image, index) => (
                     <SwiperSlide key={index}>
                       <Image
@@ -156,7 +197,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 <div className="flex w-full justify-between items-center">
                   <h3 className="font-semibold">Sizes</h3>
                   <div className="flex justify-center items-center gap-2 ml-4">
-                    <Image src="/product/product_size.svg" alt="Bảng size" width={20} height={20} />
+                    <Image
+                      src="/product/product_size.svg"
+                      alt="Bảng size"
+                      width={20}
+                      height={20}
+                    />
                     <p>Bảng size</p>
                   </div>
                 </div>
@@ -212,7 +258,11 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 </div>
                 <button onClick={toggleLike} className="mt-1 ml-4">
                   <Image
-                    src={isLiked ? "/product/product_like_active.svg" : "/product/product_like_square.svg"}
+                    src={
+                      isLiked
+                        ? "/product/product_like_active.svg"
+                        : "/product/product_like_square.svg"
+                    }
                     alt={isLiked ? "Đã thích" : "Thích"}
                     width={45}
                     height={45}
@@ -227,7 +277,9 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                     width={20}
                     height={20}
                   />
-                  <span className="text-sm">Free ship khi đơn hàng trên 1 triệu</span>
+                  <span className="text-sm">
+                    Free ship khi đơn hàng trên 1 triệu
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Image
@@ -267,12 +319,28 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 {
                   id: "reviews",
                   title: (
-                    <div className="flex justify-between items-center w-full gap-40">
+                    <div className="flex justify-between items-center w-full text-base font-semibold">
                       <span>Đánh giá</span>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={16} fill="black" stroke="black" />
-                        ))}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={16}
+                              fill="black"
+                              stroke="black"
+                            />
+                          ))}
+                        </div>
+                        <motion.img
+                          src="/nav/footer_down.svg"
+                          alt="Dropdown"
+                          className="h-4 w-auto"
+                          animate={{
+                            rotate: activeSection === "reviews" ? 180 : 0,
+                          }}
+                          transition={{ duration: 0.3 }}
+                        />
                       </div>
                     </div>
                   ),
@@ -281,7 +349,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[...Array(4)].map((_, i) => (
-                            <Star key={i} size={16} fill="black" stroke="black" />
+                            <Star
+                              key={i}
+                              size={16}
+                              fill="black"
+                              stroke="black"
+                            />
                           ))}
                           <Star size={16} stroke="black" />
                         </div>
@@ -291,7 +364,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                         <div className="flex items-center justify-between">
                           <div className="flex">
                             {[...Array(3)].map((_, i) => (
-                              <Star key={i} size={16} fill="black" stroke="black" />
+                              <Star
+                                key={i}
+                                size={16}
+                                fill="black"
+                                stroke="black"
+                              />
                             ))}
                             {[...Array(2)].map((_, i) => (
                               <Star key={i} size={16} stroke="black" />
@@ -300,9 +378,14 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                           <span>TanNhutHa - Oct 29, 2024</span>
                         </div>
                         <p className="line-clamp-3">
-                          They are very narrow and somewhat stiff. I've only worn them for 1 day, so maybe I need to break them in more. So far, I like the regular DN's much better.
+                          They are very narrow and somewhat stiff. I've only
+                          worn them for 1 day, so maybe I need to break them in
+                          more. So far, I like the regular DN's much better.
                         </p>
-                        <a href="#" className="text-[1rem] text-black hover:underline">
+                        <a
+                          href="#"
+                          className="text-[1rem] text-black hover:underline"
+                        >
                           Xem thêm
                         </a>
                       </div>
@@ -319,14 +402,20 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                       handleSectionClick(id);
                     }}
                   >
-                    <p className="text-base font-semibold">{title}</p>
-                    <motion.img
-                      src="/nav/footer_down.svg"
-                      alt="Dropdown"
-                      className="h-4 w-auto"
-                      animate={{ rotate: activeSection === id ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    />
+                    {id === "reviews" ? (
+                      title
+                    ) : (
+                      <>
+                        <p className="text-base font-semibold">{title}</p>
+                        <motion.img
+                          src="/nav/footer_down.svg"
+                          alt="Dropdown"
+                          className="h-4 w-auto"
+                          animate={{ rotate: activeSection === id ? 180 : 0 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </>
+                    )}
                   </a>
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -352,7 +441,10 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             {/* Section 5 */}
             <div className="mb-4">
               <div className="max-w-md mx-auto tablet:max-w-2xl">
-                <h1 className="text-[1.5rem] pb-6 font-bold">Có thể bạn thích</h1>
+                <h1 className="text-[1.5rem] pb-6 font-bold">
+                  Có thể bạn thích
+                </h1>
+                {/* Mobile: Swiper 1.5 */}
                 <div className="block tablet:hidden overflow-x-hidden">
                   <div className="max-w-md">
                     <Swiper
@@ -363,13 +455,17 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                       className="select-none"
                     >
                       {suggestedProducts.map((product) => (
-                        <SwiperSlide key={product.id} className="!w-[16.8125rem]">
+                        <SwiperSlide
+                          key={product.id}
+                          className="!w-[22.6875rem]"
+                        >
                           {renderProductCard(product)}
                         </SwiperSlide>
                       ))}
                     </Swiper>
                   </div>
                 </div>
+                {/* Tablet: Grid 2 cột */}
                 <div className="hidden tablet:block">
                   <div className="grid grid-cols-2 gap-6">
                     {suggestedProducts.map((product) => (
@@ -382,30 +478,32 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
           </div>
 
           {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
-          <div className="hidden desktop:flex desktop:flex-col desktop:w-2/3">
-            <div className="grid grid-cols-2 gap-0">
-              {product.images.slice(0, 4).map((image, index) => (
+          <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4 overflow-x-hidden">
+            <div className="relative">
+              <div className="grid grid-cols-2 gap-0">
+                {product.images.slice(0, 4).map((image, index) => (
+                  <Image
+                    key={index}
+                    src={image}
+                    alt={`${product.name} - Ảnh ${index + 1}`}
+                    width={380}
+                    height={285}
+                    className="w-full h-auto object-cover"
+                  />
+                ))}
+              </div>
+              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex justify-center items-center gap-2 py-2 px-4 border-2 border-black w-[15%] bg-white">
+                <button className="text-base font-bold">XEM THÊM</button>
                 <Image
-                  key={index}
-                  src={image}
-                  alt={`${product.name} - Ảnh ${index + 1}`}
-                  width={380}
-                  height={285}
-                  className="w-full h-auto object-cover"
+                  src="/nav/footer_down.svg"
+                  alt="Xem thêm"
+                  width={16}
+                  height={16}
                 />
-              ))}
+              </div>
             </div>
-            <div className="flex justify-center items-center gap-2 py-4">
-              <button className="text-base font-medium">Xem thêm</button>
-              <Image
-                src="/nav/footer_down.svg"
-                alt="Xem thêm"
-                width={16}
-                height={16}
-              />
-            </div>
-
-            <div className="border-t-2 pt-4 border-[#B0B0B0] mt-6">
+                {/* Desktop */}
+            <div className="border-b-2 pt-4 border-[#B0B0B0] mt-8 w-[60%] mx-auto">
               {[
                 {
                   id: "product_details",
@@ -430,12 +528,28 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 {
                   id: "reviews",
                   title: (
-                    <div className="flex justify-between items-center w-full gap-40">
+                    <div className="flex justify-between items-center w-full text-base font-semibold">
                       <span>Đánh giá</span>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={16} fill="black" stroke="black" />
-                        ))}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={16}
+                              fill="black"
+                              stroke="black"
+                            />
+                          ))}
+                        </div>
+                        <motion.img
+                          src="/nav/footer_down.svg"
+                          alt="Dropdown"
+                          className="h-4 w-auto"
+                          animate={{
+                            rotate: activeSection === "reviews" ? 180 : 0,
+                          }}
+                          transition={{ duration: 0.3 }}
+                        />
                       </div>
                     </div>
                   ),
@@ -444,7 +558,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[...Array(4)].map((_, i) => (
-                            <Star key={i} size={16} fill="black" stroke="black" />
+                            <Star
+                              key={i}
+                              size={16}
+                              fill="black"
+                              stroke="black"
+                            />
                           ))}
                           <Star size={16} stroke="black" />
                         </div>
@@ -454,7 +573,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                         <div className="flex items-center justify-between">
                           <div className="flex">
                             {[...Array(3)].map((_, i) => (
-                              <Star key={i} size={16} fill="black" stroke="black" />
+                              <Star
+                                key={i}
+                                size={16}
+                                fill="black"
+                                stroke="black"
+                              />
                             ))}
                             {[...Array(2)].map((_, i) => (
                               <Star key={i} size={16} stroke="black" />
@@ -463,9 +587,14 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                           <span>TanNhutHa - Oct 29, 2024</span>
                         </div>
                         <p className="line-clamp-3">
-                          They are very narrow and somewhat stiff. I've only worn them for 1 day, so maybe I need to break them in more. So far, I like the regular DN's much better.
+                          They are very narrow and somewhat stiff. I've only
+                          worn them for 1 day, so maybe I need to break them in
+                          more. So far, I like the regular DN's much better.
                         </p>
-                        <a href="#" className="text-[1rem] text-black hover:underline">
+                        <a
+                          href="#"
+                          className="text-[1rem] text-black hover:underline"
+                        >
                           Xem thêm
                         </a>
                       </div>
@@ -476,20 +605,28 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 <div key={id}>
                   <a
                     href="#"
-                    className="w-full flex items-center justify-between no-underline hover:underline focus:no-underline pb-4 border-b-2 border-[#B0B0B0]"
+                    className={`w-full flex items-center justify-between no-underline hover:underline focus:no-underline border-t-2 border-[#B0B0B0] pt-4 pb-4 ${
+                      activeSection === id ? "pb-4" : "pb-4"
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       handleSectionClick(id);
                     }}
                   >
-                    <p className="text-base font-semibold">{title}</p>
-                    <motion.img
-                      src="/nav/footer_down.svg"
-                      alt="Dropdown"
-                      className="h-4 w-auto"
-                      animate={{ rotate: activeSection === id ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    />
+                    {id === "reviews" ? (
+                      title
+                    ) : (
+                      <>
+                        <p className="text-base font-semibold">{title}</p>
+                        <motion.img
+                          src="/nav/footer_down.svg"
+                          alt="Dropdown"
+                          className="h-4 w-auto"
+                          animate={{ rotate: activeSection === id ? 180 : 0 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </>
+                    )}
                   </a>
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -502,9 +639,9 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                   >
                     {content.map((item, index) =>
                       typeof item === "string" ? (
-                        <p key={index}>{item}</p>
+                        <p className="pb-4" key={index}>{item}</p>
                       ) : (
-                        <div key={index}>{item}</div>
+                        <div className="pb-4" key={index}>{item}</div>
                       )
                     )}
                   </motion.div>
@@ -512,27 +649,40 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               ))}
             </div>
 
+            {/* Section 5 */}
             <div className="mb-4 mt-9">
               <h1 className="text-[1.5rem] pb-6 font-bold">Có thể bạn thích</h1>
-              <Swiper
-                spaceBetween={16}
-                slidesPerView={3}
-                loop={false}
-                grabCursor={true}
-                className="select-none w-full"
-              >
-                {suggestedProducts.map((product) => (
-                  <SwiperSlide key={product.id} className="!w-[23.75rem]">
-                    {renderProductCard(product)}
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+              <div className="w-full">
+                <Swiper
+                  spaceBetween={100}
+                  slidesPerView={3}
+                  loop={false}
+                  grabCursor={true}
+                  className="select-none w-full"
+                >
+                  {suggestedProducts.map((product) => (
+                    <SwiperSlide key={product.id} className="">
+                      {renderProductCard(product)}
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
             </div>
           </div>
 
           {/* Desktop: Container 2 (Thông tin Sticky) */}
-          <div className="hidden desktop:block desktop:sticky desktop:top-4 desktop:self-start desktop:w-1/3">
-            <div className="mt-4 flex flex-col items-start gap-4">
+          <div className="hidden desktop:block desktop:sticky desktop:top-4 desktop:self-start desktop:w-1/4 gap-16">
+            <div className="mt-4 flex flex-col items-start gap-6">
+              <div className="w-full flex justify-between">
+                <div className="text-sm font-bold opacity-40">
+                  {product.category}
+                </div>
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={16} fill="black" stroke="black" />
+                  ))}
+                </div>
+              </div>
               <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
               <div className="flex items-center gap-4">
                 <div className="text-red-500 font-bold text-lg">
@@ -544,11 +694,16 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               </div>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-16">
               <div className="flex w-full justify-between items-center">
                 <h3 className="font-semibold">Sizes</h3>
                 <div className="flex justify-center items-center gap-2 ml-4">
-                  <Image src="/product/product_size.svg" alt="Bảng size" width={20} height={20} />
+                  <Image
+                    src="/product/product_size.svg"
+                    alt="Bảng size"
+                    width={20}
+                    height={20}
+                  />
                   <p>Bảng size</p>
                 </div>
               </div>
@@ -575,7 +730,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               Còn {product.stock} sản phẩm
             </div>
 
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center justify-between mt-16">
               <div className="relative w-full">
                 <button
                   onClick={handleAddToCart}
@@ -601,7 +756,11 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               </div>
               <button onClick={toggleLike} className="mt-1 ml-4">
                 <Image
-                  src={isLiked ? "/product/product_like_active.svg" : "/product/product_like_square.svg"}
+                  src={
+                    isLiked
+                      ? "/product/product_like_active.svg"
+                      : "/product/product_like_square.svg"
+                  }
                   alt={isLiked ? "Đã thích" : "Thích"}
                   width={45}
                   height={45}
@@ -617,7 +776,9 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                   width={20}
                   height={20}
                 />
-                <span className="text-sm">Free ship khi đơn hàng trên 1 triệu</span>
+                <span className="text-sm">
+                  Free ship khi đơn hàng trên 1 triệu
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Image

@@ -17,7 +17,7 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
     // Cập nhật slidesPerView dựa trên kích thước màn hình
     const handleResize = () => {
       if (typeof window !== "undefined") {
-        setSlidesPerView(window.innerWidth >= 1920 ? 3.5 : 1.5);
+        setSlidesPerView(window.innerWidth >= 1920 ? 3 : 1.5);
       }
     };
 
@@ -62,7 +62,7 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
                 draggable="false"
               />
               <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors">
-                Shop {product.category || "Danh mục"}
+                Shop {product.gender || "Danh mục"}
               </button>
             </div>
           </SwiperSlide>

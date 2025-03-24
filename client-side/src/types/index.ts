@@ -6,6 +6,7 @@ export interface Product {
   discountPercent: number;
   image: string; 
   banner: string; 
+  gender : string;
 }
 
 export interface MemberBenefit {

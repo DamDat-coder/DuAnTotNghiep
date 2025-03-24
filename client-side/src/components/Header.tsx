@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import MobileMenu from "./MobileMenu";
 import LookupMenu from "./LookupMenu";
@@ -22,7 +21,6 @@ export default function Header({ title }: HeaderProps) {
     <nav className="bg-white text-black">
       <div className="w-[95%] mx-auto px-4 max-w-[2560px] desktop:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Phần 1: Logo bên trái */}
           <div className="flex items-center">
             <Image
               src="/nav/logo.svg"
@@ -35,28 +33,25 @@ export default function Header({ title }: HeaderProps) {
             />
           </div>
 
-          {/* Phần 2: Menu giữa (Desktop) */}
           <div className="hidden desktop:flex items-center space-x-6">
-            <a href="#" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
+            <a href="/" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
               Trang chủ
             </a>
-            <a href="#" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
+            <a href="/products" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
               Nam
             </a>
-            <a href="#" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
+            <a href="" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
               Nữ
             </a>
-            <a href="#" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
+            <a href="" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
               Giảm giá
             </a>
-            <a href="#" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
+            <a href="" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
               Bài viết
             </a>
           </div>
 
-          {/* Phần 3: CTA bên phải */}
           <div className="flex items-center space-x-[0.75rem]">
-            {/* Mobile icons (ẩn từ desktop) */}
             <div className="flex items-center space-x-[0.75rem] desktop:hidden">
               <button
                 type="button"
@@ -72,7 +67,7 @@ export default function Header({ title }: HeaderProps) {
               >
                 <img src="/nav/nav_user.svg" alt="Nav User" className="h-6 w-auto" />
               </button>
-              <a href="#">
+              <a href="/cart">
                 <img src="/nav/nav_cart.svg" alt="Nav Cart" className="h-6 w-auto" />
               </a>
               <button
@@ -84,7 +79,6 @@ export default function Header({ title }: HeaderProps) {
               </button>
             </div>
 
-            {/* Desktop icons (hiển thị từ desktop) */}
             <div className="hidden desktop:flex items-center space-x-[0.75rem]">
               <button
                 type="button"
@@ -108,7 +102,7 @@ export default function Header({ title }: HeaderProps) {
               </button>
             </div>
 
-            {/* Các popup */}
+            {/* Render các component mà không cần điều kiện */}
             <MobileMenu isOpen={isMenuOpen} setIsOpen={setIsMenuOpen} />
             <LookupMenu isOpen={isLookupOpen} setIsOpen={setIsLookupOpen} />
             <LoginPopup

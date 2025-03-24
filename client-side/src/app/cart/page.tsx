@@ -170,33 +170,33 @@ export default function Cart() {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <div className="product w-[16.8125rem] h-[23.875rem] desktop:w-[23.75rem] desktop:h-auto flex flex-col bg-white shadow-xl relative">
+      <div className="product w-[22.5rem] h-auto flex flex-col bg-white relative">
         <Image
-          src={`/featured/${product.image}`}
+          src={`/featured/featured_banner_4.png`}
           alt={product.name || "Sản phẩm"}
-          width={269}
-          height={269}
-          className="w-[16.8125rem] h-[16.8125rem] desktop:w-[23.75rem] desktop:h-[35.625rem] object-cover"
+          width={363} // 22.6875rem = 363px (1rem = 16px)
+          height={363} // Tỷ lệ 1:1 với width để phù hợp
+          className="w-[22.6875rem] h-[22.6875rem] object-cover"
           draggable={false}
         />
-        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] desktop:text-[0.875rem] font-bold px-2 py-1 rounded">
+        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
           -{product.discountPercent}%
         </div>
         <button className="absolute top-[0.5rem] right-[0.5rem]">
-          <img src="/product/product_addToCart.svg" alt="Thêm vào giỏ hàng" />
+          <img src="/product/product_addToCart.svg" alt="" />
         </button>
         <div className="content flex flex-col p-4">
-          <div className="name text-lg desktop:text-xl font-bold text-[#374151] pb-2 truncate">
+          <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
             {product.name || "Sản phẩm"}
           </div>
           <div className="category desc-text text-[#374151] truncate">
             {product.category || "Danh mục"}
           </div>
           <div className="price-container flex items-center gap-3 pt-2">
-            <div className="discountPrice text-[1rem] desktop:text-[1.125rem] font-bold text-red-500">
+            <div className="discountPrice text-[1rem] font-bold text-red-500">
               {discountPrice.toLocaleString("vi-VN")}₫
             </div>
-            <div className="price text-[0.875rem] desktop:text-[1rem] text-[#374151] line-through">
+            <div className="price text-[0.875rem] text-[#374151] line-through">
               {product.price.toLocaleString("vi-VN")}₫
             </div>
           </div>
@@ -204,6 +204,7 @@ export default function Cart() {
       </div>
     );
   };
+
 
   return (
     <div className="py-8">
@@ -241,7 +242,7 @@ export default function Cart() {
               </div>
 
               {/* Container phải (20%) - Tóm tắt */}
-              <div className="w-[20%]">
+              <div className="w-[25%]">
                 <h2 className="text-xl font-semibold mb-4">Tóm tắt</h2>
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center">
@@ -276,7 +277,7 @@ export default function Cart() {
                   </div>
                 </div>
                 <button className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800 mt-4">
-                  Thanh toán
+                    <a href="/checkout">Thanh toán</a> 
                 </button>
               </div>
             </div>

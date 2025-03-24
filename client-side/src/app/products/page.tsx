@@ -157,8 +157,8 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen">
-      <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[85%] desktop:max-w-[2560px]">
+    <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen ">
+      <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px]">
         <Breadcrumb />
         <Swiper
           spaceBetween={9}

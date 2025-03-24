@@ -40,7 +40,7 @@ export default function NewsSection() {
   }
 
   return (
-    <div className="max-w-md mx-auto tablet:max-w-2xl desktop:w-[80%] desktop:max-w-[2560px]">
+    <div className="max-w-md mx-auto tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px]">
       <h1 className="text-[1.5rem] pb-6 font-bold">Tin Tức Mới Nhất</h1>
       <Swiper
         spaceBetween={16} // 16px = 1rem
@@ -50,7 +50,7 @@ export default function NewsSection() {
         className="select-none w-full" // Full width container
         breakpoints={{
           768: { slidesPerView: 2 }, // Tablet: 2 slide
-          1024: { slidesPerView: 3 }, // Desktop: 3 slide
+          1920: { slidesPerView: 2 }, // Desktop: 3 slide
         }}
       >
         {newsItems.map((news) => (
@@ -58,7 +58,7 @@ export default function NewsSection() {
             <div className="flex flex-col items-start gap-3">
               <Image
                 src={`/memberBenefit/${news.img}`}
-                alt={news.name}
+                alt={"image"}
                 width={240}
                 height={136}
                 className="w-[240px] h-[136px] desktop:w-[380px] desktop:h-[214px] object-cover rounded select-none"

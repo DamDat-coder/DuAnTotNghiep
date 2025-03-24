@@ -12,7 +12,9 @@ interface ProductSectionProps {
 }
 
 export default function ProductSection({ products }: ProductSectionProps) {
-  const [displayedProducts, setDisplayedProducts] = useState<Product[]>(products.slice(0, 5));
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>(
+    products.slice(0, 5)
+  );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(products.length > 5);
   const observerRef = useRef<HTMLDivElement | null>(null);
@@ -46,7 +48,10 @@ export default function ProductSection({ products }: ProductSectionProps) {
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = products.slice(currentLength, currentLength + PRODUCTS_PER_PAGE);
+    const nextProducts = products.slice(
+      currentLength,
+      currentLength + PRODUCTS_PER_PAGE
+    );
 
     setTimeout(() => {
       setDisplayedProducts((prev) => [...prev, ...nextProducts]);
@@ -59,7 +64,9 @@ export default function ProductSection({ products }: ProductSectionProps) {
   if (!products || products.length === 0) {
     return (
       <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px]">
-        <p className="text-center text-gray-500">Không có sản phẩm nào để hiển thị.</p>
+        <p className="text-center text-gray-500">
+          Không có sản phẩm nào để hiển thị.
+        </p>
       </div>
     );
   }
@@ -68,13 +75,13 @@ export default function ProductSection({ products }: ProductSectionProps) {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <div className="product w-[16.8125rem] h-[23.875rem] flex flex-col bg-white  relative">
+      <div className="product w-[16.8125rem] h-auto flex flex-col bg-white relative desktop:w-[22.6875rem] desktop:h-auto">
         <Image
           src={`/featured/${product.image}`}
           alt={product.name || "Sản phẩm"}
-          width={269}
-          height={269}
-          className="w-[16.8125rem] h-[16.8125rem] object-cover"
+          width={363} // 22.6875rem = 363px (1rem = 16px)
+          height={363} // Tỷ lệ 1:1 với width để phù hợp
+          className="w-[16.8125rem] h-[16.8125rem] desktop:w-[22.6875rem] desktop:h-[22.6875rem] object-cover" // Điều chỉnh kích thước hình ảnh
           draggable={false}
         />
         <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
@@ -135,14 +142,14 @@ export default function ProductSection({ products }: ProductSectionProps) {
       {/* Desktop: Swiper 4.5 */}
       <div className="hidden desktop:block">
         <Swiper
-          spaceBetween={10}
+          spaceBetween={200}
           slidesPerView={4.5}
           loop={false}
           grabCursor={true}
           className="select-none"
         >
           {displayedProducts.map((product) => (
-            <SwiperSlide key={product.id} className="!w-[16.8125rem]">
+            <SwiperSlide key={product.id} className="">
               {renderProductCard(product)}
             </SwiperSlide>
           ))}

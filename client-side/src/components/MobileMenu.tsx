@@ -1,4 +1,3 @@
-// src/components/MobileMenu.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -28,12 +27,12 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
 
   return (
     <>
-      {/* MobileMenu */}
       <div
         className={`fixed inset-0 text-black bg-white transform transition-transform duration-300 ease-in-out z-50 tablet:hidden flex flex-col ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+          isOpen ? "translate-x-0" : "hidden"
         }`}
       >
+        {/* Nội dung giữ nguyên */}
         <button
           type="button"
           className="absolute top-4 right-4 p-2 text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none"

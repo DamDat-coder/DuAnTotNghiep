@@ -22,7 +22,9 @@ export default function MemberBenefitsBanner() {
     // Cập nhật slidesPerView dựa trên kích thước màn hình
     const handleResize = () => {
       if (typeof window !== "undefined") {
-        setSlidesPerView(window.innerWidth >= 1920 ? 3 : 1.5);
+        setSlidesPerView(
+          window.innerWidth >= 1920 ? 3 : window.innerWidth >= 1024 ? 2.5 : 1.5
+        );
       }
     };
 
@@ -38,7 +40,7 @@ export default function MemberBenefitsBanner() {
 
   if (!benefits.length) {
     return (
-      <div className="member-benefits w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px] py-4">
+      <div className="member-benefits w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full">
         <p className="text-center text-gray-500">
           Không có quyền lợi nào để hiển thị.
         </p>
@@ -47,10 +49,16 @@ export default function MemberBenefitsBanner() {
   }
 
   return (
-    <div className="member-benefits w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px]">
+    <div className="member-benefits w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px] py-4">
       <h1 className="text-[1.5rem] pb-6 font-bold">Quyền Lợi Thành Viên</h1>
       <Swiper
-        spaceBetween={typeof window !== "undefined" && window.innerWidth >= 1920 ? 109 : 16}
+        spaceBetween={
+          typeof window !== "undefined" && window.innerWidth >= 1920
+            ? 109
+            : window.innerWidth >= 1024
+            ? 24
+            : 16
+        }
         slidesPerView={slidesPerView}
         loop={false}
         grabCursor={true}
@@ -58,15 +66,18 @@ export default function MemberBenefitsBanner() {
       >
         {benefits.map((benefit) => (
           <SwiperSlide key={benefit.id}>
-            <div className="flex flex-col items-start gap-5">
+            <div className="relative w-full h-full">
+              {" "}
+              {/* Thêm h-full để giữ kích thước đúng */}
               <img
                 src={`/memberBenefit/${benefit.image}`}
                 alt={benefit.benefit}
-                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-[25.625rem] desktop:h-auto"
+                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto"
                 draggable="false"
               />
-              <div className="absolute inset-0 bg-black/20 rounded"></div>
-              <div className="w-[55%] absolute bottom-[1.5rem] left-[1.5rem] flex flex-col gap-2">
+              <div className="absolute inset-0 bg-black/45 rounded"></div>{" "}
+              {/* Overlay khớp với hình */}
+              <div className="absolute bottom-[1.5rem] left-[1.5rem] w-[55%] flex flex-col gap-2">
                 <div className="text-[1.5rem] font-bold text-white tablet:text-2xl desktop:text-3xl leading-[1.8125rem] flex flex-wrap">
                   {benefit.benefit}
                 </div>

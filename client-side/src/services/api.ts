@@ -1,6 +1,6 @@
 import { Product, MemberBenefit } from "../types";
 
-const API_BASE_URL = "https://67d2c0f690e0670699beeab2.mockapi.io/";
+const API_BASE_URL = "https://67e3b0622ae442db76d1204c.mockapi.io/";
 
 export async function fetchProducts(): Promise<Product[]> {
     try {

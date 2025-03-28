@@ -1,18 +1,31 @@
+// app/components/LoginPopup.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-
+import { fetchUsers } from "@/services/api"; // Import fetchUsers và User type
+import { User } from "@/types/index";
 interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenRegister: () => void;
 }
 
-export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPopupProps) {
+export default function LoginPopup({
+  isOpen,
+  onClose,
+  onOpenRegister,
+}: LoginPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    identifier: "", // Email hoặc số điện thoại
+    password: "",
+    keepLoggedIn: false,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,6 +37,50 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
       document.body.classList.remove("overflow-hidden");
     };
   }, [isOpen]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      // Lấy danh sách người dùng từ API
+      const users = await fetchUsers();
+
+      // Tìm user khớp với email hoặc số điện thoại
+      const user = users.find(
+        (u: User) =>
+          (u.email === formData.identifier ||
+            u["số điện thoại"] === formData.identifier) &&
+          u.password === formData.password // Giả định API có field password
+      );
+
+      if (!user) {
+        setError("Email/Số điện thoại hoặc mật khẩu không đúng.");
+        setLoading(false);
+        return;
+      }
+
+      // Lưu thông tin đăng nhập
+      const storage = formData.keepLoggedIn ? localStorage : sessionStorage;
+      storage.setItem("user", JSON.stringify(user));
+
+      alert("Đăng nhập thành công!");
+      onClose();
+    } catch (err) {
+      setError("Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -38,7 +95,7 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md desktop:max-w-2xl" // max-w-md cho mobile, max-w-2xl cho desktop
+        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md desktop:max-w-2xl"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -56,7 +113,11 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
             strokeWidth={1.5}
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18 18 6M6 6l12 12"
+            />
           </svg>
         </button>
 
@@ -78,21 +139,32 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
               Trở thành thành viên để có được những sản phẩm và giá tốt nhất.
             </p>
           </div>
-          <form className="flex flex-col gap-4">
+          {error && <p className="text-red-500 text-center">{error}</p>}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium">Email hoặc Số điện thoại</label>
+              <label className="block text-sm font-medium">
+                Email hoặc Số điện thoại
+              </label>
               <input
                 type="text"
+                name="identifier"
+                value={formData.identifier}
+                onChange={handleChange}
                 className="w-full mt-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Nhập email hoặc số điện thoại"
+                required
               />
             </div>
             <div className="relative">
               <label className="block text-sm font-medium">Mật khẩu</label>
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 className="w-full mt-1 p-2 pr-[0.75rem] border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Nhập mật khẩu"
+                required
               />
               <button
                 type="button"
@@ -106,6 +178,9 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
+                  name="keepLoggedIn"
+                  checked={formData.keepLoggedIn}
+                  onChange={handleChange}
                   className="h-4 w-4 accent-black border-black"
                 />
                 Duy trì đăng nhập
@@ -116,9 +191,10 @@ export default function LoginPopup({ isOpen, onClose, onOpenRegister }: LoginPop
             </div>
             <button
               type="submit"
-              className="w-full py-2 bg-black text-white font-medium rounded hover:bg-gray-800"
+              disabled={loading}
+              className="w-full py-2 bg-black text-white font-medium rounded hover:bg-gray-800 disabled:opacity-50"
             >
-              Đăng nhập
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
           </form>
           <p className="text-center text-sm">

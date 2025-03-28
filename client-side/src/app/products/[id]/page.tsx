@@ -1,115 +1,128 @@
+// app/products/[id]/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumb";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+import { use } from "react"; // Thêm import use từ React
 
-export default function ProductDetail({ params }: { params: { id: string } }) {
-  const product = {
-    id: 1,
-    category: "Men's Shoes",
-    name: "MLB - Áo khoác phối mũ unisex Gopcore Basic",
-    price: 5589000,
-    discountPercent: 68,
-    images: [
-      "/featured/featured_banner_4.png",
-      "/featured/featured_banner_4.png",
-      "/featured/featured_banner_4.png",
-      "/featured/featured_banner_4.png",
-      "/featured/featured_banner_4.png",
-    ],
-    sizes: [
-      { value: "S", inStock: true },
-      { value: "M", inStock: true },
-      { value: "L", inStock: true },
-      { value: "XL", inStock: true },
-      { value: "2XL", inStock: true },
-      { value: "3XL", inStock: false },
-    ],
-    stock: 1,
-  };
+// Định nghĩa kiểu dữ liệu cho sản phẩm
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  discountPercent: number;
+  image: string;
+  banner: string;
+  gender: string;
+}
 
-  const suggestedProducts = [
-    {
-      id: 2,
-      name: "Áo thun unisex",
-      price: 500000,
-      discountPercent: 20,
-      image: "featured_banner_4.png",
-      category: "Áo thun",
-    },
-    {
-      id: 3,
-      name: "Quần jeans slim",
-      price: 800000,
-      discountPercent: 15,
-      image: "featured_banner_4.png",
-      category: "Quần jeans",
-    },
-    {
-      id: 4,
-      name: "Giày sneakers trắng",
-      price: 1200000,
-      discountPercent: 10,
-      image: "featured_banner_4.png",
-      category: "Giày",
-    },
-    {
-      id: 5,
-      name: "Mũ lưỡi trai đen",
-      price: 300000,
-      discountPercent: 25,
-      image: "featured_banner_4.png",
-      category: "Phụ kiện",
-    },
-    {
-      id: 6,
-      name: "Áo khoác bomber",
-      price: 1500000,
-      discountPercent: 30,
-      image: "featured_banner_4.png",
-      category: "Áo khoác",
-    },
-  ];
+export default function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
+  // Sử dụng use để lấy id từ params
+  const { id } = use(params);
 
-  const discountedPrice = product.price * (1 - product.discountPercent / 100);
+  // State cho sản phẩm chính và sản phẩm gợi ý
+  const [product, setProduct] = useState<Product | null>(null);
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // State cho các chức năng khác
   const [selectedSize, setSelectedSize] = useState<string | null>("XL");
   const [isLiked, setIsLiked] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
+  // Giả lập sizes và stock (vì API không có thông tin này)
+  const sizes = [
+    { value: "S", inStock: true },
+    { value: "M", inStock: true },
+    { value: "L", inStock: true },
+    { value: "XL", inStock: true },
+    { value: "2XL", inStock: true },
+    { value: "3XL", inStock: false },
+  ];
+  const stock = 1;
+
+  // Lấy dữ liệu từ API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Lấy dữ liệu sản phẩm chính
+        const productResponse = await fetch(
+          `https://67e3b0622ae442db76d1204c.mockapi.io/products/${id}`,
+          { cache: "no-store" }
+        );
+        if (!productResponse.ok) throw new Error("Không thể tải thông tin sản phẩm.");
+        const productData = await productResponse.json();
+        setProduct(productData);
+
+        // Lấy dữ liệu sản phẩm gợi ý
+        const suggestedResponse = await fetch(
+          `https://67e3b0622ae442db76d1204c.mockapi.io/products`,
+          { cache: "no-store" }
+        );
+        if (!suggestedResponse.ok) throw new Error("Không thể tải danh sách sản phẩm gợi ý.");
+        const suggestedData = await suggestedResponse.json();
+        // Loại bỏ sản phẩm hiện tại khỏi danh sách gợi ý và lấy tối đa 5 sản phẩm
+        const filteredSuggested = suggestedData
+          .filter((p: Product) => p.id !== id)
+          .slice(0, 5);
+        setSuggestedProducts(filteredSuggested);
+      } catch (err) {
+        setError("Có lỗi xảy ra khi tải dữ liệu.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  // Hàm tính giá sau giảm giá
+  const discountedPrice = product ? product.price * (1 - product.discountPercent / 100) : 0;
+
+  // Hàm chọn size
   const handleSizeChange = (size: string) => {
-    if (product.sizes.find((s) => s.value === size)?.inStock) {
+    if (sizes.find((s) => s.value === size)?.inStock) {
       setSelectedSize(size);
     }
   };
 
+  // Hàm thêm vào giỏ hàng
   const handleAddToCart = () => {
     if (!selectedSize) {
       alert("Vui lòng chọn size trước!");
       return;
     }
-    console.log({
-      id: product.id,
-      name: product.name,
-      size: selectedSize,
-      price: discountedPrice,
-    });
-    alert("Đã thêm vào giỏ hàng!");
+    if (product) {
+      console.log({
+        id: product.id,
+        name: product.name,
+        size: selectedSize,
+        price: discountedPrice,
+      });
+      alert("Đã thêm vào giỏ hàng!");
+    }
   };
 
+  // Hàm thích sản phẩm
   const toggleLike = () => {
     setIsLiked((prev) => !prev);
   };
 
+  // Hàm mở/đóng section
   const handleSectionClick = (section: string) => {
     setActiveSection(activeSection === section ? null : section);
   };
 
-  const renderProductCard = (product: (typeof suggestedProducts)[0]) => {
+  // Hàm render sản phẩm gợi ý
+  const renderProductCard = (product: Product) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
@@ -117,8 +130,8 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         <Image
           src={`/featured/${product.image}`}
           alt={product.name || "Sản phẩm"}
-          width={363} // 22.6875rem = 363px (1rem = 16px)
-          height={363} // Tỷ lệ 1:1 với width để phù hợp
+          width={363}
+          height={363}
           className="w-[22.6875rem] h-[22.6875rem] object-cover"
           draggable={false}
         />
@@ -148,6 +161,23 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     );
   };
 
+  // Xử lý trạng thái loading và error
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-center text-lg">Đang tải...</p>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-center text-lg text-red-500">{error || "Không tìm thấy sản phẩm."}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-full desktop:w-full">
@@ -175,10 +205,11 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                   loop={true}
                   className="w-full"
                 >
-                  {product.images.map((image, index) => (
+                  {/* Sử dụng banner làm ảnh chính, lặp lại để giống dữ liệu cũ */}
+                  {[product.banner, product.banner, product.banner, product.banner, product.banner].map((image, index) => (
                     <SwiperSlide key={index}>
                       <Image
-                        src={image}
+                        src={`/featured/${image}`}
                         alt={`${product.name} - Ảnh ${index + 1}`}
                         width={0}
                         height={400}
@@ -207,7 +238,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                   </div>
                 </div>
                 <div className="pt-3 flex flex-wrap gap-2 mt-2">
-                  {product.sizes.map((size) => (
+                  {sizes.map((size) => (
                     <button
                       key={size.value}
                       onClick={() => handleSizeChange(size.value)}
@@ -226,7 +257,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 </div>
               </div>
               <div className="pt-3 text-red-500 text-sm font-medium">
-                Còn {product.stock} sản phẩm
+                Còn {stock} sản phẩm
               </div>
             </div>
 
@@ -481,10 +512,11 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
           <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4 overflow-x-hidden">
             <div className="relative">
               <div className="grid grid-cols-2 gap-0">
-                {product.images.slice(0, 4).map((image, index) => (
+                {/* Sử dụng banner làm ảnh chính, lặp lại để giống dữ liệu cũ */}
+                {[product.banner, product.banner, product.banner, product.banner].map((image, index) => (
                   <Image
                     key={index}
-                    src={image}
+                    src={`/featured/${image}`}
                     alt={`${product.name} - Ảnh ${index + 1}`}
                     width={380}
                     height={285}
@@ -502,7 +534,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 />
               </div>
             </div>
-                {/* Desktop */}
+            {/* Desktop */}
             <div className="border-b-2 pt-4 border-[#B0B0B0] mt-8 w-[60%] mx-auto">
               {[
                 {
@@ -708,7 +740,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 </div>
               </div>
               <div className="pt-3 flex flex-wrap gap-2 mt-2">
-                {product.sizes.map((size) => (
+                {sizes.map((size) => (
                   <button
                     key={size.value}
                     onClick={() => handleSizeChange(size.value)}
@@ -727,7 +759,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="pt-3 text-red-500 text-sm font-medium">
-              Còn {product.stock} sản phẩm
+              Còn {stock} sản phẩm
             </div>
 
             <div className="flex items-center justify-between mt-16">

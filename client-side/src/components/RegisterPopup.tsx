@@ -1,10 +1,12 @@
+// app/components/RegisterPopup.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-
+import { fetchUsers} from "@/services/api"; // Import fetchUsers
+import { User} from "@/types/index";
 interface RegisterPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,6 +16,14 @@ interface RegisterPopupProps {
 export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: RegisterPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    identifier: "", // Email hoặc số điện thoại
+    password: "",
+    confirmPassword: "",
+    keepLoggedIn: false,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +35,72 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
       document.body.classList.remove("overflow-hidden");
     };
   }, [isOpen]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    // Kiểm tra mật khẩu và xác nhận mật khẩu
+    if (formData.password !== formData.confirmPassword) {
+      setError("Mật khẩu và xác nhận mật khẩu không khớp.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Lấy danh sách người dùng để kiểm tra email/số điện thoại đã tồn tại
+      const users = await fetchUsers();
+      const isEmailOrPhoneExist = users.some(
+        (u: User) => u.email === formData.identifier || u["số điện thoại"] === formData.identifier
+      );
+
+      if (isEmailOrPhoneExist) {
+        setError("Email hoặc số điện thoại đã được sử dụng.");
+        setLoading(false);
+        return;
+      }
+
+      // Chuẩn bị dữ liệu để gửi lên API
+      const newUser = {
+        email: formData.identifier.includes("@") ? formData.identifier : "user@example.com", // Nếu không phải email, gán mặc định
+        "số điện thoại": !formData.identifier.includes("@") ? formData.identifier : "0000000000", // Nếu không phải số điện thoại, gán mặc định
+        password: formData.password,
+        role: "user", // Mặc định role là user khi đăng ký
+      };
+
+      // Gửi yêu cầu POST để đăng ký
+      const response = await fetch("https://67e0f65058cc6bf785238ee0.mockapi.io/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newUser),
+      });
+
+      if (!response.ok) throw new Error("Không thể đăng ký tài khoản.");
+
+      // Lưu thông tin đăng nhập nếu chọn "Duy trì đăng nhập"
+      const storage = formData.keepLoggedIn ? localStorage : sessionStorage;
+      const createdUser = await response.json();
+      storage.setItem("user", JSON.stringify(createdUser));
+
+      alert("Đăng ký thành công!");
+      onClose();
+    } catch (err) {
+      setError("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -39,7 +115,7 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md desktop:max-w-2xl" // max-w-md cho mobile, max-w-2xl cho desktop
+        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md desktop:max-w-2xl"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -79,21 +155,30 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
               Trở thành thành viên để có được những sản phẩm và giá tốt nhất.
             </p>
           </div>
-          <form className="flex flex-col gap-4">
+          {error && <p className="text-red-500 text-center">{error}</p>}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-medium">Email hoặc Số điện thoại</label>
               <input
                 type="text"
+                name="identifier"
+                value={formData.identifier}
+                onChange={handleChange}
                 className="w-full mt-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Nhập email hoặc số điện thoại"
+                required
               />
             </div>
             <div className="relative">
               <label className="block text-sm font-medium">Mật khẩu</label>
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 className="w-full mt-1 p-2 pr-[0.75rem] border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Nhập mật khẩu"
+                required
               />
               <button
                 type="button"
@@ -107,8 +192,12 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
               <label className="block text-sm font-medium">Xác nhận mật khẩu</label>
               <input
                 type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 className="w-full mt-1 p-2 pr-[0.75rem] border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Xác nhận mật khẩu"
+                required
               />
               <button
                 type="button"
@@ -122,6 +211,9 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
+                  name="keepLoggedIn"
+                  checked={formData.keepLoggedIn}
+                  onChange={handleChange}
                   className="h-4 w-4 accent-black border-black"
                 />
                 Duy trì đăng nhập
@@ -132,9 +224,10 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
             </div>
             <button
               type="submit"
-              className="w-full py-2 bg-black text-white font-medium rounded hover:bg-gray-800"
+              disabled={loading}
+              className="w-full py-2 bg-black text-white font-medium rounded hover:bg-gray-800 disabled:opacity-50"
             >
-              Đăng ký
+              {loading ? "Đang đăng ký..." : "Đăng ký"}
             </button>
           </form>
           <p className="text-center text-sm">
@@ -164,7 +257,5 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
         </div>
       </motion.div>
     </div>
-
-    
   );
 }

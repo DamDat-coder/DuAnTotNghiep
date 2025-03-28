@@ -19,3 +19,11 @@ export interface FilterPopupProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  "số điện thoại": string;
+  role: "admin" | "user";
+  password: string; // Thêm field password
+}

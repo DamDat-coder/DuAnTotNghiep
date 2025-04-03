@@ -106,7 +106,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       pageTitle={`Chỉnh sửa sản phẩm #${params.id}`}
       pageSubtitle="Chỉnh sửa thông tin sản phẩm."
     >
-      <div className="edit-product w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="edit-product h-full w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">Chỉnh sửa sản phẩm</h2>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}

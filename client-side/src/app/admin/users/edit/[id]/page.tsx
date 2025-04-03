@@ -98,7 +98,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
       pageTitle={`Sửa người dùng #${id}`}
       pageSubtitle="Chỉnh sửa thông tin người dùng."
     >
-      <div className="edit-user-page w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="edit-user-page w-full h-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">Sửa người dùng</h2>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}

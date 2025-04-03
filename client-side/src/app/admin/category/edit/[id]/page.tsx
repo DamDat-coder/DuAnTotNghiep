@@ -32,7 +32,7 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
       pageTitle={`Sửa danh mục #${id}`}
       pageSubtitle="Chỉnh sửa thông tin danh mục."
     >
-      <div className="edit-category-page w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="edit-category-page h-full w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">Sửa danh mục</h2>
 
         {/* Form sửa danh mục */}

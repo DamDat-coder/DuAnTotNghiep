@@ -3,21 +3,21 @@
 
 import React, { useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Product } from "../types";
-import "swiper/css";
+import { FeaturedProducts } from "../types";
+import "swiper/css"; // Import CSS của Swiper
 
 interface FeaturedSectionProps {
-  products: Product[];
+  featuredSection: FeaturedProducts[];
 }
 
-export default function FeaturedSection({ products }: FeaturedSectionProps) {
-  const [slidesPerView, setSlidesPerView] = useState(1.5); // Giá trị mặc định
+export default function FeaturedSection({ featuredSection }: FeaturedSectionProps) {
+  const [isMobile, setIsMobile] = useState(false);
 
+  // Kiểm tra kích thước màn hình để quyết định dùng Swiper hay Grid
   useEffect(() => {
-    // Cập nhật slidesPerView dựa trên kích thước màn hình
     const handleResize = () => {
       if (typeof window !== "undefined") {
-        setSlidesPerView(window.innerWidth >= 1920 ? 3 : 1.5);
+        setIsMobile(window.innerWidth < 768); // Dưới 768px là mobile
       }
     };
 
@@ -31,10 +31,10 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  if (!products || products.length === 0) {
+  if (!featuredSection || featuredSection.length === 0) {
     return (
-      <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[2560px] py-4">
-        <p className="text-center text-gray-500">
+      <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[90%] desktop:max-w-[1920px] large:max-w-[2560px] py-4">
+        <p className="text-center text-gray-500 font-body">
           Không có sản phẩm nào để hiển thị.
         </p>
       </div>
@@ -42,32 +42,57 @@ export default function FeaturedSection({ products }: FeaturedSectionProps) {
   }
 
   return (
-    <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-[100%] desktop:max-w-[2560px]">
-      <h1 className="text-[1.5rem] pb-6 font-bold">Mua Sắm Theo Giới Tính</h1>
-      <Swiper
-        spaceBetween={typeof window !== "undefined" && window.innerWidth >= 1920 ? 109 : 16}
-        slidesPerView={slidesPerView}
-        loop={false}
-        grabCursor={true}
-        className="select-none"
-        wrapperClass="swiper-wrapper"
-      >
-        {products.map((product) => (
-          <SwiperSlide key={product.id}>
-            <div className="flex flex-col items-start gap-5">
+    <div className="featured w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[1920px]  py-4">
+      <h1 className="text-[1.5rem] pb-6 font-heading font-bold">
+        Mua Sắm Theo Giới Tính
+      </h1>
+
+      {/* Hiển thị Swiper trên mobile, Grid trên tablet trở lên */}
+      {isMobile ? (
+        <Swiper
+          spaceBetween={16} // Khoảng cách giữa các slide trên mobile
+          slidesPerView={1.5} // Hiển thị 1.5 slide để có hiệu ứng preview
+          loop={false}
+          grabCursor={true}
+          className="select-none"
+          wrapperClass="swiper-wrapper"
+        >
+          {featuredSection.map((product) => (
+            <SwiperSlide key={product.id}>
+              <div className="flex flex-col items-start gap-5">
+                <img
+                  src={`/featured/${product.banner}`}
+                  alt={`Featured ${product.gender || "Sản phẩm"}`}
+                  className="w-auto h-[25.625rem] object-cover rounded select-none"
+                  draggable="false"
+                />
+                <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-body rounded-full hover:opacity-70 transition-colors">
+                  Shop {product.gender || "Danh mục"}
+                </button>
+                <p className="font-description text-gray-600">
+                  Mô tả sản phẩm: {product.gender || "Danh mục"}
+                </p>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      ) : (
+        <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8">
+          {featuredSection.map((product) => (
+            <div key={product.id} className="flex flex-col items-start gap-5">
               <img
                 src={`/featured/${product.banner}`}
-                alt={`Featured ${product.name || "Sản phẩm"}`}
-                className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-[28.125rem] desktop:h-auto desktop:object-contain"
+                alt={`Featured ${product.gender || "Sản phẩm"}`}
+                className="w-auto h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto desktop:object-contain"
                 draggable="false"
               />
-              <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors">
+              <button className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-body rounded-full hover:opacity-70 transition-colors">
                 Shop {product.gender || "Danh mục"}
               </button>
             </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
+// src/components/MobileMenu.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import LoginPopup from "./LoginPopup";
 import RegisterPopup from "./RegisterPopup";
@@ -14,28 +15,17 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
-  }, [isOpen]);
-
   return (
     <>
       <div
-        className={`fixed inset-0 text-black bg-white transform transition-transform duration-300 ease-in-out z-50 tablet:hidden flex flex-col ${
-          isOpen ? "translate-x-0" : "hidden"
-        }`}
+        className={`fixed inset-0 w-full text-black bg-white transform transition-transform duration-300 ease-in-out z-50 tablet:hidden flex flex-col ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } ${isOpen ? "overflow-hidden" : ""}`}
       >
-        {/* Nội dung giữ nguyên */}
+        {/* Nút đóng menu (dấu X) */}
         <button
           type="button"
-          className="absolute top-4 right-4 p-2 text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none"
+          className="fixed top-4 right-4 p-2 text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none z-[60]"
           onClick={() => setIsOpen(false)}
         >
           <svg
@@ -53,6 +43,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           </svg>
         </button>
 
+        {/* Nội dung menu */}
         <div className="flex-1 px-6 pt-16 pb-6 flex flex-col gap-9 overflow-y-auto">
           <div className="flex gap-3 items-center">
             <Image
@@ -60,7 +51,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               alt={"Sản phẩm"}
               width={32}
               height={32}
-              className="object-cover"
+              className="object-cover z-0"
               draggable={false}
               loading="lazy"
             />
@@ -78,7 +69,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 alt={"Sản phẩm"}
                 width={8}
                 height={16}
-                className="object-cover"
+                className="object-cover z-0"
                 draggable={false}
                 loading="lazy"
               />
@@ -94,7 +85,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 alt={"Sản phẩm"}
                 width={8}
                 height={16}
-                className="object-cover"
+                className="object-cover z-0"
                 draggable={false}
                 loading="lazy"
               />
@@ -110,7 +101,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 alt={"Sản phẩm"}
                 width={8}
                 height={16}
-                className="object-cover"
+                className="object-cover z-0"
                 draggable={false}
                 loading="lazy"
               />
@@ -126,7 +117,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 alt={"Sản phẩm"}
                 width={8}
                 height={16}
-                className="object-cover"
+                className="object-cover z-0"
                 draggable={false}
                 loading="lazy"
               />
@@ -142,7 +133,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 alt={"Sản phẩm"}
                 width={8}
                 height={16}
-                className="object-cover"
+                className="object-cover z-0"
                 draggable={false}
                 loading="lazy"
               />
@@ -157,7 +148,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           </div>
 
           <div className="flex flex-col gap-6">
-            <img className="w-[40%]" src="/nav/logo.svg" alt="" />
+            <img className="w-[40%] z-0" src="/nav/logo.svg" alt="" />
             <p className="text-lg">
               Trở thành thành viên Nike để có được những sản phẩm và giá tốt
               nhất
@@ -193,6 +184,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 height={18}
                 draggable={false}
                 loading="lazy"
+                className="z-0"
               />
               <p className="font-medium text-2xl">Yêu thích</p>
             </div>
@@ -204,6 +196,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 height={24}
                 draggable={false}
                 loading="lazy"
+                className="z-0"
               />
               <p className="font-medium text-2xl">Giỏ hàng</p>
             </div>

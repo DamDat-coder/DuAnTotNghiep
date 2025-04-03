@@ -10,7 +10,7 @@ export default function AddCategoryPage() {
       pageTitle="Thêm danh mục"
       pageSubtitle="Tạo danh mục mới."
     >
-      <div className="add-category-page w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="add-category-page h-full w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">Thêm danh mục</h2>
 
         {/* Form thêm danh mục */}

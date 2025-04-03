@@ -196,8 +196,8 @@ export default function Checkout() {
   // Section Giao hàng, Vận chuyển, Thanh toán
   const renderShippingPaymentSection = () => (
     <form onSubmit={handleSubmit} className="grid desktop:grid-cols-2 gap-4">
-      <div className="mt-8 col-span-full">
-        <h2 className="text-[18px] font-medium mb-4">THÔNG TIN GIAO HÀNG</h2>
+      <div className="col-span-full">
+        <h2 className="text-[18px] font-medium mb-4 desktop:text-[2rem] desktop:font-bold" >THÔNG TIN GIAO HÀNG</h2>
         <div className="grid grid-cols-1 desktop:grid-cols-2 gap-4">
           <div>
             <label className="text-[1rem] font-medium uppercase">Họ và tên</label>
@@ -463,7 +463,7 @@ export default function Checkout() {
 
   return (
     <div className="py-8">
-      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[95%]">
+      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[80%]">
         {/* Mobile/Tablet */}
         <div className="desktop:hidden mt-4">
           {/* Đơn hàng */}

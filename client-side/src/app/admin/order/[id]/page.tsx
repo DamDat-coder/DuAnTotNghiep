@@ -92,7 +92,7 @@ export default function OrderDetailPage({
 
   return (
     <AdminLayout pageTitle={`Đơn hàng #${id}`} pageSubtitle="Chi tiết đơn hàng">
-      <div className="order-detail w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="order-detail h-full w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">
           Chi tiết đơn hàng
         </h2>

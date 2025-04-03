@@ -75,9 +75,9 @@ export default function ProductSection({ products }: ProductSectionProps) {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <div className="product w-[16.8125rem] h-auto flex flex-col bg-white relative desktop:w-[22.6875rem] desktop:h-auto">
+      <div className="product w-[16.8125rem] h-auto flex flex-col bg-white relative desktop:w-[22.6875rem] desktop:h-auto font-description">
         <Image
-          src={`/featured/${product.image}`}
+          src={`/product/img/${product.image[0]}`}
           alt={product.name || "Sản phẩm"}
           width={363} // 22.6875rem = 363px (1rem = 16px)
           height={363} // Tỷ lệ 1:1 với width để phù hợp
@@ -94,7 +94,7 @@ export default function ProductSection({ products }: ProductSectionProps) {
           <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
             {product.name || "Sản phẩm"}
           </div>
-          <div className="category desc-text text-[#374151] truncate">
+          <div className="category text-base text-[#374151] truncate">
             {product.category || "Danh mục"}
           </div>
           <div className="price-container flex items-center gap-3 pt-2">

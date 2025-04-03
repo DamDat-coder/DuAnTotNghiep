@@ -113,7 +113,7 @@ export default function AddProductPage() {
       pageTitle="Thêm sản phẩm"
       pageSubtitle="Thêm sản phẩm mới vào hệ thống."
     >
-      <div className="add-product w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="add-product h-full w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">
           Thêm sản phẩm
         </h2>

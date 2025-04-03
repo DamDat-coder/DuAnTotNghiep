@@ -7,18 +7,23 @@ module.exports = {
   ],
   theme: {
     screens: {
-      'mobile': '390px',   // Mobile: 390px
-      'tablet': '768px',   // Tablet: 768px
-      'desktop': '1920px', // Desktop: 1920px
+      // Định nghĩa các breakpoint với max-width
+      mobile: { max: "767px" }, // Dưới 768px
+      tablet: { min: "768px", max: "1920px" }, // Từ 768px đến 1279px
+      desktop: { min: "1280px", max: "1920px" }, // Từ 1280px đến 1920px
     },
     extend: {
       gap: {
-        8: "2rem",    // 32px
-        12: "3rem",   // 48px
-        16: "4rem",   // 64px
-        20: "5rem",   // 80px
-        24: "6rem",   // 96px
-        // Thêm các giá trị khác nếu cần
+        8: "2rem", // 32px
+        12: "3rem", // 48px
+        16: "4rem", // 64px
+        20: "5rem", // 80px
+        24: "6rem", // 96px
+      },
+      fontFamily: {
+        heading: ["UTM Avo", "sans-serif"],
+        body: ["UTM Avo", "sans-serif"],
+        description: ["var(--font-lora)", "serif"],
       },
     },
   },

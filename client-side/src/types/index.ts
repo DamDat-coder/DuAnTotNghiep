@@ -5,10 +5,14 @@ export interface Product {
   price: number;
   discountPercent: number;
   image: string; 
-  banner: string; 
-  gender : string;
+
 }
 
+export interface FeaturedProducts {
+  id: string;
+  banner: string;
+  gender: string;
+}
 export interface MemberBenefit {
   id: string;
   image: string;

@@ -208,7 +208,7 @@ export default function Cart() {
 
   return (
     <div className="py-8">
-      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[95%]">
+      <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-[80%]">
         <h1 className="text-2xl font-medium text-left">Giỏ hàng của bạn</h1>
         {cartItems.length === 0 ? (
           <p className="text-center text-gray-500 mt-4">Giỏ hàng trống.</p>

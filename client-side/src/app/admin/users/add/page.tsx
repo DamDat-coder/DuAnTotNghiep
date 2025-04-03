@@ -57,7 +57,7 @@ export default function AddUserPage() {
       pageTitle="Thêm người dùng"
       pageSubtitle="Tạo người dùng mới."
     >
-      <div className="add-user-page w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
+      <div className="add-user-page h-full w-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
         <h2 className="text-[2rem] font-bold mb-6 text-center">Thêm người dùng</h2>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}

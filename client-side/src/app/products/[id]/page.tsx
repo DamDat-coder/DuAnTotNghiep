@@ -9,19 +9,7 @@ import "swiper/css";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { use } from "react"; // Thêm import use từ React
-
-// Định nghĩa kiểu dữ liệu cho sản phẩm
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  discountPercent: number;
-  image: string;
-  banner: string;
-  gender: string;
-}
-
+import { Product } from "@/types";
 export default function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   // Sử dụng use để lấy id từ params
   const { id } = use(params);
@@ -181,7 +169,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
   return (
     <div className="min-h-screen">
       <div className="max-w-md mx-auto tablet:max-w-2xl desktop:max-w-full desktop:w-full">
-        <Breadcrumb />
+        {/* <Breadcrumb /> */}
         <div className="mt-4 flex flex-col desktop:flex-row desktop:gap-6">
           {/* Mobile/Tablet: Toàn bộ layout gốc */}
           <div className="max-w-sm mx-auto flex flex-col gap-9 desktop:hidden">
@@ -682,7 +670,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
             </div>
 
             {/* Section 5 */}
-            <div className="mb-4 mt-9">
+            <div className="mb-4 mt-9 desktop:w-[80%] desktop:mx-auto">
               <h1 className="text-[1.5rem] pb-6 font-bold">Có thể bạn thích</h1>
               <div className="w-full">
                 <Swiper
@@ -703,7 +691,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
           </div>
 
           {/* Desktop: Container 2 (Thông tin Sticky) */}
-          <div className="hidden desktop:block desktop:sticky desktop:top-4 desktop:self-start desktop:w-1/4 gap-16">
+          <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16 desktop:px-[3.75rem] desktop:py-[1.875rem]">
             <div className="mt-4 flex flex-col items-start gap-6">
               <div className="w-full flex justify-between">
                 <div className="text-sm font-bold opacity-40">

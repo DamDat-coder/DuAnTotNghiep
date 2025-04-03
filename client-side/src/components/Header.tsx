@@ -34,7 +34,7 @@ export default function Header({ title }: HeaderProps) {
           </div>
 
           <div className="hidden desktop:flex items-center space-x-6">
-            <a href="/" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">
+            <a href="/" className="px-3 py-2 text-xl font-bold hover:bg-gray-200 rounded">
               Trang chủ
             </a>
             <a href="/products" className="px-3 py-2 text-xl font-medium hover:bg-gray-200 rounded">

@@ -110,14 +110,14 @@ export default function ProductsPage() {
     return (
       <Link
         href={`/products/${product.id}`}
-        className="product w-[171px] h-[22rem] desktop:w-[23.75rem] desktop:h-auto flex flex-col bg-white relative"
+        className="product w-[171px] h-[22rem] desktop:w-[300px] desktop:h-auto flex flex-col bg-white relative"
       >
         <Image
-          src={`/featured/${product.image}`}
+          src={`/product/img/${product.image[0]}`}
           alt={product.name || "Sản phẩm"}
           width={171}
           height={269}
-          className="w-[171px] h-[269px] desktop:w-[23.75rem] desktop:h-[35.625rem] object-cover"
+          className="w-[171px] h-[269px] desktop:w-full object-cover"
           draggable={false}
           loading="lazy"
         />
@@ -157,7 +157,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen ">
+    <div className="py-3 overflow-x-hidden flex flex-col gap-6 min-h-screen desktop:w-[80%] desktop:mx-auto">
       <div className="w-full mx-auto max-w-md tablet:max-w-2xl desktop:w-full desktop:max-w-[2560px]">
         <Breadcrumb />
         <Swiper
@@ -206,7 +206,7 @@ export default function ProductsPage() {
           <>
             <div className="grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4 desktop:gap-[1rem] justify-center overflow-x-hidden pt-2">
               {displayedProducts.map((product) => (
-                <div key={product.id} className="flex justify-center">
+                <div key={product.id} className="flex justify-center ">
                   {renderProductCard(product)}
                 </div>
               ))}

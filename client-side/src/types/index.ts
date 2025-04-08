@@ -1,4 +1,4 @@
-export interface Product {
+export interface IProduct {
   id: string;
   name: string;
   category: string;
@@ -8,26 +8,37 @@ export interface Product {
 
 }
 
-export interface FeaturedProducts {
+export interface IFeaturedProducts {
   id: string;
   banner: string;
   gender: string;
 }
-export interface MemberBenefit {
+export interface IMemberBenefit {
   id: string;
   image: string;
   benefit: string;
 }
 
-export interface FilterPopupProps {
+export interface IFilterPopupProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
-export interface User {
-  id: string;
+// src/types/index.ts
+export interface IUser {
+  id?: number | string;
+  name:string,
   email: string;
-  "số điện thoại": string;
-  role: "admin" | "user";
-  password: string; // Thêm field password
+  phone: string;
+  role: string;
+  password?: string;
 }
+
+export interface AuthContextType {
+  user: IUser | null;
+  login: (identifier: string, password: string, keepLoggedIn: boolean) => Promise<boolean>;
+  register: (identifier: string, password: string, keepLoggedIn: boolean) => Promise<boolean>;
+  logout: () => void;
+}
+
+// Các interface khác (Product, MemberBenefit, v.v.) giữ nguyên

@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { FilterPopupProps } from "../types";
+import { IFilterPopupProps } from "../types";
 
-export default function FilterPopup({ isOpen, setIsOpen }: FilterPopupProps) {
+export default function FilterPopup({ isOpen, setIsOpen }: IFilterPopupProps) {
   const [selectedSort, setSelectedSort] = useState<string | null>(null);
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
   const [selectedPrices, setSelectedPrices] = useState<string[]>([]);

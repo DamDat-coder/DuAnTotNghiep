@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,13 +7,16 @@ import MobileMenu from "./MobileMenu";
 import LookupMenu from "./LookupMenu";
 import LoginPopup from "./LoginPopup";
 import RegisterPopup from "./RegisterPopup";
+import { useMenu } from "@/contexts/MenuContext"; // Import MenuContext
+import { useAuth } from "@/contexts/AuthContext"; // Import AuthContext
 
 interface HeaderProps {
   title: string;
 }
 
 export default function Header({ title }: HeaderProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isOpen: isMenuOpen, setIsOpen: setIsMenuOpen } = useMenu(); // Sử dụng MenuContext
+  const { user, logout } = useAuth(); // Sử dụng AuthContext
   const [isLookupOpen, setIsLookupOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -93,16 +97,28 @@ export default function Header({ title }: HeaderProps) {
               <a href="#" className="text-gray-400 hover:text-black">
                 <img src="/nav/nav_cart.svg" alt="Cart" className="h-6 w-auto" />
               </a>
-              <button
-                type="button"
-                className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                onClick={() => setIsLoginOpen(true)}
-              >
-                <img src="/nav/nav_user.svg" alt="User" className="h-6 w-auto" />
-              </button>
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-700">Hi, {user.name}</span>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                    onClick={() => logout()}
+                  >
+                    <img src="/nav/nav_user.svg" alt="User" className="h-6 w-auto" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                  onClick={() => setIsLoginOpen(true)}
+                >
+                  <img src="/nav/nav_user.svg" alt="User" className="h-6 w-auto" />
+                </button>
+              )}
             </div>
 
-            {/* Render các component mà không cần điều kiện */}
             <MobileMenu isOpen={isMenuOpen} setIsOpen={setIsMenuOpen} />
             <LookupMenu isOpen={isLookupOpen} setIsOpen={setIsLookupOpen} />
             <LoginPopup

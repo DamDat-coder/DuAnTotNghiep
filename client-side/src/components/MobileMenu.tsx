@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import LoginPopup from "./LoginPopup";
 import RegisterPopup from "./RegisterPopup";
+import { useAuth } from "@/contexts/AuthContext"; // Import AuthContext
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
+  const { user, logout } = useAuth(); // Sử dụng AuthContext
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
@@ -22,7 +24,6 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           isOpen ? "translate-x-0" : "translate-x-full"
         } ${isOpen ? "overflow-hidden" : ""}`}
       >
-        {/* Nút đóng menu (dấu X) */}
         <button
           type="button"
           className="fixed top-4 right-4 p-2 text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none z-[60]"
@@ -43,7 +44,6 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           </svg>
         </button>
 
-        {/* Nội dung menu */}
         <div className="flex-1 px-6 pt-16 pb-6 flex flex-col gap-9 overflow-y-auto">
           <div className="flex gap-3 items-center">
             <Image
@@ -55,7 +55,9 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               draggable={false}
               loading="lazy"
             />
-            <p className="font-medium text-2xl">Hi, Hà</p>
+            <p className="font-medium text-2xl">
+              Hi, {user ? user.email.split("@")[0] : "Khách"}
+            </p>
           </div>
           <div className="flex flex-col items-start gap-4">
             <a
@@ -150,28 +152,41 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           <div className="flex flex-col gap-6">
             <img className="w-[40%] z-0" src="/nav/logo.svg" alt="" />
             <p className="text-lg">
-              Trở thành thành viên Nike để có được những sản phẩm và giá tốt
-              nhất
+              Trở thành thành viên Nike để có được những sản phẩm và giá tốt nhất
             </p>
             <div className="flex justify-center gap-2">
-              <button
-                className="bg-black text-white p-3 rounded-full"
-                onClick={() => {
-                  setIsRegisterOpen(true);
-                  setIsOpen(false);
-                }}
-              >
-                Đăng ký
-              </button>
-              <button
-                className="p-3 rounded-full border border-black"
-                onClick={() => {
-                  setIsLoginOpen(true);
-                  setIsOpen(false);
-                }}
-              >
-                Đăng nhập
-              </button>
+              {user ? (
+                <button
+                  className="p-3 rounded-full border border-black"
+                  onClick={() => {
+                    logout();
+                    setIsOpen(false);
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="bg-black text-white p-3 rounded-full"
+                    onClick={() => {
+                      setIsRegisterOpen(true);
+                      setIsOpen(false);
+                    }}
+                  >
+                    Đăng ký
+                  </button>
+                  <button
+                    className="p-3 rounded-full border border-black"
+                    onClick={() => {
+                      setIsLoginOpen(true);
+                      setIsOpen(false);
+                    }}
+                  >
+                    Đăng nhập
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

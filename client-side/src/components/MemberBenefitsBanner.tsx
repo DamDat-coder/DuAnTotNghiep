@@ -3,12 +3,12 @@
 
 import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { MemberBenefit } from "../types";
+import { IMemberBenefit } from "../types";
 import { fetchMemberBenefits } from "../services/api";
 import "swiper/css";
 
 export default function MemberBenefitsBanner() {
-  const [benefits, setBenefits] = useState<MemberBenefit[]>([]);
+  const [benefits, setBenefits] = useState<IMemberBenefit[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [slidesPerView, setSlidesPerView] = useState(2.5); // Giá trị mặc định cho tablet/desktop
 

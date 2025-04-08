@@ -1,12 +1,12 @@
-// app/components/RegisterPopup.tsx
+// src/components/RegisterPopup.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { fetchUsers} from "@/services/api"; // Import fetchUsers
-import { User} from "@/types/index";
+import { useAuth } from "../contexts/AuthContext";
+
 interface RegisterPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,13 +17,14 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    identifier: "", // Email hoặc số điện thoại
+    identifier: "",
     password: "",
     confirmPassword: "",
     keepLoggedIn: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -49,7 +50,6 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
     setError(null);
     setLoading(true);
 
-    // Kiểm tra mật khẩu và xác nhận mật khẩu
     if (formData.password !== formData.confirmPassword) {
       setError("Mật khẩu và xác nhận mật khẩu không khớp.");
       setLoading(false);
@@ -57,46 +57,17 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
     }
 
     try {
-      // Lấy danh sách người dùng để kiểm tra email/số điện thoại đã tồn tại
-      const users = await fetchUsers();
-      const isEmailOrPhoneExist = users.some(
-        (u: User) => u.email === formData.identifier || u["số điện thoại"] === formData.identifier
+      const success = await register(
+        formData.identifier,
+        formData.password,
+        formData.keepLoggedIn
       );
-
-      if (isEmailOrPhoneExist) {
-        setError("Email hoặc số điện thoại đã được sử dụng.");
-        setLoading(false);
-        return;
+      if (success) {
+        alert("Đăng ký thành công!");
+        onClose();
       }
-
-      // Chuẩn bị dữ liệu để gửi lên API
-      const newUser = {
-        email: formData.identifier.includes("@") ? formData.identifier : "user@example.com", // Nếu không phải email, gán mặc định
-        "số điện thoại": !formData.identifier.includes("@") ? formData.identifier : "0000000000", // Nếu không phải số điện thoại, gán mặc định
-        password: formData.password,
-        role: "user", // Mặc định role là user khi đăng ký
-      };
-
-      // Gửi yêu cầu POST để đăng ký
-      const response = await fetch("https://67e0f65058cc6bf785238ee0.mockapi.io/user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newUser),
-      });
-
-      if (!response.ok) throw new Error("Không thể đăng ký tài khoản.");
-
-      // Lưu thông tin đăng nhập nếu chọn "Duy trì đăng nhập"
-      const storage = formData.keepLoggedIn ? localStorage : sessionStorage;
-      const createdUser = await response.json();
-      storage.setItem("user", JSON.stringify(createdUser));
-
-      alert("Đăng ký thành công!");
-      onClose();
-    } catch (err) {
-      setError("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.");
+    } catch (err: any) {
+      setError(err.message || "Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }

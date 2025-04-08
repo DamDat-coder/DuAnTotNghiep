@@ -1,12 +1,12 @@
-// app/components/LoginPopup.tsx
+// src/components/LoginPopup.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { fetchUsers } from "@/services/api"; // Import fetchUsers và User type
-import { User } from "@/types/index";
+import { useAuth } from "../contexts/AuthContext";
+
 interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,12 +20,13 @@ export default function LoginPopup({
 }: LoginPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    identifier: "", // Email hoặc số điện thoại
+    identifier: "",
     password: "",
     keepLoggedIn: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -52,31 +53,17 @@ export default function LoginPopup({
     setLoading(true);
 
     try {
-      // Lấy danh sách người dùng từ API
-      const users = await fetchUsers();
-
-      // Tìm user khớp với email hoặc số điện thoại
-      const user = users.find(
-        (u: User) =>
-          (u.email === formData.identifier ||
-            u["số điện thoại"] === formData.identifier) &&
-          u.password === formData.password // Giả định API có field password
+      const success = await login(
+        formData.identifier,
+        formData.password,
+        formData.keepLoggedIn
       );
-
-      if (!user) {
-        setError("Email/Số điện thoại hoặc mật khẩu không đúng.");
-        setLoading(false);
-        return;
+      if (success) {
+        alert("Đăng nhập thành công!");
+        onClose();
       }
-
-      // Lưu thông tin đăng nhập
-      const storage = formData.keepLoggedIn ? localStorage : sessionStorage;
-      storage.setItem("user", JSON.stringify(user));
-
-      alert("Đăng nhập thành công!");
-      onClose();
-    } catch (err) {
-      setError("Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.");
+    } catch (err: any) {
+      setError(err.message || "Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }

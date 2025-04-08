@@ -3,11 +3,11 @@
 
 import React, { useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { FeaturedProducts } from "../types";
+import { IFeaturedProducts } from "../types";
 import "swiper/css"; // Import CSS của Swiper
 
 interface FeaturedSectionProps {
-  featuredSection: FeaturedProducts[];
+  featuredSection: IFeaturedProducts[];
 }
 
 export default function FeaturedSection({ featuredSection }: FeaturedSectionProps) {

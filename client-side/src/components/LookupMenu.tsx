@@ -200,7 +200,7 @@
 
 import React, { useState, useEffect } from "react";
 import { fetchProducts } from "../services/api";
-import { Product } from "../types";
+import { IProduct } from "../types";
 import Link from "next/link";
 
 interface LookupMenuProps {
@@ -210,8 +210,8 @@ interface LookupMenuProps {
 
 export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Lấy danh sách sản phẩm từ API khi component mount

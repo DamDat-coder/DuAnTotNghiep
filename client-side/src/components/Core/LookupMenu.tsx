@@ -199,8 +199,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { fetchProducts } from "../services/api";
-import { IProduct } from "../types";
+import { fetchProducts } from "../../services/api";
+import { IProduct } from "../../types";
 import Link from "next/link";
 
 interface LookupMenuProps {

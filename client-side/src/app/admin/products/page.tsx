@@ -8,18 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fetchProducts } from "@/services/api";
 import Image from "next/image";
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  image: string;
-  discountPercent: number;
-  banner: string;
-  gender: string;
-}
-
+import { IProduct } from "@/types";
 interface SortConfig {
   key: "name" | "price";
   direction: "asc" | "desc";
@@ -32,8 +21,8 @@ export default function ProductsPage() {
     { label: "Danh sách sản phẩm", href: "/admin/products/list" },
   ];
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [sortedProducts, setSortedProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [sortedProducts, setSortedProducts] = useState<IProduct[]>([]);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

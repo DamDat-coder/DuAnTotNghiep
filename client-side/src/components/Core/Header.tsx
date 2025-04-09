@@ -1,25 +1,33 @@
 // src/components/Header.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Thêm useEffect
 import Image from "next/image";
 import MobileMenu from "./MobileMenu";
 import LookupMenu from "./LookupMenu";
 import LoginPopup from "./LoginPopup";
 import RegisterPopup from "./RegisterPopup";
-import { useMenu } from "@/contexts/MenuContext"; // Import MenuContext
-import { useAuth } from "@/contexts/AuthContext"; // Import AuthContext
+import { useMenu } from "@/contexts/MenuContext";
+import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 interface HeaderProps {
   title: string;
 }
 
 export default function Header({ title }: HeaderProps) {
-  const { isOpen: isMenuOpen, setIsOpen: setIsMenuOpen } = useMenu(); // Sử dụng MenuContext
-  const { user, logout } = useAuth(); // Sử dụng AuthContext
+  const { isOpen: isMenuOpen, setIsOpen: setIsMenuOpen } = useMenu();
+  const { user, logout } = useAuth();
   const [isLookupOpen, setIsLookupOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false); // Thêm trạng thái isClient
+
+  // Đặt isClient thành true sau khi client mounted
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <nav className="bg-white text-black">
@@ -92,30 +100,74 @@ export default function Header({ title }: HeaderProps) {
                 <img src="/nav/nav_lookup.svg" alt="Lookup" className="h-6 w-auto" />
               </button>
               <a href="#" className="text-gray-400 hover:text-black">
-                <img src="/nav/nav_like_desktop.svg" alt="Wishlist" className="h-5 w-auto" />
+                <img src="/nav/nav_like_desktop.svg" alt="Wishlist" className="h-[1.05rem] w-auto" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-black">
+              <a href="/cart" className="text-gray-400 hover:text-black">
                 <img src="/nav/nav_cart.svg" alt="Cart" className="h-6 w-auto" />
               </a>
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-700">Hi, {user.name}</span>
+              {isClient ? ( // Chỉ render phần này khi client đã mounted
+                user ? (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setIsDropdownOpen(true)}
+                    onMouseLeave={() => setIsDropdownOpen(false)}
+                  >
+                    <div className="flex items-center space-x-2 cursor-pointer">
+                    <span className="text-gray-700">
+                        Hi, {user.name}
+                      </span>
+                      <img
+                        src="/nav/avatar.png"
+                        alt="User"
+                        className="h-[2.375rem] w-auto rounded-full"
+                      />
+                     
+                    </div>
+                    {isDropdownOpen && (
+                      <div className="absolute right-0 top-full w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                        <Link
+                          href="/profile"
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
+                        >
+                          Thông tin người dùng
+                        </Link>
+                        <hr />
+                        <button
+                          type="button"
+                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                          onClick={() => {
+                            logout();
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          Quên mật khẩu
+                        </button>
+                        <hr />
+                        <button
+                          type="button"
+                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                          onClick={() => {
+                            logout();
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          Đăng xuất
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                   <button
                     type="button"
                     className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                    onClick={() => logout()}
+                    onClick={() => setIsLoginOpen(true)}
                   >
                     <img src="/nav/nav_user.svg" alt="User" className="h-6 w-auto" />
                   </button>
-                </div>
+                )
               ) : (
-                <button
-                  type="button"
-                  className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                  onClick={() => setIsLoginOpen(true)}
-                >
-                  <img src="/nav/nav_user.svg" alt="User" className="h-6 w-auto" />
-                </button>
+                // Placeholder khi chưa mounted
+                <div className="w-12 h-12"></div>
               )}
             </div>
 

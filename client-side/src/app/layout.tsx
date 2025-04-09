@@ -5,8 +5,8 @@ import { Lora } from "next/font/google";
 import { usePathname } from "next/navigation";
 import "../styles/font.css";
 import "./globals.css";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "../components/Core/Header";
+import Footer from "../components/Core/Footer";
 import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
 

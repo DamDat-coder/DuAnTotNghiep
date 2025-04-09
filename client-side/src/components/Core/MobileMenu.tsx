@@ -1,11 +1,11 @@
 // src/components/MobileMenu.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Thêm useEffect
 import Image from "next/image";
 import LoginPopup from "./LoginPopup";
 import RegisterPopup from "./RegisterPopup";
-import { useAuth } from "@/contexts/AuthContext"; // Import AuthContext
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -13,9 +13,15 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
-  const { user, logout } = useAuth(); // Sử dụng AuthContext
+  const { user, logout } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false); // Thêm trạng thái isClient
+
+  // Đặt isClient thành true sau khi client mounted
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <>
@@ -55,9 +61,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               draggable={false}
               loading="lazy"
             />
-            <p className="font-medium text-2xl">
-              Hi, {user ? user.email.split("@")[0] : "Khách"}
-            </p>
+            {isClient ? ( // Chỉ render phần này khi client đã mounted
+              <p className="font-medium text-2xl">
+                Hi, {user ? user.email.split("@")[0] : "Khách"}
+              </p>
+            ) : (
+              <p className="font-medium text-2xl">Hi, Khách</p> // Placeholder
+            )}
           </div>
           <div className="flex flex-col items-start gap-4">
             <a
@@ -155,33 +165,50 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               Trở thành thành viên Nike để có được những sản phẩm và giá tốt nhất
             </p>
             <div className="flex justify-center gap-2">
-              {user ? (
-                <button
-                  className="p-3 rounded-full border border-black"
-                  onClick={() => {
-                    logout();
-                    setIsOpen(false);
-                  }}
-                >
-                  Đăng xuất
-                </button>
+              {isClient ? ( // Chỉ render phần này khi client đã mounted
+                user ? (
+                  <button
+                    className="p-3 rounded-full border border-black"
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                  >
+                    Đăng xuất
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="bg-black text-white p-3 rounded-full"
+                      onClick={() => {
+                        setIsRegisterOpen(true);
+                        setIsOpen(false);
+                      }}
+                    >
+                      Đăng ký
+                    </button>
+                    <button
+                      className="p-3 rounded-full border border-black"
+                      onClick={() => {
+                        setIsLoginOpen(true);
+                        setIsOpen(false);
+                      }}
+                    >
+                      Đăng nhập
+                    </button>
+                  </>
+                )
               ) : (
                 <>
                   <button
-                    className="bg-black text-white p-3 rounded-full"
-                    onClick={() => {
-                      setIsRegisterOpen(true);
-                      setIsOpen(false);
-                    }}
+                    className="bg-black text-white p-3 rounded-full opacity-50"
+                    disabled
                   >
                     Đăng ký
                   </button>
                   <button
-                    className="p-3 rounded-full border border-black"
-                    onClick={() => {
-                      setIsLoginOpen(true);
-                      setIsOpen(false);
-                    }}
+                    className="p-3 rounded-full border border-black opacity-50"
+                    disabled
                   >
                     Đăng nhập
                   </button>

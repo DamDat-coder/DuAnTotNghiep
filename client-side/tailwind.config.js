@@ -1,16 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/app/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     screens: {
-      // Định nghĩa các breakpoint với max-width
-      mobile: { max: "767px" }, // Dưới 768px
-      tablet: { min: "768px", max: "1920px" }, // Từ 768px đến 1279px
-      desktop: { min: "1280px", max: "1920px" }, // Từ 1280px đến 1920px
+      mobile: { max: "767px" },
+      tablet: "768px",
+      desktop: "1920px" , // Từ 1280px trở lên
     },
     extend: {
       gap: {

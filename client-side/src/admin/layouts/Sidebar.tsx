@@ -5,10 +5,63 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+interface SidebarItem {
+  label: string;
+  href: string;
+  icon: string;
+  iconActive: string;
+}
+
+const sidebarItems: SidebarItem[] = [
+  {
+    label: "Dashboard",
+    href: "/admin/dashboard",
+    icon: "/admin/sidebar/dashboard.svg",
+    iconActive: "/admin/sidebar/dashboard_active.svg",
+  },
+  {
+    label: "Đơn hàng",
+    href: "/admin/order",
+    icon: "/admin/sidebar/order.svg",
+    iconActive: "/admin/sidebar/order_active.svg",
+  },
+  {
+    label: "Sản phẩm",
+    href: "/admin/products",
+    icon: "/admin/sidebar/product.svg",
+    iconActive: "/admin/sidebar/product_active.svg",
+  },
+  {
+    label: "Danh mục",
+    href: "/admin/category",
+    icon: "/admin/sidebar/category.svg",
+    iconActive: "/admin/sidebar/category_active.svg",
+  },
+  {
+    label: "Quản lý người dùng",
+    href: "/admin/users",
+    icon: "/admin/sidebar/user.svg",
+    iconActive: "/admin/sidebar/user_active.svg",
+  },
+  {
+    label: "Cài đặt",
+    href: "/admin/settings",
+    icon: "/admin/sidebar/setting.svg",
+    iconActive: "/admin/sidebar/setting_active.svg",
+  },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => {
+    // Bỏ phần "/admin" khỏi pathname và href để so sánh
+    const basePath = pathname.replace("/admin/", "").split("/")[0] || "";
+    const hrefBasePath = href.replace("/admin/", "").split("/")[0] || "";
+
+    // So sánh đoạn đầu tiên sau "/admin"
+    return basePath === hrefBasePath;
+  };
 
   return (
     <div className="h-full w-[21.5625rem] bg-black text-white flex flex-col sticky top-0 rounded-r-3xl">
@@ -19,102 +72,24 @@ export default function Sidebar() {
         <h1 className="text-[1.5rem] font-bold">MENU</h1>
       </div>
       <ul className="flex-1 flex flex-col gap-4 p-4">
-        <li>
-          <Link
-            href="/admin/dashboard"
-            className={`flex items-center gap-3 p-2 rounded ${
-              isActive("/admin/dashboard") ? "bg-white text-black" : "hover:bg-gray-800"
-            }`}
-          >
-            <Image
-              src={isActive("/admin/dashboard") ? "/admin/sidebar/dashboard_active.svg" : "/admin/sidebar/dashboard.svg"}
-              alt="Dashboard"
-              width={20}
-              height={20}
-            />
-            <span className="text-lg">Dashboard</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/admin/order"
-            className={`flex items-center gap-3 p-2 rounded ${
-              isActive("/admin/order") ? "bg-white text-black" : "hover:bg-gray-800"
-            }`}
-          >
-            <Image
-              src={isActive("/admin/order") ? "/admin/sidebar/order_active.svg" : "/admin/sidebar/order.svg"}
-              alt="Đơn hàng"
-              width={20}
-              height={20}
-            />
-            <span className="text-lg">Đơn hàng</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/admin/products"
-            className={`flex items-center gap-3 p-2 rounded ${
-              isActive("/admin/products") ? "bg-white text-black" : "hover:bg-gray-800"
-            }`}
-          >
-            <Image
-              src={isActive("/admin/products") ? "/admin/sidebar/product_active.svg" : "/admin/sidebar/product.svg"}
-              alt="Sản phẩm"
-              width={20}
-              height={20}
-            />
-            <span className="text-lg">Sản phẩm</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/admin/category"
-            className={`flex items-center gap-3 p-2 rounded ${
-              isActive("/admin/category") ? "bg-white text-black" : "hover:bg-gray-800"
-            }`}
-          >
-            <Image
-              src={isActive("/admin/category") ? "/admin/sidebar/category_active.svg" : "/admin/sidebar/category.svg"}
-              alt="Danh mục"
-              width={20}
-              height={20}
-            />
-            <span className="text-lg">Danh mục</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/admin/users"
-            className={`flex items-center gap-3 p-2 rounded ${
-              isActive("/admin/users") ? "bg-white text-black" : "hover:bg-gray-800"
-            }`}
-          >
-            <Image
-              src={isActive("/admin/users") ? "/admin/sidebar/user_active.svg" : "/admin/sidebar/user.svg"}
-              alt="Quản lý người dùng"
-              width={20}
-              height={20}
-            />
-            <span className="text-lg">Quản lý người dùng</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/admin/settings"
-            className={`flex items-center gap-3 p-2 rounded ${
-              isActive("/admin/settings") ? "bg-white text-black" : "hover:bg-gray-800"
-            }`}
-          >
-            <Image
-              src={isActive("/admin/settings") ? "/admin/sidebar/setting_active.svg" : "/admin/sidebar/setting.svg"}
-              alt="Cài đặt"
-              width={20}
-              height={20}
-            />
-            <span className="text-lg">Cài đặt</span>
-          </Link>
-        </li>
+        {sidebarItems.map((item) => (
+          <li key={item.href}>
+            <Link
+              href={item.href}
+              className={`flex items-center gap-3 p-2 rounded ${
+                isActive(item.href) ? "bg-white text-black" : "hover:bg-gray-800"
+              }`}
+            >
+              <Image
+                src={isActive(item.href) ? item.iconActive : item.icon}
+                alt={item.label}
+                width={20}
+                height={20}
+              />
+              <span className="text-lg">{item.label}</span>
+            </Link>
+          </li>
+        ))}
       </ul>
     </div>
   );

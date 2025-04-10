@@ -1,8 +1,7 @@
 // src/admin/layouts/AdminHeader.tsx
-
-"use client";
+"use client"
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { signOut } from "next-auth/react"; // Giả sử sử dụng NextAuth để đăng xuất
 
 interface AdminHeaderProps {
   pageTitle: string;
@@ -10,22 +9,18 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) return null;
-
-  console.log("AdminHeader rendered", { pageTitle, pageSubtitle });
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
 
   return (
     <header className="flex justify-between items-center p-6 border-b w-full">
       {/* Tiêu đề trang */}
       <div className="min-w-[200px]">
         <h1 className="font-bold text-4xl">{pageTitle || "Default Title"}</h1>
-        <p className="font-semibold text-base text-[#8A99AE]">{pageSubtitle || "Default Subtitle"}</p>
+        <p className="font-semibold text-base text-[#8A99AE]">
+          {pageSubtitle || "Default Subtitle"}
+        </p>
       </div>
 
       {/* Thông tin admin */}
@@ -41,10 +36,10 @@ export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProp
           <span className="font-medium">Nguyễn Phương</span>
           <span className="text-base text-[#CCCCCC]">dsun.agency@gmail.com</span>
         </div>
-        <button className="p-2 hover:bg-gray-100 rounded">
+        <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded">
           <Image
             src="/admin/admin_header/admin_header_logout.svg"
-            alt="Menu Người Dùng"
+            alt="Đăng Xuất"
             width={20}
             height={20}
           />

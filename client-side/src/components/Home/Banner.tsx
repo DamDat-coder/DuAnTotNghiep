@@ -30,7 +30,7 @@ export default function Banner({
       )}
 
       {/* Mobile/Tablet: 1 hình */}
-      <div className="desktop:hidden mt-5">
+      <div className="desktop:hidden">
         <Image
           src={image1}
           alt={altText}
@@ -54,7 +54,7 @@ export default function Banner({
 
       {/* Desktop: 2 hình với overlay */}
       <div className="hidden desktop:flex w-full">
-        <div className="relative w-full flex mt-5">
+        <div className="relative w-full flex">
           {/* Hình 1 */}
           <div className="w-[50%]">
             <Image

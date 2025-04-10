@@ -2,14 +2,15 @@ export interface IProduct {
   id: string;
   name: string;
   category: string;
-  price: number;
-  discountPercent: number;
+  price?: number;
+  discountPercent?: number;
   image: string[];
-  gender?: string; // Thêm nếu cần lọc theo giới tính
-  color?: string; // Thêm nếu cần lọc theo màu sắc
-  sizes?: string[]; // Thêm nếu cần lọc theo size
-  brand?: string; // Thêm nếu cần lọc theo brand
-  createdAt?: string; // Thêm nếu cần sắp xếp theo "newest"
+  banner: string;
+  gender?: string;
+  color?: string;
+  sizes?: string[];
+  brand?: string;
+  createdAt?: string;
 }
 
 export interface IFeaturedProducts {
@@ -30,7 +31,7 @@ export interface IFilterPopupProps {
 
 // src/types/index.ts
 export interface IUser {
-  id?: number | string;
+  id: string;
   name: string;
   email: string;
   phone: string;

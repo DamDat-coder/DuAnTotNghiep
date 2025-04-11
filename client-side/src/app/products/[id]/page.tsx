@@ -1,9 +1,9 @@
 // app/products/[id]/page.tsx
 import { Suspense } from "react";
-import { fetchProducts } from "@/services/api";
-import { IProduct } from "@/types";
+import { fetchProductById, fetchProducts, fetchCategories } from "@/services/api"; // Thêm fetchSuggestedProducts
+import { ICategory, IProduct } from "@/types";
 import Container from "@/components/Core/Container";
-import Breadcrumb from "@/components/Core/Breadcrumb";
+import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductImageSwiper from "@/components/Detail/ProductImageSwiper";
 import ProductActions from "@/components/Detail/ProductActions";
 import ProductDetailsSection from "@/components/Detail/ProductDetailsSection";
@@ -15,36 +15,18 @@ interface ProductDetailProps {
   params: { id: string };
 }
 
-async function fetchProductById(id: string): Promise<IProduct> {
-  const response = await fetch(
-    `https://67e3b0622ae442db76d1204c.mockapi.io/products/${id}`,
-    { cache: "no-store" }
-  );
-  if (!response.ok) throw new Error("Không thể tải thông tin sản phẩm.");
-  return response.json();
-}
-
-async function fetchSuggestedProducts(id: string): Promise<IProduct[]> {
-  const response = await fetch(
-    `https://67e3b0622ae442db76d1204c.mockapi.io/products`,
-    { cache: "no-store" }
-  );
-  if (!response.ok) throw new Error("Không thể tải danh sách sản phẩm gợi ý.");
-  const data = await response.json();
-  return data.filter((p: IProduct) => p.id !== id).slice(0, 5);
-}
-
 export default async function ProductDetail({ params }: ProductDetailProps) {
   const { id } = params;
 
   let product: IProduct | null = null;
-  let suggestedProducts: IProduct[] = [];
+  let suggestedProducts: ICategory[] = [];
   let allProducts: IProduct[] = [];
   let error: string | null = null;
 
   try {
     product = await fetchProductById(id);
-    suggestedProducts = await fetchSuggestedProducts(id);
+    if (!product) throw new Error("Không tìm thấy sản phẩm.");
+    suggestedProducts = await fetchCategories();
     allProducts = await fetchProducts();
   } catch (err) {
     error = "Có lỗi xảy ra khi tải dữ liệu.";

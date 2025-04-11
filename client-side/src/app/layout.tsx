@@ -5,8 +5,9 @@ import { Lora } from "next/font/google";
 import { usePathname } from "next/navigation";
 import "../styles/font.css";
 import "./globals.css";
-import Header from "../components/Core/Header";
-import Footer from "../components/Core/Footer";
+import { LookupProvider } from "@/contexts/LookupContext";
+import Header from "../components/Core/Layout/Header/Header";
+import Footer from "../components/Core/Layout/Footer/Footer";
 import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
 
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <AuthProvider>
           <MenuProvider>
+          <LookupProvider>
             {!isAdminRoute && <Header title="My App" />}
             <main className={mainClassName}>{children}</main>
             {!isAdminRoute && <br />}
             {!isAdminRoute && <Footer />}
+            </LookupProvider>
           </MenuProvider>
         </AuthProvider>
       </body>

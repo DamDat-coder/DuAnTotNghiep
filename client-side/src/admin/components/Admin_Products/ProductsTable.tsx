@@ -64,7 +64,7 @@ export default function ProductsTable({
     if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
       try {
         const response = await fetch(
-          `https://67e3b0622ae442db76d1204c.mockapi.io/products/${productId}`,
+          `http://localhost:3000/products/${productId}`,
           { method: "DELETE" }
         );
         if (!response.ok) throw new Error("Không thể xóa sản phẩm.");

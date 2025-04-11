@@ -1,18 +1,12 @@
 export interface IProduct {
   id: string;
   name: string;
-  category: string;
-  price?: number;
-  discountPercent?: number;
+  categoryId: string; // Thêm categoryId
+  category: string; // Vẫn giữ category để hiển thị tên danh mục
+  price: number;
+  discountPercent: number;
   image: string[];
-  banner: string;
-  gender?: string;
-  color?: string;
-  sizes?: string[];
-  brand?: string;
-  createdAt?: string;
 }
-
 export interface IFeaturedProducts {
   id: string;
   banner: string;
@@ -126,4 +120,12 @@ export interface CheckoutErrors {
   district: string;
   ward: string;
   address: string;
+}
+
+export interface ICategory {
+  id: string;
+  name: string;
+  description: string;
+  img: string;
+  parentId: string | null;
 }

@@ -2,7 +2,7 @@
 import { fetchProducts, fetchMemberBenefits } from "@/services/api";
 import { IProduct } from "@/types";
 import Container from "@/components/Core/Container";
-import Breadcrumb from "@/components/Core/Breadcrumb";
+import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import CategorySwiper from "@/components/Products/CategorySwiper";
 import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";

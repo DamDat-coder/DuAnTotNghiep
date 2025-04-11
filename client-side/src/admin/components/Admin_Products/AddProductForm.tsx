@@ -1,77 +1,78 @@
 // src/admin/components/AddProductForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { IProduct } from "@/types/index";
-
-// Danh sách options (tái sử dụng từ các component Filter)
-const sizeOptions = ["Size S", "Size M", "Size L", "Size XL", "Size XXL", "Size 3XL"];
-
-const colorOptions = [
-  { value: "black", label: "Đen", color: "#000000" },
-  { value: "cyan", label: "Xanh da trời", color: "#87CEEB" },
-  { value: "red", label: "Đỏ", color: "#FF0000" },
-  { value: "white", label: "Trắng", color: "#FFFFFF" },
-  { value: "pink", label: "Hồng", color: "#FFC0CB" },
-  { value: "color", label: "Màu da", color: "#FAD2B6" },
-  { value: "brown", label: "Nâu", color: "#8B4513" },
-];
-
-const brandOptions = [
-  { value: "nike", label: "Nike" },
-  { value: "adidas", label: "Adidas" },
-  { value: "puma", label: "Puma" },
-  { value: "gucci", label: "Gucci" },
-];
+import { fetchCategories } from "@/services/api";
+// Định nghĩa kiểu dữ liệu cho danh mục
+interface ICategory {
+  id: string;
+  name: string;
+  description: string;
+  img: string;
+  parentId: string | null;
+}
 
 export default function AddProductForm() {
   const router = useRouter();
 
   const [formData, setFormData] = useState<IProduct>({
-    id: "", // Không cần nhập, server sẽ tạo
+    id: "",
     name: "",
-    category: "Áo",
-    price: undefined, // Khởi tạo là undefined
-    discountPercent: undefined, // Khởi tạo là undefined
-    image: [], // Khởi tạo là mảng rỗng
-    banner: "",
-    gender: "Unisex",
-    color: "", // Khởi tạo là rỗng
-    sizes: [], // Khởi tạo là mảng rỗng
-    brand: "", // Khởi tạo là rỗng
-    createdAt: "", // Không cần nhập, server sẽ tạo
+    categoryId: "",
+    category: "",
+    price: 0,
+    discountPercent: 0,
+    image: [],
   });
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]); // Lưu các file ảnh để upload
+
+  // Lấy danh sách danh mục khi component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      const fetchedCategories = await fetchCategories();
+      setCategories(fetchedCategories);
+      // Đặt categoryId mặc định là danh mục đầu tiên (nếu có)
+      if (fetchedCategories.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          categoryId: fetchedCategories[0].id,
+          category: fetchedCategories[0].name,
+        }));
+      }
+    };
+    loadCategories();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, files } = e.target as HTMLInputElement; // Ép kiểu để hỗ trợ files
-    if (files && (name === "image" || name === "banner")) {
-      // Xử lý file cho image và banner
-      const file = files[0];
-      if (file) {
-        if (name === "image") {
-          setFormData((prev) => ({
-            ...prev,
-            image: [file.name], // Lưu tên file vào mảng
-          }));
-        } else if (name === "banner") {
-          setFormData((prev) => ({
-            ...prev,
-            banner: file.name, // Lưu tên file cho banner
-          }));
-        }
-      }
-    } else if (name === "price" || name === "discountPercent") {
-      // Xử lý price và discountPercent: Cho phép để trống
+    const { name, value, files } = e.target as HTMLInputElement;
+    if (name === "image" && files) {
+      // Xử lý nhiều file ảnh
+      const newFiles = Array.from(files);
+      setImageFiles(newFiles);
       setFormData((prev) => ({
         ...prev,
-        [name]: value === "" ? undefined : Number(value),
+        image: newFiles.map((file) => file.name),
+      }));
+    } else if (name === "price" || name === "discountPercent") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value === "" ? 0 : Number(value),
+      }));
+    } else if (name === "categoryId") {
+      // Khi chọn danh mục, cập nhật cả categoryId và category
+      const selectedCategory = categories.find((cat) => cat.id === value);
+      setFormData((prev) => ({
+        ...prev,
+        categoryId: value,
+        category: selectedCategory?.name || "",
       }));
     } else {
-      // Xử lý các field khác (category, gender, color, brand)
       setFormData((prev) => ({
         ...prev,
         [name]: value,
@@ -79,37 +80,22 @@ export default function AddProductForm() {
     }
   };
 
-  // Xử lý chọn kích thước (sizes)
-  const handleSizeChange = (size: string) => {
-    setFormData((prev) => {
-      // Đảm bảo prev.sizes luôn là mảng, nếu undefined thì dùng []
-      const currentSizes = prev.sizes ?? [];
-      const newSizes = currentSizes.includes(size)
-        ? currentSizes.filter((s) => s !== size) // Bỏ chọn
-        : [...currentSizes, size]; // Thêm vào
-      return { ...prev, sizes: newSizes };
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     // Validation
-    if (!formData.name || formData.image.length === 0 || !formData.banner) {
-      setError("Vui lòng điền đầy đủ thông tin bắt buộc (Tên, Ảnh, Banner).");
+    if (!formData.name || formData.image.length === 0 || !formData.categoryId) {
+      setError("Vui lòng điền đầy đủ thông tin bắt buộc (Tên, Ảnh, Danh mục).");
       return;
     }
 
-    if (formData.price !== undefined && formData.price < 0) {
+    if (formData.price < 0) {
       setError("Giá sản phẩm không được nhỏ hơn 0.");
       return;
     }
 
-    if (
-      formData.discountPercent !== undefined &&
-      (formData.discountPercent < 0 || formData.discountPercent > 100)
-    ) {
+    if (formData.discountPercent < 0 || formData.discountPercent > 100) {
       setError("Phần trăm giảm giá phải từ 0 đến 100.");
       return;
     }
@@ -119,20 +105,22 @@ export default function AddProductForm() {
 
     while (retries < maxRetries) {
       try {
-        const response = await fetch(
-          "https://67e3b0622ae442db76d1204c.mockapi.io/products",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ...formData,
-              price: formData.price ?? 0, // Đặt mặc định là 0 nếu undefined
-              discountPercent: formData.discountPercent ?? 0, // Đặt mặc định là 0 nếu undefined
-            }),
-          }
-        );
+        // Chuẩn bị dữ liệu gửi lên API
+        const productData = {
+          name: formData.name,
+          categoryId: formData.categoryId,
+          price: formData.price,
+          discountPercent: formData.discountPercent,
+          image: formData.image,
+        };
+
+        const response = await fetch("http://localhost:3000/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(productData),
+        });
 
         if (response.status === 429) {
           const retryAfter = response.headers.get("Retry-After") || "5";
@@ -159,7 +147,10 @@ export default function AddProductForm() {
     <>
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="space-y-6 w-[60%] mx-auto flex flex-col gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 w-[60%] mx-auto flex flex-col gap-4"
+      >
         {/* Tên sản phẩm */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
@@ -181,15 +172,21 @@ export default function AddProductForm() {
             Danh mục
           </label>
           <select
-            name="category"
-            value={formData.category}
+            name="categoryId"
+            value={formData.categoryId}
             onChange={handleChange}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
           >
-            <option value="Áo">Áo</option>
-            <option value="Quần">Quần</option>
-            <option value="Giày">Giày</option>
-            <option value="Phụ kiện">Phụ kiện</option>
+            {categories.length === 0 ? (
+              <option value="">Không có danh mục</option>
+            ) : (
+              categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
@@ -201,15 +198,12 @@ export default function AddProductForm() {
           <input
             type="number"
             name="price"
-            value={formData.price ?? ""}
+            placeholder="0 VNĐ"
             onChange={handleChange}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             min="0"
-            placeholder="0"
+            required
           />
-          <p className="mt-1 text-sm text-gray-500">
-            Để trống để đặt giá trị mặc định là 0.
-          </p>
         </div>
 
         {/* Phần trăm giảm giá */}
@@ -220,22 +214,19 @@ export default function AddProductForm() {
           <input
             type="number"
             name="discountPercent"
-            value={formData.discountPercent ?? ""}
+            placeholder="0"
             onChange={handleChange}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             min="0"
             max="100"
-            placeholder="0"
+            required
           />
-          <p className="mt-1 text-sm text-gray-500">
-            Để trống để đặt giá trị mặc định là 0.
-          </p>
         </div>
 
         {/* Ảnh */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
-            Ảnh (chọn file ảnh)
+            Ảnh (chọn nhiều file ảnh)
           </label>
           <input
             type="file"
@@ -243,112 +234,19 @@ export default function AddProductForm() {
             onChange={handleChange}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             accept="image/*"
+            multiple
             required
           />
           {formData.image.length > 0 && (
-            <p className="mt-2 text-sm text-gray-500">
-              File đã chọn: {formData.image[0]}
-            </p>
+            <div className="mt-2 text-sm text-gray-500">
+              <p>File đã chọn:</p>
+              <ul className="list-disc list-inside">
+                {formData.image.map((img, index) => (
+                  <li key={index}>{img}</li>
+                ))}
+              </ul>
+            </div>
           )}
-        </div>
-
-        {/* Banner */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Banner (chọn file ảnh)
-          </label>
-          <input
-            type="file"
-            name="banner"
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            accept="image/*"
-            required
-          />
-          {formData.banner && (
-            <p className="mt-2 text-sm text-gray-500">
-              File đã chọn: {formData.banner}
-            </p>
-          )}
-        </div>
-
-        {/* Giới tính */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Giới tính
-          </label>
-          <select
-            name="gender"
-            value={formData.gender || "Unisex"}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="Unisex">Unisex</option>
-            <option value="Nam">Nam</option>
-          </select>
-        </div>
-
-        {/* Kích thước (dùng FilterSize) */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Kích thước
-          </label>
-          <div className="grid grid-cols-4 gap-2 mt-2 justify-items-stretch min-w-0">
-            {sizeOptions.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => handleSizeChange(size)}
-                className={`w-full flex items-center justify-center text-base font-medium rounded border p-2 whitespace-nowrap ${
-                  formData.sizes?.includes(size)
-                    ? "border-black border-2"
-                    : "border-gray-300"
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Màu sắc (dùng select thay vì checkbox để chỉ chọn 1 màu) */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Màu sắc
-          </label>
-          <select
-            name="color"
-            value={formData.color || ""}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Chọn màu</option>
-            {colorOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Thương hiệu (dùng select thay vì checkbox để chỉ chọn 1 thương hiệu) */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Thương hiệu
-          </label>
-          <select
-            name="brand"
-            value={formData.brand || ""}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Chọn thương hiệu</option>
-            {brandOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Nút hành động */}

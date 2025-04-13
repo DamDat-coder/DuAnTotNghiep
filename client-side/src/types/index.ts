@@ -26,13 +26,10 @@ export interface IFilterPopupProps {
 // src/types/index.ts
 export interface IUser {
   id: string;
-  name: string;
   email: string;
-  phone: string;
-  role: string;
-  password?: string;
+  avatar: string | null;
+  role: "user" | "admin";
 }
-
 export interface AuthContextType {
   user: IUser | null;
   login: (

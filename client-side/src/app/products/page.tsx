@@ -1,12 +1,14 @@
-// src/app/products/page.tsx
-import { fetchProducts, fetchMemberBenefits } from "@/services/api";
-import { IProduct } from "@/types";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { fetchProducts, fetchMemberBenefits} from "@/services/api";
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import CategorySwiper from "@/components/Products/CategorySwiper";
 import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
-import { Suspense } from "react";
+import {IProduct} from "@/types/index";
 
 interface News {
   id: string;
@@ -16,22 +18,56 @@ interface News {
   benefit?: string;
 }
 
-export default async function ProductsPage() {
-  let products: IProduct[] = [];
-  let newsItems: News[] = [];
-  let error = null;
+export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [newsItems, setNewsItems] = useState<News[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  try {
-    products = await fetchProducts();
-    const memberBenefits = await fetchMemberBenefits();
-    newsItems = memberBenefits.map((item, index) => ({
-      ...item,
-      img: item.image,
-      newsCategory: ["Khuyến Mãi", "Dịch Vụ", "Sự Kiện"][index],
-      name: ["Ưu đãi tháng 3", "Giao hàng miễn phí 2025", "Quà tặng đặc biệt"][index],
-    }));
-  } catch (err) {
-    error = "Có lỗi xảy ra khi tải dữ liệu sản phẩm.";
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const query = {
+          gender: searchParams.get("gender") || undefined,
+          discount: searchParams.get("discount") === "true" ? true : undefined,
+        };
+
+        const [productsData, memberBenefits] = await Promise.all([
+          fetchProducts(query),
+          fetchMemberBenefits(),
+        ]);
+
+        setProducts(productsData);
+        setCategories(Array.from(new Set(productsData.map((product) => product.category))));
+
+        const news = memberBenefits.map((item, index) => ({
+          ...item ,
+          img: item.image,
+          newsCategory: ["Khuyến Mãi", "Dịch Vụ", "Sự Kiện"][index] || "Khác",
+          name: ["Ưu đãi tháng 3", "Giao hàng miễn phí 2025", "Quà tặng đặc biệt"][index] || "Tin tức",
+        }));
+        setNewsItems(news);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu sản phẩm.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [searchParams]); 
+
+  if (loading) {
+    return (
+      <div className="py-8">
+        <Container>
+          <p className="text-center text-gray-500">Đang tải...</p>
+        </Container>
+      </div>
+    );
   }
 
   if (error) {
@@ -44,18 +80,14 @@ export default async function ProductsPage() {
     );
   }
 
-  const categories = Array.from(new Set(products.map((product) => product.category)));
-
   return (
     <div className="py-3 px-6 overflow-x-hidden flex flex-col gap-6">
       <Container>
         <Breadcrumb />
         <CategorySwiper categories={categories} />
-        <Suspense fallback={<p className="text-center text-gray-500">Đang tải...</p>}>
-          <ProductGrid products={products} />
-        </Suspense>
+        <ProductGrid products={products} />
         <br />
-      <NewsSection newsItems={newsItems} />
+        <NewsSection newsItems={newsItems} />
       </Container>
     </div>
   );

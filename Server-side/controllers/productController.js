@@ -37,21 +37,28 @@ const products = require("../models/productModel");
 // Lấy tất cả sản phẩm
 const getAllProducts = async (req, res) => {
   try {
-    const { name, idcate, limit, sort, page } = req.query;
+    const { name, idcate, limit, sort, page, gender, discount } = req.query;
     let query = {};
     let options = {};
 
     if (name) query.name = new RegExp(name, "i");
     if (idcate) query.categoryId = idcate;
+    if (gender) query.gender = gender;
+    if (discount === "true") query.discount = true;
+
     if (limit) options.limit = parseInt(limit) || 10;
     if (sort) options.sort = { price: sort === "asc" ? 1 : -1 };
+
     const pageNum = parseInt(page) || 1;
     options.skip = (pageNum - 1) * (options.limit || 10);
 
     const total = await products.countDocuments(query);
-    const arr = await products.find(query, null, options).populate("categoryId", "name");
+    const arr = await products
+      .find(query, null, options)
+      .populate("categoryId", "name");
 
     if (!arr.length) return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+
     res.json({
       data: arr,
       total,
@@ -63,6 +70,7 @@ const getAllProducts = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Lấy sản phẩm theo ID
 const getProductById = async (req, res) => {

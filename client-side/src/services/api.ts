@@ -1,4 +1,3 @@
-// api.ts
 import {
   IProduct,
   IMemberBenefit,
@@ -7,41 +6,207 @@ import {
   ICategory,
 } from "../types";
 
-// Định nghĩa kiểu dữ liệu cho User
+// Định nghĩa base URL của backend
+const API_BASE_URL = "http://localhost:3000"; // Thay bằng URL backend thực tế nếu cần
+const PRODUCTS_URL = `${API_BASE_URL}/products/`;
+const CATEGORIES_URL = `${API_BASE_URL}/categories/`;
+const USER_API_URL = `${API_BASE_URL}/users/`;
+const TEMP_URL = "https://67e3b0622ae442db76d1204c.mockapi.io/";
+const TEMP2_URL = "https://67e0f65058cc6bf785238ee0.mockapi.io/";
 
-const API_BASE_URL = "https://67e3b0622ae442db76d1204c.mockapi.io/";
-const USER_API_BASE_URL = "https://67e0f65058cc6bf785238ee0.mockapi.io/";
-const PRODUCTS_URL = "http://localhost:3000/products/";
-const CATEGORIES_URL = "http://localhost:3000/categories/";
+// Hàm kiểm tra môi trường trình duyệt
+const isBrowser = () => typeof window !== "undefined";
 
-export async function fetchProducts(): Promise<IProduct[]> {
+// Hàm lấy access token từ localStorage (chỉ trong trình duyệt)
+const getAccessToken = (): string | null => {
+  return isBrowser() ? localStorage.getItem("accessToken") : null;
+};
+
+// Hàm thiết lập header với token
+const getAuthHeaders = () => {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Hàm làm mới token
+export async function refreshToken(): Promise<boolean> {
   try {
-    const res = await fetch(`${PRODUCTS_URL}`, { cache: "no-store" });
+    const res = await fetch(`${USER_API_URL}refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    let temp = await res.json();
+    const data = await res.json();
+    if (isBrowser()) {
+      localStorage.setItem("accessToken", data.accessToken);
+    }
+    return true;
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return false;
+  }
+}
 
-    // Truy cập vào temp.data
+// Hàm xử lý request với retry khi token hết hạn
+async function fetchWithAuth<T>(
+  url: string,
+  options: RequestInit = {},
+  requiresAuth: boolean = true
+): Promise<T> {
+  const headers = requiresAuth
+    ? { ...getAuthHeaders(), ...options.headers }
+    : options.headers;
+  const res = await fetch(url, {
+    ...options,
+    headers: headers as Record<string, string>,
+  });
+
+  if (requiresAuth && res.status === 401) {
+    const refreshed = await refreshToken();
+    if (refreshed) {
+      const newHeaders = requiresAuth
+        ? { ...getAuthHeaders(), ...options.headers }
+        : options.headers;
+      const retryRes = await fetch(url, {
+        ...options,
+        headers: newHeaders as Record<string, string>,
+      });
+      if (!retryRes.ok) throw new Error(`HTTP error! status: ${retryRes.status}`);
+      return retryRes.json();
+    }
+    throw new Error("Unable to refresh token");
+  }
+
+  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+  return res.json();
+}
+
+// Đăng nhập
+export async function login(
+  email: string,
+  password: string
+): Promise<{ user: IUser; accessToken: string } | null> {
+  try {
+    const res = await fetch(`${USER_API_URL}login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    const user: IUser = {
+      id: data.user._id,
+      email: data.user.email,
+      avatar: data.user.avatar,
+      role: data.user.role,
+    };
+    if (isBrowser()) {
+      localStorage.setItem("accessToken", data.accessToken);
+    }
+    return { user, accessToken: data.accessToken };
+  } catch (error) {
+    console.error("Error logging in:", error);
+    return null;
+  }
+}
+
+// Đăng ký
+export async function register(
+  email: string,
+  password: string,
+  avatar?: File
+): Promise<{ user: IUser; accessToken: string } | null> {
+  try {
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("password", password);
+    if (avatar) formData.append("avatar", avatar);
+
+    const res = await fetch(`${USER_API_URL}register`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    const user: IUser = {
+      id: data.user._id,
+      email: data.user.email,
+      avatar: data.user.avatar,
+      role: data.user.role,
+    };
+    if (isBrowser()) {
+      localStorage.setItem("accessToken", data.accessToken);
+    }
+    return { user, accessToken: data.accessToken };
+  } catch (error) {
+    console.error("Error registering:", error);
+    return null;
+  }
+}
+
+// Lấy thông tin user
+export async function fetchUser(): Promise<IUser | null> {
+  try {
+    const data = await fetchWithAuth<{ user: any }>(`${USER_API_URL}userinfo`, {
+      cache: "no-store",
+    });
+    const user: IUser = {
+      id: data.user._id,
+      email: data.user.email,
+      avatar: data.user.avatar,
+      role: data.user.role,
+    };
+    return user;
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+}
+
+// Lấy danh sách sản phẩm
+export async function fetchProducts(query: {
+  gender?: string;
+  discount?: boolean;
+  name?: string;
+  idcate?: string;
+  limit?: number;
+  page?: number;
+  sort?: "asc" | "desc";
+} = {}): Promise<IProduct[]> {
+  try {
+    // Tạo query string từ tham số
+    const queryParams = new URLSearchParams();
+    if (query.gender) queryParams.append("gender", query.gender);
+    if (query.discount !== undefined) queryParams.append("discount", String(query.discount));
+    if (query.name) queryParams.append("name", query.name);
+    if (query.idcate) queryParams.append("idcate", query.idcate);
+    if (query.limit) queryParams.append("limit", String(query.limit));
+    if (query.page) queryParams.append("page", String(query.page));
+    if (query.sort) queryParams.append("sort", query.sort);
+
+    const url = `${PRODUCTS_URL}?${queryParams.toString()}`;
+    const temp = await fetchWithAuth<any>(url, { cache: "no-store" }, false); // Không cần auth
     let data: IProduct[] = temp.data.map((e: any) => ({
       id: e._id,
       name: e.name,
-      category: e.categoryId?.name || "Không rõ", // category nằm trong categoryId
+      category: e.categoryId?.name || "Không rõ",
       price: e.price,
       discountPercent: e.discountPercent,
       image: e.image,
     }));
-
     return data;
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
   }
 }
+
+// Lấy sản phẩm theo ID
 export async function fetchProductById(id: string): Promise<IProduct | null> {
   try {
-    const res = await fetch(`${PRODUCTS_URL}/${id}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const temp = await res.json();
-
+    const temp = await fetchWithAuth<any>(`${PRODUCTS_URL}${id}`, { cache: "no-store" }, false);
     const product: IProduct = {
       id: temp._id,
       categoryId: temp.categoryId?.$oid || temp.categoryId,
@@ -51,7 +216,6 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
       discountPercent: temp.discountPercent,
       image: temp.image,
     };
-
     return product;
   } catch (error) {
     console.error("Error fetching product by ID:", error);
@@ -59,21 +223,13 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
   }
 }
 
+// Lấy danh mục
 export async function fetchCategories(): Promise<ICategory[]> {
   try {
-    const res = await fetch(CATEGORIES_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-    const temp = await res.json();
-    console.log("fetchCategories response:", temp); // Log để debug
-
-    // Kiểm tra temp.data có phải là mảng không
+    const temp = await fetchWithAuth<any>(CATEGORIES_URL, { cache: "no-store" }, false);
     if (!temp.data || !Array.isArray(temp.data)) {
-      throw new Error(
-        "Dữ liệu danh mục không hợp lệ: temp.data không phải là mảng."
-      );
+      throw new Error("Dữ liệu danh mục không hợp lệ: temp.data không phải là mảng.");
     }
-
     const data: ICategory[] = temp.data.map((e: any) => ({
       id: e._id,
       name: e.name,
@@ -81,39 +237,31 @@ export async function fetchCategories(): Promise<ICategory[]> {
       img: e.img,
       parentId: e.parentId,
     }));
-
     return data;
   } catch (error) {
     console.error("Error fetching categories:", error);
-
     return [];
   }
 }
 
+// Lấy lợi ích thành viên
 export async function fetchMemberBenefits(): Promise<IMemberBenefit[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/memberBenefits`, {
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    return await res.json();
+    return await fetchWithAuth<IMemberBenefit[]>(`${TEMP_URL}/memberBenefits`, { cache: "no-store" }, false);
   } catch (error) {
     console.error("Error fetching member benefits:", error);
     return [];
   }
 }
 
+// Lấy featured section
 export async function fetchFeaturedSection(): Promise<IFeaturedProducts[]> {
   try {
-    const res = await fetch(`${USER_API_BASE_URL}/memberBenefit`, {
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    let temp = await res.json();
+    const temp = await fetchWithAuth<any>(`${TEMP2_URL}/memberBenefit`, { cache: "no-store" }, false);
     let data: IFeaturedProducts[] = temp.map((e: any) => ({
       id: e.id,
-      banner: e.banner,
-      gender: e.gender,
+      banner: e.banner || "",
+      gender: e.gender || "unknown",
     }));
     return data;
   } catch (error) {
@@ -122,27 +270,4 @@ export async function fetchFeaturedSection(): Promise<IFeaturedProducts[]> {
   }
 }
 
-export async function fetchUsers(): Promise<IUser[]> {
-  try {
-    const res = await fetch(`${USER_API_BASE_URL}/user`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    let temp = await res.json();
-    let data: IUser[] = temp
-      .filter((e: any) => e.role === "admin" || e.role === "user") // Lọc bỏ user có role không hợp lệ
-      .map((e: any) => ({
-        id: e.id,
-        email: e.email,
-        name: e.name,
-        phone: e.phone,
-        role: e.role,
-        password: e.password,
-      }));
-    console.log(data);
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return [];
-  }
-}
 export type { IUser };

@@ -1,9 +1,8 @@
-// src/contexts/AuthContext.tsx
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
 import { AuthContextType, IUser } from "../types";
-import { fetchUsers } from "../services/api";
+import { login, register, fetchUser } from "../services/api";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -18,44 +17,34 @@ export const useAuth = (): AuthContextType => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<IUser | null>(() => {
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
+      const storedUser = localStorage.getItem("user");
       return storedUser ? JSON.parse(storedUser) : null;
     }
     return null;
   });
 
-  const login = async (
+  const loginHandler = async (
     identifier: string,
     password: string,
     keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      const users = await fetchUsers();
-      const matchedUser = users.find(
-        (u: IUser) =>
-          (u.email === identifier || u.phone === identifier) &&
-          u.password === password
-      );
-
-      if (!matchedUser) {
-        throw new Error("Email/Số điện thoại hoặc mật khẩu không đúng.");
+      const result = await login(identifier, password);
+      if (!result) {
+        throw new Error("Email hoặc mật khẩu không đúng.");
       }
 
-      const userData: IUser = {
-        id: matchedUser.id,
-        name:matchedUser.name,
-        email: matchedUser.email,
-        phone: matchedUser.phone,
-        role: matchedUser.role,
-      };
-
+      const { user: userData, accessToken } = result;
       setUser(userData);
-      const storage = keepLoggedIn ? localStorage : sessionStorage;
-      storage.setItem("user", JSON.stringify(userData));
-      // Lưu vào cookie để middleware có thể đọc (cho phân quyền)
-      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=${
-        keepLoggedIn ? 86400 : 0
-      }`;
+
+      if (keepLoggedIn) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("accessToken", accessToken);
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("accessToken", accessToken);
+      }
+
       return true;
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
@@ -63,55 +52,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (
+  const registerHandler = async (
     identifier: string,
     password: string,
-    keepLoggedIn: boolean
+    keepLoggedIn: boolean,
+    avatar?: File
   ): Promise<boolean> => {
     try {
-      const users = await fetchUsers();
-      const isEmailOrPhoneExist = users.some(
-        (u: IUser) => u.email === identifier || u.phone === identifier
-      );
-
-      if (isEmailOrPhoneExist) {
-        throw new Error("Email hoặc số điện thoại đã được sử dụng.");
-      }
-
-      const newUser = {
-        email: identifier.includes("@") ? identifier : "user@example.com",
-        "số điện thoại": !identifier.includes("@") ? identifier : "0000000000",
-        password,
-        role: "user",
-      };
-
-      const response = await fetch("https://67e0f65058cc6bf785238ee0.mockapi.io/user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newUser),
-      });
-
-      if (!response.ok) {
+      const result = await register(identifier, password, avatar);
+      if (!result) {
         throw new Error("Không thể đăng ký tài khoản.");
       }
 
-      const createdUser = await response.json();
-      const userData: IUser = {
-        id: createdUser.id,
-        name:createdUser.name,
-        email: createdUser.email,
-        phone: createdUser.phone,
-        role: createdUser.role,
-      };
-
+      const { user: userData, accessToken } = result;
       setUser(userData);
-      const storage = keepLoggedIn ? localStorage : sessionStorage;
-      storage.setItem("user", JSON.stringify(userData));
-      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=${
-        keepLoggedIn ? 86400 : 0
-      }`;
+
+      if (keepLoggedIn) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("accessToken", accessToken);
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("accessToken", accessToken);
+      }
+
       return true;
     } catch (error) {
       console.error("Lỗi đăng ký:", error);
@@ -119,15 +82,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logoutHandler = () => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
-    document.cookie = "user=; path=/; max-age=0";
+    sessionStorage.removeItem("accessToken");
+    // Xóa refresh token cookie (nếu cần)
+    document.cookie = "refreshToken=; path=/; max-age=0";
   };
 
+  // Kiểm tra user khi khởi tạo
+  const checkAuth = async () => {
+    try {
+      const userData = await fetchUser();
+      if (userData) {
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+      } else {
+        logoutHandler();
+      }
+    } catch (error) {
+      console.error("Lỗi kiểm tra auth:", error);
+      logoutHandler();
+    }
+  };
+
+  // Gọi checkAuth khi component mount nếu cần
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login: loginHandler,
+        register: registerHandler,
+        logout: logoutHandler,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

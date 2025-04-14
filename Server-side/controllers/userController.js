@@ -26,7 +26,9 @@ const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const filetypes = /jpg|jpeg|png|gif|webp/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
     const mimetype = filetypes.test(file.mimetype);
     if (extname && mimetype) cb(null, true);
     else cb(new Error("Chỉ được upload file ảnh (jpg, jpeg, png, gif, webp)"));
@@ -39,17 +41,33 @@ const register = [
   upload.single("avatar"),
   async (req, res) => {
     try {
-      const { email, password } = req.body;
-      if (!email || !password) throw new Error("Email và mật khẩu là bắt buộc");
-      if (password.length < 6) throw new Error("Mật khẩu phải dài ít nhất 6 ký tự");
+      const { email, password, name, address, phone } = req.body;
+      if (!email || !password || !name) {
+        throw new Error("Email, mật khẩu và tên là bắt buộc");
+      }
+      if (password.length < 6) {
+        throw new Error("Mật khẩu phải dài ít nhất 6 ký tự");
+      }
 
-      const checkUser = await userModel.findOne({ email });
-      if (checkUser) return res.status(409).json({ message: "Email đã tồn tại" });
+      const checkEmail = await userModel.findOne({ email });
+      if (checkEmail) {
+        return res.status(409).json({ message: "Email đã tồn tại" });
+      }
+
+      if (phone) {
+        const checkPhone = await userModel.findOne({ phone });
+        if (checkPhone) {
+          return res.status(409).json({ message: "Số điện thoại đã tồn tại" });
+        }
+      }
 
       const hashPassword = await bcrypt.hash(password, 10);
       const newUser = new userModel({
         email,
         password: hashPassword,
+        name,
+        address: address || null,
+        phone: phone || null,
         avatar: req.file ? `/images/${req.file.filename}` : null,
         role: "user",
       });
@@ -58,8 +76,12 @@ const register = [
       const { password: _, ...userData } = data._doc;
 
       const jwtSecret = process.env.JWT_SECRET || "default_secret";
-      const accessToken = jwt.sign({ id: data._id }, jwtSecret, { expiresIn: "1h" });
-      const refreshToken = jwt.sign({ id: data._id }, jwtSecret, { expiresIn: "30d" });
+      const accessToken = jwt.sign({ id: data._id }, jwtSecret, {
+        expiresIn: "1h",
+      });
+      const refreshToken = jwt.sign({ id: data._id }, jwtSecret, {
+        expiresIn: "30d",
+      });
 
       await RefreshTokenModel.create({
         userId: data._id,
@@ -74,7 +96,9 @@ const register = [
         sameSite: "Strict",
       });
 
-      res.status(201).json({ message: "Đăng ký thành công", accessToken, user: userData });
+      res
+        .status(201)
+        .json({ message: "Đăng ký thành công", accessToken, user: userData });
     } catch (error) {
       if (req.file) fs.unlinkSync(req.file.path);
       res.status(400).json({ message: error.message });
@@ -85,16 +109,37 @@ const register = [
 // Đăng nhập
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
-    if (!user) return res.status(404).json({ message: "Email không tồn tại" });
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
+      return res
+        .status(400)
+        .json({
+          message: "Vui lòng cung cấp email hoặc số điện thoại và mật khẩu",
+        });
+    }
+
+    const user = await userModel.findOne({
+      $or: [{ email: identifier }, { phone: identifier }],
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Email hoặc số điện thoại không tồn tại" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Mật khẩu không đúng" });
+    if (!isMatch) {
+      return res.status(401).json({ message: "Mật khẩu không đúng" });
+    }
 
     const jwtSecret = process.env.JWT_SECRET || "default_secret";
-    const accessToken = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: "1h" });
-    const refreshToken = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: "30d" });
+    const accessToken = jwt.sign({ id: user._id }, jwtSecret, {
+      expiresIn: "1h",
+    });
+    const refreshToken = jwt.sign({ id: user._id }, jwtSecret, {
+      expiresIn: "30d",
+    });
 
     await RefreshTokenModel.create({
       userId: user._id,
@@ -119,19 +164,29 @@ const login = async (req, res) => {
 // Làm mới token
 const refresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) return res.status(400).json({ message: "Thiếu Refresh Token" });
+  if (!refreshToken)
+    return res.status(400).json({ message: "Thiếu Refresh Token" });
 
   try {
     const jwtSecret = process.env.JWT_SECRET || "default_secret";
     const decoded = jwt.verify(refreshToken, jwtSecret);
-    const tokenDoc = await RefreshTokenModel.findOne({ userId: decoded.id, token: refreshToken });
-    if (!tokenDoc) return res.status(401).json({ message: "Refresh Token không hợp lệ" });
+    const tokenDoc = await RefreshTokenModel.findOne({
+      userId: decoded.id,
+      token: refreshToken,
+    });
+    if (!tokenDoc)
+      return res.status(401).json({ message: "Refresh Token không hợp lệ" });
 
-    const accessToken = jwt.sign({ id: decoded.id }, jwtSecret, { expiresIn: "1h" });
+    const accessToken = jwt.sign({ id: decoded.id }, jwtSecret, {
+      expiresIn: "1h",
+    });
     res.json({ accessToken, message: "Làm mới token thành công" });
   } catch (error) {
-    res.status(401).json({ 
-      message: error.name === "TokenExpiredError" ? "Refresh Token đã hết hạn" : "Refresh Token không hợp lệ" 
+    res.status(401).json({
+      message:
+        error.name === "TokenExpiredError"
+          ? "Refresh Token đã hết hạn"
+          : "Refresh Token không hợp lệ",
     });
   }
 };
@@ -148,8 +203,11 @@ const verifyToken = (req, res, next) => {
 
   jwt.verify(token, jwtSecret, (err, decoded) => {
     if (err) {
-      return res.status(401).json({ 
-        message: err.name === "TokenExpiredError" ? "Token đã hết hạn" : "Token không hợp lệ" 
+      return res.status(401).json({
+        message:
+          err.name === "TokenExpiredError"
+            ? "Token đã hết hạn"
+            : "Token không hợp lệ",
       });
     }
     req.userId = decoded.id;
@@ -173,11 +231,101 @@ const verifyAdmin = async (req, res, next) => {
   try {
     const user = await userModel.findById(req.userId);
     if (!user) return res.status(404).json({ message: "Không tìm thấy user" });
-    if (user.role !== "admin") return res.status(403).json({ message: "Không có quyền truy cập" });
+    if (user.role !== "admin")
+      return res.status(403).json({ message: "Không có quyền truy cập" });
     next();
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { register, login, getUser, verifyToken, verifyAdmin, refresh };
+// Cập nhật thông tin người dùng
+const updateUser = [
+  upload.single("avatar"),
+  async (req, res) => {
+    try {
+      const { name, address, phone, password } = req.body;
+      const updates = {};
+
+      if (name) updates.name = name;
+      if (address) updates.address = address;
+      if (phone) {
+        const checkPhone = await userModel.findOne({
+          phone,
+          _id: { $ne: req.userId },
+        });
+        if (checkPhone) {
+          return res
+            .status(409)
+            .json({ message: "Số điện thoại đã được sử dụng" });
+        }
+        updates.phone = phone;
+      }
+      if (req.file) updates.avatar = `/images/${req.file.filename}`;
+      if (password) {
+        if (password.length < 6) {
+          throw new Error("Mật khẩu mới phải dài ít nhất 6 ký tự");
+        }
+        updates.password = await bcrypt.hash(password, 10);
+      }
+
+      const user = await userModel.findByIdAndUpdate(
+        req.userId,
+        { $set: updates },
+        { new: true, select: "-password" }
+      );
+
+      if (!user) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(404).json({ message: "Không tìm thấy người dùng" });
+      }
+
+      res.json({ message: "Cập nhật thông tin thành công", user });
+    } catch (error) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      res.status(400).json({ message: error.message });
+    }
+  },
+];
+
+// Xóa người dùng
+const deleteUser = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    await RefreshTokenModel.deleteMany({ userId: req.userId });
+
+    if (user.avatar) {
+      const avatarPath = path.join(__dirname, "../public", user.avatar);
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath);
+      }
+    }
+
+    await userModel.findByIdAndDelete(req.userId);
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
+
+    res.json({ message: "Xóa tài khoản thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getUser,
+  verifyToken,
+  verifyAdmin,
+  refresh,
+  updateUser,
+  deleteUser,
+};

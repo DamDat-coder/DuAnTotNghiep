@@ -245,14 +245,31 @@ export async function fetchProducts(query: {
   }
 }
 
-export async function addProduct(productData: Partial<IProduct>) {
+export async function addProduct(product: {
+  name: string;
+  categoryId: string;
+  price: number;
+  discountPercent?: number;
+  images: File[];
+}): Promise<IProduct | null> {
   try {
-    const data = await fetchWithAuth("/products", {
-      method: "POST",
-      body: JSON.stringify(productData),
+    const formData = new FormData();
+    formData.append("name", product.name);
+    formData.append("categoryId", product.categoryId);
+    formData.append("price", product.price.toString());
+    if (product.discountPercent) {
+      formData.append("discountPercent", product.discountPercent.toString());
+    }
+    product.images.forEach((image, index) => {
+      formData.append("image", image);
     });
-    return data;
-  } catch (error: any) {
+
+    const res = await fetchWithAuth<IProduct>(`${API_BASE_URL}/products`, {
+      method: "POST",
+      body: formData,
+    });
+    return res;
+  } catch (error) {
     console.error("Error adding product:", error);
     throw error;
   }
@@ -281,20 +298,16 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
 // Lấy danh mục
 export async function fetchCategories(): Promise<ICategory[]> {
   try {
-    const temp = await fetchWithAuth<any>(`${API_BASE_URL}/categories`, { cache: "no-store" }, false);
-    if (!temp.data || !Array.isArray(temp.data)) {
-      throw new Error("Dữ liệu danh mục không hợp lệ: temp.data không phải là mảng.");
-    }
-    const data: ICategory[] = temp.data.map((e: any) => ({
-      id: e._id,
-      name: e.name,
-      description: e.description,
-      img: e.img,
-      parentId: e.parentId,
+    const data = await fetchWithAuth<{ data: any[] }>(`${API_BASE_URL}/categories`, {
+      cache: "no-store",
+    }, false);
+    return data.data.map((item) => ({
+      id: item._id,
+      name: item.name,
+      description: item.description || "",
+      img: item.img || "",
+      parentId: item.parentId || null,
     }));
-    console.log(data);
-    
-    return data;
   } catch (error) {
     console.error("Error fetching categories:", error);
     return [];

@@ -6,7 +6,9 @@ import UserForm from "@/admin/components/Admin_User/UserForm";
 import { useUserForm } from "@/hooks/useUserForm";
 
 export default function AddUserPage() {
-  const { formData, error, handleChange, handleSubmit } = useUserForm({});
+  const { formData, error, handleChange, handleSubmit } = useUserForm({
+    isEdit: false,
+  });
 
   return (
     <AdminLayout pageTitle="Thêm người dùng" pageSubtitle="Tạo người dùng mới.">

@@ -1,4 +1,3 @@
-// src/components/RegisterPopup.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -17,6 +16,7 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
+    name: "", // Thêm name
     identifier: "",
     password: "",
     confirmPassword: "",
@@ -58,6 +58,7 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
 
     try {
       const success = await register(
+        formData.name, // Thêm name
         formData.identifier,
         formData.password,
         formData.keepLoggedIn
@@ -128,6 +129,18 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
           </div>
           {error && <p className="text-red-500 text-center">{error}</p>}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-medium">Họ và tên</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full mt-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="Nhập họ và tên"
+                required
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium">Email hoặc Số điện thoại</label>
               <input

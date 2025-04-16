@@ -1,9 +1,8 @@
-// src/admin/components/EditUserForm.tsx
 "use client";
 
 import { useUserForm } from "@/hooks/useUserForm";
 import UserForm from "./UserForm";
-import { IUser } from "@/services/api";
+import { IUser } from "@/types";
 
 interface EditUserFormProps {
   user: IUser;
@@ -22,7 +21,10 @@ export default function EditUserForm({ user, userId }: EditUserFormProps) {
       formData={formData}
       error={error}
       handleChange={handleChange}
-      handleSubmit={handleSubmit}
+      handleSubmit={(e) => {
+        console.log("Submitting user update:", { userId, formData });
+        handleSubmit(e);
+      }}
       isEdit
     />
   );

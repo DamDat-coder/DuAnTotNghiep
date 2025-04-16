@@ -27,7 +27,7 @@ export default function DashboardContent({ users, navigationItems }: DashboardCo
         currentFilter={filter}
         onFilter={setFilter}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white rounded-[2.125rem] px-12 py-8">
         <UserRoleChart users={filteredUsers} />
         <UserRegistrationChart />
       </div>

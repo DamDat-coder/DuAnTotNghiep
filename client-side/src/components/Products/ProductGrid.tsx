@@ -1,35 +1,27 @@
-// src/components/ProductGrid.tsx
+// src/components/Home/ProductGrid.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import FilterPopup from "./FilterPopup";
-import { IProduct, FilterState } from "@/types";
+import FilterPopup from "../Products/FilterPopup";
+import { IProduct } from "@/types";
+import AddToCartButton from "../Cart/AddToCartButton";
 
 interface ProductGridProps {
   products: IProduct[];
 }
 
 export default function ProductGrid({ products }: ProductGridProps) {
-  const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(products.slice(0, 10));
-  const [filteredProducts, setFilteredProducts] = useState<IProduct[]>(products);
+  const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
+    products.slice(0, 10)
+  );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(products.length > 10);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [likedProducts, setLikedProducts] = useState<{ [key: string]: boolean }>({});
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const PRODUCTS_PER_PAGE = 10;
-
-  useEffect(() => {
-    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
-    setLikedProducts(savedLikes);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("likedProducts", JSON.stringify(likedProducts));
-  }, [likedProducts]);
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -58,7 +50,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = filteredProducts.slice(
+    const nextProducts = products.slice(
       currentLength,
       currentLength + PRODUCTS_PER_PAGE
     );
@@ -66,81 +58,13 @@ export default function ProductGrid({ products }: ProductGridProps) {
     setTimeout(() => {
       setDisplayedProducts((prev) => [...prev, ...nextProducts]);
       const newLength = currentLength + nextProducts.length;
-      setHasMore(newLength < filteredProducts.length);
+      setHasMore(newLength < products.length);
       setLoading(false);
     }, 500);
   };
 
-  const applyFilters = (filters: FilterState) => {
-    let filtered = [...products];
-
-    // Lọc theo giới tính
-    if (filters.gender) {
-      filtered = filtered.filter((product) => product.gender === filters.gender);
-    }
-
-    // Lọc theo giá
-    if (filters.prices.length > 0) {
-      filtered = filtered.filter((product) => {
-        const price = product.price * (1 - product.discountPercent / 100);
-        return filters.prices.some((range) => {
-          if (range === "0-100000") return price < 100000;
-          if (range === "100000-300000") return price >= 100000 && price <= 300000;
-          if (range === "300000-500000") return price > 300000 && price <= 500000;
-          if (range === "500000+") return price > 500000;
-          return false;
-        });
-      });
-    }
-
-    // Lọc theo màu sắc
-    if (filters.colors.length > 0) {
-      filtered = filtered.filter((product) =>
-        filters.colors.includes(product.color?.toLowerCase() || "")
-      );
-    }
-
-    // Lọc theo size
-    if (filters.sizes.length > 0) {
-      filtered = filtered.filter((product) =>
-        product.sizes?.some((size) => filters.sizes.includes(size))
-      );
-    }
-
-    // Lọc theo brand
-    if (filters.brands.length > 0) {
-      filtered = filtered.filter((product) =>
-        filters.brands.includes(product.brand?.toLowerCase() || "")
-      );
-    }
-
-    // Sắp xếp
-    if (filters.sort) {
-      filtered.sort((a, b) => {
-        const priceA = a.price * (1 - a.discountPercent / 100);
-        const priceB = b.price * (1 - b.discountPercent / 100);
-        if (filters.sort === "priceLowToHigh") return priceA - priceB;
-        if (filters.sort === "priceHighToLow") return priceB - priceA;
-        if (filters.sort === "newest") return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        return 0; // "popular" cần logic riêng, tạm thời giữ nguyên
-      });
-    }
-
-    setFilteredProducts(filtered);
-    setDisplayedProducts(filtered.slice(0, PRODUCTS_PER_PAGE));
-    setHasMore(filtered.length > PRODUCTS_PER_PAGE);
-  };
-
-  const toggleLike = (productId: string) => {
-    setLikedProducts((prev) => ({
-      ...prev,
-      [productId]: !prev[productId],
-    }));
-  };
-
   const renderProductCard = (product: IProduct) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
-    const isLiked = likedProducts[product.id] || false;
 
     return (
       <Link
@@ -159,22 +83,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
         <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] desktop:text-[0.875rem] font-bold px-2 py-1 rounded">
           -{product.discountPercent}%
         </div>
-        <button
-          className="absolute top-[0.5rem] right-[0.5rem]"
-          onClick={(e) => {
-            e.preventDefault();
-            toggleLike(product.id);
-          }}
-        >
-          <img
-            src={
-              isLiked
-                ? "/product/product_like_active.svg"
-                : "/product/product_like.svg"
-            }
-            alt={isLiked ? "Đã thích" : "Thích"}
-          />
-        </button>
+        <AddToCartButton product={product} />
         <div className="content flex flex-col p-4">
           <div className="name h-20 text-lg desktop:text-lg font-bold text-[#374151] line-clamp-2">
             {product.name || "Sản phẩm"}
@@ -198,7 +107,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
   return (
     <>
       <div className="flex justify-between items-center">
-        <p className="desc-text text-[#B0B0B0]">{filteredProducts.length} Sản phẩm</p>
+        <p className="desc-text text-[#B0B0B0]">{products.length} Sản phẩm</p>
         <button
           className="flex items-center gap-1 py-[0.625rem] px-[0.75rem] text-base font-bold rounded-full border-2"
           onClick={() => setIsFilterOpen(true)}
@@ -224,11 +133,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
           <p className="text-center text-gray-500">Đang tải thêm...</p>
         )}
       </div>
-      <FilterPopup
-        isOpen={isFilterOpen}
-        setIsOpen={setIsFilterOpen}
-        onApplyFilters={applyFilters}
-      />
+      <FilterPopup isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} />
     </>
   );
 }

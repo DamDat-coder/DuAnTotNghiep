@@ -1,6 +1,6 @@
 // app/products/[id]/page.tsx
 import { Suspense } from "react";
-import { fetchProductById, fetchProducts, fetchCategories } from "@/services/api"; // Thêm fetchSuggestedProducts
+import { fetchProductById, fetchProducts, fetchCategories } from "@/services/api";
 import { ICategory, IProduct } from "@/types";
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";

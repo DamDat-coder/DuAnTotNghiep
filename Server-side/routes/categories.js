@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { verifyToken, restrictTo } = require("../controllers/userController");
+const { verifyToken, verifyAdmin } = require("../controllers/userController");
 const {
   getAllCategories,
   getCategoryById,
@@ -16,12 +16,12 @@ router.get("/", getAllCategories);
 router.get("/:id", getCategoryById);
 
 // Tạo danh mục mới (chỉ admin)
-router.post("/", verifyToken, restrictTo("admin"), createCategory);
+router.post("/", verifyToken, verifyAdmin, createCategory);
 
 // Cập nhật danh mục (chỉ admin)
-router.put("/:id", verifyToken, restrictTo("admin"), updateCategory);
+router.put("/:id", verifyToken, verifyAdmin, updateCategory);
 
 // Xóa danh mục (chỉ admin)
-router.delete("/:id", verifyToken, restrictTo("admin"), deleteCategory);
+router.delete("/:id", verifyToken, verifyAdmin, deleteCategory);
 
 module.exports = router;

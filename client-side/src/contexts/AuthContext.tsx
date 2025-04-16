@@ -45,6 +45,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem("accessToken", accessToken);
       }
 
+      // Redirect nếu là admin
+      if (userData.role === "admin") {
+        window.location.assign("/admin/dashboard");
+      }
+
       return true;
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
@@ -88,11 +93,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("accessToken");
-    // Xóa refresh token cookie (nếu cần)
     document.cookie = "refreshToken=; path=/; max-age=0";
   };
 
-  // Kiểm tra user khi khởi tạo
   const checkAuth = async () => {
     try {
       const userData = await fetchUser();
@@ -107,11 +110,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logoutHandler();
     }
   };
-
-  // Gọi checkAuth khi component mount nếu cần
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
 
   return (
     <AuthContext.Provider

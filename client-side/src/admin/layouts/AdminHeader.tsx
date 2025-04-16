@@ -1,7 +1,9 @@
-// src/admin/layouts/AdminHeader.tsx
-"use client"
+"use client";
+
 import Image from "next/image";
-import { signOut } from "next-auth/react"; // Giả sử sử dụng NextAuth để đăng xuất
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { fetchUser, IUser } from "@/services/api";
 
 interface AdminHeaderProps {
   pageTitle: string;
@@ -9,9 +11,58 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProps) {
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/login" });
+  const router = useRouter();
+  const [admin, setAdmin] = useState<IUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAdminData() {
+      try {
+        setLoading(true);
+        const userData = await fetchUser();
+        if (userData && userData.role === "admin") {
+          setAdmin(userData);
+        } else {
+
+          router.push("/");
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin admin:", error);
+        router.push("/");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAdminData();
+  }, [router]);
+
+  const handleLogout = () => {
+    // Xóa token và trạng thái
+    localStorage.removeItem("accessToken");
+    document.cookie = "refreshToken=; path=/; max-age=0";
+    router.push("/");
   };
+
+  if (loading) {
+    return (
+      <header className="flex justify-between items-center p-6 border-b w-full">
+        <div className="min-w-[200px]">
+          <h1 className="font-bold text-4xl">{pageTitle || "Default Title"}</h1>
+          <p className="font-semibold text-base text-[#8A99AE]">
+            {pageSubtitle || "Default Subtitle"}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 bg-[#02203B] rounded-full p-2 text-white">
+          <p>Đang tải...</p>
+        </div>
+      </header>
+    );
+  }
+
+  if (!admin) {
+    return null; // Hoặc redirect, đã xử lý trong useEffect
+  }
 
   return (
     <header className="flex justify-between items-center p-6 border-b w-full">
@@ -26,15 +77,15 @@ export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProp
       {/* Thông tin admin */}
       <div className="flex items-center gap-3 bg-[#02203B] rounded-full p-2 text-white">
         <Image
-          src="/admin/admin_header/admin_header_user_avatar.svg"
+          src={admin.avatar || "/admin/admin_header/admin_header_user_avatar.svg"}
           alt="Ảnh Hồ Sơ"
           width={40}
           height={40}
           className="rounded-full"
         />
         <div className="flex flex-col">
-          <span className="font-medium">Nguyễn Phương</span>
-          <span className="text-base text-[#CCCCCC]">dsun.agency@gmail.com</span>
+          <span className="font-medium">{admin.email.split("@")[0]}</span>
+          <span className="text-base text-[#CCCCCC]">{admin.email}</span>
         </div>
         <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded">
           <Image

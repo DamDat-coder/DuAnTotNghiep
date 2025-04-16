@@ -2,7 +2,7 @@
 "use client";
 
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import AddCategoryForm from "@/admin/components/AddCategoryForm";
+import AddCategoryForm from "@/admin/components/Admin_Category/AddCategoryForm";
 
 export default function AddCategoryPage() {
   return (

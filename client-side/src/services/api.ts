@@ -7,14 +7,15 @@ import {
 } from "../types";
 
 // Định nghĩa base URL của backend
-const API_BASE_URL = "http://localhost:3000"; 
+export const API_BASE_URL = "http://localhost:3000"; 
 const TEMP_URL = "https://67e3b0622ae442db76d1204c.mockapi.io/";
 const TEMP2_URL = "https://67e0f65058cc6bf785238ee0.mockapi.io/";
 
 // Hàm kiểm tra môi trường trình duyệt
+// Hàm kiểm tra môi trường trình duyệt
 const isBrowser = () => typeof window !== "undefined";
 
-// Hàm lấy access token từ localStorage (chỉ trong trình duyệt)
+// Hàm lấy access token từ localStorage (chỉ trong trình duyệt)// Hàm lấy access token từ localStorage (chỉ trong trình duyệt)
 const getAccessToken = (): string | null => {
   return isBrowser() ? localStorage.getItem("accessToken") : null;
 };
@@ -24,7 +25,6 @@ const getAuthHeaders = () => {
   const token = getAccessToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
-
 // Hàm làm mới token
 export async function refreshToken(): Promise<boolean> {
   try {
@@ -44,8 +44,7 @@ export async function refreshToken(): Promise<boolean> {
   }
 }
 
-// Hàm xử lý request với retry khi token hết hạn
-async function fetchWithAuth<T>(
+export async function fetchWithAuth<T>(
   url: string,
   options: RequestInit = {},
   requiresAuth: boolean = true
@@ -77,8 +76,6 @@ async function fetchWithAuth<T>(
   if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
   return res.json();
 }
-
-// Đăng nhập
 export async function login(
   identifier: string,
   password: string
@@ -95,6 +92,7 @@ export async function login(
     const user: IUser = {
       id: data.user._id,
       email: data.user.email,
+      phone: data.user.phone,
       avatar: data.user.avatar,
       role: data.user.role,
     };
@@ -107,39 +105,51 @@ export async function login(
     return null;
   }
 }
-
-// Đăng ký
 export async function register(
-  email: string,
+  name: string, // Thêm name
+  identifier: string,
   password: string,
   avatar?: File
 ): Promise<{ user: IUser; accessToken: string } | null> {
   try {
     const formData = new FormData();
-    formData.append("email", email);
+    formData.append("name", name); // Thêm name
+    formData.append("email", identifier); // Đổi identifier thành email
     formData.append("password", password);
     if (avatar) formData.append("avatar", avatar);
 
-    const res = await fetch(`${API_BASE_URL}/users/register`, {
+    const url = `${API_BASE_URL}/users/register`;
+    console.log("Sending register request:", url, { name, email: identifier });
+    const res = await fetch(url, {
       method: "POST",
       body: formData,
       credentials: "include",
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    if (!res.ok) {
+      let errorData;
+      try {
+        errorData = await res.json();
+      } catch {
+        errorData = {};
+      }
+      console.error("Register failed:", res.status, errorData);
+      throw new Error(errorData.message || "Email, mật khẩu hoặc tên không hợp lệ.");
+    }
     const data = await res.json();
     const user: IUser = {
       id: data.user._id,
-      email: data.user.email,
-      avatar: data.user.avatar,
-      role: data.user.role,
+      phone: data.user.phone || "",
+      email: data.user.email || identifier,
+      avatar: data.user.avatar || "",
+      role: data.user.role || "user",
     };
-    if (isBrowser()) {
+    if (typeof window !== "undefined") {
       localStorage.setItem("accessToken", data.accessToken);
     }
     return { user, accessToken: data.accessToken };
   } catch (error) {
     console.error("Error registering:", error);
-    return null;
+    throw error;
   }
 }
 
@@ -159,6 +169,7 @@ export async function fetchUser(): Promise<IUser | null> {
     const user: IUser = {
       id: data._id,
       email: data.email,
+      phone: data.phone,
       avatar: data.avatar,
       role: data.role,
     };
@@ -184,6 +195,7 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
     const users: IUser[] = data.map((userData) => ({
       id: userData._id,
       email: userData.email,
+      phone: userData.phone,
       password:userData.password,
       avatar: userData.avatar,
       role: userData.role,

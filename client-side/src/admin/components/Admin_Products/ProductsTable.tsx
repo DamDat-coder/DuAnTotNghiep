@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
 import Image from "next/image";
 import { IProduct } from "@/types/index";
+import { fetchWithAuth } from "@/services/api";
 
 interface SortConfig {
   key: "name" | "price";
@@ -63,11 +64,11 @@ export default function ProductsTable({
   const handleDelete = async (productId: string) => {
     if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
       try {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `http://localhost:3000/products/${productId}`,
+          
           { method: "DELETE" }
         );
-        if (!response.ok) throw new Error("Không thể xóa sản phẩm.");
         const updatedProducts = products.filter((product) => product.id !== productId);
         setProducts(updatedProducts);
         alert("Xóa sản phẩm thành công!");

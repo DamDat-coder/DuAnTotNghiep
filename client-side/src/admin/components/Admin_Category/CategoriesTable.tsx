@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import AdminNavigation from "./AdminNavigation";
+import AdminNavigation from "../AdminNavigation";
 
 // Định nghĩa kiểu dữ liệu cho danh mục
 interface Category {

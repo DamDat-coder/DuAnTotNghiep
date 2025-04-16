@@ -1,6 +1,6 @@
 // app/admin/category/edit/[id]/page.tsx
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import EditCategoryForm from "@/admin/components/EditCategoryForm";
+import EditCategoryForm from "@/admin/components/Admin_Category/EditCategoryForm";
 
 // Định nghĩa kiểu dữ liệu cho danh mục
 interface Category {

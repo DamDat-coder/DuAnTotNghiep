@@ -9,8 +9,10 @@ const {
   refresh,
   updateUser,
   deleteUser,
+  getAllUser,
 } = require("../controllers/userController");
 
+router.get("/", getAllUser);
 router.post("/register", register);
 router.post("/login", login);
 router.get("/userinfo", verifyToken, getUser);

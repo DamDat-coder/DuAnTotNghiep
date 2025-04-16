@@ -225,6 +225,14 @@ const getUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getAllUser = async (req, res) => {
+  try {
+    const users = await userModel.find({}, { password: 0 }); // Lấy tất cả user, bỏ password
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Middleware kiểm tra admin
 const verifyAdmin = async (req, res, next) => {
@@ -328,4 +336,5 @@ module.exports = {
   refresh,
   updateUser,
   deleteUser,
+  getAllUser,
 };

@@ -1,14 +1,16 @@
-// src/components/ProductSection.tsx
+// src/components/Home/ProductSection.tsx
 "use client";
+
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import Image from "next/image";
 import "swiper/css";
 import { IProduct } from "@/types";
+import AddToCartButton from "../Cart/AddToCartButton";
 
 interface ProductSectionProps {
-  products: IProduct[];
+  products: { data: IProduct[] } | IProduct[];
   desktopSlidesPerView?: number;
   showLoadMore?: boolean;
 }
@@ -18,11 +20,13 @@ export default function ProductSection({
   desktopSlidesPerView = 4.5,
   showLoadMore = true,
 }: ProductSectionProps) {
+  const productList = Array.isArray(products) ? products : products.data || [];
+
   const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
-    products.slice(0, 5)
+    productList.slice(0, 5)
   );
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(products.length > 5);
+  const [hasMore, setHasMore] = useState(productList.length > 5);
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const PRODUCTS_PER_PAGE = 5;
@@ -54,7 +58,7 @@ export default function ProductSection({
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = products.slice(
+    const nextProducts = productList.slice(
       currentLength,
       currentLength + PRODUCTS_PER_PAGE
     );
@@ -62,12 +66,12 @@ export default function ProductSection({
     setTimeout(() => {
       setDisplayedProducts((prev) => [...prev, ...nextProducts]);
       const newLength = currentLength + nextProducts.length;
-      setHasMore(newLength < products.length);
+      setHasMore(newLength < productList.length);
       setLoading(false);
     }, 500);
   };
 
-  if (!products || products.length === 0) {
+  if (!productList || productList.length === 0) {
     return (
       <div>
         <p className="text-center text-gray-500">
@@ -97,9 +101,7 @@ export default function ProductSection({
           <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
             -{product.discountPercent}%
           </div>
-          <button className="absolute top-[0.5rem] right-[0.5rem]">
-            <img src="/product/product_addToCart.svg" alt="Thêm vào giỏ hàng" />
-          </button>
+          <AddToCartButton product={product} />
           <div className="content flex flex-col p-4">
             <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
               {product.name || "Sản phẩm"}
@@ -136,8 +138,8 @@ export default function ProductSection({
           grabCursor={true}
           className="select-none"
         >
-          {displayedProducts.map((product) => (
-            <SwiperSlide key={product.id} className="!w-[16.8125rem]">
+          {displayedProducts.map((product, index) => (
+            <SwiperSlide key={product.id || index} className="!w-[16.8125rem]">
               {renderProductCard(product)}
             </SwiperSlide>
           ))}
@@ -145,9 +147,9 @@ export default function ProductSection({
       </div>
 
       {/* Tablet: Grid */}
-      <div className="hidden  desktop:hidden tablet:grid tablet:grid-cols-2 gap-6">
-        {displayedProducts.map((product) => (
-          <div key={product.id}>{renderProductCard(product)}</div>
+      <div className="hidden desktop:hidden tablet:grid tablet:grid-cols-2 gap-6">
+        {displayedProducts.map((product, index) => (
+          <div key={product.id || index}>{renderProductCard(product)}</div>
         ))}
       </div>
 
@@ -160,8 +162,10 @@ export default function ProductSection({
           grabCursor={true}
           className="select-none"
         >
-          {displayedProducts.map((product) => (
-            <SwiperSlide key={product.id}>{renderProductCard(product)}</SwiperSlide>
+          {displayedProducts.map((product, index) => (
+            <SwiperSlide key={product.id || index}>
+              {renderProductCard(product)}
+            </SwiperSlide>
           ))}
         </Swiper>
       </div>

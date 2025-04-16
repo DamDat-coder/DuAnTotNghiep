@@ -2,7 +2,7 @@
 "use client";
 
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import CategoriesTable from "@/admin/components/CategoriesTable";
+import CategoriesTable from "@/admin/components/Admin_Category/CategoriesTable";
 
 // Định nghĩa kiểu dữ liệu cho danh mục
 interface Category {

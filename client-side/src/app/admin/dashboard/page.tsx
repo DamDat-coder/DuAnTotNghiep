@@ -14,19 +14,13 @@ async function fetchDashboardData() {
 export default async function DashboardPage() {
   const { users, error } = await fetchDashboardData();
 
-  const navigationItems: NavigationItem[] = [
-    { label: "Tất cả", href: "#", filter: "Tất cả" },
-    { label: "Admin", href: "#", filter: "admin" },
-    { label: "User", href: "#", filter: "user" },
-  ];
-
   return (
     <AdminLayout pageTitle="Dashboard" pageSubtitle="Đây là trang tổng quan.">
       <div className="dashboard-page w-full h-auto mx-auto flex flex-col gap-8">
         {error ? (
           <p className="text-center text-lg text-red-500">{error}</p>
         ) : (
-          <DashboardContent users={users} navigationItems={navigationItems} />
+          <DashboardContent users={users} navigationItems={[]}  />
         )}
       </div>
     </AdminLayout>

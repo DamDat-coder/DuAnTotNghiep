@@ -40,31 +40,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
+        console.log("Stored accessToken:", accessToken); // Debug
       } else {
         sessionStorage.setItem("user", JSON.stringify(userData));
         sessionStorage.setItem("accessToken", accessToken);
+        console.log("Stored accessToken in session:", accessToken); // Debug
       }
 
-      // Redirect nếu là admin
       if (userData.role === "admin") {
         window.location.assign("/admin/dashboard");
       }
 
       return true;
     } catch (error) {
+      const message = error instanceof Error && error.message.includes("404")
+        ? "Không tìm thấy dịch vụ đăng nhập."
+        : "Email hoặc mật khẩu không đúng.";
       console.error("Lỗi đăng nhập:", error);
-      throw error;
+      throw new Error(message);
     }
   };
 
   const registerHandler = async (
+    name: string,
     identifier: string,
     password: string,
-    keepLoggedIn: boolean,
-    avatar?: File
+    keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      const result = await register(identifier, password, avatar);
+      const result = await register(name, identifier, password);
       if (!result) {
         throw new Error("Không thể đăng ký tài khoản.");
       }
@@ -75,15 +79,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
+        console.log("Stored accessToken:", accessToken); // Debug
       } else {
         sessionStorage.setItem("user", JSON.stringify(userData));
         sessionStorage.setItem("accessToken", accessToken);
+        console.log("Stored accessToken in session:", accessToken); // Debug
       }
 
       return true;
     } catch (error) {
+      const message = error instanceof Error
+        ? error.message.includes("400")
+          ? "Email, mật khẩu hoặc tên không hợp lệ. Vui lòng kiểm tra lại."
+          : error.message
+        : "Có lỗi xảy ra khi đăng ký.";
       console.error("Lỗi đăng ký:", error);
-      throw error;
+      throw new Error(message);
     }
   };
 
@@ -94,6 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
+    console.log("Logged out, cleared storage"); // Debug
   };
 
   const checkAuth = async () => {

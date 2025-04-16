@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
-import { IUser } from "@/services/api";
+import { fetchWithAuth, IUser } from "@/services/api";
 
 // Định nghĩa kiểu dữ liệu cho cấu hình sắp xếp
 interface SortConfig {
@@ -67,13 +67,9 @@ export default function UsersTable({ initialUsers, navigationItems, addButton }:
   const handleDelete = async (userId: string) => {
     if (confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
       try {
-        const response = await fetch(
-          `https://67e0f65058cc6bf785238ee0.mockapi.io/user/${userId}`,
-          {
-            method: "DELETE",
-          }
-        );
-        if (!response.ok) throw new Error("Không thể xóa người dùng.");
+        await fetchWithAuth(`http://localhost:3000/users/delete/${userId}`, {
+          method: "DELETE",
+        });
         const updatedUsers = users.filter((user) => user.id !== userId);
         setUsers(updatedUsers);
         setFilteredUsers(
@@ -83,10 +79,12 @@ export default function UsersTable({ initialUsers, navigationItems, addButton }:
         );
         alert("Xóa người dùng thành công!");
       } catch (err) {
+        console.error("Error deleting user:", err);
         alert("Có lỗi xảy ra khi xóa người dùng.");
       }
     }
   };
+  
 
   return (
     <>

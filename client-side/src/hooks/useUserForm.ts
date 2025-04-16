@@ -1,104 +1,65 @@
-// src/hooks/useUserForm.ts
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IUser } from "@/services/api";
-
-interface UserFormData {
-  email: string;
-  phone: string;
-  role: "admin" | "user" | "";
-}
+import { fetchWithAuth } from "@/services/api";
+import { IUser } from "@/types";
 
 interface UseUserFormProps {
-  initialData?: IUser | null;
-  isEdit?: boolean;
+  initialData?: IUser; // Optional
+  isEdit: boolean;
   userId?: string;
 }
 
-export function useUserForm({
-  initialData,
-  isEdit = false,
-  userId,
-}: UseUserFormProps) {
+export function useUserForm({ initialData, isEdit, userId }: UseUserFormProps) {
+  const [formData, setFormData] = useState({
+    email: initialData?.email || "",
+    phone: initialData?.phone || "",
+    role: initialData && ["admin", "user"].includes(initialData.role)
+      ? initialData.role
+      : ("" as "admin" | "user" | ""),
+  });
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const [formData, setFormData] = useState<UserFormData>(
-    initialData
-    ? {
-        email: initialData.email,
-        phone: initialData.phone,
-        role: ["admin", "user"].includes(initialData.role)
-          ? (initialData.role as "admin" | "user")
-          : "",
-      }
-    : { email: "", phone: "", role: "" }
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.email || !formData.phone || !formData.role) {
-      setError("Vui lòng điền đầy đủ thông tin.");
+    if (!["admin", "user", ""].includes(formData.role)) {
+      setError("Vai trò không hợp lệ.");
       return;
     }
 
-    const maxRetries = 3;
-    let retries = 0;
-
-    while (retries < maxRetries) {
-      try {
-        const url = isEdit
-          ? `https://67e0f65058cc6bf785238ee0.mockapi.io/user/${userId}`
-          : "https://67e0f65058cc6bf785238ee0.mockapi.io/user";
-        const method = isEdit ? "PUT" : "POST";
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...formData,
-            "số điện thoại": formData.phone,
-          }),
+    try {
+      if (isEdit && userId) {
+        console.log("Sending PUT request:", `/users/${userId}`, formData);
+        await fetchWithAuth(`/users/${userId}`, {
+          method: "PUT", // Hoặc thử PATCH nếu 404
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
         });
-
-        if (response.status === 429) {
-          const retryAfter = response.headers.get("Retry-After") || "5";
-          await new Promise((resolve) =>
-            setTimeout(resolve, parseInt(retryAfter) * 1000)
-          );
-          retries++;
-          continue;
-        }
-
-        if (!response.ok)
-          throw new Error(
-            `Không thể ${isEdit ? "cập nhật" : "thêm"} người dùng.`
-          );
-        alert(`${isEdit ? "Cập nhật" : "Thêm"} người dùng thành công!`);
         router.push("/admin/users");
-        return;
-      } catch (err) {
-            throw(error)
-        return;
+      } else {
+        console.log("Sending POST request:", `/users`, formData);
+        await fetchWithAuth(`/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        router.push("/admin/users");
       }
+    } catch (err) {
+      console.error("Error submitting user form:", err);
+      setError(
+        err instanceof Error ? err.message : "Có lỗi xảy ra khi lưu thông tin người dùng."
+      );
     }
-    setError(`Max retries reached due to 429 errors`);
   };
 
   return { formData, error, handleChange, handleSubmit };

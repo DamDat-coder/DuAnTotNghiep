@@ -1,29 +1,35 @@
-// app/admin/users/edit/[id]/page.tsx
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import EditUserForm from "@/admin/components/Admin_User/EditUserForm";
-import { IUser } from "@/services/api";
+import { IUser } from "@/types/index";
+import { fetchWithAuth } from "@/services/api";
 
-async function fetchUser(id: string) {
+async function fetchUserById(id: string): Promise<{ user: IUser | null; error: string | null }> {
   try {
-    const response = await fetch(
-      `https://67e0f65058cc6bf785238ee0.mockapi.io/user/${id}`,
-      { cache: "no-store" }
-    );
-    if (!response.ok) throw new Error("Không thể tải thông tin người dùng.");
-    const data: IUser = await response.json();
-    // Đảm bảo role hợp lệ
-    if (data.role !== "admin" && data.role !== "user") {
-      data.role = "user";
+    const data = await fetchWithAuth<any>(`http://localhost:3000/users/userinfo/${id}`, {
+      cache: "no-store",
+    });
+    if (!data || !data._id) {
+      throw new Error("Dữ liệu user không hợp lệ");
     }
-    return { user: data, error: null };
+    const user: IUser = {
+      id: data._id.$oid || data._id,
+      email: data.email || "",
+      phone: data.phone || "",
+      avatar: data.avatar || "",
+      role: data.role === "admin" || data.role === "user" ? data.role : "user",
+    };
+    return { user, error: null };
   } catch (err) {
-    return { user: null, error: "Có lỗi xảy ra khi tải thông tin người dùng." };
+    return {
+      user: null,
+      error: err instanceof Error ? err.message : "Có lỗi xảy ra khi tải thông tin người dùng.",
+    };
   }
 }
 
-export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function UserPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { user, error } = await fetchUser(id);
+  const { user, error } = await fetchUserById(id);
 
   if (error || !user) {
     return (

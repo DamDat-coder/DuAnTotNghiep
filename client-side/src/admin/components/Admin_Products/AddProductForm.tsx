@@ -1,10 +1,11 @@
-// src/admin/components/AddProductForm.tsx
+// src/admin/components/Admin_Products/AddProductForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IProduct } from "@/types/index";
-import { fetchCategories } from "@/services/api";
+import { IProduct } from "@/types";
+import { fetchCategories, addProduct } from "@/services/api";
+
 // Định nghĩa kiểu dữ liệu cho danh mục
 interface ICategory {
   id: string;
@@ -28,14 +29,14 @@ export default function AddProductForm() {
   });
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [imageFiles, setImageFiles] = useState<File[]>([]); // Lưu các file ảnh để upload
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
-  // Lấy danh sách danh mục khi component mount
+  // Lấy danh mục
   useEffect(() => {
     const loadCategories = async () => {
       const fetchedCategories = await fetchCategories();
+      console.log("Categories:", fetchedCategories);
       setCategories(fetchedCategories);
-      // Đặt categoryId mặc định là danh mục đầu tiên (nếu có)
       if (fetchedCategories.length > 0) {
         setFormData((prev) => ({
           ...prev,
@@ -52,12 +53,11 @@ export default function AddProductForm() {
   ) => {
     const { name, value, files } = e.target as HTMLInputElement;
     if (name === "image" && files) {
-      // Xử lý nhiều file ảnh
       const newFiles = Array.from(files);
       setImageFiles(newFiles);
       setFormData((prev) => ({
         ...prev,
-        image: newFiles.map((file) => file.name),
+        image: newFiles.map((file) => file.name), // Lưu tên file tạm thời
       }));
     } else if (name === "price" || name === "discountPercent") {
       setFormData((prev) => ({
@@ -65,7 +65,6 @@ export default function AddProductForm() {
         [name]: value === "" ? 0 : Number(value),
       }));
     } else if (name === "categoryId") {
-      // Khi chọn danh mục, cập nhật cả categoryId và category
       const selectedCategory = categories.find((cat) => cat.id === value);
       setFormData((prev) => ({
         ...prev,
@@ -100,47 +99,28 @@ export default function AddProductForm() {
       return;
     }
 
-    const maxRetries = 3;
-    let retries = 0;
+    try {
+      // Chuẩn bị dữ liệu
+      const productData = {
+        name: formData.name,
+        categoryId: formData.categoryId,
+        price: formData.price,
+        discountPercent: formData.discountPercent,
+        image: formData.image,
+      };
 
-    while (retries < maxRetries) {
-      try {
-        // Chuẩn bị dữ liệu gửi lên API
-        const productData = {
-          name: formData.name,
-          categoryId: formData.categoryId,
-          price: formData.price,
-          discountPercent: formData.discountPercent,
-          image: formData.image,
-        };
-
-        const response = await fetch("http://localhost:3000/products", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(productData),
-        });
-
-        if (response.status === 429) {
-          const retryAfter = response.headers.get("Retry-After") || "5";
-          await new Promise((resolve) =>
-            setTimeout(resolve, parseInt(retryAfter) * 1000)
-          );
-          retries++;
-          continue;
-        }
-
-        if (!response.ok) throw new Error("Không thể thêm sản phẩm.");
-        alert("Thêm sản phẩm thành công!");
-        router.push("/admin/products");
-        return;
-      } catch (err) {
+      // Gọi API
+      await addProduct(productData);
+      alert("Thêm sản phẩm thành công!");
+      router.push("/admin/products");
+    } catch (err: any) {
+      console.error("Add product error:", err);
+      if (err.message.includes("403")) {
+        setError("Không có quyền thêm sản phẩm. Vui lòng kiểm tra đăng nhập admin.");
+      } else {
         setError("Có lỗi xảy ra khi thêm sản phẩm.");
-        return;
       }
     }
-    setError("Max retries reached due to 429 errors");
   };
 
   return (

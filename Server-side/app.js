@@ -10,7 +10,7 @@ const rateLimit = require("express-rate-limit");
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
-const categoriesRouter = require("./routes/categories");
+const categoriesRouter = require("./routes/categories"); 
 const productsRouter = require("./routes/products");
 const couponsRouter = require("./routes/coupons");
 
@@ -52,7 +52,7 @@ app.use(limiter);
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
-app.use("/categories", categoriesRouter);
+app.use("/categories", categoriesRouter);  
 app.use("/products", productsRouter);
 app.use("/coupons", couponsRouter);
 

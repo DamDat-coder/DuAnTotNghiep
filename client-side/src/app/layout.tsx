@@ -10,6 +10,7 @@ import Header from "../components/Core/Layout/Header/Header";
 import Footer from "../components/Core/Layout/Footer/Footer";
 import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -17,7 +18,11 @@ const lora = Lora({
   variable: "--font-lora",
 });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin") ?? false;
 
@@ -30,11 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <AuthProvider>
           <MenuProvider>
-          <LookupProvider>
-            {!isAdminRoute && <Header title="My App" />}
-            <main className={mainClassName}>{children}</main>
-            {!isAdminRoute && <br />}
-            {!isAdminRoute && <Footer />}
+            <LookupProvider>
+              {!isAdminRoute && <Header title="My App" />}
+              <CartProvider>
+              <main className={mainClassName}>{children}</main>
+              </CartProvider>
+              {!isAdminRoute && <br />}
+              {!isAdminRoute && <Footer />}
             </LookupProvider>
           </MenuProvider>
         </AuthProvider>

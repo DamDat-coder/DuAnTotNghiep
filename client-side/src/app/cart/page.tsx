@@ -1,42 +1,55 @@
-// app/cart/page.tsx
+// src/app/cart/page.tsx
 "use client";
-
 import ProductSection from "@/components/Home/ProductSection";
 import Container from "@/components/Core/Container";
 import { CartMobile, CartDesktop } from "@/components/Cart";
-import { useCart } from "@/hooks";
+import { useCart, useCartDispatch } from "@/contexts/CartContext";
+import { IProduct, ICartItem } from "@/types";
+import { fetchProducts } from "@/services/api";
 
-export default function Cart() {
-  const {
-    cartItems,
-    products,
-    loading,
-    error,
-    handleQuantityChange,
-    toggleLike,
-    removeItem,
-    totalPrice,
-  } = useCart();
-
-  if (loading) {
-    return (
-      <div className="py-8">
-        <Container>
-          <p className="text-center text-gray-500">Đang tải...</p>
-        </Container>
-      </div>
-    );
+// Hàm fetch tĩnh để lấy sản phẩm gợi ý
+async function getSuggestedProducts(): Promise<IProduct[]> {
+  try {
+    const products = await fetchProducts();
+    return products || [];
+  } catch {
+    return [];
   }
+}
 
-  if (error) {
-    return (
-      <div className="py-8">
-        <Container>
-          <p className="text-center text-red-500">{error}</p>
-        </Container>
-      </div>
-    );
-  }
+export default async function Cart() {
+  const cartItems = useCart();
+  const dispatch = useCartDispatch();
+  const products = await getSuggestedProducts();
+
+  const totalPrice = cartItems.reduce(
+    (sum, item) =>
+      sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+    0
+  );
+
+  const handleQuantityChange = (id: string, change: number) => {
+    const item = cartItems.find((i) => i.id === id);
+    if (!item) return;
+    const newQuantity = Math.max(1, item.quantity + change);
+    dispatch({
+      type: "update",
+      item: { ...item, quantity: newQuantity },
+    });
+  };
+
+  const toggleLike = (id: string) => {
+    const item = cartItems.find((i) => i.id === id);
+    if (!item) return;
+    dispatch({
+      type: "update",
+      item: { ...item, liked: !item.liked },
+    });
+  };
+
+  const removeItem = (id: string) => {
+    dispatch({ type: "delete", id });
+  };
 
   return (
     <div className="py-8">

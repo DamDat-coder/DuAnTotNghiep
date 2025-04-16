@@ -1,15 +1,16 @@
-// app/admin/users/page.tsx
 import AdminLayout, { NavigationItem } from "@/admin/layouts/AdminLayout";
-import { fetchUsers, IUser } from "@/services/api";
+import { fetchAllUsers, IUser } from "@/services/api";
 import UsersTable from "@/admin/components/Admin_User/UsersTable";
 
 async function fetchUsersData() {
   try {
-    const fetchedUsers = await fetchUsers();
-    // Lọc bỏ các user có role không hợp lệ
-    const validUsers = fetchedUsers.filter(
-      (user: { role: string }) => user.role === "admin" || user.role === "user"
-    );
+    const fetchedUsers = await fetchAllUsers();
+    // Kiểm tra fetchedUsers không phải null
+    const validUsers = fetchedUsers
+      ? fetchedUsers.filter(
+          (user) => user.role === "admin" || user.role === "user"
+        )
+      : [];
     return { users: validUsers, error: null };
   } catch (err) {
     return { users: [], error: "Có lỗi xảy ra khi tải dữ liệu người dùng." };

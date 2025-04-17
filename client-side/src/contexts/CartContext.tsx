@@ -1,60 +1,86 @@
-// src/contexts/CartContext.tsx
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode } from "react";
-import { ICartItem } from "@/types";
+import { createContext, useContext, useReducer, useEffect } from "react";
+import { ICartItem } from "@/types/index";
 
-// Khai báo context
-export const CartContext = createContext<ICartItem[] | null>(null);
-export const CartDispatchContext = createContext<React.Dispatch<any> | null>(null);
+interface CartState {
+  items: ICartItem[];
+}
 
-// Định nghĩa type cho action
-type CartAction =
-  | { type: "add"; item: ICartItem }
-  | { type: "update"; item: ICartItem }
-  | { type: "delete"; id: string }
-  | { type: "clear" };
+interface CartAction {
+  type: "add" | "update" | "delete" | "clear";
+  item?: ICartItem;
+}
 
-// Reducer
-export function cartReducer(cart: ICartItem[], action: CartAction): ICartItem[] {
+export const CartContext = createContext<CartState | null>(null);
+export const CartDispatchContext = createContext<React.Dispatch<CartAction> | null>(null);
+
+const initialCart: CartState = {
+  items: [],
+};
+
+function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
-    case "add": {
-      const existingItem = cart.find((i) => i.id === action.item.id);
-      if (existingItem) {
-        return cart.map((i) =>
-          i.id === action.item.id
-            ? { ...i, quantity: i.quantity + action.item.quantity }
-            : i
-        );
-      }
-      return [...cart, action.item];
-    }
-
-    case "update": {
-      return cart.map((i) =>
-        i.id === action.item.id ? { ...i, ...action.item } : i
+    case "add":
+      if (!action.item) return state;
+      const existingItem = state.items.find(
+        (item) => item.id === action.item!.id && item.size === action.item!.size
       );
-    }
-
-    case "delete": {
-      return cart.filter((i) => i.id !== action.id);
-    }
-
-    case "clear": {
-      return [];
-    }
-
+      if (existingItem) {
+        return {
+          ...state,
+          items: state.items.map((item) =>
+            item.id === action.item!.id && item.size === action.item!.size
+              ? { ...item, quantity: item.quantity + action.item!.quantity }
+              : item
+          ),
+        };
+      }
+      return {
+        ...state,
+        items: [...state.items, action.item],
+      };
+    case "update":
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.id === action.item!.id && item.size === action.item!.size
+            ? { ...item, ...action.item }
+            : item
+        ),
+      };
+    case "delete":
+      return {
+        ...state,
+        items: state.items.filter(
+          (item) => !(item.id === action.item!.id && item.size === action.item!.size)
+        ),
+      };
+    case "clear":
+      return { items: [] };
     default:
-      throw new Error(`Unknown action type: ${(action as any).type}`);
+      throw new Error("Unknown action type");
   }
 }
 
-// Initial cart
-export const initialCart: ICartItem[] = [];
-
-// Provider
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, dispatch] = useReducer(cartReducer, initialCart);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      const parsedCart = JSON.parse(savedCart);
+      parsedCart.items.forEach((item: ICartItem) => {
+        dispatch({ type: "add", item });
+      });
+    }
+  }, []);
+
+  // Save cart to localStorage on update
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
   return (
     <CartContext.Provider value={cart}>
@@ -65,19 +91,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hooks tùy chỉnh
 export function useCart() {
   const context = useContext(CartContext);
-  if (context === null) {
-    throw new Error("useCart phải được dùng trong CartProvider");
+  if (!context) {
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 }
 
 export function useCartDispatch() {
   const context = useContext(CartDispatchContext);
-  if (context === null) {
-    throw new Error("useCartDispatch phải được dùng trong CartProvider");
+  if (!context) {
+    throw new Error("useCartDispatch must be used within a CartProvider");
   }
   return context;
 }

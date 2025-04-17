@@ -1,9 +1,8 @@
-// src/components/Cart/AddToCartButton.tsx
 "use client";
 
 import Image from "next/image";
 import { useCartDispatch } from "@/contexts/CartContext";
-import { IProduct, ICartItem } from "@/types";
+import { IProduct } from "@/types";
 
 interface AddToCartButtonProps {
   product: IProduct;
@@ -21,18 +20,19 @@ export default function AddToCartButton({
   const dispatch = useCartDispatch();
 
   const handleAddToCart = () => {
-    const cartItem: ICartItem = {
+    const cartItem = {
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: product.price * (1 - product.discountPercent / 100),
       discountPercent: product.discountPercent,
-      image: product.image[0],
+      image: `/product/img/${product.image[0]}`,
       quantity,
       size,
       color,
       liked: false,
     };
     dispatch({ type: "add", item: cartItem });
+    alert("Đã thêm vào giỏ hàng!");
   };
 
   return (
@@ -40,8 +40,8 @@ export default function AddToCartButton({
       <Image
         src="/product/product_addToCart.svg"
         alt="Thêm vào giỏ hàng"
-        width={24}
-        height={24}
+        width={30}
+        height={30}
       />
     </button>
   );

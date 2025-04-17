@@ -13,7 +13,7 @@ const usersRouter = require("./routes/users");
 const categoriesRouter = require("./routes/categories"); 
 const productsRouter = require("./routes/products");
 const couponsRouter = require("./routes/coupons");
-
+const ordersRouter = require("./routes/order");
 const app = express();
 
 mongoose
@@ -55,6 +55,7 @@ app.use("/users", usersRouter);
 app.use("/categories", categoriesRouter);  
 app.use("/products", productsRouter);
 app.use("/coupons", couponsRouter);
+app.use("/orders", ordersRouter);
 
 app.get("/favicon.ico", (req, res) => {
   const faviconPath = path.join(__dirname, "public", "favicon.ico");

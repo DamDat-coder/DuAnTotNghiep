@@ -1,9 +1,9 @@
-// src/components/ProductActions.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { IProduct } from "@/types";
+import { useCartDispatch } from "@/contexts/CartContext";
 
 interface ProductActionsProps {
   product: IProduct;
@@ -20,6 +20,7 @@ export default function ProductActions({
 }: ProductActionsProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>("XL");
   const [isLiked, setIsLiked] = useState(false);
+  const dispatch = useCartDispatch();
 
   useEffect(() => {
     const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
@@ -45,12 +46,20 @@ export default function ProductActions({
       alert("Vui lòng chọn size trước!");
       return;
     }
-    console.log({
+
+    const cartItem = {
       id: product.id,
       name: product.name,
-      size: selectedSize,
       price: discountedPrice,
-    });
+      discountPercent: product.discountPercent,
+      image: product.image[0],
+      quantity: 1,
+      size: selectedSize,
+      color: "Default",
+      liked: isLiked,
+    };
+
+    dispatch({ type: "add", item: cartItem });
     alert("Đã thêm vào giỏ hàng!");
   };
 

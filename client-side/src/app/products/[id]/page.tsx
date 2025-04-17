@@ -16,7 +16,7 @@ interface ProductDetailProps {
 }
 
 export default async function ProductDetail({ params }: ProductDetailProps) {
-  const { id } = params;
+  const  { id } = await params;
 
   let product: IProduct | null = null;
   let suggestedProducts: ICategory[] = [];

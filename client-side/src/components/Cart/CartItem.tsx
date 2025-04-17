@@ -1,22 +1,14 @@
-// src/components/Cart/CartItem.tsx
+"use client";
+
 import Image from "next/image";
 import { Heart, Trash2 } from "lucide-react";
+import { ICartItem } from "@/types";
 
 interface CartItemProps {
-  item: {
-    id: string;
-    name: string;
-    price: number;
-    discountPercent: number;
-    image: string;
-    size: string;
-    color: string;
-    quantity: number;
-    liked: boolean;
-  };
+  item: ICartItem;
   onQuantityChange: (id: string, change: number) => void;
-  onToggleLike: (id: string) => void;
-  onRemove: (id: string) => void;
+  onToggleLike: () => void;
+  onRemove: () => void;
 }
 
 export default function CartItem({
@@ -25,16 +17,17 @@ export default function CartItem({
   onToggleLike,
   onRemove,
 }: CartItemProps) {
-  const discountPrice = item.price * (1 - item.discountPercent / 100);
+  // Dùng hình ảnh mặc định nếu item.image không hợp lệ
+  const imageSrc = item.image && item.image.startsWith("/") ? item.image : "/images/placeholder.jpg";
 
   return (
     <div className="flex items-center gap-4 p-4">
       <Image
-        src={item.image}
+        src={imageSrc}
         alt={item.name}
         width={110}
         height={110}
-        className="w-[6.9rem] h-[6.9rem] object-cover rounded"
+        className="w-[6.9rem] h-[6.9rem] object-cover rounded desktop:w-[150px] desktop:h-[150px]"
       />
       <div className="flex-1 flex flex-col gap-2">
         <h3 className="text-lg font-semibold text-[#374151] line-clamp-2">
@@ -44,7 +37,7 @@ export default function CartItem({
           Size: {item.size} ({item.color})
         </div>
         <div className="text-[1rem] font-bold text-red-500">
-          {discountPrice.toLocaleString("vi-VN")}₫
+          {item.price.toLocaleString("vi-VN")}₫
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 border border-gray-300 rounded-full w-fit">
@@ -66,7 +59,7 @@ export default function CartItem({
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => onToggleLike(item.id)}
+              onClick={onToggleLike}
               className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
             >
               <Heart
@@ -76,7 +69,7 @@ export default function CartItem({
               />
             </button>
             <button
-              onClick={() => onRemove(item.id)}
+              onClick={onRemove}
               className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
             >
               <Trash2 size={20} stroke="black" />

@@ -1,12 +1,14 @@
-// src/components/Cart/CartMobile.tsx
+"use client";
+
 import CartItem from "./CartItem";
+import { ICartItem } from "@/types";
 
 interface CartMobileProps {
-  cartItems: any[];
+  cartItems: ICartItem[];
   totalPrice: number;
-  onQuantityChange: (id: string, change: number) => void;
-  onToggleLike: (id: string) => void;
-  onRemove: (id: string) => void;
+  onQuantityChange: (id: string, size: string, change: number) => void;
+  onToggleLike: (id: string, size: string) => void;
+  onRemove: (id: string, size: string) => void;
 }
 
 export default function CartMobile({
@@ -21,11 +23,11 @@ export default function CartMobile({
       <div className="grid grid-cols-1 gap-6 border-b-2 border-black mt-4">
         {cartItems.map((item) => (
           <CartItem
-            key={item.id}
+            key={`${item.id}-${item.size}`}
             item={item}
-            onQuantityChange={onQuantityChange}
-            onToggleLike={onToggleLike}
-            onRemove={onRemove}
+            onQuantityChange={(id, change) => onQuantityChange(id, item.size, change)}
+            onToggleLike={() => onToggleLike(item.id, item.size)}
+            onRemove={() => onRemove(item.id, item.size)}
           />
         ))}
       </div>

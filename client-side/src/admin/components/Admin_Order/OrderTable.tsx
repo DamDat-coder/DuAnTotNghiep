@@ -1,18 +1,9 @@
-// src/admin/components/OrderTable.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
-
-// Định nghĩa kiểu dữ liệu cho đơn hàng
-interface Order {
-  id: number;
-  user: string;
-  total: number;
-  products: string[];
-  status: "Đã huỷ" | "Chưa giải quyết" | "Hoàn thành";
-}
+import { Order } from "@/types";
 
 interface SortConfig {
   key: "total" | "products";
@@ -24,9 +15,14 @@ interface OrderTableProps {
   navigationItems: { label: string; href: string; filter?: string }[];
 }
 
+const statusText: { [key: string]: string } = {
+  pending: "Chưa giải quyết",
+  success: "Hoàn thành",
+  cancelled: "Đã huỷ",
+};
+
 export default function OrderTable({ initialOrders, navigationItems }: OrderTableProps) {
   const router = useRouter();
-
   const [orders] = useState<Order[]>(initialOrders);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>(initialOrders);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
@@ -52,11 +48,11 @@ export default function OrderTable({ initialOrders, navigationItems }: OrderTabl
 
     const sortedOrders = [...filteredOrders].sort((a, b) => {
       if (key === "total") {
-        return direction === "asc" ? a.total - b.total : b.total - a.total;
+        return direction === "asc" ? (a.total || 0) - (b.total || 0) : (b.total || 0) - (a.total || 0);
       }
       if (key === "products") {
-        const aProducts = a.products.join(", ");
-        const bProducts = b.products.join(", ");
+        const aProducts = a.products.map((p) => p.productId.name || "").join(", ");
+        const bProducts = b.products.map((p) => p.productId.name || "").join(", ");
         return direction === "asc"
           ? aProducts.localeCompare(bProducts)
           : bProducts.localeCompare(aProducts);
@@ -69,18 +65,18 @@ export default function OrderTable({ initialOrders, navigationItems }: OrderTabl
   };
 
   // Hàm xem chi tiết
-  const handleViewDetails = (orderId: number) => {
+  const handleViewDetails = (orderId: string) => {
     router.push(`/admin/order/${orderId}`);
   };
 
   // Hàm xác định màu nền cho trạng thái
   const getStatusBackground = (status: string) => {
     switch (status) {
-      case "Đã huỷ":
+      case "cancelled":
         return "w-full text-[#92929D] bg-[#92929D]/10";
-      case "Chưa giải quyết":
+      case "pending":
         return "w-full text-[#B70D52] bg-[#B70D52]/10";
-      case "Hoàn thành":
+      case "success":
         return "w-full text-[#449E3C] bg-[#56BA6C]/10";
       default:
         return "w-full text-[#B70D52] bg-[#B70D52]/10";
@@ -129,15 +125,25 @@ export default function OrderTable({ initialOrders, navigationItems }: OrderTabl
             ) : (
               filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 text-center">
-                  <td className="py-4 px-6 text-base font-medium">{order.user}</td>
-                  <td className="py-4 px-6 text-base font-bold">{order.total.toLocaleString()} VNĐ</td>
-                  <td className="py-4 px-6 text-base">{order.products.join(", ")}</td>
+                  <td className="py-4 px-6 text-base font-medium">{order.user?.name || "Không xác định"}</td>
+                  <td className="py-4 px-6 text-base font-bold">
+                    {(order.total || 0).toLocaleString()} VNĐ
+                  </td>
+                  <td className="py-4 px-6 text-base">
+                    <ul className="list-none m-0 p-0">
+                      {order.products.map((p, index) => (
+                        <li key={index} className="mb-1">
+                          {p.productId.name || "Không xác định"}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
                   <td className="py-4 px-6">
                     <div className="w-full flex justify-center">
                       <span
                         className={`px-4 py-2 font-medium rounded-full ${getStatusBackground(order.status)}`}
                       >
-                        {order.status}
+                        {statusText[order.status] || order.status}
                       </span>
                     </div>
                   </td>

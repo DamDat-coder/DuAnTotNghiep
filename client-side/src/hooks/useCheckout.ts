@@ -1,11 +1,45 @@
-// src/hooks/useCheckout.ts
 "use client";
 
-import { useState } from "react";
-import { CheckoutFormData, CheckoutErrors, OrderItem } from "@/types";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCart, useCartDispatch } from "@/contexts/CartContext";
+import { createOrder, fetchUser } from "@/services/api";
+import { ICartItem, CheckoutFormData, CheckoutErrors } from "@/types";
+import toast from "react-hot-toast";
 
-export function useCheckout(initialOrderItems: OrderItem[]) {
-  const [orderItems] = useState<OrderItem[]>(initialOrderItems);
+export function useCheckout() {
+  const cart = useCart();
+  const dispatch = useCartDispatch();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Kiểm tra trạng thái đăng nhập
+  useEffect(() => {
+    async function checkAuth() {
+      const user = await fetchUser();
+      if (user) {
+        setIsLoggedIn(true);
+        setFormData((prev) => ({
+          ...prev,
+          fullName: user.name || prev.fullName,
+          email: user.email || prev.email,
+          phone: user.phone || prev.phone,
+        }));
+      } else {
+        toast.error("Vui lòng đăng nhập để thanh toán!");
+        router.push("/login");
+      }
+    }
+    checkAuth();
+  }, [router]);
+
+  // Chuyển cart.items thành orderItems
+  const orderItems: ICartItem[] = cart.items;
+
+  // Log cart.items để debug
+  useEffect(() => {
+    console.log("Cart items:", cart.items);
+  }, [cart.items]);
 
   // Tính tổng tiền tạm thời
   const subtotal = orderItems.reduce((total, item) => {
@@ -15,14 +49,14 @@ export function useCheckout(initialOrderItems: OrderItem[]) {
 
   // Mã giảm giá
   const [discountCode, setDiscountCode] = useState("");
-  const discount = 0; // Chưa áp dụng logic giảm giá, để 0 tạm thời
+  const [discount, setDiscount] = useState(0);
 
   // Phí vận chuyển
-  const [shippingFee, setShippingFee] = useState(25000); // Mặc định là Giao hàng tiêu chuẩn
-  const [shippingMethod, setShippingMethod] = useState("standard"); // Mặc định là Giao hàng tiêu chuẩn
+  const [shippingFee, setShippingFee] = useState(25000);
+  const [shippingMethod, setShippingMethod] = useState("standard");
 
   // Phương thức thanh toán
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // Mặc định là COD
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   // Tổng tiền
   const total = subtotal - discount + shippingFee;
@@ -82,11 +116,22 @@ export function useCheckout(initialOrderItems: OrderItem[]) {
     setPaymentMethod(e.target.value);
   };
 
+  // Xử lý áp dụng mã giảm giá
+  const handleApplyDiscount = () => {
+    if (discountCode === "SAVE10") {
+      setDiscount(subtotal * 0.1);
+      toast.success("Áp dụng mã giảm giá thành công!");
+    } else {
+      setDiscount(0);
+      toast.error("Mã giảm giá không hợp lệ!");
+    }
+  };
+
   // Xử lý submit form
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: CheckoutErrors = {
-      fullName: "", // Bỏ validation cho fullName
+      fullName: formData.fullName ? "" : "Họ và tên là bắt buộc",
       email: formData.email
         ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
           ? ""
@@ -106,19 +151,30 @@ export function useCheckout(initialOrderItems: OrderItem[]) {
     setErrors(newErrors);
 
     if (Object.values(newErrors).every((error) => error === "")) {
-      console.log("Form submitted:", {
-        ...formData,
-        shippingMethod,
-        shippingFee,
-        paymentMethod,
-        total,
-      });
-    }
-  };
+      try {
+        const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
+        const order = {
+          products: orderItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+          shippingAddress,
+        };
 
-  // Xử lý áp dụng mã giảm giá
-  const handleApplyDiscount = () => {
-    console.log("Mã giảm giá:", discountCode);
+        console.log("Order data:", order); // Log dữ liệu gửi đi
+        const response = await createOrder(order);
+        if (response) {
+          toast.success("Đặt hàng thành công!");
+          dispatch({ type: "clear" });
+          router.push("/orders");
+        } else {
+          toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
+        }
+      } catch (error: any) {
+        console.error("Submit error:", error);
+        toast.error(error.message || "Đặt hàng thất bại!");
+      }
+    }
   };
 
   return {

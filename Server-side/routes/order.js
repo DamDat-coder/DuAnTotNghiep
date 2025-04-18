@@ -7,8 +7,10 @@ const {
   createOrder,
   getOrderById,
   getUserOrders,
+  getAllOrders,
+  updateOrderStatus,
 } = require("../controllers/orderController");
-const { verifyToken } = require("../controllers/userController");
+const { verifyToken,verifyAdmin } = require("../controllers/userController");
 
 router.use(helmet());
 
@@ -21,6 +23,8 @@ router.use(limiter);
 // Tạo đơn hàng
 router.post("/", verifyToken, createOrder);
 
+router.get("/", verifyToken, verifyAdmin, getAllOrders);
+router.patch("/:id", verifyToken, verifyAdmin, updateOrderStatus);
 // Lấy chi tiết đơn hàng theo ID
 router.get("/:id", verifyToken, getOrderById);
 

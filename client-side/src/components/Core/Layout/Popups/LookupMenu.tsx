@@ -143,7 +143,7 @@ export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
                       className="flex flex-col bg-[#ededed] rounded-lg p-3"
                     >
                       <img
-                        src={`/featured/${product.image}`}
+                        src={`/product/img/${product.image[0]}`}
                         alt={product.name}
                         className="w-full h-24 object-cover rounded"
                       />

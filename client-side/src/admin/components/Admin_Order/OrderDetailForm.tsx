@@ -1,30 +1,28 @@
-// src/admin/components/OrderDetailForm.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-
-interface OrderDetail {
-  id: string;
-  orderCode: string;
-  purchaseDate: string;
-  customerEmail: string;
-  products: string[];
-  total: number;
-  status: "Đã huỷ" | "Chưa giải quyết" | "Hoàn thành";
-}
+import { updateOrderStatus } from "@/services/api";
+import toast from "react-hot-toast";
+import { OrderDetail } from "@/types";
 
 interface OrderDetailFormProps {
-  order: OrderDetail;
+  order: OrderDetail | null;
 }
+
+const statusText: { [key: string]: string } = {
+  pending: "Chưa giải quyết",
+  success: "Hoàn thành",
+  cancelled: "Đã huỷ",
+};
 
 export default function OrderDetailForm({ order: initialOrder }: OrderDetailFormProps) {
   const router = useRouter();
-  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(initialOrder);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [tempStatus, setTempStatus] = useState<"Đã huỷ" | "Chưa giải quyết" | "Hoàn thành">(
-    initialOrder.status
+  const [tempStatus, setTempStatus] = useState<"pending" | "success" | "cancelled">(
+    initialOrder?.status || "pending"
   );
 
   useEffect(() => {
@@ -39,13 +37,15 @@ export default function OrderDetailForm({ order: initialOrder }: OrderDetailForm
   }, [initialOrder]);
 
   const handleStatusChange = async () => {
+    if (!order) return;
     try {
-      // Giả lập cập nhật trạng thái
+      const response = await updateOrderStatus(order.id, tempStatus);
       setOrder((prev) => (prev ? { ...prev, status: tempStatus } : null));
-      console.log("Cập nhật trạng thái thành công:", tempStatus);
+      toast.success("Cập nhật trạng thái thành công!");
       router.push("/admin/order");
     } catch (err) {
       console.error("Lỗi khi cập nhật trạng thái:", err);
+      toast.error("Cập nhật trạng thái thất bại!");
     }
   };
 
@@ -85,7 +85,7 @@ export default function OrderDetailForm({ order: initialOrder }: OrderDetailForm
             <label className="block text-lg font-medium text-gray-700">Sản phẩm đã mua</label>
             <ul className="list-disc list-inside text-base text-gray-900">
               {order.products.map((product, index) => (
-                <li key={index}>{product}</li>
+                <li key={index}>{`${product.name} (Số lượng: ${product.quantity})`}</li>
               ))}
             </ul>
           </div>
@@ -99,40 +99,13 @@ export default function OrderDetailForm({ order: initialOrder }: OrderDetailForm
               <select
                 value={tempStatus}
                 onChange={(e) =>
-                  setTempStatus(e.target.value as "Đã huỷ" | "Chưa giải quyết" | "Hoàn thành")
+                  setTempStatus(e.target.value as "pending" | "success" | "cancelled")
                 }
                 className="w-[50%] p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center appearance-none bg-white text-blue-600"
               >
-                <option
-                  value="Đã huỷ"
-                  className="text-gray-700 hover:text-white hover:bg-black"
-                  style={{
-                    backgroundColor: tempStatus === "Đã huỷ" ? "#000" : "white",
-                    color: tempStatus === "Đã huỷ" ? "white" : "black",
-                  }}
-                >
-                  Đã huỷ
-                </option>
-                <option
-                  value="Chưa giải quyết"
-                  className="text-gray-700 hover:text-white hover:bg-black"
-                  style={{
-                    backgroundColor: tempStatus === "Chưa giải quyết" ? "#000" : "white",
-                    color: tempStatus === "Chưa giải quyết" ? "white" : "black",
-                  }}
-                >
-                  Chưa giải quyết
-                </option>
-                <option
-                  value="Hoàn thành"
-                  className="text-gray-700 hover:text-white hover:bg-black"
-                  style={{
-                    backgroundColor: tempStatus === "Hoàn thành" ? "#000" : "white",
-                    color: tempStatus === "Hoàn thành" ? "white" : "black",
-                  }}
-                >
-                  Hoàn thành
-                </option>
+                <option value="pending">Chưa giải quyết</option>
+                <option value="success">Hoàn thành</option>
+                <option value="cancelled">Đã huỷ</option>
               </select>
               <button
                 onClick={handleStatusChange}

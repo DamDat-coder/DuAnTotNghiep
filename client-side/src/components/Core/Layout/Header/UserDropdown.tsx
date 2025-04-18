@@ -49,6 +49,13 @@ export default function UserDropdown() {
             Thông tin người dùng
           </Link>
           <hr />
+          <Link
+            href="/orders"
+            className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
+          >
+            Đơn hàng
+          </Link>
+          <hr />
           <button
             type="button"
             className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"

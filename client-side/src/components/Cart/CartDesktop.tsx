@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
 import { ICartItem } from "@/types";
 
@@ -18,6 +19,8 @@ export default function CartDesktop({
   onToggleLike,
   onRemove,
 }: CartDesktopProps) {
+  const router = useRouter();
+
   return (
     <div className="hidden desktop:flex desktop:gap-6 mt-4">
       {/* Container trái (80%) - Giỏ hàng */}
@@ -81,8 +84,11 @@ export default function CartDesktop({
             </span>
           </div>
         </div>
-        <button className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800 mt-4">
-          <a href="/checkout">Thanh toán</a>
+        <button
+          onClick={() => router.push("/checkout")}
+          className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800 mt-4"
+        >
+          Thanh toán
         </button>
       </div>
     </div>

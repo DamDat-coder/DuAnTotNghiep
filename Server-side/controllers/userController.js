@@ -36,6 +36,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
+
 // Đăng ký
 const register = [
   upload.single("avatar"),
@@ -54,7 +55,8 @@ const register = [
         return res.status(409).json({ message: "Email đã tồn tại" });
       }
 
-      if (phone) {
+      // Kiểm tra phone chỉ khi phone được cung cấp và không rỗng
+      if (phone && phone.trim() !== "") {
         const checkPhone = await userModel.findOne({ phone });
         if (checkPhone) {
           return res.status(409).json({ message: "Số điện thoại đã tồn tại" });
@@ -67,7 +69,7 @@ const register = [
         password: hashPassword,
         name,
         address: address || null,
-        phone: phone || null,
+        phone: phone && phone.trim() !== "" ? phone : null, // Chỉ gán phone nếu không rỗng
         avatar: req.file ? `/images/${req.file.filename}` : null,
         role: "user",
       });

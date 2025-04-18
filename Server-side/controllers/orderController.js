@@ -1,5 +1,6 @@
 const orders = require("../models/orderModel");
 const products = require("../models/productModel");
+const mongoose = require("mongoose"); 
 
 // Tạo đơn hàng
 const createOrder = async (req, res) => {
@@ -29,11 +30,11 @@ const createOrder = async (req, res) => {
 
     // Tạo đơn hàng mới
     const newOrder = new orders({
-      userId: req.user._id, // Giả sử verifyToken thêm thông tin user vào req
+      userId: req.userId,
       products: orderProducts,
       totalPrice,
       shippingAddress,
-      status: "success", // Giả sử mua hàng thành công ngay lập tức
+      status: "pending",
     });
 
     const savedOrder = await newOrder.save();
@@ -57,10 +58,6 @@ const getOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Đơn hàng không tồn tại" });
     }
-    // Kiểm tra quyền truy cập
-    if (order.userId._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Bạn không có quyền xem đơn hàng này" });
-    }
     res.json(order);
   } catch (error) {
     console.error(error);
@@ -77,9 +74,9 @@ const getUserOrders = async (req, res) => {
       skip: (parseInt(page) - 1) * parseInt(limit),
     };
 
-    const total = await orders.countDocuments({ userId: req.user._id });
+    const total = await orders.countDocuments({ userId: req.userId });
     const userOrders = await orders
-      .find({ userId: req.user._id }, null, options)
+      .find({ userId: req.userId }, null, options)
       .populate("products.productId", "name price image");
 
     if (!userOrders.length) {
@@ -98,8 +95,84 @@ const getUserOrders = async (req, res) => {
   }
 };
 
+// Lấy tất cả đơn hàng (cho admin)
+const getAllOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const query = status ? { status } : {};
+    const options = {
+      limit: parseInt(limit),
+      skip: (parseInt(page) - 1) * parseInt(limit),
+    };
+
+    const total = await orders.countDocuments(query);
+    const allOrders = await orders
+      .find(query, null, options)
+      .populate("userId", "name email")
+      .populate("products.productId", "name price image");
+
+    res.json({
+      data: allOrders,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Kiểm tra định dạng ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đơn hàng không hợp lệ" });
+    }
+
+    // Kiểm tra trạng thái hợp lệ
+    if (!status) {
+      return res.status(400).json({ message: "Trạng thái là bắt buộc" });
+    }
+    if (!["pending", "success", "cancelled"].includes(status)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+    }
+
+    // Cập nhật đơn hàng
+    const order = await orders.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+    }
+
+    // Populate dữ liệu (tùy chọn)
+    await order.populate("userId", "name email").catch((err) => {
+      console.error("Error populating userId:", err);
+    });
+    await order.populate("products.productId", "name price image").catch((err) => {
+      console.error("Error populating productId:", err);
+    });
+
+    res.json({ message: "Cập nhật trạng thái thành công", data: order });
+  } catch (error) {
+    console.error(`Error updating order ${req.params.id} with status ${req.body.status}:`, error);
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "ID đơn hàng không hợp lệ" });
+    }
+    res.status(500).json({ message: "Lỗi server khi cập nhật trạng thái" });
+  }
+};
 module.exports = {
   createOrder,
   getOrderById,
   getUserOrders,
+  getAllOrders,
+  updateOrderStatus,
 };

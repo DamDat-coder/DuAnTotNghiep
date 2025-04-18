@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
 import { ICartItem } from "@/types";
 
@@ -18,6 +19,8 @@ export default function CartMobile({
   onToggleLike,
   onRemove,
 }: CartMobileProps) {
+  const router = useRouter();
+
   return (
     <div className="desktop:hidden">
       <div className="grid grid-cols-1 gap-6 border-b-2 border-black mt-4">
@@ -38,7 +41,10 @@ export default function CartMobile({
             {totalPrice.toLocaleString("vi-VN")}₫
           </span>
         </div>
-        <button className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800">
+        <button
+          onClick={() => router.push("/checkout")}
+          className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800"
+        >
           Thanh toán
         </button>
       </div>

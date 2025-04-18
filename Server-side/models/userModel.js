@@ -8,7 +8,6 @@ const userSchema = new mongoose.Schema({
   phone: { 
     type: String, 
     default: null, 
-    unique: true, 
     sparse: true // Cho phép nhiều tài khoản có phone là null
   },
   avatar: { type: String, default: null },

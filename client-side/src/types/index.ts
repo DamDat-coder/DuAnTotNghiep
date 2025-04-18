@@ -26,6 +26,7 @@ export interface IFilterPopupProps {
 // src/types/index.ts
 export interface IUser {
   id: string;
+  name:string,
   email: string;
   phone: string | null;
   avatar: string | null;
@@ -81,7 +82,7 @@ export interface BrandOption {
 
 // src/types/index.ts
 export interface OrderItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   discountPercent: number;
@@ -89,6 +90,23 @@ export interface OrderItem {
   size: string;
   color: string;
   quantity: number;
+}
+export interface Order {
+  id: string;
+  user: { name: string; email: string };
+  total: number;
+  products: { productId: { name: string; price: number; image: string[] }; quantity: number }[];
+  status: "pending" | "success" | "cancelled";
+}
+
+export interface OrderDetail {
+  id: string;
+  orderCode: string;
+  purchaseDate: string;
+  customerEmail: string;
+  products: { name: string; quantity: number }[];
+  total: number;
+  status: "pending" | "success" | "cancelled";
 }
 
 export interface CheckoutFormData {

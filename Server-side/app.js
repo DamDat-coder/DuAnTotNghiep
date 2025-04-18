@@ -38,7 +38,7 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3300",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -55,7 +55,7 @@ app.use("/users", usersRouter);
 app.use("/categories", categoriesRouter);  
 app.use("/products", productsRouter);
 app.use("/coupons", couponsRouter);
-app.use("/orders", ordersRouter);
+app.use("/order", ordersRouter);
 
 app.get("/favicon.ico", (req, res) => {
   const faviconPath = path.join(__dirname, "public", "favicon.ico");

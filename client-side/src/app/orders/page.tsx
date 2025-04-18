@@ -24,10 +24,10 @@ export default function Orders() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const response = await fetchWithAuth<{ data: Order[] }>(`${API_BASE_URL}/orders/user/orders`, {
+        const response = await fetchWithAuth<{ data: Order[] }>(`${API_BASE_URL}/order/user/orders`, {
           cache: "no-store",
         });
-        setOrders(response.data);
+        setOrders(response.data); 
       } catch (error) {
         toast.error("Không thể tải danh sách đơn hàng!");
         console.error("Error fetching orders:", error);

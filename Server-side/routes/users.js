@@ -16,7 +16,7 @@ router.get("/", getAllUser);
 router.post("/register", register);
 router.post("/login", login);
 router.get("/userinfo", verifyToken, getUser);
-router.post("/refresh", verifyToken, verifyAdmin, refresh);
+router.post("/refresh", verifyToken, refresh);
 router.put("/update", verifyToken, verifyAdmin, updateUser);
 router.delete("/delete/:id", verifyToken, verifyAdmin, deleteUser);
 

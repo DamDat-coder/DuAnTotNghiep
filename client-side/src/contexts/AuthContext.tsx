@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { AuthContextType, IUser } from "../types";
 import { login, register, fetchUser } from "../services/api";
 
@@ -23,6 +29,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const accessToken = localStorage.getItem("accessToken");
+      console.log("initializeAuth - accessToken:", accessToken);
+      if (accessToken) {
+        console.log("Initializing auth check...");
+        await checkAuth();
+      } else {
+        console.log("No stored user or accessToken, skipping checkAuth");
+      }
+    };
+    initializeAuth();
+  }, []);
+
   const loginHandler = async (
     identifier: string,
     password: string,
@@ -40,11 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
-        console.log("Stored accessToken:", accessToken); // Debug
       } else {
         sessionStorage.setItem("user", JSON.stringify(userData));
         sessionStorage.setItem("accessToken", accessToken);
-        console.log("Stored accessToken in session:", accessToken); // Debug
       }
 
       if (userData.role === "admin") {
@@ -53,11 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       return true;
     } catch (error) {
-      const message = error instanceof Error && error.message.includes("404")
-        ? "Không tìm thấy dịch vụ đăng nhập."
-        : "Email hoặc mật khẩu không đúng.";
       console.error("Lỗi đăng nhập:", error);
-      throw new Error(message);
+      throw new Error("Email hoặc mật khẩu không đúng.");
     }
   };
 
@@ -79,22 +94,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
-        console.log("Stored accessToken:", accessToken); // Debug
       } else {
         sessionStorage.setItem("user", JSON.stringify(userData));
         sessionStorage.setItem("accessToken", accessToken);
-        console.log("Stored accessToken in session:", accessToken); // Debug
       }
 
       return true;
     } catch (error) {
-      const message = error instanceof Error
-        ? error.message.includes("400")
-          ? "Email, mật khẩu hoặc tên không hợp lệ. Vui lòng kiểm tra lại."
-          : error.message
-        : "Có lỗi xảy ra khi đăng ký.";
       console.error("Lỗi đăng ký:", error);
-      throw new Error(message);
+      throw new Error("Có lỗi xảy ra khi đăng ký.");
     }
   };
 
@@ -105,20 +113,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
-    console.log("Logged out, cleared storage"); // Debug
   };
 
   const checkAuth = async () => {
+    console.log("Running checkAuth...");
     try {
       const userData = await fetchUser();
+      console.log("checkAuth - fetchUser result:", userData);
       if (userData) {
+        console.log("checkAuth - Setting user:", userData);
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
       } else {
+        console.warn("checkAuth - fetchUser returned null, logging out");
         logoutHandler();
       }
     } catch (error) {
-      console.error("Lỗi kiểm tra auth:", error);
+      console.error("checkAuth - Error:", error);
+      console.warn("checkAuth - Logging out due to error");
       logoutHandler();
     }
   };

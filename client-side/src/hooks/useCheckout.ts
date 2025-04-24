@@ -128,54 +128,62 @@ export function useCheckout() {
   };
 
   // Xử lý submit form
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: CheckoutErrors = {
-      fullName: formData.fullName ? "" : "Họ và tên là bắt buộc",
-      email: formData.email
-        ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-          ? ""
-          : "Email không hợp lệ"
-        : "Email là bắt buộc",
-      phone: formData.phone
-        ? /^[0-9]{10}$/.test(formData.phone)
-          ? ""
-          : "Số điện thoại phải có 10 chữ số"
-        : "Số điện thoại là bắt buộc",
-      province: formData.province ? "" : "Vui lòng chọn tỉnh thành",
-      district: formData.district ? "" : "Vui lòng chọn quận huyện",
-      ward: formData.ward ? "" : "Vui lòng chọn phường xã",
-      address: formData.address ? "" : "Địa chỉ là bắt buộc",
-    };
+// src/hooks/useCheckout.ts
 
-    setErrors(newErrors);
-
-    if (Object.values(newErrors).every((error) => error === "")) {
-      try {
-        const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
-        const order = {
-          products: orderItems.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-          })),
-          shippingAddress,
-        };
-
-        console.log("Order data:", order); // Log dữ liệu gửi đi
-        const response = await createOrder(order);
-        if (response) {
-          toast.success("Đặt hàng thành công!");
-          dispatch({ type: "clear" });
-          router.push("/orders");
-        } else {
-          toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
-        }
-      } catch (error: any) {
-        console.error("Submit error:", error);
-        toast.error(error.message || "Đặt hàng thất bại!");
-      }
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const newErrors: CheckoutErrors = {
+    fullName: formData.fullName ? "" : "Họ và tên là bắt buộc",
+    email: formData.email
+      ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+        ? ""
+        : "Email không hợp lệ"
+      : "Email là bắt buộc",
+    phone: formData.phone
+      ? /^[0-9]{10}$/.test(formData.phone)
+        ? ""
+        : "Số điện thoại phải có 10 chữ số"
+      : "Số điện thoại là bắt buộc",
+    province: formData.province ? "" : "Vui lòng chọn tỉnh thành",
+    district: formData.district ? "" : "Vui lòng chọn quận huyện",
+    ward: formData.ward ? "" : "Vui lòng chọn phường xã",
+    address: formData.address ? "" : "Địa chỉ là bắt buộc",
   };
+
+  setErrors(newErrors);
+
+  if (Object.values(newErrors).every((error) => error === "")) {
+    try {
+      const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
+      const order = {
+        products: orderItems.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+        shippingAddress,
+        paymentMethod, // Thêm phương thức thanh toán
+        shippingMethod, // Thêm phương thức vận chuyển
+        subtotal, // Thêm giá trị tạm tính
+        discount, // Thêm giá trị giảm giá
+        shippingFee, // Thêm phí vận chuyển
+        total, // Thêm tổng tiền
+      };
+
+      console.log("Order data:", order); // Log dữ liệu gửi đi
+      const response = await createOrder(order);
+      if (response) {
+        toast.success("Đặt hàng thành công!");
+        dispatch({ type: "clear" });
+        router.push("/orders");
+      } else {
+        toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
+      }
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast.error(error.message || "Đặt hàng thất bại!");
+    }
+  }
+};
 
   return {
     orderItems,

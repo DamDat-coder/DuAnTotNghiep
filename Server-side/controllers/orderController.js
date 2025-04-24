@@ -5,7 +5,16 @@ const mongoose = require("mongoose");
 // Tạo đơn hàng
 const createOrder = async (req, res) => {
   try {
-    const { products: orderProducts, shippingAddress } = req.body;
+    const {
+      products: orderProducts,
+      shippingAddress,
+      paymentMethod,
+      shippingMethod,
+      subtotal,
+      discount,
+      shippingFee,
+      total,
+    } = req.body;
 
     // Kiểm tra dữ liệu đầu vào
     if (!orderProducts || !Array.isArray(orderProducts) || orderProducts.length === 0) {
@@ -14,9 +23,27 @@ const createOrder = async (req, res) => {
     if (!shippingAddress) {
       return res.status(400).json({ message: "Vui lòng cung cấp địa chỉ giao hàng" });
     }
+    if (!paymentMethod || !["cod", "vnpay", "momo", "zalopay"].includes(paymentMethod)) {
+      return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ" });
+    }
+    if (!shippingMethod || !["standard", "express"].includes(shippingMethod)) {
+      return res.status(400).json({ message: "Phương thức vận chuyển không hợp lệ" });
+    }
+    if (typeof subtotal !== "number" || subtotal < 0) {
+      return res.status(400).json({ message: "Giá trị tạm tính không hợp lệ" });
+    }
+    if (typeof discount !== "number" || discount < 0) {
+      return res.status(400).json({ message: "Giá trị giảm giá không hợp lệ" });
+    }
+    if (typeof shippingFee !== "number" || shippingFee < 0) {
+      return res.status(400).json({ message: "Phí vận chuyển không hợp lệ" });
+    }
+    if (typeof total !== "number" || total < 0) {
+      return res.status(400).json({ message: "Tổng tiền không hợp lệ" });
+    }
 
-    // Tính tổng giá và kiểm tra sản phẩm
-    let totalPrice = 0;
+    // Kiểm tra sản phẩm và tính toán tổng giá (để xác minh)
+    let calculatedSubtotal = 0;
     for (const item of orderProducts) {
       const product = await products.findById(item.productId);
       if (!product) {
@@ -25,15 +52,31 @@ const createOrder = async (req, res) => {
       if (item.quantity < 1) {
         return res.status(400).json({ message: "Số lượng sản phẩm phải lớn hơn 0" });
       }
-      totalPrice += product.price * (1 - product.discountPercent / 100) * item.quantity;
+      calculatedSubtotal += product.price * (1 - product.discountPercent / 100) * item.quantity;
+    }
+
+    // Xác minh subtotal từ frontend
+    if (Math.abs(calculatedSubtotal - subtotal) > 0.01) {
+      return res.status(400).json({ message: "Giá trị tạm tính không khớp với dữ liệu sản phẩm" });
+    }
+
+    // Xác minh total
+    const calculatedTotal = subtotal - discount + shippingFee;
+    if (Math.abs(calculatedTotal - total) > 0.01) {
+      return res.status(400).json({ message: "Tổng tiền không khớp với các giá trị cung cấp" });
     }
 
     // Tạo đơn hàng mới
     const newOrder = new orders({
       userId: req.userId,
       products: orderProducts,
-      totalPrice,
       shippingAddress,
+      paymentMethod,
+      shippingMethod,
+      subtotal,
+      discount,
+      shippingFee,
+      totalPrice: total, // Sử dụng total từ req.body
       status: "pending",
     });
 

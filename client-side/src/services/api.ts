@@ -20,10 +20,15 @@ const getAccessToken = (): string | null => {
 };
 
 // Hàm thiết lập header với token
-const getAuthHeaders = () => {
+// src/services/api.ts
+function getAuthHeaders() {
   const token = getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+  console.log("getAuthHeaders - Token:", token);
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
 
 // Hàm làm mới token
 export async function refreshToken(): Promise<boolean> {
@@ -49,32 +54,50 @@ export async function fetchWithAuth<T>(
   options: RequestInit = {},
   requiresAuth: boolean = true
 ): Promise<T> {
+  console.log("fetchWithAuth - URL:", url, "requiresAuth:", requiresAuth);
   const headers = requiresAuth
     ? { ...getAuthHeaders(), ...options.headers }
     : options.headers;
+  console.log("fetchWithAuth - Headers:", headers);
   const res = await fetch(url, {
     ...options,
     headers: headers as Record<string, string>,
   });
+  console.log("fetchWithAuth - Response status:", res.status);
 
   if (requiresAuth && res.status === 401) {
+    console.log("fetchWithAuth - Received 401, attempting to refresh token...");
     const refreshed = await refreshToken();
+    console.log("fetchWithAuth - refreshToken result:", refreshed);
     if (refreshed) {
+      console.log("fetchWithAuth - Token refreshed, retrying request...");
       const newHeaders = requiresAuth
         ? { ...getAuthHeaders(), ...options.headers }
         : options.headers;
+      console.log("fetchWithAuth - Retry headers:", newHeaders);
       const retryRes = await fetch(url, {
         ...options,
         headers: newHeaders as Record<string, string>,
       });
-      if (!retryRes.ok) throw new Error(`HTTP error! status: ${retryRes.status}`);
+      console.log("fetchWithAuth - Retry response status:", retryRes.status);
+      if (!retryRes.ok) {
+        console.error("fetchWithAuth - Retry failed, status:", retryRes.status);
+        throw new Error(`HTTP error! status: ${retryRes.status}`);
+      }
       return retryRes.json();
+    } else {
+      console.error("fetchWithAuth - Failed to refresh token");
+      throw new Error("Unable to refresh token");
     }
-    throw new Error("Unable to refresh token");
   }
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    console.error("fetchWithAuth - Error details:", {
+      status: res.status,
+      message: errorData.message || "No error message",
+      url,
+    });
     throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
   }
   return res.json();
@@ -168,26 +191,26 @@ export async function register(
 // Lấy thông tin user
 export async function fetchUser(): Promise<IUser | null> {
   try {
+    const token = getAccessToken();
+    console.log("fetchUser - accessToken:", token);
     const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/userinfo`, {
       cache: "no-store",
     });
-    console.log("fetchUser response:", data);
-
+    console.log("fetchUser - Response data:", data);
     if (!data || !data._id) {
-      throw new Error("Dữ liệu user không hợp lệ");
+      console.warn("fetchUser - Invalid user data, returning null");
+      return null;
     }
-
-    const user: IUser = {
+    return {
       id: data._id,
       email: data.email,
       name: data.name,
-      phone: data.phone,
-      avatar: data.avatar,
+      phone: data.phone || null,
+      avatar: data.avatar || null,
       role: data.role,
     };
-    return user;
   } catch (error) {
-    console.error("Error fetching user:", error);
+    console.error("fetchUser - Error:", error);
     return null;
   }
 }

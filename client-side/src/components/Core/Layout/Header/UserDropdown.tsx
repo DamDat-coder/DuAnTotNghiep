@@ -23,7 +23,8 @@ export default function UserDropdown() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
+  
+  console.log("UserDropdown user:", user);
   if (!user) return null;
 
   return (

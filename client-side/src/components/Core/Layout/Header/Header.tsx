@@ -34,6 +34,7 @@ export default function Header({ title }: HeaderProps) {
   useEffect(() => {
     console.log("isLookupOpen in Header:", isLookupOpen);
   }, [isLookupOpen]);
+  console.log("Header user on render:", user);
 
   return (
     <>

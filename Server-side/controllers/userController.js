@@ -165,6 +165,7 @@ const login = async (req, res) => {
 
 // Làm mới token
 const refresh = async (req, res) => {
+  console.log("Refresh token request:", req.cookies, "User ID:", req.userId);
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)
     return res.status(400).json({ message: "Thiếu Refresh Token" });

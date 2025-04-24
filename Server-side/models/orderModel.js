@@ -39,6 +39,16 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    paymentMethod: {
+      type: String,
+      enum: ["cod", "vnpay", "momo", "zalopay"], // Giới hạn các giá trị hợp lệ
+      required: true,
+    },
+    shippingMethod: {
+      type: String,
+      enum: ["standard", "express"], // Giới hạn các giá trị hợp lệ
+      required: true,
+    },
   },
   { versionKey: false }
 );

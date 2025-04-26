@@ -1,48 +1,52 @@
-const Coupon = require('../models/couponsModel');
-
-// Middleware để kiểm tra quyền admin (giả định)
-const isAdmin = (req, res, next) => {
-    if (!req.user || !req.user.isAdmin) { // Giả định req.user từ JWT
-        return res.status(403).json({ message: 'Admin access required' });
-    }
-    next();
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
-
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteCoupon = exports.updateCoupon = exports.getCouponById = exports.createCoupon = exports.getAllCoupons = void 0;
+const couponsModel_1 = __importDefault(require("../models/couponsModel"));
+const validateCouponFields_1 = require("../utils/validateCouponFields");
 // Lấy tất cả coupons (có pagination)
-exports.getAllCoupons = async (req, res) => {
+const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { page = 1, limit = 10, status } = req.query;
+        const { page = '1', limit = '10', status } = req.query;
         const query = status ? { status } : {};
-        const coupons = await Coupon.find(query)
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
+        const coupons = yield couponsModel_1.default.find(query)
+            .limit(parseInt(limit))
+            .skip((parseInt(page) - 1) * parseInt(limit))
             .sort({ createdAt: -1 });
-        const total = await Coupon.countDocuments(query);
-        
+        const total = yield couponsModel_1.default.countDocuments(query);
         res.json({
             coupons,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page * 1
+            totalPages: Math.ceil(total / parseInt(limit)),
+            currentPage: parseInt(page)
         });
-    } catch (error) {
+    }
+    catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
-
+});
+exports.getAllCoupons = getAllCoupons;
 // Tạo mới coupon
-exports.createCoupon = async (req, res) => {
+const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const {
-            code, description, discountType, discountValue, minOrderAmount,
-            maxDiscountAmount, startDate, endDate, usageLimit
-        } = req.body;
-
+        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit } = req.body;
         // Validation cơ bản
-        if (!code || !discountType || !discountValue || !startDate || !endDate) {
-            return res.status(400).json({ message: 'Missing required fields' });
+        const validationError = (0, validateCouponFields_1.validateCouponFields)({ code, discountType, discountValue, startDate, endDate });
+        if (validationError) {
+            res.status(400).json({ message: validationError });
+            return;
         }
-
-        const coupon = new Coupon({
+        const coupon = new couponsModel_1.default({
             code,
             description,
             discountType,
@@ -54,35 +58,37 @@ exports.createCoupon = async (req, res) => {
             usageLimit,
             status: 'active'
         });
-
-        const newCoupon = await coupon.save();
+        const newCoupon = yield coupon.save();
         res.status(201).json(newCoupon);
-    } catch (error) {
+    }
+    catch (error) {
         res.status(400).json({ message: error.message });
     }
-};
-
+});
+exports.createCoupon = createCoupon;
 // Lấy coupon theo ID
-exports.getCouponById = async (req, res) => {
+const getCouponById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const coupon = await Coupon.findById(req.params.id);
+        const coupon = yield couponsModel_1.default.findById(req.params.id);
         if (!coupon) {
-            return res.status(404).json({ message: 'Coupon not found' });
+            res.status(404).json({ message: 'Coupon not found' });
+            return;
         }
         res.json(coupon);
-    } catch (error) {
+    }
+    catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
-
+});
+exports.getCouponById = getCouponById;
 // Cập nhật coupon
-exports.updateCoupon = async (req, res) => {
+const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const coupon = await Coupon.findById(req.params.id);
+        const coupon = yield couponsModel_1.default.findById(req.params.id);
         if (!coupon) {
-            return res.status(404).json({ message: 'Coupon not found' });
+            res.status(404).json({ message: 'Coupon not found' });
+            return;
         }
-
         // Cập nhật các trường nếu có trong request body
         const fields = [
             'code', 'description', 'discountType', 'discountValue',
@@ -94,35 +100,36 @@ exports.updateCoupon = async (req, res) => {
                 coupon[field] = req.body[field];
             }
         });
-
         // Kiểm tra logic nghiệp vụ
-        if (coupon.usedCount >= coupon.usageLimit) {
+        if (coupon.usedCount && coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
             coupon.status = 'inactive';
         }
         if (new Date(coupon.endDate) < new Date()) {
             coupon.status = 'inactive';
         }
-
-        const updatedCoupon = await coupon.save();
+        const updatedCoupon = yield coupon.save();
         res.json(updatedCoupon);
-    } catch (error) {
+    }
+    catch (error) {
         res.status(400).json({ message: error.message });
     }
-};
-
+});
+exports.updateCoupon = updateCoupon;
 // Xóa coupon (soft delete)
-exports.deleteCoupon = async (req, res) => {
+const deleteCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const coupon = await Coupon.findById(req.params.id);
+        const coupon = yield couponsModel_1.default.findById(req.params.id);
         if (!coupon) {
-            return res.status(404).json({ message: 'Coupon not found' });
+            res.status(404).json({ message: 'Coupon not found' });
+            return;
         }
-
         // Soft delete: chỉ cập nhật status
         coupon.status = 'inactive';
-        await coupon.save();
+        yield coupon.save();
         res.json({ message: 'Coupon deactivated' });
-    } catch (error) {
+    }
+    catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
+});
+exports.deleteCoupon = deleteCoupon;

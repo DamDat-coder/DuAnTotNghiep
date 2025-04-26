@@ -1,30 +1,21 @@
-const express = require("express");
-const router = express.Router();
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
-
-const {
-  createOrder,
-  getOrderById,
-  getUserOrders,
-} = require("../controllers/orderController");
-const { verifyToken } = require("../controllers/userController");
-
-router.use(helmet());
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // Giới hạn 100 yêu cầu
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const helmet_1 = __importDefault(require("helmet"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const orderController_1 = require("../controllers/orderController");
+const verifyToken_1 = __importDefault(require("../middlewares/verifyToken"));
+const router = express_1.default.Router();
+router.use((0, helmet_1.default)());
+const limiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
 });
 router.use(limiter);
-
-// Tạo đơn hàng
-router.post("/", verifyToken, createOrder);
-
-// Lấy chi tiết đơn hàng theo ID
-router.get("/:id", verifyToken, getOrderById);
-
-// Lấy danh sách đơn hàng của người dùng
-router.get("/user/orders", verifyToken, getUserOrders);
-
+router.get("/user/orders", verifyToken_1.default, orderController_1.getUserOrders);
+router.post("/", verifyToken_1.default, orderController_1.createOrder);
+router.get("/:id", verifyToken_1.default, orderController_1.getOrderById);
 module.exports = router;

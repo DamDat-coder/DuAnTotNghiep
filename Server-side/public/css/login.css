@@ -1,0 +1,96 @@
+/* Form Đăng Nhập */
+form#fromLogin {
+    max-width: 500px;
+    margin: 100px auto;
+    margin-top: 150px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+  }
+  
+  form#fromLogin h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  form#fromLogin label {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #555;
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  form#fromLogin input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+  }
+  
+  form#fromLogin input:focus {
+    border-color: #009eff;
+    outline: none;
+  }
+  
+  form#fromLogin button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 1.2rem;
+    color: #fff;
+    background-color: #004C59;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  form#fromLogin button:hover {
+    background-color: #007acc;
+  }
+  
+  form#fromLogin p {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  form#fromLogin p a {
+    color: #004C59;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  form#fromLogin p a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    form#fromLogin {
+      padding: 15px;
+      width: 90%;
+    }
+  
+    form#fromLogin h1 {
+      font-size: 1.5rem;
+    }
+  
+    form#fromLogin button {
+      font-size: 1rem;
+    }
+  
+    form#fromLogin p {
+      font-size: 0.8rem;
+    }
+  }
+  

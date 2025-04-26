@@ -89,9 +89,11 @@ const orderSchema = new mongoose_1.Schema({
         required: false,
     },
     createdAt: {
+
         type: Date,
         default: Date.now,
     },
 }, { versionKey: false });
 const OrderModel = mongoose_1.default.model('Order', orderSchema);
 exports.default = OrderModel;
+

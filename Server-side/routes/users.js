@@ -1,3 +1,4 @@
+
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -19,4 +20,5 @@ router.get("/", verifyToken_1.default, verifyAdmin_1.default, userController_1.g
 router.put("/update", verifyToken_1.default, fileUpload_1.upload.single("avatar"), userController_1.updateUser);
 router.delete("/delete", verifyToken_1.default, userController_1.deleteUser);
 // Xuất CommonJS thay vì export default
+
 module.exports = router;

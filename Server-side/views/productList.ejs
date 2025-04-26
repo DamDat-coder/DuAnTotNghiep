@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products - Step Walk Sneaker</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/product.css" />
+    <link rel="stylesheet" href="/css/index.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <!-- Logo Section -->
+        <div class="logo">
+          <img src="/images/logo.png" alt="Logo của Step Walk Sneaker" />
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav>
+          <ul>
+            <li><a href="#">Nam</a></li>
+            <li><a href="#">Nữ</a></li>
+            <li><a href="#">Nhãn Hiệu</a></li>
+            <li><a href="#">Thể Thao</a></li>
+          </ul>
+        </nav>
+
+        <!-- Search and Icons Section -->
+        <div class="search-icons">
+          <div class="search-box">
+            <input
+              type="text"
+              placeholder="Tìm Kiếm"
+              aria-label="Tìm kiếm sản phẩm"
+            />
+            <button><i class="fa fa-search"></i></button>
+          </div>
+          <div class="icons">
+            <a href="#" aria-label="Giỏ hàng"
+              ><i class="fa-solid fa-cart-shopping"></i
+            ></a>
+            <a href="#" aria-label="Tài khoản người dùng"
+              ><i class="fa-regular fa-user"></i
+            ></a>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu - Đặt bên ngoài container -->
+      <div class="mobile-menu">
+        <ul>
+          <li><a href="#">Nam</a></li>
+          <li><a href="#">Nữ</a></li>
+          <li><a href="#">Nhãn Hiệu</a></li>
+          <li><a href="#">Thể Thao</a></li>
+        </ul>
+      </div>
+    </header>
+    <main>
+      <div class="product-container">
+        <!-- Sidebar Filters -->
+        <aside class="filter-sidebar">
+          <div class="filter-section">
+            <h3>Chọn mức giá</h3>
+            <div class="price-filter">
+              <label
+                ><input type="radio" name="price" value="under500" /> Giá dưới
+                500.000đ</label
+              >
+              <label
+                ><input type="radio" name="price" value="500to1m" /> 500.000đ -
+                1 triệu</label
+              >
+              <label
+                ><input type="radio" name="price" value="1to2m" /> 1 - 2
+                triệu</label
+              >
+              <label
+                ><input type="radio" name="price" value="2to3m" /> 2 - 3
+                triệu</label
+              >
+              <label
+                ><input type="radio" name="price" value="above3m" /> Giá trên 3
+                triệu</label
+              >
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3>Chọn Theo Size</h3>
+            <div class="size-grid">
+              <button class="size-btn">36</button>
+              <button class="size-btn">37</button>
+              <button class="size-btn">38</button>
+              <button class="size-btn">39</button>
+              <button class="size-btn">40</button>
+              <button class="size-btn">41</button>
+              <button class="size-btn">42</button>
+              <button class="size-btn">43</button>
+              <button class="size-btn">44</button>
+              <button class="size-btn">45</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Product Grid -->
+        <section class="product-content">
+          <div class="sort-filter">
+            <select id="sortSelect">
+              <option value="default">Sắp Xếp: Mặc Định</option>
+              <option value="lowToHigh">Giá: Thấp đến Cao</option>
+              <option value="highToLow">Giá: Cao đến Thấp</option>
+            </select>
+          </div>
+
+          <div class="product-grid">
+            <!-- Product Card 1 -->
+            <% products.forEach(product => { %>
+            <div
+              class="product-card"
+              data-price="<%= product.price %>"
+              data-sizes="<%= product.sizes.join(',') %>"
+            >
+              <button class="favorite-btn"><i class="far fa-heart"></i></button>
+              <img src="<%= product.images[0] %>" alt="<%= product.title %>" />
+              <div class="product-info">
+                <h3><%= product.title %></h3>
+                <p class="product-price">
+                  <%= product.price.toLocaleString("vi-VN") %>đ
+                </p>
+                <div class="rating">★★★★★ <span>(88)</span></div>
+              </div>
+            </div>
+
+            <% }); %>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-container">
+        <div class="footer-info">
+          <h4>Thông tin</h4>
+          <ul>
+            <li><a href="#">Giới thiệu</a></li>
+            <li><a href="#">Chính sách đổi trả</a></li>
+            <li><a href="#">Chính sách bảo mật</a></li>
+            <li><a href="#">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Liên Hệ</h4>
+          <p>Email: contact@stepwalksneaker.com</p>
+          <p>Điện thoại: 0123-456-789</p>
+        </div>
+        <div class="footer-social">
+          <h4>Kết nối với chúng tôi</h4>
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Step Walk Sneaker. Tất cả quyền được bảo lưu.</p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const productsContainer = document.querySelector(".product-grid");
+        const products = Array.from(document.querySelectorAll(".product-card"));
+        const priceFilters = document.querySelectorAll(".price-filter input");
+        const sizeFilters = document.querySelectorAll(".size-btn");
+        const sortSelect = document.getElementById("sortSelect");
+
+        let selectedPrice = null;
+        let selectedSize = null;
+
+        function filterProducts() {
+          let filteredProducts = products.filter((product) => {
+            const productPrice = parseInt(product.dataset.price);
+            const productSizes = product.dataset.sizes.split(",").map(Number);
+
+            let priceMatch =
+              !selectedPrice ||
+              (selectedPrice === "under500" && productPrice < 500000) ||
+              (selectedPrice === "500to1m" &&
+                productPrice >= 500000 &&
+                productPrice <= 1000000) ||
+              (selectedPrice === "1to2m" &&
+                productPrice > 1000000 &&
+                productPrice <= 2000000) ||
+              (selectedPrice === "2to3m" &&
+                productPrice > 2000000 &&
+                productPrice <= 3000000) ||
+              (selectedPrice === "above3m" && productPrice > 3000000);
+
+            let sizeMatch =
+              !selectedSize || productSizes.includes(parseInt(selectedSize));
+
+            return priceMatch && sizeMatch;
+          });
+
+          sortProducts(filteredProducts);
+        }
+
+        function sortProducts(productsList) {
+          const sortValue = sortSelect.value;
+
+          if (sortValue === "lowToHigh") {
+            productsList.sort(
+              (a, b) => parseInt(a.dataset.price) - parseInt(b.dataset.price)
+            );
+          } else if (sortValue === "highToLow") {
+            productsList.sort(
+              (a, b) => parseInt(b.dataset.price) - parseInt(a.dataset.price)
+            );
+          }
+
+          productsContainer.innerHTML = "";
+          productsList.forEach((product) =>
+            productsContainer.appendChild(product)
+          );
+        }
+
+        // Xử lý khi chọn bộ lọc giá
+        priceFilters.forEach((filter) => {
+          filter.addEventListener("click", function () {
+            if (selectedPrice === this.value) {
+              this.checked = false; // Hủy chọn nếu nhấn lần nữa
+              selectedPrice = null;
+            } else {
+              selectedPrice = this.value;
+            }
+            filterProducts();
+          });
+        });
+
+        // Xử lý khi chọn size
+        sizeFilters.forEach((button) => {
+          button.addEventListener("click", function () {
+            if (selectedSize === this.textContent) {
+              this.classList.remove("selected");
+              selectedSize = null;
+            } else {
+              sizeFilters.forEach((btn) => btn.classList.remove("selected"));
+              this.classList.add("selected");
+              selectedSize = this.textContent;
+            }
+            filterProducts();
+          });
+        });
+
+        // Xử lý khi chọn sắp xếp
+        sortSelect.addEventListener("change", function () {
+          filterProducts();
+        });
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+        const mobileMenu = document.querySelector(".mobile-menu");
+        const menuIcon = mobileMenuBtn.querySelector("i");
+
+        // Toggle menu
+        mobileMenuBtn.addEventListener("click", function (e) {
+          e.stopPropagation(); // Ngăn sự kiện click lan ra document
+          mobileMenu.classList.toggle("active");
+
+          // Toggle icon
+          if (mobileMenu.classList.contains("active")) {
+            menuIcon.classList.remove("fa-bars");
+            menuIcon.classList.add("fa-times");
+          } else {
+            menuIcon.classList.remove("fa-times");
+            menuIcon.classList.add("fa-bars");
+          }
+        });
+
+        // Đóng menu khi click bên ngoài
+        document.addEventListener("click", function (e) {
+          if (
+            !mobileMenu.contains(e.target) &&
+            !mobileMenuBtn.contains(e.target)
+          ) {
+            mobileMenu.classList.remove("active");
+            menuIcon.classList.remove("fa-times");
+            menuIcon.classList.add("fa-bars");
+          }
+        });
+
+        // Ngăn sự kiện click trong menu lan ra document
+        mobileMenu.addEventListener("click", function (e) {
+          e.stopPropagation();
+        });
+
+        // Đóng menu khi click vào links
+        const mobileMenuLinks = mobileMenu.querySelectorAll("a");
+        mobileMenuLinks.forEach((link) => {
+          link.addEventListener("click", () => {
+            mobileMenu.classList.remove("active");
+            menuIcon.classList.remove("fa-times");
+            menuIcon.classList.add("fa-bars");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

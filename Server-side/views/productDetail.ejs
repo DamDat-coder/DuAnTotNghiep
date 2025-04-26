@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Step Walk Sneaker</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/detail.css" />
+    <link rel="stylesheet" href="/css/index.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <div class="logo">
+          <img src="/images/logo.png" alt="Logo của Step Walk Sneaker" />
+        </div>
+
+        <nav>
+          <ul>
+            <li><a href="#">Nam</a></li>
+            <li><a href="#">Nữ</a></li>
+            <li><a href="#">Nhãn Hiệu</a></li>
+            <li><a href="#">Thể Thao</a></li>
+          </ul>
+        </nav>
+
+        <div class="search-icons">
+          <div class="search-box">
+            <input
+              type="text"
+              placeholder="Tìm Kiếm"
+              aria-label="Tìm kiếm sản phẩm"
+            />
+            <button><i class="fa fa-search"></i></button>
+          </div>
+          <div class="icons">
+            <a href="#" aria-label="Giỏ hàng"
+              ><i class="fa-solid fa-cart-shopping"></i
+            ></a>
+            <a href="#" aria-label="Tài khoản người dùng"
+              ><i class="fa-regular fa-user"></i
+            ></a>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-menu">
+        <ul>
+          <li><a href="#">Nam</a></li>
+          <li><a href="#">Nữ</a></li>
+          <li><a href="#">Nhãn Hiệu</a></li>
+          <li><a href="#">Thể Thao</a></li>
+        </ul>
+      </div>
+    </header>
+    <div id="product-container">
+        <div class="product-container">
+          <div class="image-section">
+            <div class="thumbnails">
+              <% if (product.images && product.images.length > 0) { %>
+                <% product.images.forEach((image, index) => { %>
+                  <img src="<%= image %>" class="thumbnail" alt="Thumb <%= index + 1 %>" />
+                <% }) %>
+              <% } else { %>
+                <p>Không có hình ảnh</p>
+              <% } %>
+            </div>
+            <div class="main-image-container">
+              <img src="<%= product.images?.length ? product.images[0] : '/images/default.jpg' %>" class="main-image" alt="<%= product.name %>" />
+            </div>
+          </div>
+      
+          <div class="product-info">
+            <h1 class="product-title"><%= product.title %></h1>
+            <p class="product-category"><%= product.category || 'Không rõ danh mục' %></p>
+            <p class="product-price"><%= product.price.toLocaleString() %>₫</p>
+      
+            <h3 class="size-label">Chọn Size <span class="size-guide">📏 Hướng dẫn</span></h3>
+            <div class="size-options">
+              <% if (product.sizes?.length) { %>
+                <% product.sizes.forEach(size => { %>
+                  <button class="size-button">Size <%= size %></button>
+                <% }) %>
+              <% } else { %>
+                <p>Hết hàng</p>
+              <% } %>
+            </div>
+      
+            <button class="add-to-bag">Thêm vào giỏ</button>
+            <button class="favorite-button">♡ Yêu thích</button>
+      
+            <div class="description-info">
+              <p><%= product.description %></p>
+              <ul>
+                <% if (product.details) { %>
+                  <li><strong>Màu sắc:</strong> <%= product.details.color || "Không có thông tin" %></li>
+                  <li><strong>Style:</strong> <%= product.details.style || "Không có thông tin" %></li>
+                  <li><strong>Xuất xứ:</strong> <%= product.details.origin || "Không có thông tin" %></li>
+                <% } else { %>
+                  <li>Không có thông tin chi tiết sản phẩm.</li>
+                <% } %>
+              </ul>
+            </div>
+      
+            <div class="reviews-wrapper">
+              <div class="review-container" onclick="toggleReviews()">
+                <h3>Đánh giá (<%= product.reviews?.length || 0 %>)</h3>
+                <span>★★★★☆</span>
+                <span class="arrow">▲</span>
+              </div>
+      
+              <div class="review-section">
+                <span>★★★★☆ 4.3 stars</span>
+                <p class="write-review">Write a review</p>
+                <% if (product.reviews?.length) { %>
+                  <% product.reviews.forEach(review => { %>
+                    <div class="review-content">
+                      <p>★★★★★ <%= review.username %> - <%= new Date(review.date).toLocaleDateString() %></p>
+                      <p><%= review.comment %></p>
+                    </div>
+                  <% }) %>
+                <% } else { %>
+                  <p>Chưa có đánh giá nào</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+
+    <footer>
+      <div class="footer-container">
+        <div class="footer-info">
+          <h4>Thông tin</h4>
+          <ul>
+            <li><a href="#">Giới thiệu</a></li>
+            <li><a href="#">Chính sách đổi trả</a></li>
+            <li><a href="#">Chính sách bảo mật</a></li>
+            <li><a href="#">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Liên Hệ</h4>
+          <p>Email: contact@stepwalksneaker.com</p>
+          <p>Điện thoại: 0123-456-789</p>
+        </div>
+        <div class="footer-social">
+          <h4>Kết nối với chúng tôi</h4>
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Step Walk Sneaker. Tất cả quyền được bảo lưu.</p>
+      </div>
+    </footer>
+
+    <script>
+      function toggleReviews() {
+        const reviewSection = document.querySelector(".review-section");
+        const arrow = document.querySelector(".arrow");
+        reviewSection.classList.toggle("show");
+        arrow.classList.toggle("collapsed");
+      }
+      // Chọn nút yêu thích
+      const favoriteButton = document.querySelector(".favorite-button");
+
+      // Thêm sự kiện click vào nút yêu thích
+      favoriteButton.addEventListener("click", () => {
+        // Toggling class 'active' khi nhấn vào nút
+        favoriteButton.classList.toggle("active");
+
+        // Cập nhật văn bản trong nút tùy vào trạng thái
+        if (favoriteButton.classList.contains("active")) {
+          favoriteButton.textContent = "Favourite"; // Khi yêu thích
+        } else {
+          favoriteButton.textContent = "♡ Favourite"; // Khi không yêu thích
+        }
+      });
+
+      // Chọn tất cả các nút size
+      const sizeButtons = document.querySelectorAll(".size-button");
+
+      // Thêm sự kiện click vào mỗi nút
+      sizeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          // Loại bỏ class 'selected' từ tất cả các nút
+          sizeButtons.forEach((btn) => btn.classList.remove("selected"));
+
+          // Thêm class 'selected' vào nút mà người dùng đã nhấn
+          button.classList.add("selected");
+        });
+      });
+
+      const thumbnails = document.querySelectorAll(".thumbnail");
+      const mainImage = document.querySelector(".main-image");
+
+      mainImage.src = thumbnails[0].src;
+
+      thumbnails.forEach((thumbnail) => {
+        thumbnail.addEventListener("mouseenter", () => {
+          mainImage.src = thumbnail.src;
+        });
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+        const mobileMenu = document.querySelector(".mobile-menu");
+        const menuIcon = mobileMenuBtn.querySelector("i");
+
+        // Toggle menu
+        mobileMenuBtn.addEventListener("click", function (e) {
+          e.stopPropagation(); // Ngăn sự kiện click lan ra document
+          mobileMenu.classList.toggle("active");
+
+          // Toggle icon
+          if (mobileMenu.classList.contains("active")) {
+            menuIcon.classList.remove("fa-bars");
+            menuIcon.classList.add("fa-times");
+          } else {
+            menuIcon.classList.remove("fa-times");
+            menuIcon.classList.add("fa-bars");
+          }
+        });
+
+        // Đóng menu khi click bên ngoài
+        document.addEventListener("click", function (e) {
+          if (
+            !mobileMenu.contains(e.target) &&
+            !mobileMenuBtn.contains(e.target)
+          ) {
+            mobileMenu.classList.remove("active");
+            menuIcon.classList.remove("fa-times");
+            menuIcon.classList.add("fa-bars");
+          }
+        });
+
+        // Ngăn sự kiện click trong menu lan ra document
+        mobileMenu.addEventListener("click", function (e) {
+          e.stopPropagation();
+        });
+
+        // Đóng menu khi click vào links
+        const mobileMenuLinks = mobileMenu.querySelectorAll("a");
+        mobileMenuLinks.forEach((link) => {
+          link.addEventListener("click", () => {
+            mobileMenu.classList.remove("active");
+            menuIcon.classList.remove("fa-times");
+            menuIcon.classList.add("fa-bars");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

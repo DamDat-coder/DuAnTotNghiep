@@ -27,12 +27,29 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:3300",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again later.",
+});
+app.use(limiter);
+
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/categories", categoriesRouter);
 app.use("/products", productsRouter);
 app.use("/coupons", couponsRouter);
-app.use("/orders", ordersRouter);
+app.use("/order", ordersRouter);
 
 app.use((req, res, next) => {
   res.status(404).json({ error: "Resource not found" });

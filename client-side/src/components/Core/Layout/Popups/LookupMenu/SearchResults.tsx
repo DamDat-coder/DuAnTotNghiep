@@ -54,7 +54,7 @@ export default function SearchResults({
           className="flex flex-col bg-[#ededed] rounded-lg p-3"
         >
           <img
-            src={`/featured/${product.image[0]}`}
+            src={`/featured/${product.images[0]}`}
             alt={product.name}
             className="w-full h-24 object-cover rounded"
           />

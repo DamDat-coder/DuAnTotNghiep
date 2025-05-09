@@ -5,7 +5,7 @@ import { useState } from "react";
 import AdminNavigation from "../AdminNavigation";
 import UserRoleChart from "./UserRoleChart";
 import UserRegistrationChart from "./UserRegistrationChart";
-import { IUser } from "@/services/api";
+import { IUser } from "@/types";
 
 interface DashboardContentProps {
   users: IUser[];

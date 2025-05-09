@@ -2,9 +2,13 @@
 import FeaturedSection from "@/components/Home/FeaturedSection";
 import {
   fetchProducts,
+} from "@/services/productApi";
+import {
   fetchFeaturedSection,
+} from "@/services/featuredSectionApi";
+import {
   fetchMemberBenefits,
-} from "@/services/api";
+} from "@/services/memberBenefitApi";
 import ProductSection from "@/components/Home/ProductSection";
 import MemberBenefitsBanner from "@/components/Home/MemberBenefitsBanner";
 import Container from "@/components/Core/Container";
@@ -37,16 +41,15 @@ export default async function Home() {
 
   return (
     <div className="py-0 px-6 desktop:px-0 overflow-x-hidden flex flex-col gap-4">
-
-        {/* Banner đầu */}
-        <Banner
-          status="Vừa ra mắt"
-          name="Áo khoác Gopcore Basic"
-          description="Chào đón chương tiếp theo của Dynamic Air. Cảm nhận sự khác biệt."
-          image1="/banner/banner_1.png"
-          image2="/banner/banner_2.png"
-          altText="Áo khoác Gopcore Basic"
-        />
+      {/* Banner đầu */}
+      <Banner
+        status="Vừa ra mắt"
+        name="Áo khoác Gopcore Basic"
+        description="Chào đón chương tiếp theo của Dynamic Air. Cảm nhận sự khác biệt."
+        image1="/banner/banner_1.png"
+        image2="/banner/banner_2.png"
+        altText="Áo khoác Gopcore Basic"
+      />
       <Container className="flex flex-col gap-4 w-full">
         {/* Nội dung chính */}
         <FeaturedSection featuredSection={featuredSection} />

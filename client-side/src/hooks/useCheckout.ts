@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
-import { createOrder, fetchUser } from "@/services/api";
+import { createOrder} from "@/services/orderApi";
+import { fetchUser } from "@/services/userApi";
 import { ICartItem, CheckoutFormData, CheckoutErrors } from "@/types";
 import toast from "react-hot-toast";
 

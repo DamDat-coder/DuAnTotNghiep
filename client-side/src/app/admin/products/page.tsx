@@ -1,7 +1,7 @@
 // app/admin/products/page.tsx
 import ProductsTable from "@/admin/components/Admin_Products/ProductsTable";
 import AdminLayout, { NavigationItem } from "@/admin/layouts/AdminLayout";
-import { fetchProducts } from "@/services/api";
+import { fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/index";
 
 async function fetchProductsData() {

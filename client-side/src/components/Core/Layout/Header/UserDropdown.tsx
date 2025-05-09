@@ -24,7 +24,6 @@ export default function UserDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   
-  console.log("UserDropdown user:", user);
   if (!user) return null;
 
   return (

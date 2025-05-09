@@ -32,17 +32,11 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3300",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use(limiter);
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);

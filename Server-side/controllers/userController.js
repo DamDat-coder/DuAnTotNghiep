@@ -1,4 +1,3 @@
-
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -34,11 +33,9 @@ const userModel_1 = __importDefault(require("../models/userModel"));
 const refreshTokenModel_1 = __importDefault(require("../models/refreshTokenModel"));
 // Load environment variables
 dotenv_1.default.config();
-
 // Đăng ký
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-
         const { email, password, name, address, phone } = req.body;
         // Kiểm tra các trường bắt buộc
         if (!email || !password || !name) {
@@ -98,7 +95,6 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (req.file)
             fs_1.default.unlinkSync(req.file.path);
         res.status(400).json({ message: error.message });
-
     }
 });
 exports.register = register;
@@ -152,13 +148,11 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.login = login;
 // Làm mới token
-
 const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
         res.status(400).json({ message: "Thiếu Refresh Token" });
         return;
-
     }
     try {
         const jwtSecret = process.env.JWT_SECRET || "default_secret";

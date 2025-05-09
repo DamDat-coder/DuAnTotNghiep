@@ -6,7 +6,7 @@ import { CartMobile, CartDesktop } from "@/components/Cart";
 import ProductSection from "@/components/Home/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct, ICartItem } from "@/types";
-import { fetchProducts } from "@/services/api";
+import { fetchProducts } from "@/services/productApi";
 
 export default function Cart() {
   const cart = useCart();

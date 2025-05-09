@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import OrderDetailForm from "@/admin/components/Admin_Order/OrderDetailForm";
-import { fetchOrderById } from "@/services/api";
+import { fetchOrderById } from "@/services/orderApi";
 import toast from "react-hot-toast";
 
 export default function OrderDetailClientPage({ id }: { id: string }) {

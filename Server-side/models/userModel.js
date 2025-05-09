@@ -1,4 +1,3 @@
-
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -48,7 +47,6 @@ const userSchema = new mongoose_1.Schema({
     },
     avatar: { type: String, default: null },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
-
 }, { versionKey: false });
 const UserModel = mongoose_1.default.model('User', userSchema);
 exports.default = UserModel;

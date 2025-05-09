@@ -21,7 +21,7 @@ router.post("/refresh", refresh);
 
 // Protected routes
 router.get("/userinfo", verifyToken, getUser);
-router.get("/", verifyToken, verifyAdmin, getAllUser);
+router.get("/", getAllUser);
 router.put("/update", verifyToken, upload.single("avatar"), updateUser);
 router.delete("/delete", verifyToken, deleteUser);
 

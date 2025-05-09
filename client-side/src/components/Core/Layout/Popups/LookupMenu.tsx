@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { fetchProducts } from "../../../../services/api";
-import { IProduct } from "../../../../types";
+import { fetchProducts } from "@/services/productApi";
+import { IProduct } from "@/types";
 import Link from "next/link";
 
 interface LookupMenuProps {
@@ -143,7 +143,7 @@ export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
                       className="flex flex-col bg-[#ededed] rounded-lg p-3"
                     >
                       <img
-                        src={`/product/img/${product.image[0]}`}
+                        src={`/product/img/${product.images[0]}`}
                         alt={product.name}
                         className="w-full h-24 object-cover rounded"
                       />

@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-  fetchProducts,
-  fetchCategories,
-  fetchMemberBenefits,
-  fetchFeaturedSection,
-  fetchUser,
-} from "../services/api";
+import { fetchProducts } from "../services/productApi";
+import { fetchUser } from "../services/userApi";
+import { fetchFeaturedSection } from "../services/featuredSectionApi";
+import { fetchMemberBenefits } from "../services/memberBenefitApi";
+import { fetchCategories } from "../services/categoryApi";
 import {
   IProduct,
   ICategory,

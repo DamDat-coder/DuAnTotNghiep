@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import { addProduct, fetchCategories } from "@/services/api";
+import { addProduct } from "@/services/productApi";
+import { fetchCategories } from "@/services/categoryApi";
 
 export interface ICategory {
   id: string;
@@ -43,7 +44,9 @@ export default function AddProductPage() {
     loadCategories();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, files } = e.target as any;
     if (name === "image" && files) {
       setFormData((prev) => ({
@@ -68,7 +71,10 @@ export default function AddProductPage() {
         name: formData.name,
         categoryId: formData.categoryId,
         price: parseFloat(formData.price),
-        discountPercent: formData.discountPercent ? parseFloat(formData.discountPercent) : undefined,
+        discountPercent: formData.discountPercent
+          ? parseFloat(formData.discountPercent)
+          : undefined,
+        sizes: [],
         images: formData.image,
       };
       const result = await addProduct(product);

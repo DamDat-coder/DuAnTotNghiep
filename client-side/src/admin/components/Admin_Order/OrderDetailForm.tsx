@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { updateOrderStatus } from "@/services/api";
+import { updateOrderStatus } from "@/services/orderApi";
 import toast from "react-hot-toast";
 import { OrderDetail } from "@/types";
 

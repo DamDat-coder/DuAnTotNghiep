@@ -13,6 +13,7 @@ async function fetchUserById(id: string): Promise<{ user: IUser | null; error: s
     }
     const user: IUser = {
       id: data._id.$oid || data._id,
+      name: data.name || "",
       email: data.email || "",
       phone: data.phone || "",
       avatar: data.avatar || "",

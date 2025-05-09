@@ -1,6 +1,7 @@
 // app/products/[id]/page.tsx
 import { Suspense } from "react";
-import { fetchProductById, fetchProducts, fetchCategories } from "@/services/api";
+import { fetchProductById, fetchProducts} from "@/services/productApi";
+import { fetchCategories } from "@/services/categoryApi";
 import { ICategory, IProduct } from "@/types";
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
@@ -77,7 +78,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             </div>
             <div className="relative mt-4">
               <ProductImageSwiper
-                images={product.image}
+                images={product.images}
                 productName={product.name}
               />
             </div>
@@ -104,7 +105,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
         <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4 overflow-x-hidden">
           <div className="relative">
             <div className="grid grid-cols-2 gap-0">
-              {product.image.slice(0, 4).map((image, index) => (
+              {product.images.slice(0, 4).map((image, index) => (
                 <Image
                   key={index}
                   src={`/product/img/${image}`}

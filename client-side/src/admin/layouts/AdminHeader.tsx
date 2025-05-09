@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchUser, IUser } from "@/services/api";
-
+import { fetchUser} from "@/services/userApi";
+import { IUser } from "@/types";
 interface AdminHeaderProps {
   pageTitle: string;
   pageSubtitle: string;

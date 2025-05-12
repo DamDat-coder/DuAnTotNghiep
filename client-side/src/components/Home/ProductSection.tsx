@@ -83,7 +83,7 @@ export default function ProductSection({
 
   const renderProductCard = (product: IProduct) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
-
+    
     return (
       <Link
         href={`/products/${product.id}`}
@@ -91,7 +91,7 @@ export default function ProductSection({
       >
         <div className="product w-[16.8125rem] h-auto flex flex-col bg-white relative desktop:w-[22.6875rem] desktop:h-auto font-description">
           <Image
-            src={`/product/img/${product.image[0]}`}
+            src={`/product/img/${product.images[0]}`}
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}

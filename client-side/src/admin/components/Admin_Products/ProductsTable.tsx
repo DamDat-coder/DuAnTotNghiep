@@ -122,9 +122,9 @@ export default function ProductsTable({
           <tbody>
             {products.map((product) => {
               // Lấy ảnh đầu tiên từ mảng image (nếu là mảng) hoặc image trực tiếp (nếu là chuỗi)
-              const firstImage = Array.isArray(product.image)
-                ? product.image[0]
-                : product.image;
+              const firstImage = Array.isArray(product.images)
+                ? product.images[0]
+                : product.images;
 
               const imageSrc = firstImage ? `/product/img/${firstImage}` : null;
 

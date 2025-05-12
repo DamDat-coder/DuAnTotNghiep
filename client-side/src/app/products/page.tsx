@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchProducts, fetchMemberBenefits} from "@/services/api";
+import { fetchProducts } from "@/services/productApi";
+import { fetchMemberBenefits } from "@/services/memberBenefitApi";
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import CategorySwiper from "@/components/Products/CategorySwiper";
 import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
-import {IProduct} from "@/types/index";
+import { IProduct } from "@/types/index";
 
 interface News {
   id: string;
@@ -41,24 +42,33 @@ export default function ProductsPage() {
         ]);
 
         setProducts(productsData);
-        setCategories(Array.from(new Set(productsData.map((product) => product.category))));
+        setCategories(
+          Array.from(new Set(productsData.map((product) => product.category)))
+        );
 
         const news = memberBenefits.map((item, index) => ({
-          ...item ,
+          ...item,
           img: item.image,
           newsCategory: ["Khuyến Mãi", "Dịch Vụ", "Sự Kiện"][index] || "Khác",
-          name: ["Ưu đãi tháng 3", "Giao hàng miễn phí 2025", "Quà tặng đặc biệt"][index] || "Tin tức",
+          name:
+            ["Ưu đãi tháng 3", "Giao hàng miễn phí 2025", "Quà tặng đặc biệt"][
+              index
+            ] || "Tin tức",
         }));
         setNewsItems(news);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu sản phẩm.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Có lỗi xảy ra khi tải dữ liệu sản phẩm."
+        );
       } finally {
         setLoading(false);
       }
     }
 
     loadData();
-  }, [searchParams]); 
+  }, [searchParams]);
 
   if (loading) {
     return (

@@ -32,7 +32,7 @@ export async function fetchProducts(
       category: e.categoryId?.name || "Không rõ",
       price: e.price,
       discountPercent: e.discountPercent,
-      image: e.image,
+      images: e.image,
     }));
     return data;
   } catch (error) {

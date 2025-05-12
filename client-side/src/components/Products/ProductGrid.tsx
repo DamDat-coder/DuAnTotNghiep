@@ -72,7 +72,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
         className="product w-full h-auto desktop:w-full flex flex-col bg-white relative"
       >
         <Image
-          src={`/product/img/${product.image[0]}`}
+          src={`/product/img/${product.images[0]}`}
           alt={product.name || "Sản phẩm"}
           width={171}
           height={269}

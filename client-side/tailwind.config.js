@@ -5,7 +5,8 @@ module.exports = {
     screens: {
       mobile: { max: "767px" },
       tablet: "768px",
-      desktop: "1920px" , // Từ 1280px trở lên
+      laptop: "1440px",
+      desktop: "1920px" ,
     },
     extend: {
       gap: {

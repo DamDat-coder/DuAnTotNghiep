@@ -17,7 +17,7 @@ export default function DesktopNav() {
   const searchParams = useSearchParams();
 
   return (
-    <div className="hidden desktop:flex items-center space-x-6">
+    <div className="hidden laptop:flex desktop:flex items-center space-x-6">
       {navLinks.map((link) => {
         // Tạo URLSearchParams từ link.href
         const linkSearchParams = new URLSearchParams(link.href.split("?")[1] || "");

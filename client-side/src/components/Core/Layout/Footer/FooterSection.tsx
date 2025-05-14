@@ -21,7 +21,7 @@ export default function FooterSection({
   return (
     <div>
       {/* Mobile/Tablet: Có mũi tên và accordion */}
-      <div className="desktop:hidden">
+      <div className="laptop:hidden desktop:hidden">
         <a
           href="#"
           className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline border-t-2 pt-4 border-[#B0B0B0]"
@@ -53,7 +53,7 @@ export default function FooterSection({
       </div>
 
       {/* Desktop: Không mũi tên, nội dung hiển thị luôn */}
-      <div className="hidden desktop:block">
+      <div className="hidden laptop:block desktop:block">
         <p className="text-xl font-medium text-left">{title}</p>
         <FooterContent content={content} />
       </div>

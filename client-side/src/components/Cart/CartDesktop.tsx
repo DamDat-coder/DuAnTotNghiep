@@ -22,7 +22,7 @@ export default function CartDesktop({
   const router = useRouter();
 
   return (
-    <div className="hidden desktop:flex desktop:gap-6 mt-4">
+    <div className="hidden desktop:flex desktop:gap-6 laptop:flex laptop:gap-6 mt-4">
       {/* Container trái (80%) - Giỏ hàng */}
       <div className="w-[80%]">
         <div className="grid grid-cols-1 gap-6 border-b-2 border-black">

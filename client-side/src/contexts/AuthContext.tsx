@@ -119,9 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Running checkAuth...");
     try {
       const userData = await fetchUser();
-      console.log("checkAuth - fetchUser result:", userData);
       if (userData) {
-        console.log("checkAuth - Setting user:", userData);
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
       } else {

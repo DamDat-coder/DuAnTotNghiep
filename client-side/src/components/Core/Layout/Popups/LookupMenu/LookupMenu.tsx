@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { fetchProducts } from "@/services/api";
+import { fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types";
 import SearchInput from "./SearchInput";
 import SearchSuggestions from "./SearchSuggestions";

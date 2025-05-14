@@ -40,10 +40,10 @@ export default function ShippingForm({
 }: ShippingFormProps) {
   return (
     <div className="col-span-full">
-      <h2 className="text-[18px] font-medium mb-4 desktop:text-[2rem] desktop:font-bold">
+      <h2 className="text-[18px] font-medium mb-4 desktop:text-[2rem] desktop:font-bold  laptop:text-[2rem] laptop:font-bold">
         THÔNG TIN GIAO HÀNG
       </h2>
-      <div className="grid grid-cols-1 desktop:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 desktop:grid-cols-2 laptop:grid-cols-2 gap-4">
         <div>
           <label className="text-[1rem] font-medium uppercase">Họ và tên</label>
           <input
@@ -161,7 +161,7 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.ward}</p>
           )}
         </div>
-        <div className="desktop:col-span-2">
+        <div className="desktop:col-span-2 laptop:col-span-2">
           <label className="text-[1rem] font-medium uppercase">Địa chỉ</label>
           <input
             type="text"

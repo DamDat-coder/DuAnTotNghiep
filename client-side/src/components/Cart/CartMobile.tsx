@@ -22,7 +22,7 @@ export default function CartMobile({
   const router = useRouter();
 
   return (
-    <div className="desktop:hidden">
+    <div className="laptop:hidden desktop:hidden">
       <div className="grid grid-cols-1 gap-6 border-b-2 border-black mt-4">
         {cartItems.map((item) => (
           <CartItem

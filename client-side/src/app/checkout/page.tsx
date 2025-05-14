@@ -36,7 +36,7 @@ export default function Checkout() {
       <Container>
         <Toaster position="top-right" />
         {/* Mobile/Tablet */}
-        <div className="desktop:hidden mt-4 flex flex-col gap-6">
+        <div className="laptop:hidden desktop:hidden mt-4 flex flex-col gap-6">
           {orderItems.length === 0 ? (
             <p className="text-center text-gray-500">Giỏ hàng trống.</p>
           ) : (
@@ -80,14 +80,14 @@ export default function Checkout() {
         </div>
 
         {/* Desktop */}
-        <div className="hidden desktop:flex desktop:gap-6 mt-4">
+        <div className="hidden desktop:flex desktop:gap-6  laptop:flex laptop:gap-6 mt-4">
           {orderItems.length === 0 ? (
             <p className="text-center text-gray-500 w-full">Giỏ hàng trống.</p>
           ) : (
             <>
               {/* Container trái */}
               <div className="w-2/3 flex flex-col gap-6">
-                <form onSubmit={handleSubmit} className="grid desktop:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="grid desktop:grid-cols-2 laptop:grid-cols-2 gap-4">
                   <ShippingForm
                     formData={formData}
                     errors={errors}

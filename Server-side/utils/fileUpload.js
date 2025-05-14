@@ -7,7 +7,7 @@ exports.upload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const uploadDir = path_1.default.join(__dirname, "../public/images");
+const uploadDir = path_1.default.join(__dirname, "../../client-side/public/product/img/");
 if (!fs_1.default.existsSync(uploadDir)) {
     fs_1.default.mkdirSync(uploadDir, { recursive: true });
 }

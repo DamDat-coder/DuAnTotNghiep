@@ -52,7 +52,7 @@ export default function ProductActions({
       name: product.name,
       price: discountedPrice,
       discountPercent: product.discountPercent,
-      image: product.image[0],
+      image: typeof product.images[0] === "string" ? product.images[0] : "",
       quantity: 1,
       size: selectedSize,
       color: "Default",

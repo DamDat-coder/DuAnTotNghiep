@@ -9,6 +9,7 @@ interface SearchResultsProps {
   filteredProducts: IProduct[];
   searchTerm: string;
   isMobile: boolean;
+  products: IProduct[]; 
 }
 
 export default function SearchResults({
@@ -54,7 +55,7 @@ export default function SearchResults({
           className="flex flex-col bg-[#ededed] rounded-lg p-3"
         >
           <img
-            src={`/featured/${product.images[0]}`}
+            src={`/product/img/${product.images[0]}`}
             alt={product.name}
             className="w-full h-24 object-cover rounded"
           />

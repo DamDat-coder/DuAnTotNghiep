@@ -69,14 +69,14 @@ export default function ProductGrid({ products }: ProductGridProps) {
     return (
       <Link
         href={`/products/${product.id}`}
-        className="product w-full h-auto desktop:w-full flex flex-col bg-white relative"
+        className="product w-full h-auto flex flex-col bg-white relative font-description"
       >
         <Image
           src={`/product/img/${product.images[0]}`}
           alt={product.name || "Sản phẩm"}
           width={171}
           height={269}
-          className="w-[171px] h-[269px] desktop:w-full desktop:h-[450px] object-cover"
+          className="w-[171px] h-[269px] desktop:w-full desktop:h-[450px]  laptop:w-full laptop:h-[450px] object-cover"
           draggable={false}
           loading="lazy"
         />
@@ -85,17 +85,17 @@ export default function ProductGrid({ products }: ProductGridProps) {
         </div>
         <AddToCartButton product={product} />
         <div className="content flex flex-col p-4">
-          <div className="name h-20 text-lg desktop:text-lg font-bold text-[#374151] line-clamp-2">
+          <div className="name h-20 text-lg font-bold text-[#374151] line-clamp-2">
             {product.name || "Sản phẩm"}
           </div>
           <div className="category desc-text text-[#374151] truncate">
             {product.category || "Danh mục"}
           </div>
           <div className="price-container flex items-center gap-3 pt-2">
-            <div className="discountPrice text-[1rem] desktop:text-[1.125rem] font-bold text-red-500">
+            <div className="discountPrice text-[1rem] desktop:text-[1rem]  laptop:text-[1rem] font-bold text-red-500">
               {discountPrice.toLocaleString("vi-VN")}₫
             </div>
-            <div className="price text-[0.875rem] desktop:text-[1rem] text-[#374151] line-through">
+            <div className="price text-[0.875rem] desktop:text-[0.875rem]  laptop:text-[1rem] text-[#374151] line-through">
               {product.price.toLocaleString("vi-VN")}₫
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
           />
         </button>
       </div>
-      <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4 desktop:grid-cols-4 justify-center overflow-x-hidden pt-2">
+      <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4 desktop:grid-cols-4  laptop:grid-cols-4 justify-center overflow-x-hidden pt-2">
         {displayedProducts.map((product) => (
           <div key={product.id} className="w-full">
             {renderProductCard(product)}

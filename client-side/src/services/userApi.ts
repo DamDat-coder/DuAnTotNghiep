@@ -51,11 +51,6 @@ export async function register(
     if (avatar) formData.append("avatar", avatar);
 
     const url = `${API_BASE_URL}/users/register`;
-    console.log("Sending register request:", url, {
-      name,
-      email: identifier,
-      phone,
-    });
     const res = await fetch(url, {
       method: "POST",
       body: formData,
@@ -122,7 +117,6 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
     const data = await fetchWithAuth<any[]>(`${API_BASE_URL}/users`, {
       cache: "no-store",
     });
-    console.log("fetchAllUsers response:", data);
 
     if (!data || !Array.isArray(data)) {
       throw new Error("Dữ liệu users không hợp lệ");

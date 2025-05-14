@@ -99,7 +99,9 @@ export const addPro = async (req: Request, res: Response): Promise<void> => {
 // PUT update product
 export const editPro = async (req: Request, res: Response): Promise<void> => {
   const product = req.body as IProduct;
-
+console.log("editPro - req.body:", req.body); // {}
+console.log("editPro - req.files:", req.files); // Có thể là [] hoặc undefined
+  
   try {
     const existingProduct = await productModel.findById(req.params.id);
     if (!existingProduct) {
@@ -118,7 +120,7 @@ export const editPro = async (req: Request, res: Response): Promise<void> => {
       product.image = (req.files as Express.Multer.File[]).map((file) => file.filename);
     } else {
       product.image = existingProduct.image;
-    }
+    }    
 
     const category = await categoryModel.findById(product.categoryId);
     if (!category) {

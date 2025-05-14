@@ -107,6 +107,8 @@ exports.addPro = addPro;
 // PUT update product
 const editPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const product = req.body;
+    console.log("editPro - req.body:", req.body); // {}
+    console.log("editPro - req.files:", req.files); // Có thể là [] hoặc undefined
     try {
         const existingProduct = yield productModel_1.default.findById(req.params.id);
         if (!existingProduct) {

@@ -78,7 +78,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             </div>
             <div className="relative mt-4">
               <ProductImageSwiper
-                images={product.images}
+                images={product.images.filter((img): img is string => typeof img === "string")}
                 productName={product.name}
               />
             </div>

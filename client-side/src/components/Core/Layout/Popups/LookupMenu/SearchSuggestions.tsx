@@ -6,6 +6,7 @@ import React from "react";
 interface SearchSuggestionsProps {
   suggestions: string[];
   handleSuggestionClick: (suggestion: string) => void;
+  onClick: (suggestion: string) => void;
 }
 
 export default function SearchSuggestions({

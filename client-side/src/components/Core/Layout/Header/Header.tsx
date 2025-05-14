@@ -10,7 +10,7 @@ import DesktopNav from "./DesktopNav";
 import UserDropdown from "./UserDropdown";
 import MobileNav from "./MobileNav";
 import MobileMenu from "../MobileMenu/MobileMenu";
-import LookupMenu from "../Popups/LookupMenu";
+import LookupMenu from "../Popups/LookupMenu/LookupMenu";
 import LoginPopup from "../Popups/LoginPopup";
 import RegisterPopup from "../Popups/RegisterPopup";
 

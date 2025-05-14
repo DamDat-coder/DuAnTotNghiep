@@ -38,7 +38,6 @@ export function useUserForm({ initialData, isEdit, userId }: UseUserFormProps) {
 
     try {
       if (isEdit && userId) {
-        console.log("Sending PUT request:", `/users/${userId}`, formData);
         await fetchWithAuth(`/users/${userId}`, {
           method: "PUT", // Hoặc thử PATCH nếu 404
           headers: { "Content-Type": "application/json" },
@@ -46,7 +45,6 @@ export function useUserForm({ initialData, isEdit, userId }: UseUserFormProps) {
         });
         router.push("/admin/users");
       } else {
-        console.log("Sending POST request:", `/users`, formData);
         await fetchWithAuth(`/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

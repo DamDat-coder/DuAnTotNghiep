@@ -5,7 +5,7 @@ export interface IProduct {
   category: string; // Vẫn giữ category để hiển thị tên danh mục
   price: number;
   discountPercent: number;
-  images: string[];
+  images: string[] | File[] ;
   sizes:string[];
 }
 export interface IFeaturedProducts {

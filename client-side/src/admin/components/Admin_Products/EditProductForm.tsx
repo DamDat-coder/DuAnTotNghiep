@@ -11,9 +11,7 @@ interface EditProductFormProps {
   productId: string;
 }
 
-// Danh sách options (tái sử dụng từ AddProductForm)
 const sizeOptions = ["Size S", "Size M", "Size L", "Size XL", "Size XXL", "Size 3XL"];
-
 const colorOptions = [
   { value: "black", label: "Đen", color: "#000000" },
   { value: "cyan", label: "Xanh da trời", color: "#87CEEB" },
@@ -23,20 +21,12 @@ const colorOptions = [
   { value: "color", label: "Màu da", color: "#FAD2B6" },
   { value: "brown", label: "Nâu", color: "#8B4513" },
 ];
-
 const brandOptions = [
   { value: "nike", label: "Nike" },
   { value: "adidas", label: "Adidas" },
   { value: "puma", label: "Puma" },
   { value: "gucci", label: "Gucci" },
 ];
-
-// Ánh xạ giá trị cũ sang giá trị mới
-const mapColor = (color: string | undefined): string => {
-  if (!color) return "";
-  if (color === "Trắng") return "white";
-  return color;
-};
 
 const mapSizes = (sizes: string[] | undefined): string[] => {
   if (!sizes) return [];
@@ -62,12 +52,11 @@ export default function EditProductForm({ product, productId }: EditProductFormP
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Lấy danh sách danh mục khi component mount
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const result = await fetchCategories();
-        setCategories(result); // Truy cập trực tiếp result
+        setCategories(result);
       } catch (err) {
         console.error("Error loading categories:", err);
         setError("Không thể tải danh mục.");
@@ -84,7 +73,7 @@ export default function EditProductForm({ product, productId }: EditProductFormP
       const fileList = Array.from(files);
       setFormData((prev) => ({
         ...prev,
-        images: fileList.map((file) => file.name), // Convert File[] to string[]
+        images: fileList, // Lưu File[] trực tiếp
       }));
     } else if (name === "price" || name === "discountPercent") {
       setFormData((prev) => ({
@@ -118,17 +107,37 @@ export default function EditProductForm({ product, productId }: EditProductFormP
       setError("Tên sản phẩm không được để trống.");
       return;
     }
-
     if (formData.price === undefined || formData.price < 0) {
       setError("Giá sản phẩm không được nhỏ hơn 0.");
       return;
     }
-
     if (
       formData.discountPercent !== undefined &&
       (formData.discountPercent < 0 || formData.discountPercent > 100)
     ) {
       setError("Phần trăm giảm giá phải từ 0 đến 100.");
+      return;
+    }
+    if (!formData.images || formData.images.length === 0) {
+      setError("Vui lòng chọn ít nhất một file ảnh.");
+      return;
+    }
+    // Kiểm tra định dạng file
+    const validFormats = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const invalidFiles = (formData.images as File[]).filter(
+      (file) => !validFormats.includes(file.type)
+    );
+    if (invalidFiles.length > 0) {
+      setError("Chỉ hỗ trợ file ảnh (jpg, jpeg, png, gif, webp).");
+      return;
+    }
+    // Kiểm tra kích thước file
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const oversizedFiles = (formData.images as File[]).filter(
+      (file) => file.size > maxSize
+    );
+    if (oversizedFiles.length > 0) {
+      setError("File ảnh không được lớn hơn 5MB.");
       return;
     }
 
@@ -144,11 +153,10 @@ export default function EditProductForm({ product, productId }: EditProductFormP
         categoryId: selectedCategory.id,
         price: formData.price,
         discountPercent: formData.discountPercent,
-        sizes: formData.sizes,
-        images: (document.querySelector('input[name="image"]') as HTMLInputElement)?.files
-          ? Array.from((document.querySelector('input[name="image"]') as HTMLInputElement).files!)
-          : [],
+        images: (formData.images as File[]),
       };
+
+      console.log("Submitting product data:", productData);
 
       const updatedProduct = await editProduct(productId, productData);
       if (!updatedProduct) {
@@ -167,7 +175,6 @@ export default function EditProductForm({ product, productId }: EditProductFormP
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-6 w-[60%] mx-auto flex flex-col gap-4">
-        {/* Tên sản phẩm */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Tên sản phẩm
@@ -181,7 +188,6 @@ export default function EditProductForm({ product, productId }: EditProductFormP
           />
         </div>
 
-        {/* Danh mục */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Danh mục
@@ -201,7 +207,6 @@ export default function EditProductForm({ product, productId }: EditProductFormP
           </select>
         </div>
 
-        {/* Giá sản phẩm */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Giá sản phẩm (VNĐ)
@@ -220,7 +225,6 @@ export default function EditProductForm({ product, productId }: EditProductFormP
           </p>
         </div>
 
-        {/* Phần trăm giảm giá */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Phần trăm giảm giá (%)
@@ -240,7 +244,6 @@ export default function EditProductForm({ product, productId }: EditProductFormP
           </p>
         </div>
 
-        {/* Ảnh */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Ảnh (chọn file ảnh)
@@ -250,17 +253,16 @@ export default function EditProductForm({ product, productId }: EditProductFormP
             name="image"
             onChange={handleChange}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            accept="image/*"
             multiple
+            accept="image/jpeg,image/png,image/gif,image/webp"
           />
           {formData.images && formData.images.length > 0 && (
             <p className="mt-2 text-sm text-gray-500">
-              File đã chọn: {formData.images.join(", ")}
+              File đã chọn: {(formData.images as File[]).map((file) => file.name).join(", ")}
             </p>
           )}
         </div>
 
-        {/* Kích thước */}
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Kích thước
@@ -283,7 +285,6 @@ export default function EditProductForm({ product, productId }: EditProductFormP
           </div>
         </div>
 
-        {/* Nút hành động */}
         <div className="flex justify-end gap-4 mt-8">
           <button
             type="button"

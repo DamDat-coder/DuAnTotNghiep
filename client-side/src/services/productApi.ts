@@ -112,33 +112,38 @@ export async function editProduct(
   }
 ): Promise<IProduct | null> {
   try {
-    console.log("editProduct - Input data:", product);
+
     const formData = new FormData();
     if (product.name) formData.append("name", product.name);
     if (product.categoryId) formData.append("categoryId", product.categoryId);
-    if (product.price !== undefined) formData.append("price", product.price.toString());
+    if (product.price !== undefined)
+      formData.append("price", product.price.toString());
     if (product.discountPercent !== undefined) {
       formData.append("discountPercent", product.discountPercent.toString());
     }
     if (product.sizes) {
-      // Chuẩn hóa sizes: "Size S" -> "S"
       const normalizedSizes = product.sizes.map((size) =>
         size.replace("Size ", "")
       );
       normalizedSizes.forEach((size) => formData.append("sizes", size));
     }
     if (product.images) {
-      product.images.forEach((image, index) => {
-        formData.append("image", image);
+      product.images.forEach((image) => {
+        formData.append("image", image); // Sửa thành "image"
       });
     }
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
 
-    const res = await fetchWithAuth<IProduct>(`${API_BASE_URL}/products/${id}`, {
-      method: "PATCH",
-      body: formData,
-    });
+    const res = await fetchWithAuth<IProduct>(
+      `${API_BASE_URL}/products/${id}`,
+      {
+        method: "PATCH",
+        body: formData,
+      }
+    );
 
-    console.log("editProduct - Response:", res);
     const updatedProduct: IProduct = {
       id: res.id || id,
       categoryId: res.categoryId,

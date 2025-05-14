@@ -40,6 +40,7 @@ export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProp
   const handleLogout = () => {
     // Xóa token và trạng thái
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
     document.cookie = "refreshToken=; path=/; max-age=0";
     router.push("/");
   };

@@ -1,24 +1,21 @@
 import { isBrowser } from "../utils";
 
-// Định nghĩa base URL của backend
 export const API_BASE_URL = "http://localhost:3000";
 
-// Hàm lấy access token từ localStorage
 const getAccessToken = (): string | null => {
   return isBrowser() ? localStorage.getItem("accessToken") : null;
 };
 
-// Hàm thiết lập header với token
-function getAuthHeaders() {
+function getAuthHeaders(isFormData: boolean = false) {
   const token = getAccessToken();
-  console.log("getAuthHeaders - Token:", token);
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+  return isFormData
+    ? { Authorization: `Bearer ${token}` }
+    : {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
 }
 
-// Hàm làm mới token
 export async function refreshToken(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE_URL}/users/refresh`, {
@@ -37,28 +34,26 @@ export async function refreshToken(): Promise<boolean> {
   }
 }
 
-// Hàm fetch với xác thực
 export async function fetchWithAuth<T>(
   url: string,
   options: RequestInit = {},
   requiresAuth: boolean = true
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData;
   const headers = requiresAuth
-    ? { ...getAuthHeaders(), ...options.headers }
+    ? { ...getAuthHeaders(isFormData), ...options.headers }
     : options.headers;
   const res = await fetch(url, {
     ...options,
     headers: headers as Record<string, string>,
   });
-  console.log("fetchWithAuth - Response status:", res.status);
 
   if (requiresAuth && res.status === 401) {
     const refreshed = await refreshToken();
 
     if (refreshed) {
-      console.log("fetchWithAuth - Token refreshed, retrying request...");
       const newHeaders = requiresAuth
-        ? { ...getAuthHeaders(), ...options.headers }
+        ? { ...getAuthHeaders(isFormData), ...options.headers }
         : options.headers;
 
       const retryRes = await fetch(url, {
@@ -67,7 +62,6 @@ export async function fetchWithAuth<T>(
       });
 
       if (!retryRes.ok) {
-        console.error("fetchWithAuth - Retry failed, status:", retryRes.status);
         throw new Error(`HTTP error! status: ${retryRes.status}`);
       }
       return retryRes.json();

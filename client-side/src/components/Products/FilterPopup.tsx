@@ -10,7 +10,11 @@ import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
 import FilterBrand from "./FilterBrand";
 
-export default function FilterPopup({ isOpen, setIsOpen, onApplyFilters }: IFilterPopupProps) {
+export default function FilterPopup({
+  isOpen,
+  setIsOpen,
+  onApplyFilters,
+}: IFilterPopupProps) {
   const {
     selectedSort,
     setSelectedSort,
@@ -40,14 +44,16 @@ export default function FilterPopup({ isOpen, setIsOpen, onApplyFilters }: IFilt
       {/* Overlay cho desktop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 desktop:block hidden"
+          className="fixed inset-0 bg-black/50 z-40 desktop:block laptop:block hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
       <div
         className={`fixed inset-0 bg-white transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
-          isOpen ? "translate-x-0 desktop:translate-x-0" : "translate-x-full desktop:translate-x-full"
-        } desktop:inset-auto desktop:w-[25%] desktop:right-0 desktop:top-0 desktop:h-full`}
+          isOpen
+            ? "translate-x-0 laptop:translate-x-0 desktop:translate-x-0"
+            : "translate-x-full laptop:translate-x-full desktop:translate-x-full"
+        } laptop:inset-auto laptop:w-[35%] laptop:right-0 laptop:top-0 laptop:h-full desktop:inset-auto desktop:w-[25%] desktop:right-0 desktop:top-0 desktop:h-full`}
       >
         <div className="flex flex-col h-full gap-6 px-6">
           {/* Header */}
@@ -77,12 +83,30 @@ export default function FilterPopup({ isOpen, setIsOpen, onApplyFilters }: IFilt
 
           {/* Nội dung cuộn */}
           <div className="flex-1 overflow-y-auto">
-            <FilterSort selectedSort={selectedSort} setSelectedSort={setSelectedSort} />
-            <FilterGender selectedGender={selectedGender} setSelectedGender={setSelectedGender} />
-            <FilterPrice selectedPrices={selectedPrices} handlePriceChange={handlePriceChange} />
-            <FilterColor selectedColors={selectedColors} handleColorChange={handleColorChange} />
-            <FilterSize selectedSizes={selectedSizes} handleSizeChange={handleSizeChange} />
-            <FilterBrand selectedBrands={selectedBrands} handleBrandChange={handleBrandChange} />
+            <FilterSort
+              selectedSort={selectedSort}
+              setSelectedSort={setSelectedSort}
+            />
+            <FilterGender
+              selectedGender={selectedGender}
+              setSelectedGender={setSelectedGender}
+            />
+            <FilterPrice
+              selectedPrices={selectedPrices}
+              handlePriceChange={handlePriceChange}
+            />
+            <FilterColor
+              selectedColors={selectedColors}
+              handleColorChange={handleColorChange}
+            />
+            <FilterSize
+              selectedSizes={selectedSizes}
+              handleSizeChange={handleSizeChange}
+            />
+            <FilterBrand
+              selectedBrands={selectedBrands}
+              handleBrandChange={handleBrandChange}
+            />
 
             <div className="w-full flex h-auto justify-center gap-5 pb-3">
               <button

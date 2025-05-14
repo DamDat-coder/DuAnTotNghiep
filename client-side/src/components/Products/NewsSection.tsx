@@ -36,7 +36,7 @@ export default function NewsSection({ newsItems }: NewsSectionProps) {
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8">
+      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8">
         {newsItems.map((news) => (
           <div key={news.id} className="flex flex-col items-start gap-3">
             <Image
@@ -44,7 +44,7 @@ export default function NewsSection({ newsItems }: NewsSectionProps) {
               alt={news.name || "Tin tức"}
               width={450}
               height={257}
-              className="w-full h-[136px] tablet:h-[180px] desktop:h-[257px] object-cover rounded select-none"
+              className="w-full h-[136px] tablet:h-[180px] desktop:h-[257px] laptop:h-[257px] object-cover rounded select-none"
               draggable={false}
             />
             <div className="flex flex-col gap-1">

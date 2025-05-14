@@ -93,7 +93,7 @@ export default function ProductDetailsSection() {
   ];
 
   return (
-    <div className="border-t-2 border-[#B0B0B0] border-solid mt-16 desktop:w-[60%] desktop:mx-auto">
+    <div className="border-t-2 border-[#B0B0B0] border-solid mt-16 desktop:w-[60%] desktop:mx-auto laptop:w-[60%] laptop:mx-auto">
       {sections.map(({ id, title, content }) => (
         <div key={id} className="border-b-2 border-[#B0B0B0] border-solid">
           <a

@@ -60,9 +60,9 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
         <Breadcrumb />
       </Container>
 
-      <div className="mt-4 flex flex-col desktop:flex-row desktop:gap-6">
+      <div className="mt-4 flex flex-col desktop:flex-row desktop:gap-6 laptop:flex-row laptop:gap-6">
         {/* Mobile/Tablet: Toàn bộ layout gốc */}
-        <div className="flex flex-col gap-9 desktop:hidden">
+        <div className="flex flex-col gap-9 laptop:hidden desktop:hidden">
           {/* Section 1: Thông tin cơ bản và Swiper */}
           <div>
             <div className="mt-4 flex flex-col items-start gap-4">
@@ -102,7 +102,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
         </div>
 
         {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
-        <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4 overflow-x-hidden">
+        <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4  laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
           <div className="relative">
             <div className="grid grid-cols-2 gap-0">
               {product.images.slice(0, 4).map((image, index) => (
@@ -131,13 +131,13 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
           <ProductDetailsSection />
 
           {/* Section 5: Sản phẩm gợi ý */}
-          <div className="mb-4 mt-9 desktop:w-[80%] desktop:mx-auto">
+          <div className="mb-4 mt-9 desktop:w-[80%] desktop:mx-auto laptop:w-[80%] laptop:mx-auto">
             <ProductSection products={allProducts} desktopSlidesPerView={3.2} />
           </div>
         </div>
 
         {/* Desktop: Container 2 (Thông tin Sticky) */}
-        <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16 desktop:px-[3.75rem] desktop:py-[1.875rem]">
+        <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16 desktop:px-[3.75rem] desktop:py-[1.875rem]  laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3 laptop:px-[3.75rem] laptop:py-[1.875rem]">
           <div className="mt-4 flex flex-col items-start gap-6">
             <div className="w-full flex justify-between">
               <div className="text-sm font-bold opacity-40">

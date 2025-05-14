@@ -24,13 +24,13 @@ export default function Banner({
     <div className="banner w-full">
       {/* Tiêu đề (nếu có) */}
       {title && (
-        <h1 className="text-[1.5rem] font-bold desktop:text-[1.5rem] desktop:font-bold">
+        <h1 className="text-[1.5rem] font-bold laptop:text-[1.5rem] desktop:text-[1.5rem] desktop:font-bold">
           {title}
         </h1>
       )}
 
       {/* Mobile/Tablet: 1 hình */}
-      <div className="desktop:hidden">
+      <div className="laptop:hidden desktop:hidden">
         <Image
           src={image1}
           alt={altText}
@@ -53,7 +53,7 @@ export default function Banner({
       </div>
 
       {/* Desktop: 2 hình với overlay */}
-      <div className="hidden desktop:flex w-full">
+      <div className="hidden laptop:flex desktop:flex w-full">
         <div className="relative w-full flex">
           {/* Hình 1 */}
           <div className="w-[50%]">

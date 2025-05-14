@@ -37,7 +37,7 @@ export default function Header({ title }: HeaderProps) {
   return (
     <>
       <nav className="bg-white text-black relative z-40">
-        <div className="w-[95%] mx-auto px-4 max-w-[2560px] desktop:px-8">
+        <div className="w-[95%] mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <Image
@@ -55,7 +55,7 @@ export default function Header({ title }: HeaderProps) {
 
             <div className="flex items-center space-x-[0.75rem]">
               {/* Desktop Actions */}
-              <div className="hidden desktop:flex items-center space-x-[0.75rem]">
+              <div className="hidden laptop:flex desktop:flex items-center space-x-[0.75rem]">
                 <button
                   type="button"
                   className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"

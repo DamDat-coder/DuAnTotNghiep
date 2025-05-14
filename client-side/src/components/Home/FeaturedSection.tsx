@@ -38,7 +38,7 @@ export default function FeaturedSection({
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8">
+      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid-cols-3 laptop:gap-8">
         {featuredSection.map((product) => {
           // Tìm href dựa trên product.gender
           const genderLink = genderLinks.find(
@@ -50,7 +50,7 @@ export default function FeaturedSection({
               <img
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
-                className="w-auto h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto desktop:object-contain"
+                className="w-auto h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto desktop:object-contain  laptop:w-full laptop:h-auto laptop:object-contain"
                 draggable="false"
               />
               <Link

@@ -29,18 +29,18 @@ export default function MemberBenefitsBanner({ benefits }: MemberBenefitsBannerP
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8">
+      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8 ">
         {benefits.map((benefit) => (
           <div key={benefit.id} className="relative w-full h-full">
             <img
               src={`/memberBenefit/${benefit.image}`}
               alt={benefit.benefit}
-              className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto"
+              className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto  laptop:w-full laptop:h-auto"
               draggable="false"
             />
             <div className="absolute inset-0 bg-black/45 rounded"></div>
             <div className="absolute bottom-[1.5rem] left-[1.5rem] w-[55%] flex flex-col gap-2">
-              <div className="text-[1.5rem] font-heading font-bold text-white tablet:text-2xl desktop:text-3xl leading-[1.8125rem] flex flex-wrap">
+              <div className="text-[1.5rem] font-heading font-bold text-white tablet:text-2xl desktop:text-3xl  laptop:text-3xl leading-[1.8125rem] flex flex-wrap">
                 {benefit.benefit}
               </div>
               <button className="text-[1rem] px-[0.7475rem] py-[0.52875rem] bg-black text-white font-body rounded-full hover:opacity-70 transition-colors w-fit">

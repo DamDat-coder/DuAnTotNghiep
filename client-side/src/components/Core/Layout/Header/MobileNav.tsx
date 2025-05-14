@@ -17,7 +17,7 @@ export default function MobileNav({ setIsLoginOpen, setIsLookupOpen }: MobileNav
   const handleSetIsLookupOpen = setIsLookupOpen || setIsLookupOpenFromContext;
 
   return (
-    <div className="flex items-center space-x-[0.75rem] desktop:hidden">
+    <div className="flex items-center space-x-[0.75rem] laptop:hidden desktop:hidden">
       <button
         type="button"
         className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"

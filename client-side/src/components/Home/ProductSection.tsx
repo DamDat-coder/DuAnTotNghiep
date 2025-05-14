@@ -87,15 +87,15 @@ export default function ProductSection({
     return (
       <Link
         href={`/products/${product.id}`}
-        className="product w-[171px] h-[22rem] desktop:w-[300px] desktop:h-auto flex flex-col bg-white relative"
+        className=" w-full flex flex-col bg-white relative"
       >
-        <div className="product w-[16.8125rem] h-auto flex flex-col bg-white relative desktop:w-[22.6875rem] desktop:h-auto font-description">
+        <div className="product w-full h-auto font-description">
           <Image
             src={`/product/img/${product.images[0]}`}
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}
-            className="w-[16.8125rem] h-[16.8125rem] desktop:w-[22.6875rem] desktop:h-[22.6875rem] object-cover"
+            className="w-[16.8125rem] h-[16.8125rem] desktop:w-[22.6875rem] desktop:h-[22.6875rem] laptop:w-[22.6875rem] laptop:h-[22.6875rem] object-cover"
             draggable={false}
           />
           <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
@@ -147,16 +147,16 @@ export default function ProductSection({
       </div>
 
       {/* Tablet: Grid */}
-      <div className="hidden desktop:hidden tablet:grid tablet:grid-cols-2 gap-6">
+      <div className="hidden laptop:hidden desktop:hidden tablet:grid tablet:grid-cols-2 gap-6">
         {displayedProducts.map((product, index) => (
           <div key={product.id || index}>{renderProductCard(product)}</div>
         ))}
       </div>
 
       {/* Desktop: Swiper */}
-      <div className="hidden desktop:block">
+      <div className="hidden laptop:hidden desktop:block">
         <Swiper
-          spaceBetween={200}
+          spaceBetween={20}
           slidesPerView={desktopSlidesPerView}
           loop={false}
           grabCursor={true}
@@ -164,6 +164,23 @@ export default function ProductSection({
         >
           {displayedProducts.map((product, index) => (
             <SwiperSlide key={product.id || index}>
+              {renderProductCard(product)}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+
+      {/* Laptop: Swiper */}
+      <div className="hidden desktop:hidden laptop:block">
+        <Swiper
+          spaceBetween={20}
+          slidesPerView={3.5}
+          loop={false}
+          grabCursor={true}
+          className="select-none"
+        >
+          {displayedProducts.map((product, index) => (
+            <SwiperSlide className="w-100%" key={product.id || index}>
               {renderProductCard(product)}
             </SwiperSlide>
           ))}

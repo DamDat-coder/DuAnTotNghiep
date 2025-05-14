@@ -40,7 +40,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="py-0 px-6 desktop:px-0 overflow-x-hidden flex flex-col gap-4">
+    <div className="py-0 px-6 laptop:px-0 desktop:px-0 overflow-x-hidden flex flex-col gap-4">
       {/* Banner đầu */}
       <Banner
         status="Vừa ra mắt"

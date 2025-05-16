@@ -21,8 +21,6 @@ export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
   const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Debug isOpen
-  console.log("LookupMenu received isOpen:", isOpen);
 
   // Xác định thiết bị (mobile hay desktop/tablet)
   useEffect(() => {

@@ -18,26 +18,32 @@ export default function CartItem({
   onRemove,
 }: CartItemProps) {
   // Dùng hình ảnh mặc định nếu item.image không hợp lệ
-  const imageSrc = item.image && item.image.startsWith("/") ? item.image : "/images/placeholder.jpg";
+  const imageSrc = item.image
+    ? item.image.startsWith("/")
+      ? item.image
+      : "/product/img/" + item.image
+    : "/images/placeholder.jpg";
 
   return (
     <div className="flex items-center gap-4 p-4">
       <Image
         src={imageSrc}
-        alt={item.name}
+        alt={imageSrc}
         width={110}
         height={110}
         className="w-[6.9rem] h-[6.9rem] object-cover rounded desktop:w-[150px] desktop:h-[150px]"
       />
       <div className="flex-1 flex flex-col gap-2">
-        <h3 className="text-lg font-semibold text-[#374151] line-clamp-2">
-          {item.name}
-        </h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-[#374151] line-clamp-2">
+            {item.name}
+          </h3>
+          <div className="text-[1rem] font-bold text-red-500">
+            {item.price.toLocaleString("vi-VN")}₫
+          </div>
+        </div>
         <div className="text-sm text-[#374151]">
           Size: {item.size} ({item.color})
-        </div>
-        <div className="text-[1rem] font-bold text-red-500">
-          {item.price.toLocaleString("vi-VN")}₫
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 border border-gray-300 rounded-full w-fit">

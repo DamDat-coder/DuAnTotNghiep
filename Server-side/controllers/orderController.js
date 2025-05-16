@@ -137,6 +137,11 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             res.status(400).json({ message: validationError });
             return;
         }
+        // Kiểm tra userId
+        if (!req.userId) {
+            res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+            return;
+        }
         // Tính tổng giá và kiểm tra sản phẩm
         let totalPrice = 0;
         for (const item of orderProducts) {
@@ -149,7 +154,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
         // Tạo đơn hàng mới
         const newOrder = new orderModel_1.default({
-            userId: req.user._id,
+            userId: req.userId,
             products: orderProducts,
             totalPrice,
             shippingAddress,
@@ -223,9 +228,10 @@ const vnpayReturn = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 res.redirect('http://your-frontend.com/payment/success');
             }
             else {
-                order.paymentStatus = 'failed';
+                order.paymentStatus = 'pending';
+                order.status = 'pending';
                 yield order.save();
-                res.redirect('http://your-frontend.com/payment/failed');
+                res.redirect('http://your-frontend.com/payment/pending');
             }
         }
         else {
@@ -255,9 +261,10 @@ const momoReturn = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             res.redirect('http://your-frontend.com/payment/success');
         }
         else {
-            order.paymentStatus = 'failed';
+            order.paymentStatus = 'pending';
+            order.status = 'pending';
             yield order.save();
-            res.redirect('http://your-frontend.com/payment/failed');
+            res.redirect('http://your-frontend.com/payment/pending');
         }
     }
     catch (error) {
@@ -293,8 +300,9 @@ const zalopayCallback = (req, res) => __awaiter(void 0, void 0, void 0, function
         }
         else {
             order.paymentStatus = 'failed';
+            order.status = 'pending';
             yield order.save();
-            res.json({ return_code: -1, return_message: 'Failed' });
+            res.json({ return_code: -1, return_message: 'pending' });
         }
     }
     catch (error) {
@@ -306,11 +314,21 @@ exports.zalopayCallback = zalopayCallback;
 // Lấy chi tiết đơn hàng theo ID
 const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        // Kiểm tra userId
+        if (!req.userId) {
+            res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+            return;
+        }
         const order = yield orderModel_1.default.findById(req.params.id)
             .populate('userId', 'name email')
             .populate('products.productId', 'name price image');
         if (!order) {
             res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+            return;
+        }
+        // Kiểm tra quyền truy cập (chỉ người dùng sở hữu đơn hàng được xem)
+        if (order.userId.toString() !== req.userId) {
+            res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này' });
             return;
         }
         res.json(order);
@@ -324,22 +342,23 @@ exports.getOrderById = getOrderById;
 // Lấy danh sách đơn hàng của người dùng
 const getUserOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        // Kiểm tra userId
+        if (!req.userId) {
+            res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+            return;
+        }
         const { page = '1', limit = '10', paymentMethod } = req.query;
         const options = {
             limit: parseInt(limit),
             skip: (parseInt(page) - 1) * parseInt(limit),
         };
-        const query = { userId: req.user._id };
+        const query = { userId: req.userId };
         if (paymentMethod) {
             query.paymentMethod = paymentMethod;
         }
         const total = yield orderModel_1.default.countDocuments(query);
         const userOrders = yield orderModel_1.default.find(query, null, options)
             .populate('products.productId', 'name price image');
-        if (!userOrders.length) {
-            res.status(404).json({ message: 'Bạn chưa có đơn hàng nào' });
-            return;
-        }
         res.json({
             data: userOrders,
             total,

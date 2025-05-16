@@ -82,7 +82,7 @@ export default function Cart() {
             />
             <div className="mb-4 mt-9">
               {suggestedProducts.length > 0 ? (
-                <ProductSection products={suggestedProducts} desktopSlidesPerView={4.5} />
+                <ProductSection products={suggestedProducts} desktopSlidesPerView={3.5} />
               ) : (
                 <p className="text-center text-gray-500">Không có sản phẩm gợi ý.</p>
               )}

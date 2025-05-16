@@ -134,7 +134,6 @@ export interface ICategory {
   id: string;
   name: string;
   description: string;
-  img: string;
   parentId: string | null;
 }
 export interface ICartItem {

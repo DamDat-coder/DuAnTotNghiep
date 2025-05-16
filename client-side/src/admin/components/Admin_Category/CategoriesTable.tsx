@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
+import { deleteCategory } from "@/services/categoryApi";
 
 // Định nghĩa kiểu dữ liệu cho danh mục
 interface Category {
@@ -69,27 +70,37 @@ export default function CategoriesTable({
     router.push(`/admin/category/edit/${categoryId}`);
   };
 
-  // Hàm xóa
-  const handleDelete = (categoryId: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      setCategories(categories.filter((category) => category.id !== categoryId));
-      setSortedCategories(
-        sortedCategories.filter((category) => category.id !== categoryId)
-      );
-      alert("Xóa danh mục thành công!");
+  // ✅ Hàm xóa có gọi API thật
+  const handleDelete = async (categoryId: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
+
+    try {
+      setLoading(true);
+      const response = await deleteCategory(categoryId);
+      if (response.status === "success") {
+        const updated = categories.filter((c) => c.id !== categoryId);
+        setCategories(updated);
+        setSortedCategories(updated);
+        alert("Xóa danh mục thành công!");
+      } else {
+        alert("Xóa không thành công. Vui lòng thử lại.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa:", err);
+      alert("Đã xảy ra lỗi khi xóa danh mục.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      {/* Container 1: AdminNavigation */}
       <AdminNavigation
         items={navigationItems}
         addButton={addButton}
         currentFilter=""
       />
 
-      {/* Container 2: Bảng danh mục */}
       <div className="flex-1 rounded-[2.125rem] px-12 py-8 bg-white overflow-x-auto overflow-y-auto">
         {loading ? (
           <p className="text-center text-lg">Đang tải...</p>

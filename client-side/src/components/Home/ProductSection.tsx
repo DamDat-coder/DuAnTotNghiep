@@ -174,7 +174,7 @@ export default function ProductSection({
       <div className="hidden desktop:hidden laptop:block">
         <Swiper
           spaceBetween={20}
-          slidesPerView={3.5}
+          slidesPerView={desktopSlidesPerView}
           loop={false}
           grabCursor={true}
           className="select-none"

@@ -45,10 +45,6 @@ const categorySchema = new mongoose_1.Schema({
         type: String,
         trim: true,
     },
-    img: {
-        type: String,
-        trim: true,
-    },
     parentId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "categories",

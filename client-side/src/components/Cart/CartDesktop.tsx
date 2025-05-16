@@ -77,7 +77,7 @@ export default function CartDesktop({
                 .toLocaleString("vi-VN")}₫
             </span>
           </div>
-          <div className="flex justify-between items-center border-t-2 border-black pt-3 mt-3">
+          <div className="flex justify-between items-center border-t-2 border-black border-solid pt-3 mt-3">
             <span className="text-[1rem] font-bold">Tổng tiền</span>
             <span className="text-[1rem] font-bold text-[#FF0000]">
               {totalPrice.toLocaleString("vi-VN")}₫

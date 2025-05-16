@@ -51,7 +51,7 @@ export async function fetchAllOrders(
 // Lấy chi tiết đơn hàng theo ID
 export async function fetchOrderById(id: string): Promise<any> {
   try {
-    const response = await fetchWithAuth<any>(`${API_BASE_URL}/order/${id}`, {
+    const response = await fetchWithAuth<any>(`${API_BASE_URL}/order/user/orders/${id}`, {
       cache: "no-store",
     });
     return response;

@@ -87,7 +87,7 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md desktop:max-w-2xl laptop:max-w-2xl"
+        className="relative bg-white p-6 px-36 shadow-lg w-full max-w-md desktop:max-w-2xl laptop:max-w-2xl"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}

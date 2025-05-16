@@ -44,8 +44,8 @@ export default function ShippingForm({
         THÔNG TIN GIAO HÀNG
       </h2>
       <div className="grid grid-cols-1 desktop:grid-cols-2 laptop:grid-cols-2 gap-4">
-        <div>
-          <label className="text-[1rem] font-medium uppercase">Họ và tên</label>
+        <div className="desktop:col-span-2 laptop:col-span-2">
+          <label className="text-[1rem] font-medium">Họ và tên</label>
           <input
             type="text"
             name="fullName"
@@ -59,7 +59,7 @@ export default function ShippingForm({
           )}
         </div>
         <div>
-          <label className="text-[1rem] font-medium uppercase">Email</label>
+          <label className="text-[1rem] font-medium">Email</label>
           <input
             type="email"
             name="email"
@@ -73,7 +73,7 @@ export default function ShippingForm({
           )}
         </div>
         <div>
-          <label className="text-[1rem] font-medium uppercase">Số điện thoại</label>
+          <label className="text-[1rem] font-medium">Số điện thoại</label>
           <input
             type="text"
             name="phone"
@@ -87,7 +87,7 @@ export default function ShippingForm({
           )}
         </div>
         <div>
-          <label className="text-[1rem] font-medium uppercase">Tỉnh thành</label>
+          <label className="text-[1rem] font-medium">Tỉnh thành</label>
           <Select
             name="province"
             value={
@@ -110,7 +110,7 @@ export default function ShippingForm({
           )}
         </div>
         <div>
-          <label className="text-[1rem] font-medium uppercase">Quận huyện</label>
+          <label className="text-[1rem] font-medium">Quận huyện</label>
           <Select
             name="district"
             value={
@@ -138,7 +138,7 @@ export default function ShippingForm({
           )}
         </div>
         <div>
-          <label className="text-[1rem] font-medium uppercase">Phường xã</label>
+          <label className="text-[1rem] font-medium">Phường xã</label>
           <Select
             name="ward"
             value={formData.ward ? { value: formData.ward, label: formData.ward } : null}
@@ -161,8 +161,8 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.ward}</p>
           )}
         </div>
-        <div className="desktop:col-span-2 laptop:col-span-2">
-          <label className="text-[1rem] font-medium uppercase">Địa chỉ</label>
+        <div>
+          <label className="text-[1rem] font-medium">Địa chỉ</label>
           <input
             type="text"
             name="address"

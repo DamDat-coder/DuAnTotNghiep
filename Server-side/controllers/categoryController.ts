@@ -8,15 +8,15 @@ import productModel from '../models/productModel';
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit as string) || 10, 1);
-    const skip = (page - 1) * limit;
+    // const limit = Math.max(parseInt(req.query.limit as string) || 10, 1);
+    // const skip = (page - 1) * limit;
     const parentId = req.query.parentId as string | null;
 
     const query = parentId ? { parentId } : { parentId: null };
     const categories = await categoryModel
       .find(query)
-      .skip(skip)
-      .limit(limit)
+      // .skip(skip)
+      // .limit(limit)
       .sort({ createdAt: -1 })
       .populate('parentId', 'name')
       .lean();
@@ -28,8 +28,8 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
       data: categories,
       total,
       page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      // limit,
+      // totalPages: Math.ceil(total / limit),
     });
   } catch (error: any) {
     res.status(500).json({ status: 'error', message: error.message });
@@ -63,17 +63,30 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
 // Tạo danh mục mới
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, img, parentId } = req.body;
+    console.log('req.body:', req.body);
 
-    if (!name || name.length > 100) {
+    const { name, description, parentId } = req.body;
+
+    if (!name) {
+      console.error('Missing name field');
       res.status(400).json({
         status: 'error',
-        message: 'Tên danh mục là bắt buộc và tối đa 100 ký tự',
+        message: 'Tên danh mục là bắt buộc',
+      });
+      return;
+    }
+
+    if (name.length > 100) {
+      console.error('Name too long:', name);
+      res.status(400).json({
+        status: 'error',
+        message: 'Tên danh mục tối đa 100 ký tự',
       });
       return;
     }
 
     if (parentId && !mongoose.Types.ObjectId.isValid(parentId)) {
+      console.error('Invalid parentId:', parentId);
       res.status(400).json({ status: 'error', message: 'parentId không hợp lệ' });
       return;
     }
@@ -81,12 +94,13 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     if (parentId) {
       const parentExists = await categoryModel.findById(parentId).lean();
       if (!parentExists) {
+        console.error('Parent category not found:', parentId);
         res.status(404).json({ status: 'error', message: 'Danh mục cha không tồn tại' });
         return;
       }
     }
 
-    const newCategory = new categoryModel({ name, description, img, parentId: parentId || null });
+    const newCategory = new categoryModel({ name, description, parentId: parentId || null });
     const savedCategory = await newCategory.save();
 
     res.status(201).json({
@@ -95,6 +109,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       data: savedCategory,
     });
   } catch (error: any) {
+    console.error('Create category error:', error);
     if (error.code === 11000) {
       res.status(409).json({ status: 'error', message: 'Tên danh mục đã tồn tại' });
       return;
@@ -106,15 +121,19 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
 // Cập nhật danh mục
 export const updateCategory = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('req.body:', req.body);
+
     const id = req.params.id;
-    const { name, description, img, parentId } = req.body;
+    const { name, description, parentId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.error('Invalid category ID:', id);
       res.status(400).json({ status: 'error', message: 'ID không hợp lệ' });
       return;
     }
 
     if (name && name.length > 100) {
+      console.error('Name too long:', name);
       res.status(400).json({
         status: 'error',
         message: 'Tên danh mục tối đa 100 ký tự',
@@ -123,6 +142,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     }
 
     if (parentId && !mongoose.Types.ObjectId.isValid(parentId)) {
+      console.error('Invalid parentId:', parentId);
       res.status(400).json({ status: 'error', message: 'parentId không hợp lệ' });
       return;
     }
@@ -130,15 +150,18 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     if (parentId) {
       const parentExists = await categoryModel.findById(parentId).lean();
       if (!parentExists) {
+        console.error('Parent category not found:', parentId);
         res.status(404).json({ status: 'error', message: 'Danh mục cha không tồn tại' });
         return;
       }
       if (parentId === id) {
+        console.error('Category cannot be its own parent:', id);
         res.status(400).json({ status: 'error', message: 'Danh mục không thể là cha của chính nó' });
         return;
       }
       const hasCycle = await checkCycle(id, parentId);
       if (hasCycle) {
+        console.error('Cycle detected in category hierarchy');
         res.status(400).json({ status: 'error', message: 'Phát hiện vòng lặp trong phân cấp' });
         return;
       }
@@ -147,7 +170,6 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     const updateFields: any = { updatedAt: Date.now() };
     if (name !== undefined) updateFields.name = name;
     if (description !== undefined) updateFields.description = description;
-    if (img !== undefined) updateFields.img = img;
     if (parentId !== undefined) updateFields.parentId = parentId || null;
 
     const updatedCategory = await categoryModel.findByIdAndUpdate(
@@ -157,6 +179,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     );
 
     if (!updatedCategory) {
+      console.error('Category not found:', id);
       res.status(404).json({ status: 'error', message: 'Không tìm thấy danh mục' });
       return;
     }
@@ -167,6 +190,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
       data: updatedCategory,
     });
   } catch (error: any) {
+    console.error('Update category error:', error);
     if (error.code === 11000) {
       res.status(409).json({ status: 'error', message: 'Tên danh mục đã tồn tại' });
       return;
@@ -174,7 +198,6 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
-
 // Xóa danh mục
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
   try {

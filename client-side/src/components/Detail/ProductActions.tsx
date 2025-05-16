@@ -96,7 +96,7 @@ export default function ProductActions({
             </button>
           ))}
         </div>
-        <div className="pt-3 text-red-500 text-sm font-medium">Còn {stock} sản phẩm</div>
+        <div className="pt-3 laptop:pb-16 desktop:pb-16 text-red-500 text-sm font-medium">Còn {stock} sản phẩm</div>
       </div>
 
       {/* Section 3: Actions */}

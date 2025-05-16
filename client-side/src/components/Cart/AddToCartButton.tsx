@@ -25,7 +25,7 @@ export default function AddToCartButton({
       name: product.name,
       price: product.price * (1 - product.discountPercent / 100),
       discountPercent: product.discountPercent,
-      image: `/product/img/${product.images[0]}`,
+      image: `${product.images[0]}`,
       quantity,
       size,
       color,

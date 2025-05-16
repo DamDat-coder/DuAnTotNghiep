@@ -5,8 +5,9 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { Types } from 'mongoose';
 
+// Giao diện khớp với verifyToken
 interface AuthenticatedRequest extends Request {
-  user?: { _id: string };
+  userId?: string;
 }
 
 // Hàm kiểm tra dữ liệu đầu vào
@@ -153,6 +154,12 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
+    // Kiểm tra userId
+    if (!req.userId) {
+      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+      return;
+    }
+
     // Tính tổng giá và kiểm tra sản phẩm
     let totalPrice = 0;
     for (const item of orderProducts!) {
@@ -166,7 +173,7 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response): Pro
 
     // Tạo đơn hàng mới
     const newOrder = new Order({
-      userId: req.user!._id,
+      userId: req.userId,
       products: orderProducts,
       totalPrice,
       shippingAddress,
@@ -243,9 +250,10 @@ export const vnpayReturn = async (req: Request, res: Response): Promise<void> =>
         await order.save();
         res.redirect('http://your-frontend.com/payment/success');
       } else {
-        order.paymentStatus = 'failed';
+        order.paymentStatus = 'pending';
+        order.status = 'pending';
         await order.save();
-        res.redirect('http://your-frontend.com/payment/failed');
+        res.redirect('http://your-frontend.com/payment/pending');
       }
     } else {
       res.status(400).json({ message: 'Chữ ký không hợp lệ' });
@@ -273,9 +281,10 @@ export const momoReturn = async (req: Request, res: Response): Promise<void> => 
       await order.save();
       res.redirect('http://your-frontend.com/payment/success');
     } else {
-      order.paymentStatus = 'failed';
+      order.paymentStatus = 'pending';
+      order.status = 'pending';
       await order.save();
-      res.redirect('http://your-frontend.com/payment/failed');
+      res.redirect('http://your-frontend.com/payment/pending');
     }
   } catch (error) {
     console.error(error);
@@ -312,8 +321,9 @@ export const zalopayCallback = async (req: Request, res: Response): Promise<void
       res.json({ return_code: 1, return_message: 'Success' });
     } else {
       order.paymentStatus = 'failed';
+      order.status = 'pending';
       await order.save();
-      res.json({ return_code: -1, return_message: 'Failed' });
+      res.json({ return_code: -1, return_message: 'pending' });
     }
   } catch (error) {
     console.error(error);
@@ -324,12 +334,24 @@ export const zalopayCallback = async (req: Request, res: Response): Promise<void
 // Lấy chi tiết đơn hàng theo ID
 export const getOrderById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    // Kiểm tra userId
+    if (!req.userId) {
+      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+      return;
+    }
+
     const order = await Order.findById(req.params.id)
       .populate('userId', 'name email')
       .populate('products.productId', 'name price image');
 
     if (!order) {
       res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+      return;
+    }
+
+    // Kiểm tra quyền truy cập (chỉ người dùng sở hữu đơn hàng được xem)
+    if (order.userId.toString() !== req.userId) {
+      res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này' });
       return;
     }
 
@@ -343,13 +365,19 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response): Pr
 // Lấy danh sách đơn hàng của người dùng
 export const getUserOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    // Kiểm tra userId
+    if (!req.userId) {
+      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+      return;
+    }
+
     const { page = '1', limit = '10', paymentMethod } = req.query;
     const options = {
       limit: parseInt(limit as string),
       skip: (parseInt(page as string) - 1) * parseInt(limit as string),
     };
 
-    const query: any = { userId: req.user!._id };
+    const query: any = { userId: req.userId };
     if (paymentMethod) {
       query.paymentMethod = paymentMethod;
     }
@@ -358,10 +386,6 @@ export const getUserOrders = async (req: AuthenticatedRequest, res: Response): P
     const userOrders = await Order.find(query, null, options)
       .populate('products.productId', 'name price image');
 
-    if (!userOrders.length) {
-      res.status(404).json({ message: 'Bạn chưa có đơn hàng nào' });
-      return;
-    }
 
     res.json({
       data: userOrders,

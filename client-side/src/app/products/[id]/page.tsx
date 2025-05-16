@@ -132,7 +132,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
 
           {/* Section 5: Sản phẩm gợi ý */}
           <div className="mb-4 mt-9 desktop:w-[80%] desktop:mx-auto laptop:w-[80%] laptop:mx-auto">
-            <ProductSection products={allProducts} desktopSlidesPerView={3.2} />
+            <ProductSection products={allProducts} desktopSlidesPerView={2.3} />
           </div>
         </div>
 

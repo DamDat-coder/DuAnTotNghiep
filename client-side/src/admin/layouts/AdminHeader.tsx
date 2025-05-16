@@ -37,13 +37,12 @@ export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProp
     loadAdminData();
   }, [router]);
 
-  const handleLogout = () => {
-    // Xóa token và trạng thái
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
-    document.cookie = "refreshToken=; path=/; max-age=0";
-    router.push("/");
-  };
+const handleLogout = () => {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("user");
+  document.cookie = "refreshToken=; path=/; max-age=0";
+  window.location.href = "/";
+};
 
   if (loading) {
     return (

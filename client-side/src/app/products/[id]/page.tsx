@@ -1,6 +1,5 @@
 // app/products/[id]/page.tsx
-import { Suspense } from "react";
-import { fetchProductById, fetchProducts} from "@/services/productApi";
+import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { fetchCategories } from "@/services/categoryApi";
 import { ICategory, IProduct } from "@/types";
 import Container from "@/components/Core/Container";
@@ -9,15 +8,15 @@ import ProductImageSwiper from "@/components/Detail/ProductImageSwiper";
 import ProductActions from "@/components/Detail/ProductActions";
 import ProductDetailsSection from "@/components/Detail/ProductDetailsSection";
 import ProductSection from "@/components/Home/ProductSection";
-import Image from "next/image";
 import { Star } from "lucide-react";
+import DesktopImageGalleryWrapper from "@/components/Detail/DesktopImageGalleryWrapper";
 
 interface ProductDetailProps {
   params: { id: string };
 }
 
 export default async function ProductDetail({ params }: ProductDetailProps) {
-  const  { id } = await params;
+  const { id } = await params;
 
   let product: IProduct | null = null;
   let suggestedProducts: ICategory[] = [];
@@ -78,7 +77,9 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             </div>
             <div className="relative mt-4">
               <ProductImageSwiper
-                images={product.images.filter((img): img is string => typeof img === "string")}
+                images={product.images.filter(
+                  (img): img is string => typeof img === "string"
+                )}
                 productName={product.name}
               />
             </div>
@@ -103,29 +104,12 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
 
         {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
         <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4  laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
-          <div className="relative">
-            <div className="grid grid-cols-2 gap-0">
-              {product.images.slice(0, 4).map((image, index) => (
-                <Image
-                  key={index}
-                  src={`/product/img/${image}`}
-                  alt={`${product.name} - Ảnh ${index + 1}`}
-                  width={380}
-                  height={285}
-                  className="w-full h-auto object-cover"
-                />
-              ))}
-            </div>
-            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex justify-center items-center gap-2 py-2 px-4 border-2 border-black border-solid w-[15%] bg-white">
-              <button className="text-base font-bold">XEM THÊM</button>
-              <Image
-                src="/nav/footer_down.svg"
-                alt="Xem thêm"
-                width={16}
-                height={16}
-              />
-            </div>
-          </div>
+          <DesktopImageGalleryWrapper
+            images={product.images.filter(
+              (img): img is string => typeof img === "string"
+            )}
+            productName={product.name}
+          />
 
           {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
           <ProductDetailsSection />

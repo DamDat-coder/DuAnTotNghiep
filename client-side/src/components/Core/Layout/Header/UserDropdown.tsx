@@ -23,14 +23,15 @@ export default function UserDropdown() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   if (!user) return null;
 
   return (
     <div
       ref={dropdownRef}
       className="relative"
-      onClick={() => setIsDropdownOpen((prev) => !prev)}
+      onMouseEnter={() => setIsDropdownOpen(true)}
+      onMouseLeave={() => setIsDropdownOpen(false)}
     >
       <div className="flex items-center space-x-2 cursor-pointer">
         <span className="text-gray-700">Hi, {user.name}</span>
@@ -40,45 +41,51 @@ export default function UserDropdown() {
           className="h-[2.375rem] w-auto rounded-full"
         />
       </div>
-      {isDropdownOpen && (
-        <div className="absolute right-0 top-full w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-          <Link
-            href="/profile"
-            className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
-          >
-            Thông tin người dùng
-          </Link>
-          <hr />
-          <Link
-            href="/orders"
-            className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
-          >
-            Đơn hàng
-          </Link>
-          <hr />
-          <button
-            type="button"
-            className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-            onClick={() => {
-              logout();
-              setIsDropdownOpen(false);
-            }}
-          >
-            Quên mật khẩu
-          </button>
-          <hr />
-          <button
-            type="button"
-            className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
-            onClick={() => {
-              logout();
-              setIsDropdownOpen(false);
-            }}
-          >
-            Đăng xuất
-          </button>
-        </div>
-      )}
+
+      {/* Dropdown */}
+      <div
+        className={`absolute right-0 top-full w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-all duration-300 ease-out transform ${
+          isDropdownOpen
+            ? "opacity-100 translate-y-0 visible"
+            : "opacity-0 -translate-y-2 invisible pointer-events-none"
+        }`}
+      >
+        <Link
+          href="/profile"
+          className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
+        >
+          Thông tin người dùng
+        </Link>
+        <hr />
+        <Link
+          href="/orders"
+          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+        >
+          Đơn hàng
+        </Link>
+        <hr />
+        <button
+          type="button"
+          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+          onClick={() => {
+            logout();
+            setIsDropdownOpen(false);
+          }}
+        >
+          Quên mật khẩu
+        </button>
+        <hr />
+        <button
+          type="button"
+          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
+          onClick={() => {
+            logout();
+            setIsDropdownOpen(false);
+          }}
+        >
+          Đăng xuất
+        </button>
+      </div>
     </div>
   );
 }

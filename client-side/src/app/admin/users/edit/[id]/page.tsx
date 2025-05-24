@@ -1,6 +1,6 @@
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import EditUserForm from "@/admin/components/Admin_User/EditUserForm";
-import { IUser } from "@/types/index";
+import { IUser } from "@/types/auth";
 import { fetchWithAuth } from "@/services/api";
 
 async function fetchUserById(id: string): Promise<{ user: IUser | null; error: string | null }> {

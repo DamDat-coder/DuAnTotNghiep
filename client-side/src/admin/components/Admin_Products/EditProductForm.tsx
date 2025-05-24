@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IProduct, ICategory } from "@/types/index";
+import { IProduct } from "@/types/product";
+import { ICategory } from "@/types/category";
 import { editProduct } from "@/services/productApi";
 import { fetchCategories } from "@/services/categoryApi";
 
@@ -11,7 +12,14 @@ interface EditProductFormProps {
   productId: string;
 }
 
-const sizeOptions = ["Size S", "Size M", "Size L", "Size XL", "Size XXL", "Size 3XL"];
+const sizeOptions = [
+  "Size S",
+  "Size M",
+  "Size L",
+  "Size XL",
+  "Size XXL",
+  "Size 3XL",
+];
 const colorOptions = [
   { value: "black", label: "Đen", color: "#000000" },
   { value: "cyan", label: "Xanh da trời", color: "#87CEEB" },
@@ -41,7 +49,10 @@ const mapSizes = (sizes: string[] | undefined): string[] => {
   });
 };
 
-export default function EditProductForm({ product, productId }: EditProductFormProps) {
+export default function EditProductForm({
+  product,
+  productId,
+}: EditProductFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<IProduct>({
     ...product,
@@ -142,7 +153,9 @@ export default function EditProductForm({ product, productId }: EditProductFormP
     }
 
     try {
-      const selectedCategory = categories.find((cat) => cat.name === formData.category);
+      const selectedCategory = categories.find(
+        (cat) => cat.name === formData.category
+      );
       if (!selectedCategory) {
         setError("Danh mục không hợp lệ.");
         return;
@@ -153,7 +166,7 @@ export default function EditProductForm({ product, productId }: EditProductFormP
         categoryId: selectedCategory.id,
         price: formData.price,
         discountPercent: formData.discountPercent,
-        images: (formData.images as File[]),
+        images: formData.images as File[],
       };
 
       console.log("Submitting product data:", productData);
@@ -174,7 +187,10 @@ export default function EditProductForm({ product, productId }: EditProductFormP
     <>
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="space-y-6 w-[60%] mx-auto flex flex-col gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 w-[60%] mx-auto flex flex-col gap-4"
+      >
         <div>
           <label className="block text-lg font-medium text-gray-700 mb-2">
             Tên sản phẩm
@@ -258,7 +274,8 @@ export default function EditProductForm({ product, productId }: EditProductFormP
           />
           {formData.images && formData.images.length > 0 && (
             <p className="mt-2 text-sm text-gray-500">
-              File đã chọn: {(formData.images as File[]).map((file) => file.name).join(", ")}
+              File đã chọn:{" "}
+              {(formData.images as File[]).map((file) => file.name).join(", ")}
             </p>
           )}
         </div>

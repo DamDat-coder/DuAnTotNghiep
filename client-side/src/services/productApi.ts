@@ -1,4 +1,4 @@
-import { IProduct } from "../types";
+import { IProduct } from "../types/product";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 
 // Lấy danh sách sản phẩm

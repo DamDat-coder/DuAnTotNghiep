@@ -2,7 +2,7 @@
 import Image from "next/image";
 import React, { useState, useEffect, useRef } from "react";
 import { fetchProducts } from "@/services/productApi";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 import SearchInput from "./SearchInput";
 import SearchSuggestions from "./SearchSuggestions";
 import SearchResults from "./SearchResults";

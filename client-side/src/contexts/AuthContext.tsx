@@ -7,7 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { AuthContextType, IUser } from "../types";
+import { AuthContextType, IUser } from "../types/auth";
 import { login, register, fetchUser } from "../services/userApi";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

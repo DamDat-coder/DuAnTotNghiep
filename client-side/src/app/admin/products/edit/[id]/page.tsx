@@ -2,7 +2,6 @@
 import EditProductForm from "@/admin/components/Admin_Products/EditProductForm";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchProductById } from "@/services/productApi";
-import { IProduct } from "@/types/index";
 
 export default async function EditProductPage({
   params,

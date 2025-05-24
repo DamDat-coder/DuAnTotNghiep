@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Heart, Trash2 } from "lucide-react";
-import { ICartItem } from "@/types";
+import { ICartItem } from "@/types/cart";
 
 interface CartItemProps {
   item: ICartItem;

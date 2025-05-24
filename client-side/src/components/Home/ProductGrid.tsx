@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import FilterPopup from "../Products/FilterPopup";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 
 interface ProductGridProps {
   products: IProduct[];

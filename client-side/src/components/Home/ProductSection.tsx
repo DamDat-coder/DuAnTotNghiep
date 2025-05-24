@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import Image from "next/image";
 import "swiper/css";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
 
 interface ProductSectionProps {

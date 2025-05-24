@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { createOrder} from "@/services/orderApi";
 import { fetchUser } from "@/services/userApi";
-import { ICartItem, CheckoutFormData, CheckoutErrors } from "@/types";
+import { ICartItem} from "@/types/cart";
+import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import toast from "react-hot-toast";
 
 export function useCheckout() {
@@ -20,7 +21,7 @@ export function useCheckout() {
       const user = await fetchUser();
       if (user) {
         setIsLoggedIn(true);
-        setFormData((prev) => ({
+        setFormData((prev:any) => ({
           ...prev,
           fullName: user.name || prev.fullName,
           email: user.email || prev.email,

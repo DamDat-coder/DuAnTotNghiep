@@ -2,7 +2,7 @@
 "use client";
 
 import { useFilter } from "@/hooks/useFilter";
-import { IFilterPopupProps } from "@/types";
+import { IFilterPopupProps } from "@/types/filter";
 import FilterSort from "./FilterSort";
 import FilterGender from "./FilterGender";
 import FilterPrice from "./FilterPrice";

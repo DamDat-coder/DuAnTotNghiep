@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
 import Image from "next/image";
-import { IProduct } from "@/types/index";
+import { IProduct } from "@/types/product";
 import { fetchWithAuth } from "@/services/api";
 
 interface SortConfig {

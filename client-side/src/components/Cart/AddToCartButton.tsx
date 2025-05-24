@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCartDispatch } from "@/contexts/CartContext";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 
 interface AddToCartButtonProps {
   product: IProduct;

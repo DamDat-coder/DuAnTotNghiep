@@ -13,7 +13,7 @@ import ProductSection from "@/components/Home/ProductSection";
 import MemberBenefitsBanner from "@/components/Home/MemberBenefitsBanner";
 import Container from "@/components/Core/Container";
 import Banner from "@/components/Home/Banner";
-import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types";
+import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
 
 export default async function Home() {
   let products: IProduct[] = [];

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchUser} from "@/services/userApi";
-import { IUser } from "@/types";
+import { IUser } from "@/types/auth";
 interface AdminHeaderProps {
   pageTitle: string;
   pageSubtitle: string;

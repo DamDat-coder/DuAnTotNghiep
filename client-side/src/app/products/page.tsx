@@ -9,7 +9,7 @@ import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import CategorySwiper from "@/components/Products/CategorySwiper";
 import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
-import { IProduct } from "@/types/index";
+import { IProduct } from "@/types/product";
 
 interface News {
   id: string;

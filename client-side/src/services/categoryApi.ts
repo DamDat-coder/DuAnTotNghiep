@@ -1,4 +1,4 @@
-import { ICategory } from "../types";
+import { ICategory } from "../types/category";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 interface CategoryResponse {
   status: string;

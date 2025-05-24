@@ -22,11 +22,11 @@ export default function SearchInput({
 
   return (
     <div
-      className={`flex items-center gap-4 ${
+      className={`flex items-center gap-4 laptop:w-[80%] desktop:w-[80%]${
         isMobile ? "px-6 pt-4 pb-6" : "px-4 py-2"
       } bg-white sticky top-0 z-10 rounded-t`}
     >
-      <div className="relative bg-[#687176] w-full  rounded-full flex items-center">
+      <div className="relative bg-[#687176] w-full rounded-full flex items-center ">
         <img
           src="/nav/nav_lookup_input.svg"
           alt="Search"
@@ -37,7 +37,7 @@ export default function SearchInput({
           placeholder="Tìm kiếm sản phẩm..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full py-2 pl-12 pr-12 text-lg text-black bg-[#ededed] border-none rounded-full focus:outline-none focus:ring-0 placeholder:text-base placeholder:text-[#687176] truncate"
+          className="w-full py-2 pl-12 pr-12 text-lg text-black bg-[#ededed] border-none rounded-full focus:outline-none focus:ring-0 placeholder:text-base placeholder:text-[#687176] truncate "
         />
         {searchTerm && (
           <button
@@ -53,15 +53,14 @@ export default function SearchInput({
           </button>
         )}
       </div>
-      {isMobile && (
-        <button
-          type="button"
-          className="text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none whitespace-nowrap"
-          onClick={() => setIsOpen(false)}
-        >
-          Hủy bỏ
-        </button>
-      )}
+
+      <button
+        type="button"
+        className="laptop:hidden desktop:hidden text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none whitespace-nowrap"
+        onClick={() => setIsOpen(false)}
+      >
+        Hủy bỏ
+      </button>
     </div>
   );
 }

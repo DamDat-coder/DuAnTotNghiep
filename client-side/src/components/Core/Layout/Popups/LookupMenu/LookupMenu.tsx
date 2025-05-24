@@ -1,8 +1,8 @@
 "use client";
-
+import Image from "next/image";
 import React, { useState, useEffect, useRef } from "react";
 import { fetchProducts } from "@/services/productApi";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 import SearchInput from "./SearchInput";
 import SearchSuggestions from "./SearchSuggestions";
 import SearchResults from "./SearchResults";
@@ -20,7 +20,6 @@ export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
 
   // Xác định thiết bị (mobile hay desktop/tablet)
   useEffect(() => {
@@ -124,30 +123,48 @@ export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
         className={`bg-white z-[60] text-black rounded ${
           isMobile
             ? `fixed inset-0 tablet:hidden flex flex-col`
-            : "fixed top-16 left-0 right-0 w-[60%] mx-auto shadow-lg rounded"
+            : "fixed left-0 right-0 w-[100%] h-full mx-auto shadow-lg rounded"
         }`}
         initial={isMobile ? { x: "100vh" } : { y: "-100vh" }}
         animate={isMobile ? { x: 0 } : { y: 0 }}
         exit={isMobile ? { x: "100vh" } : { y: "-100vh" }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
       >
-        {/* Thanh tìm kiếm */}
-        <SearchInput
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          setIsOpen={setIsOpen}
-          isMobile={isMobile}
-        />
+        <div className="flex w-[95%] mx-auto items-center justify-between laptop:py-[1.375rem]">
+          <Image
+            src="/nav/logo.svg"
+            alt="Logo"
+            width={120}
+            height={40}
+            className="h-auto w-auto hidden laptop:block desktop:block"
+            draggable={false}
+            loading="lazy"
+          />
+          {/* Thanh tìm kiếm */}
+          <SearchInput
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            setIsOpen={setIsOpen}
+            isMobile={isMobile}
+          />
+          <button
+            type="button"
+            className="hidden laptop:block desktop:block text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none whitespace-nowrap"
+            onClick={() => setIsOpen(false)}
+          >
+            Hủy bỏ
+          </button>
+        </div>
 
         {/* Nội dung cuộn */}
         <div
           className={`${
             isMobile
               ? "flex-1 overflow-y-auto px-6 pb-6"
-              : "max-h-[400px] overflow-y-auto p-4"
+              : "overflow-y-auto p-4 w-[85%] max-h-[80%] mx-auto"
           }`}
         >
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 laptop:flex-row desktop:flex-row">
             {isLoading ? (
               <p className="text-base text-gray-500">Đang tải...</p>
             ) : (

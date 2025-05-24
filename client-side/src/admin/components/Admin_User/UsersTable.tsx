@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
 import { fetchWithAuth } from "@/services/api";
-import { IUser } from "@/types";
+import { IUser } from "@/types/auth";
 // Định nghĩa kiểu dữ liệu cho cấu hình sắp xếp
 interface SortConfig {
   key: "email";

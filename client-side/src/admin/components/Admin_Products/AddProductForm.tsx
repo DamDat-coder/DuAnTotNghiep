@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { addProduct } from "@/services/productApi";
 import { fetchCategories } from "@/services/categoryApi";
-import { ICategory } from "@/types";
+import { ICategory } from "@/types/category";
 
 export default function AddProductPage() {
   const router = useRouter();

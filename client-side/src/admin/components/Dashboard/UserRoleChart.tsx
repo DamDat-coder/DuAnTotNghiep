@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { IUser } from "@/types";
+import { IUser } from "@/types/auth";
 
 // Đăng ký các thành phần cần thiết cho Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);

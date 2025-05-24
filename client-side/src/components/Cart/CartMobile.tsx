@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
-import { ICartItem } from "@/types";
+import { ICartItem } from "@/types/cart";
 
 interface CartMobileProps {
   cartItems: ICartItem[];

@@ -4,13 +4,9 @@ import { fetchUser } from "../services/userApi";
 import { fetchFeaturedSection } from "../services/featuredSectionApi";
 import { fetchMemberBenefits } from "../services/memberBenefitApi";
 import { fetchCategories } from "../services/categoryApi";
-import {
-  IProduct,
-  ICategory,
-  IMemberBenefit,
-  IFeaturedProducts,
-  IUser,
-} from "../types/index";
+import { IProduct, IMemberBenefit, IFeaturedProducts } from "../types/product";
+import { ICategory } from "../types/category";
+import { IUser } from "../types/auth";
 
 export function useApiData() {
   const [products, setProducts] = useState<IProduct[]>([]);

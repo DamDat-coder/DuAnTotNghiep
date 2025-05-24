@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, ChangeEvent, useEffect } from "react";
 import { addCategory, fetchCategories } from "@/services/categoryApi";
-import { ICategory } from "@/types";
+import { ICategory } from "@/types/category";
 
 interface CategoryFormData {
   name: string;

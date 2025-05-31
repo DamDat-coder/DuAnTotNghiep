@@ -96,7 +96,6 @@ export default function ProductsPage() {
         <Breadcrumb />
         <CategorySwiper categories={categories} />
         <ProductGrid products={products} />
-        <br />
         <NewsSection newsItems={newsItems} />
       </Container>
     </div>

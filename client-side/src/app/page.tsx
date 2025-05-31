@@ -1,14 +1,8 @@
 // src/app/page.tsx
 import FeaturedSection from "@/components/Home/FeaturedSection";
-import {
-  fetchProducts,
-} from "@/services/productApi";
-import {
-  fetchFeaturedSection,
-} from "@/services/featuredSectionApi";
-import {
-  fetchMemberBenefits,
-} from "@/services/memberBenefitApi";
+import { fetchProducts } from "@/services/productApi";
+import { fetchFeaturedSection } from "@/services/featuredSectionApi";
+import { fetchMemberBenefits } from "@/services/memberBenefitApi";
 import ProductSection from "@/components/Home/ProductSection";
 import MemberBenefitsBanner from "@/components/Home/MemberBenefitsBanner";
 import Container from "@/components/Core/Container";
@@ -40,7 +34,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="py-0 px-6 laptop:px-0 desktop:px-0 overflow-x-hidden flex flex-col gap-4">
+    <div className="py-0 px-6 tablet:px-4 laptop:px-0 desktop:px-0 overflow-x-hidden flex flex-col gap-4">
       {/* Banner đầu */}
       <Banner
         status="Vừa ra mắt"

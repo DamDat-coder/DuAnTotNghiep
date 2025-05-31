@@ -17,7 +17,7 @@ export default function Footer() {
     <footer className="text-center text-black px-4 desktop:border-t-2 desktop:border-solid desktop:border-[#B0B0B0] laptop:border-t-2 laptop:border-solid laptop:border-[#B0B0B0] laptop:mt-20">
       <div className="w-full mx-auto max-w-[2560px] pt-4 desktop:w-[70%] desktop:pb-4 laptop:w-[70%] laptop:pb-4">
         {/* Grid: 1 cột mobile, 2 cột tablet, 3 cột desktop */}
-        <div className="grid grid-cols-1 gap-6 tablet:grid-cols-2 laptop:grid-cols-3 desktop:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 tablet:grid-cols-1 laptop:grid-cols-3 desktop:grid-cols-3">
           {footerSections.map((section) => (
             <FooterSection
               key={section.id}

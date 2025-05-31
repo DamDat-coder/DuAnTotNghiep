@@ -21,7 +21,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
 
   return (
     <motion.div
-      className={`fixed inset-0 text-black bg-white transform transition-transform duration-300 ease-in-out z-50 tablet:hidden flex flex-col ${
+      className={`fixed inset-0 text-black bg-white transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       initial={false}

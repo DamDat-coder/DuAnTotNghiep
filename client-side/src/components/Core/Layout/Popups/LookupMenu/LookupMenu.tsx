@@ -24,10 +24,10 @@ export default function LookupMenu({ isOpen, setIsOpen }: LookupMenuProps) {
   // Xác định thiết bị (mobile hay desktop/tablet)
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768; // 768px là breakpoint cho tablet
+      const mobile = window.innerWidth <= 1440;
       setIsMobile(mobile);
-      console.log("isMobile:", mobile); // Debug
     };
+
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);

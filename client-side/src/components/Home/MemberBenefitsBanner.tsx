@@ -39,7 +39,7 @@ export default function MemberBenefitsBanner({
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid-cols-3 laptop:gap-8 ">
+      <div className="hidden desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid laptop:grid-cols-3 laptop:gap-8 ">
         {benefits.map((benefit) => (
           <div key={benefit.id} className="relative w-full h-full">
             <img

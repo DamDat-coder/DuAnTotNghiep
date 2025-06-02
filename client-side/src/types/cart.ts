@@ -8,5 +8,6 @@ export interface ICartItem {
   size: string;
   color: string;
   liked: boolean;
+  selected?: boolean;
 }
 

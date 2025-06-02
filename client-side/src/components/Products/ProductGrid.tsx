@@ -69,34 +69,35 @@ export default function ProductGrid({ products }: ProductGridProps) {
     return (
       <Link
         href={`/products/${product.id}`}
-        className="product w-full h-auto flex flex-col bg-white relative font-description"
+        className=" w-full flex flex-col bg-white relative"
       >
-        <Image
-          src={`/product/img/${product.images[0]}`}
-          alt={product.name || "Sản phẩm"}
-          width={171}
-          height={269}
-          className="w-[171px] h-[269px] desktop:w-full desktop:h-[450px]  laptop:w-full laptop:h-[450px] object-cover"
-          draggable={false}
-          loading="lazy"
-        />
-        <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] desktop:text-[0.875rem] font-bold px-2 py-1 rounded">
-          -{product.discountPercent}%
-        </div>
-        <AddToCartButton product={product} />
-        <div className="content flex flex-col p-4">
-          <div className="name h-20 text-lg font-bold text-[#374151] line-clamp-2">
-            {product.name || "Sản phẩm"}
+        <div className="product w-full h-auto font-description">
+          <Image
+            src={`/product/img/${product.images[0]}`}
+            alt={product.name || "Sản phẩm"}
+            width={363}
+            height={363}
+            className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[18.3125rem] object-cover"
+            draggable={false}
+          />
+          <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
+            -{product.discountPercent}%
           </div>
-          <div className="category desc-text text-[#374151] truncate">
-            {product.category || "Danh mục"}
-          </div>
-          <div className="price-container flex items-center gap-3 pt-2">
-            <div className="discountPrice text-[1rem] desktop:text-[1rem]  laptop:text-[1rem] font-bold text-red-500">
-              {discountPrice.toLocaleString("vi-VN")}₫
+          <AddToCartButton product={product} />
+          <div className="content flex flex-col p-4">
+            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 truncate">
+              {product.name || "Sản phẩm"}
             </div>
-            <div className="price text-[0.875rem] desktop:text-[0.875rem]  laptop:text-[1rem] text-[#374151] line-through">
-              {product.price.toLocaleString("vi-VN")}₫
+            <div className="category text-base text-[#374151] truncate">
+              {product.category || "Danh mục"}
+            </div>
+            <div className="price-container flex items-center gap-3 pt-2">
+              <div className="discountPrice text-[1rem] font-bold text-red-500">
+                {discountPrice.toLocaleString("vi-VN")}₫
+              </div>
+              <div className="price text-[0.875rem] text-[#374151] line-through">
+                {product.price.toLocaleString("vi-VN")}₫
+              </div>
             </div>
           </div>
         </div>

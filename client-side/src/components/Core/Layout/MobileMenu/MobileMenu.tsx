@@ -14,7 +14,9 @@ interface MobileMenuProps {
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const navItems = [
     { href: "/about", label: "Về chúng tôi" },
-    { href: "/products", label: "Sản phẩm" },
+    { href: "/products?gender=Nam", label: "Nam" },
+    { href: "/products?gender=Nữ", label: "Nữ" },
+    { href: "/products?gender=Unisex", label: "Unisex" },
     { href: "/contact", label: "Liên hệ" },
     { href: "/cart", label: "Giỏ hàng" },
   ];
@@ -56,7 +58,18 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               className="text-lg font-medium hover:underline"
               onClick={() => setIsOpen(false)}
             >
-              {item.label}
+              <div className="flex justify-between items-center">
+                {item.label}
+                <Image
+                  src="/nav/nav_angle_left.svg"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="h-auto w-auto tablet:w-2"
+                  draggable={false}
+                  loading="lazy"
+                />
+              </div>
             </Link>
           ))}
         </div>

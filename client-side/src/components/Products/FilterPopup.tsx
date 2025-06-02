@@ -9,6 +9,7 @@ import FilterPrice from "./FilterPrice";
 import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
 import FilterBrand from "./FilterBrand";
+import { useEffect } from "react";
 
 export default function FilterPopup({
   isOpen,
@@ -31,6 +32,17 @@ export default function FilterPopup({
     clearFilters,
     getFilters,
   } = useFilter();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isOpen]);
 
   const handleApplyFilters = () => {
     if (onApplyFilters) {

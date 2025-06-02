@@ -21,7 +21,7 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
       }}
       loop={false}
       grabCursor={true}
-      className="select-none my-4 border-b-2 border-[#D1D1D1]"
+      className="select-none my-4 border-b-2 border-[#D1D1D1] border-solid"
     >
       {categories.map((category, index) => (
         <SwiperSlide key={index} className="!w-auto">

@@ -298,67 +298,10 @@
 //                   </div>
 //                 )}
 //                 {activeTab === "Địa chỉ" && (
-//                   <div>
-//                     <p className="text-gray-700 mb-6">
-//                       Hiện tại bạn chưa lưu địa chỉ giao hàng nào. Hãy thêm địa
-//                       chỉ ở đây để điền trước nhằm thanh toán nhanh hơn.
-//                     </p>
-
-//                     <div className="text-right">
-//                       <button className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors">
-//                         Thêm địa chỉ
-//                       </button>
-//                     </div>
-//                   </div>
+//
 //                 )}
 //                 {activeTab === "Xóa tài khoản" && (
-//                   <div>
-//                     <p className="mb-4 text-gray-700">
-//                       Bạn có chắc chắn muốn xóa hồ sơ của mình? Bạn hiện đang
-//                       được hưởng các quyền lợi:
-//                     </p>
-
-//                     <ul className="list-disc list-inside text-gray-700 mb-4">
-//                       <li>Miễn phí đổi trả cho tất cả đơn hàng</li>
-//                       <li>Thanh toán nhanh chóng mỗi lần mua sắm</li>
-//                       <li>Danh sách Yêu thích cá nhân để lưu sản phẩm</li>
-//                       <li>Theo dõi đơn hàng dễ dàng</li>
-//                     </ul>
-
-//                     <p className="mb-2 text-gray-700">
-//                       Khi bạn xóa hồ sơ của mình:
-//                     </p>
-
-//                     <ul className="list-disc list-inside text-gray-700 mb-6">
-//                       <li>
-//                         Bạn sẽ không còn truy cập được vào hồ sơ Thành viên hoặc
-//                         tài khoản.
-//                       </li>
-//                       <li>
-//                         Thông tin đơn hàng chỉ có thể được cung cấp qua bộ phận
-//                         CSKH.
-//                       </li>
-//                       <li>
-//                         Dữ liệu trên ứng dụng và các nền tảng khác sẽ bị gỡ hoặc
-//                         ẩn.
-//                       </li>
-//                       <li>
-//                         Thông tin chia sẻ trên mạng xã hội sẽ không bị ảnh
-//                         hưởng.
-//                       </li>
-//                     </ul>
-
-//                     <p className="mb-6 text-gray-700">
-//                       Nếu bạn chắc chắn muốn tiếp tục, hãy xác nhận để xóa hồ sơ
-//                       của mình vĩnh viễn.
-//                     </p>
-
-//                     <div className="text-right">
-//                       <button className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors">
-//                         Xóa tài khoản
-//                       </button>
-//                     </div>
-//                   </div>
+//
 //                 )}
 //               </div>
 //             </div>
@@ -383,7 +326,7 @@ import Image from "next/image";
 
 export default function ProfilePage() {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("main");
+  const [activeTab, setActiveTab] = useState("Hồ sơ");
 
   const renderTabContent = () => {
     switch (activeTab) {

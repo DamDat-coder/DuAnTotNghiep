@@ -11,7 +11,7 @@ export default function Container({ children, className }: ContainerProps) {
   return (
     <div
       className={clsx(
-        "max-w-xs mx-auto tablet:max-w-2xl laptop:max-w-[80%] desktop:max-w-[80%]",
+        "max-w-xs mx-auto tablet:max-w-[90%] laptop:max-w-[90%] desktop:max-w-[90%]",
         className
       )}
     >

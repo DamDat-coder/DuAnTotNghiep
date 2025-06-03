@@ -1,4 +1,4 @@
-// src/components/Cart/CartMobile.tsx
+// src/components/Cart/CartTablet.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -6,7 +6,7 @@ import CartItem from "./CartItem";
 import { ICartItem } from "@/types/cart";
 import { useCartDispatch } from "@/contexts/CartContext";
 
-interface CartMobileProps {
+interface CartTabletProps {
   cartItems: ICartItem[];
   totalPrice: number;
   onQuantityChange: (id: string, size: string, change: number) => void;
@@ -14,13 +14,13 @@ interface CartMobileProps {
   onRemove: (id: string, size: string) => void;
 }
 
-export default function CartMobile({
+export default function CartTablet({
   cartItems,
   totalPrice,
   onQuantityChange,
   onToggleLike,
   onRemove,
-}: CartMobileProps) {
+}: CartTabletProps) {
   const router = useRouter();
   const dispatch = useCartDispatch();
 
@@ -42,7 +42,7 @@ export default function CartMobile({
   );
 
   return (
-    <div className="block tablet:hidden laptop:hidden desktop:hidden">
+    <div className="hidden tablet:block laptop:hidden desktop:hidden">
       <div className="grid grid-cols-1 gap-6 border-b-2 border-black mt-4">
         {cartItems.map((item) => (
           <CartItem

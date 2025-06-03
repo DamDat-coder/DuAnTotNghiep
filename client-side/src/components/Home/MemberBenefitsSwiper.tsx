@@ -3,20 +3,34 @@
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-import { IMemberBenefit } from "@/types";
+import { IMemberBenefit } from "@/types/product";
 
 interface MemberBenefitsSwiperProps {
   benefits: IMemberBenefit[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
-export default function MemberBenefitsSwiper({ benefits }: MemberBenefitsSwiperProps) {
+export default function MemberBenefitsSwiper({
+  benefits,
+  mobileSlidesPerView = 1.2,
+  tabletSlidesPerView = 2.5,
+}: MemberBenefitsSwiperProps) {
   return (
     <Swiper
-      spaceBetween={16} // Khoảng cách phù hợp cho mobile
-      slidesPerView={1.2} // Hiển thị 1.5 slide trên mobile
+      spaceBetween={16}
       loop={false}
       grabCursor={true}
       className="select-none"
+      breakpoints={{
+        0: {
+          slidesPerView: mobileSlidesPerView,
+        },
+
+        768: {
+          slidesPerView: tabletSlidesPerView,
+        },
+      }}
     >
       {benefits.map((benefit) => (
         <SwiperSlide key={benefit.id}>
@@ -24,7 +38,7 @@ export default function MemberBenefitsSwiper({ benefits }: MemberBenefitsSwiperP
             <img
               src={`/memberBenefit/${benefit.image}`}
               alt={benefit.benefit}
-              className="w-[18.75rem] h-[25.625rem] object-cover rounded select-none"
+              className="w-full h-[25.625rem] object-cover rounded select-none"
               draggable="false"
             />
             <div className="absolute inset-0 bg-black/45 rounded"></div>

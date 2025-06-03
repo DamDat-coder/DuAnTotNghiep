@@ -1,13 +1,15 @@
 // src/components/Home/FeaturedSwiper.tsx
 "use client";
 
-import { IFeaturedProducts } from "@/types";
+import { IFeaturedProducts } from "@/types/product";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 
 interface FeaturedSwiperProps {
   featuredSection: IFeaturedProducts[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
 const genderLinks = [
@@ -16,13 +18,25 @@ const genderLinks = [
   { href: "/products?gender=Unisex", label: "Unisex" },
 ];
 
-export default function FeaturedSwiper({ featuredSection }: FeaturedSwiperProps) {
+export default function FeaturedSwiper({
+  featuredSection,
+  mobileSlidesPerView = 1.2,
+  tabletSlidesPerView = 2.5,
+}: FeaturedSwiperProps) {
   return (
     <Swiper
       spaceBetween={10}
-      slidesPerView={1.5}
       loop={false}
       grabCursor={true}
+      breakpoints={{
+        0: {
+          slidesPerView: mobileSlidesPerView,
+        },
+
+        768: {
+          slidesPerView: tabletSlidesPerView,
+        },
+      }}
       className="select-none"
     >
       {featuredSection.map((product) => {

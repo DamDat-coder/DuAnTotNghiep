@@ -13,9 +13,15 @@ interface News {
 
 interface NewsSectionProps {
   newsItems: News[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
-export default function NewsSection({ newsItems }: NewsSectionProps) {
+export default function NewsSection({
+  newsItems,
+  mobileSlidesPerView = 1.5,
+  tabletSlidesPerView = 2.5,
+}: NewsSectionProps) {
   if (!newsItems || newsItems.length === 0) {
     return (
       <Container className="py-4">
@@ -31,12 +37,16 @@ export default function NewsSection({ newsItems }: NewsSectionProps) {
       <h1 className="text-[1.5rem] pb-6 font-bold">Tin Tức Mới Nhất</h1>
 
       {/* Mobile: Swiper */}
-      <div className="block tablet:hidden">
-        <NewsSwiper newsItems={newsItems} />
+      <div className="block tablet:block laptop:hidden desktop:hidden">
+        <NewsSwiper
+          newsItems={newsItems}
+          mobileSlidesPerView={mobileSlidesPerView}
+          tabletSlidesPerView={tabletSlidesPerView}
+        />
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8">
+      <div className="hidden desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8">
         {newsItems.map((news) => (
           <div key={news.id} className="flex flex-col items-start gap-3">
             <Image

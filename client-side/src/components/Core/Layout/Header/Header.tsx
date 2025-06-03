@@ -31,8 +31,7 @@ export default function Header({ title }: HeaderProps) {
   }, []);
 
   // Debug trạng thái isLookupOpen
-  useEffect(() => {
-  }, [isLookupOpen]);
+  useEffect(() => {}, [isLookupOpen]);
 
   return (
     <>
@@ -62,7 +61,11 @@ export default function Header({ title }: HeaderProps) {
                   onClick={() => setIsLookupOpen(true)}
                   aria-label="Open Lookup"
                 >
-                  <img src="/nav/nav_lookup.svg" alt="Lookup" className="h-6 w-auto" />
+                  <img
+                    src="/nav/nav_lookup.svg"
+                    alt="Lookup"
+                    className="h-6 w-auto"
+                  />
                 </button>
                 <a href="#" className="text-gray-400 hover:text-black">
                   <img
@@ -72,17 +75,28 @@ export default function Header({ title }: HeaderProps) {
                   />
                 </a>
                 <a href="/cart" className="text-gray-400 hover:text-black">
-                  <img src="/nav/nav_cart.svg" alt="Cart" className="h-6 w-auto" />
+                  <img
+                    src="/nav/nav_cart.svg"
+                    alt="Cart"
+                    className="h-6 w-auto"
+                  />
                 </a>
-                {isClient && (user ? <UserDropdown /> : (
-                  <button
-                    type="button"
-                    className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                    onClick={() => setIsLoginOpen(true)}
-                  >
-                    <img src="/nav/nav_user.svg" alt="User" className="h-6 w-auto" />
-                  </button>
-                ))}
+                {isClient &&
+                  (user ? (
+                    <UserDropdown />
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                      onClick={() => setIsLoginOpen(true)}
+                    >
+                      <img
+                        src="/nav/nav_user.svg"
+                        alt="User"
+                        className="h-6 w-auto"
+                      />
+                    </button>
+                  ))}
               </div>
 
               {/* Mobile Actions */}

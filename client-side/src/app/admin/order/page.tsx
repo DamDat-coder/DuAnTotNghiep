@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import OrderTable from "@/admin/components/Admin_Order/OrderTable";
-import { fetchAllOrders } from "@/services/api";
+import { fetchAllOrders } from "@/services/orderApi";
 import toast, { Toaster } from "react-hot-toast";
 import { Order } from "@/types";
 

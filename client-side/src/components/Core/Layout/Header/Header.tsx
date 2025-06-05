@@ -61,23 +61,29 @@ export default function Header({ title }: HeaderProps) {
                   onClick={() => setIsLookupOpen(true)}
                   aria-label="Open Lookup"
                 >
-                  <img
+                  <Image
                     src="/nav/nav_lookup.svg"
-                    alt="Lookup"
+                    alt="Logo"
+                    width={120}
+                    height={40}
                     className="h-6 w-auto"
                   />
                 </button>
                 <a href="#" className="text-gray-400 hover:text-black">
-                  <img
+                  <Image
                     src="/nav/nav_like_desktop.svg"
-                    alt="Wishlist"
+                    alt="Logo"
+                    width={120}
+                    height={40}
                     className="h-[1.05rem] w-auto"
                   />
                 </a>
                 <a href="/cart" className="text-gray-400 hover:text-black">
-                  <img
+                  <Image
                     src="/nav/nav_cart.svg"
-                    alt="Cart"
+                    alt="Logo"
+                    width={120}
+                    height={40}
                     className="h-6 w-auto"
                   />
                 </a>
@@ -90,9 +96,11 @@ export default function Header({ title }: HeaderProps) {
                       className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
                       onClick={() => setIsLoginOpen(true)}
                     >
-                      <img
+                      <Image
                         src="/nav/nav_user.svg"
-                        alt="User"
+                        alt="Logo"
+                        width={120}
+                        height={40}
                         className="h-6 w-auto"
                       />
                     </button>

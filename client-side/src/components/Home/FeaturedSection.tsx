@@ -2,7 +2,7 @@
 import { IFeaturedProducts } from "@/types/product";
 import Link from "next/link";
 import FeaturedSwiper from "./FeaturedSwiper";
-
+import Image from "next/image";
 interface FeaturedSectionProps {
   featuredSection: IFeaturedProducts[];
   mobileSlidesPerView?: number;
@@ -55,9 +55,11 @@ export default function FeaturedSection({
 
           return (
             <div key={product.id} className="flex flex-col items-start gap-5">
-              <img
+              <Image
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
+                width={120}
+                height={40}
                 className="w-auto h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto desktop:object-contain  laptop:w-full laptop:h-auto laptop:object-contain"
                 draggable="false"
               />

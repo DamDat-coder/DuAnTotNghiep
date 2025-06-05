@@ -1,6 +1,6 @@
 // src/components/Core/Layout/Header/UserDropdown.tsx
 "use client";
-
+import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,9 +35,11 @@ export default function UserDropdown() {
     >
       <div className="flex items-center space-x-2 cursor-pointer">
         <span className="text-gray-700">Hi, {user.name}</span>
-        <img
+        <Image
           src="/nav/avatar.png"
-          alt="User"
+          alt="Logo"
+          width={120}
+          height={40}
           className="h-[2.375rem] w-auto rounded-full"
         />
       </div>

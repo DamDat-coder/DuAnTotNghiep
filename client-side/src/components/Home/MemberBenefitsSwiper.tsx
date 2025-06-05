@@ -4,7 +4,7 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { IMemberBenefit } from "@/types/product";
-
+import Image from "next/image";
 interface MemberBenefitsSwiperProps {
   benefits: IMemberBenefit[];
   mobileSlidesPerView?: number;
@@ -35,11 +35,13 @@ export default function MemberBenefitsSwiper({
       {benefits.map((benefit) => (
         <SwiperSlide key={benefit.id}>
           <div className="relative w-full h-full">
-            <img
+            <Image
               src={`/memberBenefit/${benefit.image}`}
               alt={benefit.benefit}
               className="w-full h-[25.625rem] object-cover rounded select-none"
               draggable="false"
+              width={120}
+              height={40}
             />
             <div className="absolute inset-0 bg-black/45 rounded"></div>
             <div className="absolute bottom-[1.5rem] left-[1.5rem] w-[55%] flex flex-col gap-2">

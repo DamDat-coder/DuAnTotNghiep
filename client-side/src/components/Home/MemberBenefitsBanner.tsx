@@ -1,7 +1,7 @@
 // src/components/MemberBenefitsBanner.tsx
 import { IMemberBenefit } from "@/types/product";
 import MemberBenefitsSwiper from "./MemberBenefitsSwiper";
-
+import Image from "next/image";
 interface MemberBenefitsBannerProps {
   benefits: IMemberBenefit[];
   mobileSlidesPerView?: number;
@@ -42,9 +42,11 @@ export default function MemberBenefitsBanner({
       <div className="hidden desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid laptop:grid-cols-3 laptop:gap-8 ">
         {benefits.map((benefit) => (
           <div key={benefit.id} className="relative w-full h-full">
-            <img
+            <Image
               src={`/memberBenefit/${benefit.image}`}
               alt={benefit.benefit}
+              width={120}
+              height={40}
               className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto  laptop:w-full laptop:h-auto"
               draggable="false"
             />

@@ -55,7 +55,7 @@ const DesktopNewsLayout = () => (
           className="w-full px-4 py-2 text-sm border border-gray-300 rounded mb-2"
         />
         <button className="w-full bg-black text-white py-2 rounded text-sm">
-          Tìm kiếm <span role="img" aria-label="search">🔍</span>
+          Tìm kiếm
         </button>
       </div>
       {/* Tags */}
@@ -158,7 +158,7 @@ const MobileNewsLayout = () => (
         className="w-full px-4 py-2 text-sm border border-gray-300 rounded"
       />
       <button className="w-full bg-black text-white py-2 rounded text-sm">
-        Tìm kiếm 🔍
+        Tìm kiếm
       </button>
     </div>
     {/* Featured Article */}

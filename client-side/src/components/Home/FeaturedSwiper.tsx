@@ -5,7 +5,7 @@ import { IFeaturedProducts } from "@/types/product";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-
+import Image from "next/image";
 interface FeaturedSwiperProps {
   featuredSection: IFeaturedProducts[];
   mobileSlidesPerView?: number;
@@ -47,9 +47,11 @@ export default function FeaturedSwiper({
         return (
           <SwiperSlide key={product.id} className="!w-[16.8125rem]">
             <div className="flex flex-col items-start gap-5">
-              <img
+              <Image
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
+                width={120}
+                height={40}
                 className="w-[16.8125rem] h-[25.625rem] object-cover rounded select-none"
                 draggable="false"
               />

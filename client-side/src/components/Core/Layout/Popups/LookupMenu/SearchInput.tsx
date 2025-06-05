@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-
+import Image from "next/image";
 interface SearchInputProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -27,9 +27,11 @@ export default function SearchInput({
       } bg-white sticky top-0 z-10 rounded-t`}
     >
       <div className="relative bg-[#687176] w-full rounded-full flex items-center ">
-        <img
+        <Image
           src="/nav/nav_lookup_input.svg"
-          alt="Search"
+          alt="Logo"
+          width={120}
+          height={40}
           className="absolute left-4 h-5 w-5"
         />
         <input
@@ -45,9 +47,11 @@ export default function SearchInput({
             className="absolute right-4 flex items-center"
             onClick={handleClear}
           >
-            <img
+            <Image
               src="/nav/nav_clear.svg"
-              alt="Clear"
+              alt="Logo"
+              width={120}
+              height={40}
               className="h-[0.875rem] w-[0.875rem]"
             />
           </button>

@@ -45,7 +45,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
           onClick={() => setIsOpen(false)}
         >
-          <img src="/nav/Union - Copy.svg" alt="Close" className="h-6 w-auto" />
+          <Image
+            src="/nav/Union - Copy.svg"
+            alt="Logo"
+            width={120}
+            height={40}
+            className="h-6 w-auto"
+          />
         </button>
       </div>
 

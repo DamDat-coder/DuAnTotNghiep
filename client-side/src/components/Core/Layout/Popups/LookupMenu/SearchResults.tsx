@@ -46,44 +46,33 @@ export default function SearchResults({
   }
 
   return (
-    <div
-      className={`grid gap-4 text-left ${
-        isMobile ? "grid-cols-2" : "grid-cols-3"
-      }`}
-    >
+    <div className="flex flex-col gap-4">
       {filteredProducts.map((product) => {
         const discountPrice = Math.round(
           product.price * (1 - (product.discountPercent || 0) / 100)
         );
         return (
-          <Link
-            key={product.id}
-            href={`/products/${product.id}`}
-            className=" w-full flex flex-col bg-white relative"
-          >
-            <div className="product w-full h-auto font-description">
-              <Image
-                src={`/product/img/${product.images[0]}`}
-                alt={product.name || "Sản phẩm"}
-                width={363}
-                height={363}
-                className="w-[16.8125rem] h-[16.8125rem] desktop:w-[22.6875rem] desktop:h-[22.6875rem] laptop:w-[22.6875rem] laptop:h-[22.6875rem] object-cover"
-                draggable={false}
-              />
-             
-              <div className="content flex flex-col p-4">
-                <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
-                  {product.name || "Sản phẩm"}
-                </div>
-                <div className="category text-base text-[#374151] truncate">
-                  {product.category || "Danh mục"}
-                </div>
-                <div className="price-container flex items-center gap-3 pt-2">
-                  <div className="discountPrice text-[1rem] font-bold text-red-500">
-                    {discountPrice.toLocaleString("vi-VN")}₫
+          <Link key={product.id} href={`/products/${product.id}`} className="">
+            <div className="flex">
+              <div className="w-1/3 shrink-0">
+                <Image
+                  src={`/product/img/${product.images[0]}`}
+                  alt={product.name || "Sản phẩm"}
+                  width={363}
+                  height={363}
+                  className="w-full h-auto"
+                  draggable={false}
+                />
+              </div>
+              <div className="w-2/3">
+                <div className="content flex flex-col">
+                  <div className="name text-sm font-bold text-[#374151] pb-2">
+                    {product.name || "Sản phẩm"}
                   </div>
-                  <div className="price text-[0.875rem] text-[#374151] line-through">
-                    {product.price.toLocaleString("vi-VN")}₫
+                  <div className="price-container">
+                    <div className="discountPrice text-[1rem] font-bold text-red-500">
+                      {discountPrice.toLocaleString("vi-VN")}₫
+                    </div>
                   </div>
                 </div>
               </div>

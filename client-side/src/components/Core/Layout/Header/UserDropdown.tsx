@@ -29,11 +29,11 @@ export default function UserDropdown() {
   return (
     <div
       ref={dropdownRef}
-      className="relative"
+      className="relative hidden tablet:hidden laptop:block desktop:block"
       onMouseEnter={() => setIsDropdownOpen(true)}
       onMouseLeave={() => setIsDropdownOpen(false)}
     >
-      <div className="flex items-center space-x-2 cursor-pointer">
+      <div className="flex items-center space-x-2 cursor-pointer ">
         <span className="text-gray-700">Hi, {user.name}</span>
         <Image
           src="/nav/avatar.png"

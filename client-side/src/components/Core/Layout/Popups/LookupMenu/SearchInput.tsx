@@ -22,7 +22,7 @@ export default function SearchInput({
 
   return (
     <div
-      className={`flex items-center gap-4 laptop:w-[80%] desktop:w-[80%]${
+      className={`flex items-center gap-4${
         isMobile ? "px-6 pt-4 pb-6" : "px-4 py-2"
       } bg-white sticky top-0 z-10 rounded-t`}
     >
@@ -57,14 +57,6 @@ export default function SearchInput({
           </button>
         )}
       </div>
-
-      <button
-        type="button"
-        className="laptop:hidden desktop:hidden text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none whitespace-nowrap"
-        onClick={() => setIsOpen(false)}
-      >
-        Hủy bỏ
-      </button>
     </div>
   );
 }

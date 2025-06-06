@@ -4,10 +4,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const navLinks = [
-  { href: "/", label: "Trang chủ" },
   { href: "/products?gender=Nam", label: "Nam" },
   { href: "/products?gender=Nữ", label: "Nữ" },
-  { href: "/products?gender=Unisex", label: "Unisex" },
   { href: "/products?discount=true", label: "Giảm giá" },
   { href: "/posts", label: "Bài viết" },
 ];
@@ -20,7 +18,9 @@ export default function DesktopNav() {
     <div className="hidden laptop:flex desktop:flex items-center space-x-6">
       {navLinks.map((link) => {
         // Tạo URLSearchParams từ link.href
-        const linkSearchParams = new URLSearchParams(link.href.split("?")[1] || "");
+        const linkSearchParams = new URLSearchParams(
+          link.href.split("?")[1] || ""
+        );
         const linkGender = linkSearchParams.get("gender");
         const linkDiscount = linkSearchParams.get("discount");
 
@@ -39,7 +39,7 @@ export default function DesktopNav() {
           <Link
             key={link.href}
             href={link.href}
-            className={`px-3 py-2 text-xl ${
+            className={`px-2 py-2 text-xl ${
               isActive ? "font-bold" : "font-medium"
             } hover:bg-gray-200 rounded`}
           >

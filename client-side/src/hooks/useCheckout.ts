@@ -1,11 +1,13 @@
+// src/hooks/useCheckout.ts
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
-import { createOrder} from "@/services/orderApi";
+import { createOrder } from "@/services/orderApi";
 import { fetchUser } from "@/services/userApi";
-import { ICartItem, CheckoutFormData, CheckoutErrors } from "@/types";
+import { ICartItem } from "@/types/cart";
+import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import toast from "react-hot-toast";
 
 export function useCheckout() {
@@ -20,7 +22,7 @@ export function useCheckout() {
       const user = await fetchUser();
       if (user) {
         setIsLoggedIn(true);
-        setFormData((prev) => ({
+        setFormData((prev: any) => ({
           ...prev,
           fullName: user.name || prev.fullName,
           email: user.email || prev.email,
@@ -34,19 +36,27 @@ export function useCheckout() {
     checkAuth();
   }, [router]);
 
-  // Chuyển cart.items thành orderItems
-  const orderItems: ICartItem[] = cart.items;
+  // Lấy các sản phẩm được chọn (selected: true)
+  const orderItems: ICartItem[] = useMemo(
+    () => cart.items.filter((item) => item.selected),
+    [cart.items]
+  );
 
-  // Log cart.items để debug
+  // Log orderItems để debug
   useEffect(() => {
-    console.log("Cart items:", cart.items);
-  }, [cart.items]);
+    console.log("Selected order items:", orderItems);
+  }, [orderItems]);
 
-  // Tính tổng tiền tạm thời
-  const subtotal = orderItems.reduce((total, item) => {
-    const discountPrice = item.price * (1 - item.discountPercent / 100);
-    return total + discountPrice * item.quantity;
-  }, 0);
+  // Tính tổng tiền tạm thời (chỉ cho các sản phẩm được chọn)
+  const subtotal = useMemo(
+    () =>
+      orderItems.reduce(
+        (total, item) =>
+          total + item.price * (1 - item.discountPercent / 100) * item.quantity,
+        0
+      ),
+    [orderItems]
+  );
 
   // Mã giảm giá
   const [discountCode, setDiscountCode] = useState("");
@@ -129,62 +139,74 @@ export function useCheckout() {
   };
 
   // Xử lý submit form
-// src/hooks/useCheckout.ts
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const newErrors: CheckoutErrors = {
-    fullName: formData.fullName ? "" : "Họ và tên là bắt buộc",
-    email: formData.email
-      ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-        ? ""
-        : "Email không hợp lệ"
-      : "Email là bắt buộc",
-    phone: formData.phone
-      ? /^[0-9]{10}$/.test(formData.phone)
-        ? ""
-        : "Số điện thoại phải có 10 chữ số"
-      : "Số điện thoại là bắt buộc",
-    province: formData.province ? "" : "Vui lòng chọn tỉnh thành",
-    district: formData.district ? "" : "Vui lòng chọn quận huyện",
-    ward: formData.ward ? "" : "Vui lòng chọn phường xã",
-    address: formData.address ? "" : "Địa chỉ là bắt buộc",
-  };
-
-  setErrors(newErrors);
-
-  if (Object.values(newErrors).every((error) => error === "")) {
-    try {
-      const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
-      const order = {
-        products: orderItems.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-        })),
-        shippingAddress,
-        paymentMethod, // Thêm phương thức thanh toán
-        shippingMethod, // Thêm phương thức vận chuyển
-        subtotal, // Thêm giá trị tạm tính
-        discount, // Thêm giá trị giảm giá
-        shippingFee, // Thêm phí vận chuyển
-        total, // Thêm tổng tiền
-      };
-
-      console.log("Order data:", order); // Log dữ liệu gửi đi
-      const response = await createOrder(order);
-      if (response) {
-        toast.success("Đặt hàng thành công!");
-        dispatch({ type: "clear" });
-        router.push("/orders");
-      } else {
-        toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
-      }
-    } catch (error: any) {
-      console.error("Submit error:", error);
-      toast.error(error.message || "Đặt hàng thất bại!");
+    // Kiểm tra nếu không có sản phẩm được chọn
+    if (orderItems.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      return;
     }
-  }
-};
+
+    // Validation form
+    const newErrors: CheckoutErrors = {
+      fullName: formData.fullName ? "" : "Họ và tên là bắt buộc",
+      email: formData.email
+        ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+          ? ""
+          : "Email không hợp lệ"
+        : "Email là bắt buộc",
+      phone: formData.phone
+        ? /^[0-9]{10}$/.test(formData.phone)
+          ? ""
+          : "Số điện thoại phải có 10 chữ số"
+        : "Số điện thoại là bắt buộc",
+      province: formData.province ? "" : "Vui lòng chọn tỉnh thành",
+      district: formData.district ? "" : "Vui lòng chọn quận huyện",
+      ward: formData.ward ? "" : "Vui lòng chọn phường xã",
+      address: formData.address ? "" : "Địa chỉ là bắt buộc",
+    };
+
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).every((error) => error === "")) {
+      try {
+        const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
+        const order = {
+          products: orderItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            size: item.size, // Thêm size để đảm bảo thông tin đầy đủ
+            color: item.color, // Thêm color
+            price: item.price * (1 - item.discountPercent / 100), // Giá đã giảm
+          })),
+          shippingAddress,
+          paymentMethod,
+          shippingMethod,
+          subtotal,
+          discount,
+          shippingFee,
+          total,
+        };
+
+        console.log("Order data:", order); // Log dữ liệu gửi đi
+        const response = await createOrder(order);
+        if (response) {
+          toast.success("Đặt hàng thành công!");
+          // Xóa các mục đã chọn khỏi giỏ hàng
+          orderItems.forEach((item) => {
+            dispatch({ type: "delete", item });
+          });
+          router.push("/orders");
+        } else {
+          toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
+        }
+      } catch (error: any) {
+        console.error("Submit error:", error);
+        toast.error(error.message || "Đặt hàng thất bại!");
+      }
+    }
+  };
 
   return {
     orderItems,

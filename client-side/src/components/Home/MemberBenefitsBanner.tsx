@@ -1,12 +1,18 @@
 // src/components/MemberBenefitsBanner.tsx
-import { IMemberBenefit } from "@/types";
+import { IMemberBenefit } from "@/types/product";
 import MemberBenefitsSwiper from "./MemberBenefitsSwiper";
-
+import Image from "next/image";
 interface MemberBenefitsBannerProps {
   benefits: IMemberBenefit[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
-export default function MemberBenefitsBanner({ benefits }: MemberBenefitsBannerProps) {
+export default function MemberBenefitsBanner({
+  benefits,
+  mobileSlidesPerView = 1.5,
+  tabletSlidesPerView = 2.5,
+}: MemberBenefitsBannerProps) {
   if (!benefits || benefits.length === 0) {
     return (
       <div>
@@ -24,17 +30,23 @@ export default function MemberBenefitsBanner({ benefits }: MemberBenefitsBannerP
       </h1>
 
       {/* Mobile: Swiper */}
-      <div className="block tablet:hidden">
-        <MemberBenefitsSwiper benefits={benefits} />
+      <div className="block tablet:block laptop:hidden desktop:hidden">
+        <MemberBenefitsSwiper
+          benefits={benefits}
+          mobileSlidesPerView={mobileSlidesPerView}
+          tabletSlidesPerView={tabletSlidesPerView}
+        />
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8 ">
+      <div className="hidden desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid laptop:grid-cols-3 laptop:gap-8 ">
         {benefits.map((benefit) => (
           <div key={benefit.id} className="relative w-full h-full">
-            <img
+            <Image
               src={`/memberBenefit/${benefit.image}`}
               alt={benefit.benefit}
+              width={120}
+              height={40}
               className="w-full h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto  laptop:w-full laptop:h-auto"
               draggable="false"
             />

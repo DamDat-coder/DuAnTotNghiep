@@ -15,16 +15,30 @@ interface News {
 
 interface NewsSwiperProps {
   newsItems: News[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
-export default function NewsSwiper({ newsItems }: NewsSwiperProps) {
+export default function NewsSwiper({
+  newsItems,
+  mobileSlidesPerView = 1.2,
+  tabletSlidesPerView = 2.5,
+}: NewsSwiperProps) {
   return (
     <Swiper
       spaceBetween={16}
-      slidesPerView={1}
       loop={false}
       grabCursor={true}
       className="select-none w-full"
+      breakpoints={{
+        0: {
+          slidesPerView: mobileSlidesPerView,
+        },
+
+        768: {
+          slidesPerView: tabletSlidesPerView,
+        },
+      }}
     >
       {newsItems.map((news) => (
         <SwiperSlide key={news.id} className="!w-[240px]">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/services/api";
-import { IUser } from "@/types";
+import { IUser } from "@/types/auth";
 
 interface UseUserFormProps {
   initialData?: IUser; // Optional

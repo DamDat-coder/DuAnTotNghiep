@@ -14,14 +14,16 @@ interface MobileMenuProps {
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const navItems = [
     { href: "/about", label: "Về chúng tôi" },
-    { href: "/products", label: "Sản phẩm" },
+    { href: "/products?gender=Nam", label: "Nam" },
+    { href: "/products?gender=Nữ", label: "Nữ" },
+    { href: "/products?gender=Unisex", label: "Unisex" },
     { href: "/contact", label: "Liên hệ" },
     { href: "/cart", label: "Giỏ hàng" },
   ];
 
   return (
     <motion.div
-      className={`fixed inset-0 text-black bg-white transform transition-transform duration-300 ease-in-out z-50 tablet:hidden flex flex-col ${
+      className={`fixed inset-0 text-black bg-white transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       initial={false}
@@ -43,7 +45,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
           onClick={() => setIsOpen(false)}
         >
-          <img src="/nav/Union - Copy.svg" alt="Close" className="h-6 w-auto" />
+          <Image
+            src="/nav/Union - Copy.svg"
+            alt="Logo"
+            width={120}
+            height={40}
+            className="h-6 w-auto"
+          />
         </button>
       </div>
 
@@ -56,7 +64,18 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               className="text-lg font-medium hover:underline"
               onClick={() => setIsOpen(false)}
             >
-              {item.label}
+              <div className="flex justify-between items-center">
+                {item.label}
+                <Image
+                  src="/nav/nav_angle_left.svg"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="h-auto w-auto tablet:w-2"
+                  draggable={false}
+                  loading="lazy"
+                />
+              </div>
             </Link>
           ))}
         </div>

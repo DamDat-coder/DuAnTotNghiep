@@ -1,7 +1,8 @@
 // app/products/[id]/page.tsx
 import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { fetchCategories } from "@/services/categoryApi";
-import { ICategory, IProduct } from "@/types";
+import { IProduct } from "@/types/product";
+import { ICategory } from "@/types/category";
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductImageSwiper from "@/components/Detail/ProductImageSwiper";

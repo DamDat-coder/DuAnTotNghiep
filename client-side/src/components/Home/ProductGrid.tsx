@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import FilterPopup from "../Products/FilterPopup";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 
 interface ProductGridProps {
   products: IProduct[];
@@ -26,7 +26,9 @@ export default function ProductGrid({ products }: ProductGridProps) {
   const PRODUCTS_PER_PAGE = 10;
 
   useEffect(() => {
-    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
+    const savedLikes = JSON.parse(
+      localStorage.getItem("likedProducts") || "{}"
+    );
     setLikedProducts(savedLikes);
   }, []);
 
@@ -109,7 +111,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
             toggleLike(product.id);
           }}
         >
-          <img
+          <Image
             src={
               isLiked
                 ? "/product/product_like_active.svg"

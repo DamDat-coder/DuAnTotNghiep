@@ -2,7 +2,7 @@
 
 import { useUserForm } from "@/hooks/useUserForm";
 import UserForm from "./UserForm";
-import { IUser } from "@/types";
+import { IUser } from "@/types/auth";
 
 interface EditUserFormProps {
   user: IUser;

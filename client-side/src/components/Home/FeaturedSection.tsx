@@ -1,10 +1,12 @@
 // src/components/Home/FeaturedSection.tsx
-import { IFeaturedProducts } from "@/types";
+import { IFeaturedProducts } from "@/types/product";
 import Link from "next/link";
 import FeaturedSwiper from "./FeaturedSwiper";
-
+import Image from "next/image";
 interface FeaturedSectionProps {
   featuredSection: IFeaturedProducts[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
 const genderLinks = [
@@ -15,6 +17,8 @@ const genderLinks = [
 
 export default function FeaturedSection({
   featuredSection,
+  mobileSlidesPerView = 1.5,
+  tabletSlidesPerView = 2.5,
 }: FeaturedSectionProps) {
   if (!featuredSection || featuredSection.length === 0) {
     return (
@@ -33,12 +37,16 @@ export default function FeaturedSection({
       </h1>
 
       {/* Mobile: Swiper */}
-      <div className="block tablet:hidden overflow-x-hidden">
-        <FeaturedSwiper featuredSection={featuredSection} />
+      <div className="block tablet:px-0 desktop:hidden laptop:hidden overflow-x-hidden">
+        <FeaturedSwiper
+          featuredSection={featuredSection}
+          mobileSlidesPerView={mobileSlidesPerView}
+          tabletSlidesPerView={tabletSlidesPerView}
+        />
       </div>
 
-      {/* Tablet/Desktop: Grid */}
-      <div className="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid-cols-3 laptop:gap-8">
+      {/* Laptop/Desktop: Grid */}
+      <div className="hidden tablet:hidden desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid laptop:grid-cols-3 laptop:gap-8">
         {featuredSection.map((product) => {
           // Tìm href dựa trên product.gender
           const genderLink = genderLinks.find(
@@ -47,9 +55,11 @@ export default function FeaturedSection({
 
           return (
             <div key={product.id} className="flex flex-col items-start gap-5">
-              <img
+              <Image
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
+                width={120}
+                height={40}
                 className="w-auto h-[25.625rem] object-cover rounded select-none tablet:h-80 desktop:w-full desktop:h-auto desktop:object-contain  laptop:w-full laptop:h-auto laptop:object-contain"
                 draggable="false"
               />

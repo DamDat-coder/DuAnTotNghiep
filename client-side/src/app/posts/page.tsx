@@ -12,17 +12,17 @@ const recentPosts = [
   {
     title: "Đi nhanh kẻo lỡ vườn hoa thanh thảo tím rực tựa trời Âu",
     date: "10.03.2023",
-    image: "/posts/thumb2.png",
+    image: "/posts/thumb1.png",
   },
   {
     title: "Sapa có homestay nào 'ngon - bổ - rẻ'?",
     date: "10.03.2023",
-    image: "/posts/thumb3.png",
+    image: "/posts/thumb1.png",
   },
   {
     title: "Top 11 món ăn ngon còn đậm bản nhất định phải thử",
     date: "10.03.2023",
-    image: "/posts/thumb4.png",
+    image: "/posts/thumb1.png",
   },
 ];
 
@@ -116,7 +116,8 @@ const TabletNewsLayout = () => (
               className="w-full px-4 py-2 text-sm border border-gray-300 rounded mb-2"
             />
             <button className="w-full bg-black text-white py-2 rounded text-sm">
-              Tìm kiếm 🔍
+              Tìm kiếm
+              
             </button>
           </div>
           {/* Recent Posts */}

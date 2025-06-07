@@ -1,6 +1,6 @@
-import AdminLayout, { NavigationItem } from "@/admin/layouts/AdminLayout";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchAllUsers } from "@/services/userApi";
-import { IUser } from "@/types";
+import { IUser } from "@/types/auth";
 import DashboardContent from "@/admin/components/Dashboard/DashboardContent";
 
 async function fetchDashboardData() {

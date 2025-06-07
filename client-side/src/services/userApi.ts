@@ -1,4 +1,4 @@
-import { IUser } from "../types";
+import { IUser } from "../types/auth";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
 

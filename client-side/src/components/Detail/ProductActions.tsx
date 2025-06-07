@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 
 interface ProductActionsProps {

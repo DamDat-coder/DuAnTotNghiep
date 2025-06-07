@@ -1,6 +1,5 @@
 import AdminLayout, { NavigationItem } from "@/admin/layouts/AdminLayout";
 import { fetchAllUsers } from "@/services/userApi";
-import { IUser } from "@/types";
 import UsersTable from "@/admin/components/Admin_User/UsersTable";
 
 async function fetchUsersData() {

@@ -9,7 +9,7 @@ import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import CategorySwiper from "@/components/Products/CategorySwiper";
 import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
-import { IProduct } from "@/types/index";
+import { IProduct } from "@/types/product";
 
 interface News {
   id: string;
@@ -96,7 +96,6 @@ export default function ProductsPage() {
         <Breadcrumb />
         <CategorySwiper categories={categories} />
         <ProductGrid products={products} />
-        <br />
         <NewsSection newsItems={newsItems} />
       </Container>
     </div>

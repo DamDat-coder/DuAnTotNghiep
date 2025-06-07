@@ -1,13 +1,15 @@
 // src/components/Home/FeaturedSwiper.tsx
 "use client";
 
-import { IFeaturedProducts } from "@/types";
+import { IFeaturedProducts } from "@/types/product";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-
+import Image from "next/image";
 interface FeaturedSwiperProps {
   featuredSection: IFeaturedProducts[];
+  mobileSlidesPerView?: number;
+  tabletSlidesPerView?: number;
 }
 
 const genderLinks = [
@@ -16,13 +18,25 @@ const genderLinks = [
   { href: "/products?gender=Unisex", label: "Unisex" },
 ];
 
-export default function FeaturedSwiper({ featuredSection }: FeaturedSwiperProps) {
+export default function FeaturedSwiper({
+  featuredSection,
+  mobileSlidesPerView = 1.2,
+  tabletSlidesPerView = 2.5,
+}: FeaturedSwiperProps) {
   return (
     <Swiper
       spaceBetween={10}
-      slidesPerView={1.5}
       loop={false}
       grabCursor={true}
+      breakpoints={{
+        0: {
+          slidesPerView: mobileSlidesPerView,
+        },
+
+        768: {
+          slidesPerView: tabletSlidesPerView,
+        },
+      }}
       className="select-none"
     >
       {featuredSection.map((product) => {
@@ -33,9 +47,11 @@ export default function FeaturedSwiper({ featuredSection }: FeaturedSwiperProps)
         return (
           <SwiperSlide key={product.id} className="!w-[16.8125rem]">
             <div className="flex flex-col items-start gap-5">
-              <img
+              <Image
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
+                width={120}
+                height={40}
                 className="w-[16.8125rem] h-[25.625rem] object-cover rounded select-none"
                 draggable="false"
               />

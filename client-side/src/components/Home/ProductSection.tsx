@@ -6,18 +6,20 @@ import React, { useState, useEffect, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import Image from "next/image";
 import "swiper/css";
-import { IProduct } from "@/types";
+import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
 
 interface ProductSectionProps {
   products: { data: IProduct[] } | IProduct[];
   desktopSlidesPerView?: number;
+  tabletSlidesPerView?: number;
   showLoadMore?: boolean;
 }
 
 export default function ProductSection({
   products,
   desktopSlidesPerView = 4.5,
+  tabletSlidesPerView = 2.5,
   showLoadMore = true,
 }: ProductSectionProps) {
   const productList = Array.isArray(products) ? products : products.data || [];
@@ -83,7 +85,7 @@ export default function ProductSection({
 
   const renderProductCard = (product: IProduct) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
-    
+
     return (
       <Link
         href={`/products/${product.id}`}
@@ -95,7 +97,7 @@ export default function ProductSection({
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}
-            className="w-[16.8125rem] h-[16.8125rem] desktop:w-[22.6875rem] desktop:h-[22.6875rem] laptop:w-[22.6875rem] laptop:h-[22.6875rem] object-cover"
+            className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[18.3125rem] object-cover"
             draggable={false}
           />
           <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
@@ -103,7 +105,7 @@ export default function ProductSection({
           </div>
           <AddToCartButton product={product} />
           <div className="content flex flex-col p-4">
-            <div className="name text-lg font-bold text-[#374151] pb-2 truncate">
+            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 truncate">
               {product.name || "Sản phẩm"}
             </div>
             <div className="category text-base text-[#374151] truncate">
@@ -147,10 +149,20 @@ export default function ProductSection({
       </div>
 
       {/* Tablet: Grid */}
-      <div className="hidden laptop:hidden desktop:hidden tablet:grid tablet:grid-cols-2 gap-6">
-        {displayedProducts.map((product, index) => (
-          <div key={product.id || index}>{renderProductCard(product)}</div>
-        ))}
+      <div className="hidden tablet:block laptop:hidden desktop:hidden">
+        <Swiper
+          spaceBetween={20}
+          slidesPerView={tabletSlidesPerView}
+          loop={false}
+          grabCursor={true}
+          className="select-none"
+        >
+          {displayedProducts.map((product, index) => (
+            <SwiperSlide key={product.id || index}>
+              {renderProductCard(product)}
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
 
       {/* Desktop: Swiper */}

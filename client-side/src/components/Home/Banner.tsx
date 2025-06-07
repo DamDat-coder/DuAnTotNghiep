@@ -34,11 +34,11 @@ export default function Banner({
         <Image
           src={image1}
           alt={altText}
-          width={672} // max-w-2xl trên tablet
+          width={672}
           height={672}
-          className="w-full h-auto object-cover"
+          className="w-full h-auto tablet:h-[37.5rem] object-cover"
         />
-        <div className="banner_content flex flex-col items-start justify-evenly gap-3 mt-5">
+        <div className="banner_content flex flex-col items-start tablet:items-center justify-evenly gap-3 mt-5">
           <div className="banner_status text-base">{status}</div>
           <div className="banner_name text-[1.5rem] font-bold text-gray-700 tablet:text-2xl leading-[1.8125rem] line-clamp-1">
             {name}
@@ -46,10 +46,10 @@ export default function Banner({
           <div className="banner_description desc-text text-gray-700 tablet:text-lg">
             {description}
           </div>
+          <button className="banner_action text-[1rem] px-6 py-2 bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors">
+            Shop
+          </button>
         </div>
-        <button className="banner_action text-[1rem] px-6 py-2 bg-black text-white font-bold rounded-full hover:opacity-70 transition-colors mt-5">
-          Shop
-        </button>
       </div>
 
       {/* Desktop: 2 hình với overlay */}

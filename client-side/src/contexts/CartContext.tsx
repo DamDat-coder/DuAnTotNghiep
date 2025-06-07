@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useReducer, useEffect } from "react";
-import { ICartItem } from "@/types/index";
+import { ICartItem } from "@/types/cart";
 
 interface CartState {
   items: ICartItem[];

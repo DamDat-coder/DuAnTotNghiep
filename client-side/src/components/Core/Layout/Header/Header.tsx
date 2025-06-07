@@ -16,6 +16,8 @@ import SearchResults from "../Popups/LookupMenu/SearchResults";
 import { fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { motion } from "framer-motion";
+import Link from "next/link";
+
 
 interface HeaderProps {
   title: string;
@@ -106,7 +108,7 @@ export default function Header({ title }: HeaderProps) {
       <nav className="bg-white text-black relative z-40">
         <div className="w-[95%] mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
+            <Link href="/" className="flex items-center">
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -116,7 +118,7 @@ export default function Header({ title }: HeaderProps) {
                 draggable={false}
                 loading="lazy"
               />
-            </div>
+            </Link>
 
             <DesktopNav />
 

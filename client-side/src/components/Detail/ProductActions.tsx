@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductActionsProps {
   product: IProduct;
@@ -21,14 +22,19 @@ export default function ProductActions({
   const [selectedSize, setSelectedSize] = useState<string | null>("XL");
   const [isLiked, setIsLiked] = useState(false);
   const dispatch = useCartDispatch();
+  const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
+    const savedLikes = JSON.parse(
+      localStorage.getItem("likedProducts") || "{}"
+    );
     setIsLiked(savedLikes[product.id] || false);
   }, [product.id]);
 
   useEffect(() => {
-    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
+    const savedLikes = JSON.parse(
+      localStorage.getItem("likedProducts") || "{}"
+    );
     localStorage.setItem(
       "likedProducts",
       JSON.stringify({ ...savedLikes, [product.id]: isLiked })
@@ -67,6 +73,14 @@ export default function ProductActions({
     setIsLiked((prev) => !prev);
   };
 
+  const handleOpenSizeChart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsSizeChartOpen(true);
+  };
+
+  const handleCloseSizeChart = () => {
+    setIsSizeChartOpen(false);
+  };
   return (
     <>
       {/* Section 2: Sizes */}
@@ -74,8 +88,19 @@ export default function ProductActions({
         <div className="flex w-full justify-between items-center">
           <h3 className="font-semibold">Sizes</h3>
           <div className="flex justify-center items-center gap-2 ml-4">
-            <Image src="/product/product_size.svg" alt="Bảng size" width={20} height={20} />
-            <p>Bảng size</p>
+            <button
+              onClick={handleOpenSizeChart}
+              className="flex justify-center items-center gap-2 ml-4"
+              aria-label="Mở bảng kích thước"
+            >
+              <Image
+                src="/product/product_size.svg"
+                alt="Bảng size"
+                width={20}
+                height={20}
+              />
+              <p>Bảng size</p>
+            </button>
           </div>
         </div>
         <div className="pt-3 flex flex-wrap gap-2 mt-2">
@@ -96,7 +121,9 @@ export default function ProductActions({
             </button>
           ))}
         </div>
-        <div className="pt-3 laptop:pb-16 desktop:pb-16 text-red-500 text-sm font-medium">Còn {stock} sản phẩm</div>
+        <div className="pt-3 laptop:pb-16 desktop:pb-16 text-red-500 text-sm font-medium">
+          Còn {stock} sản phẩm
+        </div>
       </div>
 
       {/* Section 3: Actions */}
@@ -159,6 +186,49 @@ export default function ProductActions({
           </div>
         </div>
       </div>
+      {/* Popup bảng kích thước */}
+      <AnimatePresence>
+        {isSizeChartOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            onClick={handleCloseSizeChart}
+          >
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.7, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white p-4 rounded-lg relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleCloseSizeChart}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold"
+                aria-label="Đóng bảng kích thước"
+              >
+                <Image
+                  src="/nav/nav_clear.svg"
+                  alt="Close Icon"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+                />
+              </button>
+              <Image
+                key="size_chart_img"
+                src="/product/product_size_table.png"
+                alt="Bảng kích thước"
+                width={300}
+                height={200}
+                className="w-[40vw] h-[40vh] object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -101,11 +101,10 @@ const MobileNewsLayout = () => (
   </div>
 );
 
-// Tablet layout: 768px – 1439px (giả định UI gần giống ảnh bạn gửi)
+// Tablet layout: 768px – 1439px
 const TabletNewsLayout = () => (
   <div className="hidden tablet:block laptop:hidden">
     <div className="max-w-[1000px] mx-auto px-4 py-6">
-      {/* Thanh bên trái và nội dung chính nằm dọc nhau (giống ảnh bạn gửi) */}
       <div className="flex flex-col tablet:flex-row gap-6">
         {/* Sidebar tablet */}
         <aside className="w-full tablet:w-[260px] flex-shrink-0">
@@ -307,63 +306,6 @@ const DesktopNewsLayout = () => (
         ))}
       </div>
     </main>
-  </div>
-);
-
-// Mobile layout giữ nguyên
-const MobileNewsLayout = () => (
-  <div className="w-full max-w-[390px] mx-auto px-4 pt-4 pb-8 space-y-6 laptop:hidden">
-    {/* Search */}
-    <div className="space-y-2">
-      <input
-        type="text"
-        placeholder="Nhập từ khóa..."
-        className="w-full px-4 py-2 text-sm border border-gray-300 rounded"
-      />
-      <button className="w-full bg-black text-white py-2 rounded text-sm">
-        Tìm kiếm
-      </button>
-    </div>
-    {/* Featured Article */}
-    <div className="flex gap-2">
-      <img
-        src="/posts/imagefeatured.png"
-        alt="featured"
-        className="w-1/3 h-auto object-cover rounded"
-      />
-      <div className="w-2/3 space-y-1">
-        <h2 className="text-sm font-semibold leading-snug">
-          Cách Phối Đồ Cơ Bản Cho Người Mới Bắt Đầu: Đẹp – Đơn Giản – Hiệu Quả
-        </h2>
-      </div>
-    </div>
-    {/* News List */}
-    {Array.from({ length: 4 }).map((_, index) => (
-      <div key={index} className="space-y-2">
-        <img
-          src="/posts/image.png"
-          alt="news"
-          className="w-full h-auto rounded object-cover"
-        />
-        <h3 className="text-base font-semibold leading-tight">
-          Tái Chế Quần Áo Cũ – Xu Hướng Thời Trang Bền Vững Được Ưa Chuộng
-        </h3>
-        <p className="text-sm text-gray-500">Chất liệu | 21/05/2025</p>
-      </div>
-    ))}
-    {/* Pagination */}
-    <div className="flex justify-center gap-2 pt-4 flex-wrap text-sm">
-      {['‹', '01', '02', '03', '…', '12', '›'].map((pg, idx) => (
-        <button
-          key={idx}
-          className={`px-3 py-1 border rounded-full ${
-            pg === '01' ? 'bg-black text-white' : 'text-gray-700'
-          }`}
-        >
-          {pg}
-        </button>
-      ))}
-    </div>
   </div>
 );
 

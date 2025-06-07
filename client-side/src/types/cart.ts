@@ -10,4 +10,3 @@ export interface ICartItem {
   liked: boolean;
   selected?: boolean;
 }
-

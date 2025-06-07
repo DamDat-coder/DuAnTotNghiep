@@ -1,8 +1,5 @@
-// src/hooks/useCheckout.ts
-"use client";
-
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { createOrder } from "@/services/orderApi";
 import { fetchUser } from "@/services/userApi";
@@ -14,6 +11,7 @@ export function useCheckout() {
   const cart = useCart();
   const dispatch = useCartDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Kiểm tra trạng thái đăng nhập
@@ -36,18 +34,50 @@ export function useCheckout() {
     checkAuth();
   }, [router]);
 
-  // Lấy các sản phẩm được chọn (selected: true)
-  const orderItems: ICartItem[] = useMemo(
-    () => cart.items.filter((item) => item.selected),
-    [cart.items]
-  );
+  // Kiểm tra nếu là "Mua ngay" từ query params
+  const isBuyNow = searchParams.get("buyNow") === "true";
+  const buyNowItem: ICartItem | null = useMemo(() => {
+    if (!isBuyNow) return null;
+    const productId = searchParams.get("productId");
+    const name = searchParams.get("name");
+    const size = searchParams.get("size");
+    const color = searchParams.get("color");
+    const quantity = parseInt(searchParams.get("quantity") || "1", 10);
+    const price = parseFloat(searchParams.get("price") || "0");
+    const discountPercent = parseFloat(searchParams.get("discountPercent") || "0");
+
+    if (!productId || !size || !color || isNaN(quantity) || isNaN(price)) {
+      return null;
+    }
+
+    return {
+      id: productId,
+      name: name || "",
+      size,
+      color,
+      quantity,
+      price,
+      discountPercent,
+      selected: true,
+      image: "", // Hoặc lấy từ API nếu có
+      liked: false, // Hoặc lấy từ API nếu có
+    };
+  }, [searchParams]);
+
+  // Lấy orderItems: từ buyNowItem nếu là "Mua ngay", hoặc từ giỏ hàng
+  const orderItems: ICartItem[] = useMemo(() => {
+    if (isBuyNow && buyNowItem) {
+      return [buyNowItem];
+    }
+    return cart.items.filter((item) => item.selected);
+  }, [isBuyNow, buyNowItem, cart.items]);
 
   // Log orderItems để debug
   useEffect(() => {
     console.log("Selected order items:", orderItems);
   }, [orderItems]);
 
-  // Tính tổng tiền tạm thời (chỉ cho các sản phẩm được chọn)
+  // Tính tổng tiền tạm thời
   const subtotal = useMemo(
     () =>
       orderItems.reduce(
@@ -176,9 +206,9 @@ export function useCheckout() {
           products: orderItems.map((item) => ({
             productId: item.id,
             quantity: item.quantity,
-            size: item.size, // Thêm size để đảm bảo thông tin đầy đủ
-            color: item.color, // Thêm color
-            price: item.price * (1 - item.discountPercent / 100), // Giá đã giảm
+            size: item.size,
+            color: item.color,
+            price: item.price * (1 - item.discountPercent / 100),
           })),
           shippingAddress,
           paymentMethod,
@@ -189,14 +219,16 @@ export function useCheckout() {
           total,
         };
 
-        console.log("Order data:", order); // Log dữ liệu gửi đi
+        console.log("Order data:", order);
         const response = await createOrder(order);
         if (response) {
           toast.success("Đặt hàng thành công!");
-          // Xóa các mục đã chọn khỏi giỏ hàng
-          orderItems.forEach((item) => {
-            dispatch({ type: "delete", item });
-          });
+          // Xóa các mục đã chọn khỏi giỏ hàng (chỉ khi không phải buyNow)
+          if (!isBuyNow) {
+            orderItems.forEach((item) => {
+              dispatch({ type: "delete", item });
+            });
+          }
           router.push("/orders");
         } else {
           toast.error("Đặt hàng thất bại. Vui lòng thử lại!");

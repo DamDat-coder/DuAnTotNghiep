@@ -3,10 +3,11 @@ export interface IProduct {
   name: string;
   categoryId: string;
   category: string;
+  colors: string[];
   price: number;
   discountPercent: number;
   images: string[] | File[];
-  sizes: string[];
+  sizes: { value: string; inStock: boolean }[];
 }
 
 export interface IFeaturedProducts {

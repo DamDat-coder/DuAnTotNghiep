@@ -4,6 +4,17 @@ import Image from "next/image";
 import { Heart, Trash2 } from "lucide-react";
 import { ICartItem } from "@/types/cart";
 
+// Ánh xạ mã màu sang tên màu
+const colorMap: { [key: string]: string } = {
+  "#000000": "Đen",
+  "#87CEEB": "Xanh da trời",
+  "#FE0000": "Đỏ",
+  "#FFFFFF": "Trắng",
+  "#FFC0CB": "Hồng",
+  "#FAD2B6": "Da",
+  "#8B4513": "Nâu",
+};
+
 interface CartItemProps {
   item: ICartItem;
   onQuantityChange: (id: string, change: number) => void;
@@ -24,6 +35,9 @@ export default function CartItem({
       ? item.image
       : "/product/img/" + item.image
     : "/images/placeholder.jpg";
+
+  // Lấy tên màu từ colorMap, mặc định là item.color nếu không tìm thấy
+  const displayColor = colorMap[item.color] || item.color || "Không xác định";
 
   return (
     <>
@@ -51,11 +65,14 @@ export default function CartItem({
                 {item.name}
               </h3>
               <div className="text-[1rem] font-bold text-red-500">
-                {(item.price * (1 - item.discountPercent / 100)).toLocaleString("vi-VN")}₫
+                {(item.price * (1 - item.discountPercent / 100)).toLocaleString(
+                  "vi-VN"
+                )}
+                ₫
               </div>
             </div>
             <div className="text-sm text-[#374151]">
-              Size: {item.size} ({item.color})
+              {item.size}/({displayColor})
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 border border-gray-300 rounded-full w-fit">
@@ -121,11 +138,14 @@ export default function CartItem({
                 {item.name}
               </h3>
               <div className="text-[1rem] font-bold text-red-500">
-                {(item.price * (1 - item.discountPercent / 100)).toLocaleString("vi-VN")}₫
+                {(item.price * (1 - item.discountPercent / 100)).toLocaleString(
+                  "vi-VN"
+                )}
+                ₫
               </div>
             </div>
             <div className="text-sm text-[#374151]">
-              Size: {item.size} ({item.color})
+              {displayColor}/{item.size}
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 border border-gray-300 rounded-full w-fit">

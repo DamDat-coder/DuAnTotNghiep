@@ -39,7 +39,9 @@ export default function Checkout() {
         {/* Mobile/Tablet */}
         <div className="laptop:hidden desktop:hidden mt-4 flex flex-col gap-6">
           {orderItems.length === 0 ? (
-            <p className="text-center text-gray-500">Không có sản phẩm nào được chọn.</p>
+            <p className="text-center text-gray-500">
+              Không có sản phẩm nào được chọn.
+            </p>
           ) : (
             <>
               <OrderItems orderItems={orderItems} />
@@ -54,7 +56,10 @@ export default function Checkout() {
                 shippingFee={shippingFee}
                 total={total}
               />
-              <form onSubmit={handleSubmit} className="grid desktop:grid-cols-2 gap-4">
+              <form
+                onSubmit={handleSubmit}
+                className="grid desktop:grid-cols-2 gap-4"
+              >
                 <ShippingForm
                   formData={formData}
                   errors={errors}
@@ -83,12 +88,17 @@ export default function Checkout() {
         {/* Desktop */}
         <div className="hidden desktop:flex desktop:gap-6 laptop:flex laptop:gap-6 mt-4">
           {orderItems.length === 0 ? (
-            <p className="text-center text-gray-500 w-full">Không có sản phẩm nào được chọn.</p>
+            <p className="text-center text-gray-500 w-full">
+              Không có sản phẩm nào được chọn.
+            </p>
           ) : (
             <>
               {/* Container trái */}
               <div className="w-2/3 flex flex-col gap-6">
-                <form onSubmit={handleSubmit} className="grid desktop:grid-cols-2 laptop:grid-cols-2 gap-4">
+                <form
+                  onSubmit={handleSubmit}
+                  className="grid desktop:grid-cols-2 laptop:grid-cols-2 gap-4"
+                >
                   <ShippingForm
                     formData={formData}
                     errors={errors}
@@ -107,7 +117,15 @@ export default function Checkout() {
               </div>
 
               {/* Container phải */}
-              <div className="w-1/3 sticky top-0">
+              <div className="w-[31.875rem] sticky top-4 self-start">
+                <div className="flex justify-between items-center mb-8">
+                  <h1 className="text-lg font-bold">
+                    ĐƠN HÀNG ({orderItems.length} SẢN PHẨM)
+                  </h1>
+                  <span className="text-[1rem] font-bold">
+                    {subtotal.toLocaleString("vi-VN")}₫
+                  </span>
+                </div>
                 <OrderItems orderItems={orderItems} />
                 <DiscountCode
                   discountCode={discountCode}

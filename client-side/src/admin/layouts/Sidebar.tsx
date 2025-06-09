@@ -44,6 +44,24 @@ const sidebarItems: SidebarItem[] = [
     iconActive: "/admin/sidebar/user_active.svg",
   },
   {
+    label: "Khuyến mãi",
+    href: "/admin/sales",
+    icon: "/admin/sidebar/setting.svg",
+    iconActive: "/admin/sidebar/setting_active.svg",
+  },
+  {
+    label: "Tin tức",
+    href: "/admin/news",
+    icon: "/admin/sidebar/setting.svg",
+    iconActive: "/admin/sidebar/setting_active.svg",
+  },
+  {
+    label: "Bình luận",
+    href: "/admin/comments",
+    icon: "/admin/sidebar/setting.svg",
+    iconActive: "/admin/sidebar/setting_active.svg",
+  },
+  {
     label: "Cài đặt",
     href: "/admin/settings",
     icon: "/admin/sidebar/setting.svg",
@@ -67,7 +85,12 @@ export default function Sidebar() {
     <div className="h-full w-[285px] bg-black text-white flex flex-col sticky top-0 rounded-r-3xl">
       <div className="p-4 flex flex-col gap-12 w-full h-auto">
         <Link href="/admin/dashboard">
-          <Image src="/admin/sidebar/logo.svg" alt="Logo Công Ty" width={120} height={40} />
+          <Image
+            src="/admin/sidebar/logo.svg"
+            alt="Logo Công Ty"
+            width={120}
+            height={40}
+          />
         </Link>
         <h1 className="text-[1.5rem] font-bold">MENU</h1>
       </div>
@@ -77,7 +100,9 @@ export default function Sidebar() {
             <Link
               href={item.href}
               className={`flex items-center gap-3 p-2 rounded ${
-                isActive(item.href) ? "bg-[#ECF8FF] py-3 px-3 ml-4 rounded-xl text-black" : "hover:bg-gray-800"
+                isActive(item.href)
+                  ? "bg-[#ECF8FF] py-3 px-3 ml-4 rounded-xl text-black"
+                  : "hover:bg-gray-800"
               }`}
             >
               <Image

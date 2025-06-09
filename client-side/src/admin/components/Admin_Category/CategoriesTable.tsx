@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import AdminNavigation from "../AdminNavigation";
 import { deleteCategory } from "@/services/categoryApi";
 
 // Định nghĩa kiểu dữ liệu cho danh mục
@@ -32,7 +31,8 @@ export default function CategoriesTable({
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [sortedCategories, setSortedCategories] = useState<Category[]>(initialCategories);
+  const [sortedCategories, setSortedCategories] =
+    useState<Category[]>(initialCategories);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,11 @@ export default function CategoriesTable({
   // Hàm sắp xếp
   const handleSort = (key: "name") => {
     let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
 
@@ -95,12 +99,6 @@ export default function CategoriesTable({
 
   return (
     <>
-      <AdminNavigation
-        items={navigationItems}
-        addButton={addButton}
-        currentFilter=""
-      />
-
       <div className="flex-1 rounded-[2.125rem] px-12 py-8 bg-white overflow-x-auto overflow-y-auto">
         {loading ? (
           <p className="text-center text-lg">Đang tải...</p>
@@ -118,7 +116,8 @@ export default function CategoriesTable({
                   >
                     Tên danh mục
                     <span>
-                      {sortConfig?.key === "name" && sortConfig.direction === "desc"
+                      {sortConfig?.key === "name" &&
+                      sortConfig.direction === "desc"
                         ? "↓"
                         : "↑"}
                     </span>
@@ -131,16 +130,28 @@ export default function CategoriesTable({
             <tbody>
               {sortedCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-4 px-6 text-center text-gray-500">
+                  <td
+                    colSpan={4}
+                    className="py-4 px-6 text-center text-gray-500"
+                  >
                     Không có danh mục nào.
                   </td>
                 </tr>
               ) : (
                 sortedCategories.map((category, index) => (
-                  <tr key={category.id} className="hover:bg-gray-50 text-center">
-                    <td className="py-4 px-6 text-base font-bold">{index + 1}</td>
-                    <td className="py-4 px-6 text-base font-bold">{category.name}</td>
-                    <td className="py-4 px-6 text-base font-bold">{category.description}</td>
+                  <tr
+                    key={category.id}
+                    className="hover:bg-gray-50 text-center"
+                  >
+                    <td className="py-4 px-6 text-base font-bold">
+                      {index + 1}
+                    </td>
+                    <td className="py-4 px-6 text-base font-bold">
+                      {category.name}
+                    </td>
+                    <td className="py-4 px-6 text-base font-bold">
+                      {category.description}
+                    </td>
                     <td className="py-4 px-6">
                       <div className="w-full flex gap-4 justify-center items-center">
                         <button

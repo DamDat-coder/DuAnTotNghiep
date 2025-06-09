@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AdminNavigation from "../AdminNavigation";
+
 import { Order } from "@/types/order";
 
 interface SortConfig {
@@ -85,13 +85,6 @@ export default function OrderTable({ initialOrders, navigationItems }: OrderTabl
 
   return (
     <>
-      {/* Container 1: AdminNavigation */}
-      <AdminNavigation
-        items={navigationItems}
-        addButton={{ label: "", href: "" }}
-        currentFilter={filterStatus}
-        onFilter={handleFilter}
-      />
 
       {/* Container 2: Bảng đơn hàng */}
       <div className="flex-1 rounded-[2.125rem] px-12 py-8 bg-white overflow-x-auto overflow-y-auto">

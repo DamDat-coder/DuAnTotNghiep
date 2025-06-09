@@ -108,7 +108,7 @@ export default function Header({ title }: HeaderProps) {
       <nav className="bg-white text-black relative z-40">
         <div className="w-[95%] mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
+            <Link href="/" className="flex items-center">
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -118,7 +118,7 @@ export default function Header({ title }: HeaderProps) {
                 draggable={false}
                 loading="lazy"
               />
-            </div>
+            </Link>
 
             <DesktopNav />
 
@@ -198,7 +198,7 @@ export default function Header({ title }: HeaderProps) {
                   ) : (
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none absolute top-0 right-0 w-6 h-6"
+                      className="text-gray-400 hover:text-black  absolute top-0 right-0 w-6 h-6"
                       onClick={() => setIsLookupOpen(true)}
                       aria-label="Open Lookup"
                     >
@@ -231,7 +231,7 @@ export default function Header({ title }: HeaderProps) {
                   ) : (
                     <button
                       type="button"
-                      className="hidden tablet:hidden text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                      className="hidden tablet:hidden laptop:block desktop:block text-gray-400 hover:text-black "
                       onClick={() => setIsLoginOpen(true)}
                     >
                       <Image
@@ -245,7 +245,7 @@ export default function Header({ title }: HeaderProps) {
                   ))}
                 <button
                   type="button"
-                  className="laptop:hidden desktop:hidden text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                  className="laptop:hidden desktop:hidden text-gray-400 hover:text-black "
                   onClick={() => setIsMenuOpen(true)}
                 >
                   <Image

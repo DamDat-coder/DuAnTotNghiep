@@ -82,7 +82,7 @@ const NewsDetailPage = () => {
             className="w-full px-4 py-2 text-sm border border-gray-300 rounded mb-2"
           />
           <button className="w-full bg-black text-white py-2 rounded text-sm">
-            Tìm kiếm 🔍
+            Tìm kiếm
           </button>
         </div>
         {/* Tags */}

@@ -1,6 +1,6 @@
-// src/components/CategorySwiper.tsx
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import Link from "next/link";
 import "swiper/css";
@@ -10,6 +10,9 @@ interface CategorySwiperProps {
 }
 
 export default function CategorySwiper({ categories }: CategorySwiperProps) {
+  const searchParams = useSearchParams();
+  const currentCategory = searchParams.get("category");
+
   return (
     <Swiper
       spaceBetween={16}
@@ -23,16 +26,33 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
       grabCursor={true}
       className="select-none my-4 border-b-2 border-[#D1D1D1] border-solid"
     >
-      {categories.map((category, index) => (
-        <SwiperSlide key={index} className="!w-auto">
-          <Link
-            href={`/products?category=${category.toLowerCase()}`}
-            className="text-base text-gray-700 hover:text-black"
-          >
-            {category}
-          </Link>
-        </SwiperSlide>
-      ))}
+      <SwiperSlide className="!w-auto">
+        <Link
+          href={`/products`}
+          className={`text-base hover:text-black ${
+            !currentCategory ? "text-black font-bold" : "text-gray-700"
+          }`}
+        >
+          Tất cả
+        </Link>
+      </SwiperSlide>
+
+      {categories.map((category, index) => {
+        const isActive = currentCategory === category.toLowerCase();
+
+        return (
+          <SwiperSlide key={index} className="!w-auto">
+            <Link
+              href={`/products?category=${category.toLowerCase()}`}
+              className={`text-base hover:text-black ${
+                isActive ? "text-black font-bold" : "text-gray-700"
+              }`}
+            >
+              {category}
+            </Link>
+          </SwiperSlide>
+        );
+      })}
     </Swiper>
   );
-}   
+}

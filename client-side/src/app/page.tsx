@@ -34,7 +34,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="py-0 px-6 tablet:px-4 laptop:px-0 desktop:px-0 overflow-x-hidden flex flex-col gap-4">
+    <div className="py-0 px-6 tablet:px-4 laptop:px-0 desktop:px-0 overflow-x-hidden flex flex-col gap-20 pb-20">
       {/* Banner đầu */}
       <Banner
         status="Vừa ra mắt"
@@ -44,7 +44,7 @@ export default async function Home() {
         image2="/banner/banner_2.png"
         altText="Áo khoác Gopcore Basic"
       />
-      <Container className="flex flex-col gap-4 w-full">
+      <Container className="flex flex-col gap-[3.375rem] w-full">
         {/* Nội dung chính */}
         <FeaturedSection featuredSection={featuredSection} />
         <ProductSection products={products} />

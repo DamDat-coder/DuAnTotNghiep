@@ -24,7 +24,7 @@ export default function Banner({
     <div className="banner w-full">
       {/* Tiêu đề (nếu có) */}
       {title && (
-        <h1 className="text-[1.5rem] font-bold laptop:text-[1.5rem] desktop:text-[1.5rem] desktop:font-bold">
+        <h1 className="text-[1.5rem] font-bold laptop:text-[1.5rem] desktop:text-[1.5rem] desktop:font-bold pb-6">
           {title}
         </h1>
       )}

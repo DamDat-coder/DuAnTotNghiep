@@ -21,6 +21,9 @@ module.exports = {
         body: ["UTM Avo", "sans-serif"],
         description: ["var(--font-lora)", "serif"],
       },
+      boxShadow: {
+        "custom-order": "0px 0px 10px rgba(0, 0, 0, 0.25)",
+      },
     },
   },
   plugins: [],

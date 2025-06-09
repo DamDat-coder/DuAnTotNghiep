@@ -223,13 +223,11 @@ export function useCheckout() {
         const response = await createOrder(order);
         if (response) {
           toast.success("Đặt hàng thành công!");
-          // Xóa các mục đã chọn khỏi giỏ hàng (chỉ khi không phải buyNow)
-          if (!isBuyNow) {
-            orderItems.forEach((item) => {
-              dispatch({ type: "delete", item });
-            });
-          }
-          router.push("/orders");
+          // Xóa các mục đã chọn khỏi giỏ hàng
+          orderItems.forEach((item) => {
+            dispatch({ type: "delete", item });
+          });
+          router.push("/profile?tab=order");
         } else {
           toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
         }

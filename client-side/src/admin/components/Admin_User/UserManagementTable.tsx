@@ -65,7 +65,7 @@ export default function UserManagementTable({
           <thead className="bg-[#F0F3F7]">
             <tr className="text-left">
               <th className="px-6 py-3">STT</th>
-              <th className="px-6 py-3">Họ và tên</th>
+              <th className="px-6 py-3">Họ và tên tên</th>
               <th className="px-6 py-3">Email</th>
               <th className="px-6 py-3">SDT</th>
               <th className="px-6 py-3">Vai trò</th>

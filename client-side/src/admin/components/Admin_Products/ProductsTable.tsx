@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AdminNavigation from "../AdminNavigation";
 import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { fetchWithAuth } from "@/services/api";
@@ -32,7 +31,11 @@ export default function ProductsTable({
   // Hàm sắp xếp
   const handleSort = (key: "name" | "price") => {
     let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
 
@@ -66,10 +69,12 @@ export default function ProductsTable({
       try {
         const response = await fetchWithAuth(
           `http://localhost:3000/products/${productId}`,
-          
+
           { method: "DELETE" }
         );
-        const updatedProducts = products.filter((product) => product.id !== productId);
+        const updatedProducts = products.filter(
+          (product) => product.id !== productId
+        );
         setProducts(updatedProducts);
         alert("Xóa sản phẩm thành công!");
       } catch (err) {
@@ -80,13 +85,6 @@ export default function ProductsTable({
 
   return (
     <>
-      {/* Container 1: AdminNavigation */}
-      <AdminNavigation
-        items={navigationItems}
-        addButton={addButton}
-        currentFilter={""}
-      />
-
       {/* Container 2: Bảng sản phẩm */}
       <div className="flex-1 overflow-x-auto overflow-y-auto rounded-[2.125rem] px-12 py-8 bg-white">
         <table className="w-full">
@@ -100,7 +98,10 @@ export default function ProductsTable({
                 >
                   Tên sản phẩm
                   <span>
-                    {sortConfig?.key === "name" && sortConfig.direction === "desc" ? "↓" : "↑"}
+                    {sortConfig?.key === "name" &&
+                    sortConfig.direction === "desc"
+                      ? "↓"
+                      : "↑"}
                   </span>
                 </button>
               </th>
@@ -111,7 +112,10 @@ export default function ProductsTable({
                 >
                   Giá sản phẩm
                   <span>
-                    {sortConfig?.key === "price" && sortConfig.direction === "desc" ? "↓" : "↑"}
+                    {sortConfig?.key === "price" &&
+                    sortConfig.direction === "desc"
+                      ? "↓"
+                      : "↑"}
                   </span>
                 </button>
               </th>
@@ -152,11 +156,15 @@ export default function ProductsTable({
                       <span className="text-gray-500">No Image</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-base align-middle">{product.name}</td>
+                  <td className="py-4 px-6 text-base align-middle">
+                    {product.name}
+                  </td>
                   <td className="py-4 px-6 text-base font-bold align-middle">
                     {(product.price ?? 0).toLocaleString()} VNĐ
                   </td>
-                  <td className="py-4 px-6 text-base font-medium align-middle">{product.category}</td>
+                  <td className="py-4 px-6 text-base font-medium align-middle">
+                    {product.category}
+                  </td>
                   <td className="py-4 px-6 align-middle">
                     <div className="w-full flex gap-4 justify-center items-center">
                       <button

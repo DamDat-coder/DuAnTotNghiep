@@ -94,110 +94,116 @@ export default function OrderContent() {
   };
 
   return (
-    <div className="mx-auto mt-10 mb-10 w-[1126px] bg-[#fff] rounded-[34px] p-10 shadow" style={{ minHeight: 750}}>
-      {/* Tiêu đề & search */}
-      <div className="flex items-center gap-3 w-full mb-6">
-        {/* Dropdown filter trạng thái */}
-        <div>
-          <select
-            className="h-10 px-4 pr-8 rounded-lg bg-[#F6F8FB] border border-[#E6E8EC] text-[#474A57] font-medium focus:outline-none"
-            value={filterStatus}
-            onChange={e => handleFilter(e.target.value)}
-            style={{ minWidth: 90 }}
-          >
-            <option value="all">Tất cả</option>
-            {STATUS.map(s => (
-              <option key={s.key} value={s.key}>{s.label}</option>
-            ))}
-          </select>
-        </div>
-        {/* Thanh tìm kiếm kiểu mới */}
-        <div className="flex-1 relative">
-          <input
-            className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
-            placeholder="Tìm kiếm"
-            value={search}
-            onChange={e => handleSearch(e.target.value)}
-          />
-          <svg
-            viewBox="0 0 20 20"
-            fill="none"
-            className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none"
-          >
-            <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
-            <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </div>
-      </div>
-      {/* Table */}
-      <div className="overflow-x-auto rounded-[30px]">
-        <table className="w-full min-w-[900px] text-base">
-          <thead>
-            <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold">
-              <th className="py-3 text-left font-semibold">Order ID</th>
-              <th className="py-3 text-left font-semibold">Product</th>
-              <th className="py-3 text-left font-semibold">Customer</th>
-              <th className="py-3 text-left font-semibold">Date</th>
-              <th className="py-3 text-left font-semibold">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageData.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="text-center py-10 text-[#BDBDBD]">
-                  Không tìm thấy đơn hàng phù hợp
-                </td>
-              </tr>
-            ) : (
-              pageData.map((order) => {
-                const s = getStatusInfo(order.status);
-                return (
-                  <tr key={order.id} className="border-b border-[#F1F1F1] last:border-0">
-                    <td className="py-3 font-semibold text-[#202020]">{order.id}</td>
-                    <td className="py-3">{order.product}</td>
-                    <td className="py-3">{order.customer}</td>
-                    <td className="py-3 font-semibold text-[#212121]">{order.date}</td>
-                    <td className="py-3">
-                      <button
-                        className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105`}
-                        onClick={() => handleChangeStatus(order.id)}
-                        title="Click để đổi trạng thái"
-                      >
-                        {s.label}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-      {/* Pagination */}
-      {totalPage > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <button
-            className="px-3 py-1 rounded hover:bg-gray-100 text-xl"
-            disabled={currentPage === 1}
-            onClick={() => goToPage(currentPage - 1)}
-          >{"<"}</button>
-          {Array.from({ length: totalPage }).map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => goToPage(idx + 1)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-base font-semibold 
-                ${currentPage === idx + 1 ? "bg-[#2998FF] text-white" : "text-[#222] hover:bg-gray-100"}`}
+    <div className="w-full min-h-screen bg-[#eaf3f8] pt-10">
+      <div
+        className="mx-auto w-[1126px] bg-white rounded-[34px] p-10 shadow relative"
+        style={{ minHeight: 750 }}
+      >
+        {/* Tiêu đề & search */}
+        <div className="flex items-center gap-3 w-full mb-6">
+          <div>
+            <select
+              className="h-10 px-4 pr-8 rounded-lg bg-[#F6F8FB] border border-[#E6E8EC] text-[#474A57] font-medium focus:outline-none"
+              value={filterStatus}
+              onChange={e => handleFilter(e.target.value)}
+              style={{ minWidth: 90 }}
             >
-              {idx + 1}
-            </button>
-          ))}
-          <button
-            className="px-3 py-1 rounded hover:bg-gray-100 text-xl"
-            disabled={currentPage === totalPage}
-            onClick={() => goToPage(currentPage + 1)}
-          >{">"}</button>
+              <option value="all">Tất cả</option>
+              {STATUS.map(s => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 relative">
+            <input
+              className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
+              placeholder="Tìm kiếm"
+              value={search}
+              onChange={e => handleSearch(e.target.value)}
+            />
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none"
+            >
+              <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
+              <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
         </div>
-      )}
+        {/* Table */}
+        <div className="overflow-x-auto rounded-[30px]">
+          <table className="w-full min-w-[900px] text-base">
+            <thead>
+              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold">
+                <th className="py-3 text-left font-semibold">Order ID</th>
+                <th className="py-3 text-left font-semibold">Product</th>
+                <th className="py-3 text-left font-semibold">Customer</th>
+                <th className="py-3 text-left font-semibold">Date</th>
+                <th className="py-3 text-left font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageData.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-[#BDBDBD]">
+                    Không tìm thấy đơn hàng phù hợp
+                  </td>
+                </tr>
+              ) : (
+                pageData.map((order) => {
+                  const s = getStatusInfo(order.status);
+                  return (
+                    <tr key={order.id} className="border-b border-[#F1F1F1] last:border-0">
+                      <td className="py-3 font-semibold text-[#202020]">{order.id}</td>
+                      <td className="py-3">{order.product}</td>
+                      <td className="py-3">{order.customer}</td>
+                      <td className="py-3 font-semibold text-[#212121]">{order.date}</td>
+                      <td className="py-3">
+                        <button
+                          className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105`}
+                          onClick={() => handleChangeStatus(order.id)}
+                          title="Click để đổi trạng thái"
+                        >
+                          {s.label}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+        {/* Pagination: luôn ở đáy card */}
+        {totalPage > 1 && (
+          <div
+            className="absolute left-0 right-0 flex items-center justify-center gap-2"
+            style={{ bottom: 40 }}
+          >
+            <button
+              className="px-3 py-1 rounded hover:bg-gray-100 text-xl"
+              disabled={currentPage === 1}
+              onClick={() => goToPage(currentPage - 1)}
+            >{"<"}</button>
+            {Array.from({ length: totalPage }).map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => goToPage(idx + 1)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-base font-semibold 
+                  ${currentPage === idx + 1 ? "bg-[#2998FF] text-white" : "text-[#222] hover:bg-gray-100"}`}
+              >
+                {idx + 1}
+              </button>
+            ))}
+            <button
+              className="px-3 py-1 rounded hover:bg-gray-100 text-xl"
+              disabled={currentPage === totalPage}
+              onClick={() => goToPage(currentPage + 1)}
+            >{">"}</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,36 +1,32 @@
-// src/admin/components/DashboardContent.tsx
-"use client";
+// src/admin/dashboard/page.tsx
+'use client';
 
-import { useState } from "react";
-import AdminNavigation from "../AdminNavigation";
-import UserRoleChart from "./UserRoleChart";
-import UserRegistrationChart from "./UserRegistrationChart";
-import { IUser } from "@/types/auth";
+import Stats from './Stats';
+import RevenueChart from './RevenueChart';
+import BestSellerTable from './BestSellerTable';
+import CustomerChart from './CustomerChart';
+import TransactionHistory from './TransactionHistory';
 
-interface DashboardContentProps {
-  users: IUser[];
-  navigationItems: { label: string; href: string; filter?: string }[];
-}
-
-export default function DashboardContent({ users, navigationItems }: DashboardContentProps) {
-  const [filter, setFilter] = useState<string>("Tất cả");
-
-  const filteredUsers = users.filter((user) => {
-    if (filter === "Tất cả") return true;
-    return user.role === filter.toLowerCase();
-  });
-
+export default function DashboardPage() {
   return (
-    <>
-      <AdminNavigation
-        items={navigationItems}
-        currentFilter={filter}
-        onFilter={setFilter}
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white rounded-[2.125rem] px-12 py-8">
-        <UserRoleChart users={filteredUsers} />
-        <UserRegistrationChart />
+    <main className="pt-10"> {/* Không dùng px-10 */}
+      {/* Stats row */}
+      <div className="flex gap-6 mb-6" style={{ width: '1116px' }}>
+        <Stats />
       </div>
-    </>
+      {/* Main content: 2 cột */}
+      <div className="flex gap-6">
+        {/* Cột trái lớn */}
+        <div className="flex flex-col gap-6 w-[743px]">
+          <RevenueChart />
+          <BestSellerTable />
+        </div>
+        {/* Cột phải nhỏ */}
+        <div className="flex flex-col gap-6 w-[359px]">
+          <CustomerChart />
+          <TransactionHistory />
+        </div>
+      </div>
+    </main>
   );
 }

@@ -64,7 +64,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="h-full w-[21.5625rem] bg-black text-white flex flex-col sticky top-0 rounded-r-3xl">
+    <div className="h-full w-[285px] bg-black text-white flex flex-col sticky top-0 rounded-r-3xl">
       <div className="p-4 flex flex-col gap-12 w-full h-auto">
         <Link href="/admin/dashboard">
           <Image src="/admin/sidebar/logo.svg" alt="Logo Công Ty" width={120} height={40} />
@@ -77,7 +77,7 @@ export default function Sidebar() {
             <Link
               href={item.href}
               className={`flex items-center gap-3 p-2 rounded ${
-                isActive(item.href) ? "bg-white text-black" : "hover:bg-gray-800"
+                isActive(item.href) ? "bg-[#ECF8FF] py-3 px-3 ml-4 rounded-xl text-black" : "hover:bg-gray-800"
               }`}
             >
               <Image

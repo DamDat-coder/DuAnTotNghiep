@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { updateOrderStatus } from "@/services/orderApi";
 import toast from "react-hot-toast";
-import { OrderDetail } from "@/types";
+import { OrderDetail} from "@/types/order";
 
 interface OrderDetailFormProps {
   order: OrderDetail | null;

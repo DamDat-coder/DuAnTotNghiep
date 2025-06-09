@@ -1,3 +1,4 @@
+import Image from "next/image";
 export default function FavoriteTab() {
   return (
     <div>
@@ -7,10 +8,12 @@ export default function FavoriteTab() {
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 border-b pb-4">
               {/* Hình ảnh */}
-              <img
-                src="/images/sample-product.jpg"
+              <Image
+                src="/product/img/1.webp"
                 alt="Áo khoác"
-                className="w-24 h-24 object-cover"
+                width={96}
+                height={96}
+                className="object-cover rounded"
               />
 
               {/* Thông tin */}

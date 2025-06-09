@@ -40,7 +40,7 @@ export default function RootLayout({
               <CartProvider>
               <main className={mainClassName}>{children}</main>
               </CartProvider>
-              {!isAdminRoute && <br />}
+              {!isAdminRoute}
               {!isAdminRoute && <Footer />}
             </LookupProvider>
           </MenuProvider>

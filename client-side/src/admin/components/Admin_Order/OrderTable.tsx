@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavigation from "../AdminNavigation";
-import { Order } from "@/types";
+import { Order } from "@/types/order";
 
 interface SortConfig {
   key: "total" | "products";

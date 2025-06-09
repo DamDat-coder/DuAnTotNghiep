@@ -1,85 +1,3 @@
-// "use client";
-
-// import Image from "next/image";
-
-// const orders = [
-//   {
-//     id: 1,
-//     name: "MLB – Áo khoác phối mũ unisex Gopcore Basic",
-//     img: "/images/product.png", // đường dẫn ảnh
-//     quantity: "1 Trắng/L",
-//     status: "ĐÃ HOÀN THÀNH",
-//     price: "1,790,000₫",
-//   },
-//   {
-//     id: 2,
-//     name: "MLB – Áo khoác phối mũ unisex Gopcore Basic",
-//     img: "/images/product.png",
-//     quantity: "1 Trắng/L",
-//     status: "ĐÃ HOÀN THÀNH",
-//     price: "1,790,000₫",
-//   },
-//   {
-//     id: 3,
-//     name: "MLB – Áo khoác phối mũ unisex Gopcore Basic",
-//     img: "/images/product.png",
-//     quantity: "1 Trắng/L",
-//     status: "ĐÃ HỦY",
-//     price: "1,790,000₫",
-//   },
-//   {
-//     id: 4,
-//     name: "MLB – Áo khoác phối mũ unisex Gopcore Basic",
-//     img: "/images/product.png",
-//     quantity: "1 Trắng/L",
-//     status: "ĐÃ HOÀN THÀNH",
-//     price: "1,790,000₫",
-//   },
-// ];
-
-// export default function OrderTab() {
-//   return (
-//     <div className="space-y-6">
-//       <h1 className="text-xl font-bold border-b pb-2">ĐƠN HÀNG</h1>
-
-//       {orders.map((order) => (
-//         <div
-//           key={order.id}
-//           className="flex items-center justify-between border-b pb-4"
-//         >
-//           <div className="flex gap-4">
-//             <div className="w-[80px] h-[100px] relative shrink-0">
-//               <Image
-//                 src={order.img}
-//                 alt={order.name}
-//                 fill
-//                 className="object-contain"
-//               />
-//             </div>
-
-//             <div className="flex flex-col justify-between">
-//               <p className="font-semibold leading-snug">{order.name}</p>
-//               <p className="text-sm text-gray-500 mt-1">SL: {order.quantity}</p>
-//               <p
-//                 className={`text-sm font-semibold mt-1 ${
-//                   order.status === "ĐÃ HỦY" ? "text-red-500" : "text-green-600"
-//                 }`}
-//               >
-//                 {order.status}
-//               </p>
-//             </div>
-//           </div>
-
-//           <div className="text-red-600 font-semibold text-sm">
-//             {order.price}
-//           </div>
-//         </div>
-//       ))}
-//     </div>
-//   );
-// }
-
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -89,27 +7,52 @@ import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
 interface Order {
   _id: string;
-  products: { productId: { _id: string; name: string; price: number; image: string[] }; quantity: number }[];
+  createdAt: string;
+  status: "pending" | "processing" | "shipping" | "success" | "cancelled";
   totalPrice: number;
   shippingAddress: string;
-  status: string;
-  createdAt: string;
+  couponId?: string;
+  userId: string;
+
+  products: {
+    productId: {
+      _id: string;
+      name: string;
+      price: number;
+      image: string[];
+    };
+    quantity: number;
+  }[];
+
+  paymentMethod?: string;
+}
+interface OrderTabProps {
+  setActiveTab: (tab: string) => void;
+  setSelectedOrderId: (id: string) => void;
+  setSelectedPaymentMethod: (method: string) => void;
 }
 
-export default function Orders() {
+export default function Orders({
+  setActiveTab,
+  setSelectedOrderId,
+  setSelectedPaymentMethod,
+}: OrderTabProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const response = await fetchWithAuth<{ data: Order[] }>(`${API_BASE_URL}/order/user/orders`, {
-          cache: "no-store",
-        });
-        setOrders(response.data); 
+        const response = await fetchWithAuth<{ data: Order[] }>(
+          `${API_BASE_URL}/order/user/orders`,
+          { cache: "no-store" }
+        );
+        setOrders(response.data);
       } catch (error) {
         toast.error("Không thể tải danh sách đơn hàng!");
         console.error("Error fetching orders:", error);
@@ -124,100 +67,143 @@ export default function Orders() {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
+  const statusTabs = [
+    { label: "Tất cả", value: "all" },
+    { label: "Đã giao", value: "success" },
+    { label: "Đang giao", value: "shipping" },
+    { label: "Đang xử lý", value: "processing" },
+    { label: "Chờ xác nhận", value: "pending" },
+    { label: "Đã hủy", value: "cancelled" },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return (
+          <span className="bg-[#FFF4E5] text-[#FF9900] text-sm px-4 py-[6px] rounded">
+            Chờ xác nhận
+          </span>
+        );
+      case "processing":
+        return (
+          <span className="bg-[#E5F6FD]] text-[#007BFF] text-xs px-2 py-1 rounded">
+            Đang xử lý
+          </span>
+        );
+      case "shipping":
+        return (
+          <span className="bg-[#E6F4EA] text-[#28A745] text-xs px-2 py-1 rounded">
+            Đang giao
+          </span>
+        );
+      case "success":
+        return (
+          <span className="bg-[#EDF7ED] text-[#2E7D32] text-xs px-2 py-1 rounded">
+            Đã giao
+          </span>
+        );
+      case "cancelled":
+        return (
+          <span className="bg-[#FDECEA] text-[#D93025] text-xs px-2 py-1 rounded">
+            Đã hủy
+          </span>
+        );
+      default:
+        return (
+          <span className="bg-gray-300 text-black text-xs px-2 py-1 rounded">
+            Không xác định
+          </span>
+        );
+    }
+  };
+
   if (isLoading) {
-    return (
-      <Container>
-        <p className="text-center text-gray-500 mt-4">Đang tải...</p>
-      </Container>
-    );
+    return <p className="text-center text-gray-500 mt-4">Đang tải...</p>;
   }
+  const filteredOrders = orders.filter((order) =>
+    selectedStatus === "all" ? true : order.status === selectedStatus
+  );
 
   return (
-    <div className="py-8">
-      <Container>
-        <Toaster position="top-right" />
-        <h1 className="text-2xl font-medium text-left">Đơn hàng của bạn</h1>
-        {orders.length === 0 ? (
-          <p className="text-center text-gray-500 mt-4">Bạn chưa có đơn hàng nào.</p>
-        ) : (
-          <div className="space-y-4 mt-4">
-            {orders.map((order) => (
-              <div key={order._id} className="border rounded-md">
-                {/* Dòng tóm tắt đơn hàng */}
-                <div
-                  className="flex justify-between items-center p-4 cursor-pointer"
-                  onClick={() => toggleOrderDetails(order._id)}
-                >
-                  <div className="flex flex-col desktop:flex-row desktop:items-center desktop:gap-4">
-                    <span className="font-bold text-sm desktop:text-base">
-                      Mã đơn hàng: {order._id}
-                    </span>
-                    <span
-                      className={`text-sm desktop:text-base ${
-                        order.status === "success" ? "text-green-500" : "text-yellow-500"
-                      }`}
-                    >
-                      Trạng thái: {order.status === "success" ? "Thành công" : "Đang xử lý"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm desktop:text-base text-red-500">
-                      {order.totalPrice.toLocaleString("vi-VN")}₫
-                    </span>
-                    {expandedOrder === order._id ? (
-                      <ChevronUp className="w-5 h-5" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5" />
-                    )}
-                  </div>
-                </div>
+    <div>
+      <Toaster position="top-right" />
+      <h1 className="text-xl font-semibold mb-4">ĐƠN HÀNG</h1>
+      {/* Tabs lọc trạng thái */}
+      <div className="relative my-8">
+        {/* Tabs */}
+        <div className="flex gap-8 pb-2 relative z-10">
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setSelectedStatus(tab.value)}
+              className={`relative pb-1 text-sm font-medium transition-all ${
+                selectedStatus === tab.value
+                  ? "text-black font-bold"
+                  : "text-gray-500"
+              }`}
+            >
+              {tab.label}
+              {/* Gạch dưới cho tab active */}
+              {selectedStatus === tab.value && <span />}
+            </button>
+          ))}
+        </div>
 
-                {/* Chi tiết đơn hàng với hiệu ứng trượt */}
-                <AnimatePresence>
-                  {expandedOrder === order._id && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-4 border-t flex flex-col gap-4">
-                        <div className="space-y-2">
-                          {order.products.map((item) => (
-                            <div key={item.productId._id} className="flex items-center gap-4">
-                              <Image
-                                src={`/product/img/${item.productId.image[0]}`}
-                                alt={item.productId.name}
-                                width={90}
-                                height={90}
-                                className="object-cover rounded"
-                              />
-                              <div>
-                                <p className="text-sm desktop:text-base">{item.productId.name}</p>
-                                <p className="text-sm desktop:text-base">Số lượng: {item.quantity}</p>
-                                <p className="text-red-500 text-sm desktop:text-base">
-                                  {(item.productId.price * item.quantity).toLocaleString("vi-VN")}₫
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="mt-2 text-sm desktop:text-base font-semibold">
-                          Địa chỉ giao hàng: {order.shippingAddress}
-                        </p>
-                        <p className="mt-2 text-sm desktop:text-base text-gray-500">
-                          Ngày tạo: {new Date(order.createdAt).toLocaleDateString("vi-VN")}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+        {/* Line kéo dài toàn chiều ngang container */}
+        <span className="absolute bottom-0 left-0 w-full h-[1px] bg-[#d1d1d1] z-0" />
+      </div>
+
+      {orders.length === 0 ? (
+        <p className="text-center text-gray-500">Bạn chưa có đơn hàng nào.</p>
+      ) : (
+        filteredOrders.map((order) => (
+          <div
+            key={order._id}
+            className="shadow-custom-order rounded-lg bg-white p-4 relative"
+          >
+            <div className="absolute top-4 right-4">
+              {getStatusBadge(order.status)}
+            </div>
+
+            <div className="space-y-4">
+              <p className="font-bold text-sm">MÃ ĐƠN HÀNG: {order._id}</p>
+              <p className="text-sm text-gray-700">
+                Ngày đặt:{" "}
+                {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+              </p>
+              <p className="text-sm text-gray-700">
+                Tổng tiền: {order.totalPrice.toLocaleString("vi-VN")}₫
+              </p>
+              <p className="text-sm text-gray-700">
+                Thanh toán:{" "}
+                <span className="uppercase">
+                  {order.paymentMethod || "Chưa thanh toán"}
+                </span>
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedOrderId(order._id);
+                    setSelectedPaymentMethod(order.paymentMethod ?? "");
+                    setActiveTab("Chi tiết đơn hàng");
+                  }}
+                  className="px-4 py-1 border border-black text-sm rounded hover:bg-gray-100"
+                >
+                  <div className="cursor-pointer">Xem chi tiết</div>
+                </button>
+
+                {(order.status === "pending" ||
+                  order.status === "processing") && (
+                  <button className="px-4 py-1 bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600">
+                    Hủy
+                  </button>
+                )}
               </div>
-            ))}
+            </div>
           </div>
-        )}
-      </Container>
+        ))
+      )}
     </div>
   );
 }

@@ -197,7 +197,7 @@ export function useCheckout() {
           orderItems.forEach((item) => {
             dispatch({ type: "delete", item });
           });
-          router.push("/orders");
+          router.push("/profile?tab=order");
         } else {
           toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
         }

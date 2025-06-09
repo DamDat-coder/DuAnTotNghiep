@@ -16,6 +16,8 @@ import SearchResults from "../Popups/LookupMenu/SearchResults";
 import { fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import NotificationIcon from "./Notification";
 
 interface HeaderProps {
   title: string;
@@ -210,8 +212,8 @@ export default function Header({ title }: HeaderProps) {
                     </button>
                   )}
                 </div>
-                <a
-                  href="#"
+                <Link
+                  href="/profile?tab=favorite"
                   className="text-gray-400 hover:text-black hidden tablet:hidden laptop:block desktop:block"
                 >
                   <Image
@@ -221,16 +223,8 @@ export default function Header({ title }: HeaderProps) {
                     height={40}
                     className="h-[1.05rem] w-auto"
                   />
-                </a>
-                <a href="/cart" className="text-gray-400 hover:text-black">
-                  <Image
-                    src="/nav/nav_cart.svg"
-                    alt="Cart"
-                    width={120}
-                    height={40}
-                    className="h-6 w-auto"
-                  />
-                </a>
+                </Link>
+                <NotificationIcon />
                 {isClient &&
                   (user ? (
                     <UserDropdown />

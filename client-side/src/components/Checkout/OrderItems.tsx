@@ -22,27 +22,34 @@ export default function OrderItems({ orderItems }: OrderItemsProps) {
         return (
           <div
             key={`${item.id}-${item.size}`}
-            className="flex items-center gap-4 p-4 border-b"
+            className="flex items-center gap-4 py-4 border-b"
           >
             <Image
               src={imageSrc}
               alt={item.name}
               width={110}
               height={110}
-              className="w-[6.9rem] h-[6.9rem] object-cover rounded"
+              className="w-[4.875rem] h-[4.875rem] object-cover rounded"
             />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-[#374151]">{item.name}</h3>
-              <p className="text-sm text-[#374151]">
-                Size: {item.size} ({item.color})
-              </p>
-              <p className="text-sm text-[#374151]">Số lượng: {item.quantity}</p>
-              <p className="text-[1rem] font-bold text-red-500">
-                {(item.price * (1 - item.discountPercent / 100) * item.quantity).toLocaleString(
-                  "vi-VN"
-                )}₫
-              </p>
+              <h3 className="text-sm font-semibold text-[#374151]">
+                {item.name}
+              </h3>
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-[#374151]">
+                  {item.color}/{item.size}
+                </p>
+                <p className="text-sm text-[#374151]">Sl: {item.quantity}</p>
+              </div>
             </div>
+            <p className="text-sm font-bold">
+              {(
+                item.price *
+                (1 - item.discountPercent / 100) *
+                item.quantity
+              ).toLocaleString("vi-VN")}
+              ₫
+            </p>
           </div>
         );
       })}

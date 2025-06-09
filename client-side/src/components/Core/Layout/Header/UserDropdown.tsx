@@ -36,11 +36,11 @@ export default function UserDropdown() {
       <div className="flex items-center space-x-2 cursor-pointer ">
         <span className="text-gray-700">Hi, {user.name}</span>
         <Image
-          src="/nav/avatar.png"
+          src="/nav/nav_user.svg"
           alt="Logo"
           width={120}
           height={40}
-          className="h-[2.375rem] w-auto rounded-full"
+          className="h-6 w-6 rounded-full"
         />
       </div>
 

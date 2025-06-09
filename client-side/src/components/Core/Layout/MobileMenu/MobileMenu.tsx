@@ -42,7 +42,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
         />
         <button
           type="button"
-          className="text-gray-400 hover:text-black focus:ring-2 focus:ring-gray-300 focus:outline-none"
+          className="text-gray-400 hover:text-black "
           onClick={() => setIsOpen(false)}
         >
           <Image

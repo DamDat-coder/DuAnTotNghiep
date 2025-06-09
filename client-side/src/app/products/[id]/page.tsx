@@ -60,9 +60,9 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
         <Breadcrumb />
       </Container>
 
-      <div className="mt-4 flex flex-col desktop:flex-row desktop:gap-6 laptop:flex-row laptop:gap-6">
+      <div className="mt-4 flex flex-col tablet:flex-row tablet:gap-6 desktop:flex-row desktop:gap-6 laptop:flex-row laptop:gap-6 tablet:px-4 laptop:px-20 desktop:px-48">
         {/* Mobile/Tablet: Toàn bộ layout gốc */}
-        <div className="flex flex-col gap-9 laptop:hidden desktop:hidden">
+        <div className="flex flex-col gap-9 tablet:hidden laptop:hidden desktop:hidden">
           {/* Section 1: Thông tin cơ bản và Swiper */}
           <div>
             <div className="mt-4 flex flex-col items-start gap-4">
@@ -104,7 +104,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
         </div>
 
         {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
-        <div className="hidden desktop:flex desktop:flex-col desktop:w-3/4  laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
+        <div className="hidden tablet:flex tablet:flex-col tablet:w-3/5 desktop:flex desktop:flex-col desktop:w-3/4 laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
           <DesktopImageGalleryWrapper
             images={product.images.filter(
               (img): img is string => typeof img === "string"
@@ -122,7 +122,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
         </div>
 
         {/* Desktop: Container 2 (Thông tin Sticky) */}
-        <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16 desktop:px-[3.75rem] desktop:py-[1.875rem]  laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3 laptop:px-[3.75rem] laptop:py-[1.875rem]">
+        <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16  laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3  tablet:block tablet:sticky tablet:top-0 tablet:self-start tablet:w-2/5 pb-20">
           <div className="mt-4 flex flex-col items-start gap-6">
             <div className="w-full flex justify-between">
               <div className="text-sm font-bold opacity-40">

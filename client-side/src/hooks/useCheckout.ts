@@ -44,7 +44,9 @@ export function useCheckout() {
     const color = searchParams.get("color");
     const quantity = parseInt(searchParams.get("quantity") || "1", 10);
     const price = parseFloat(searchParams.get("price") || "0");
-    const discountPercent = parseFloat(searchParams.get("discountPercent") || "0");
+    const discountPercent = parseFloat(
+      searchParams.get("discountPercent") || "0"
+    );
 
     if (!productId || !size || !color || isNaN(quantity) || isNaN(price)) {
       return null;

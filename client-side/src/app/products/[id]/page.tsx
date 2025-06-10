@@ -55,17 +55,90 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
   const stock = 1;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-14">
       <Container>
         <Breadcrumb />
-      </Container>
 
-      <div className="mt-4 flex flex-col tablet:flex-row tablet:gap-6 desktop:flex-row desktop:gap-6 laptop:flex-row laptop:gap-6 tablet:px-4 laptop:px-20 desktop:px-48">
-        {/* Mobile/Tablet: Toàn bộ layout gốc */}
-        <div className="flex flex-col gap-9 tablet:hidden laptop:hidden desktop:hidden">
-          {/* Section 1: Thông tin cơ bản và Swiper */}
-          <div>
-            <div className="mt-4 flex flex-col items-start gap-4">
+        <div className="mt-4 flex flex-col tablet:flex-row tablet:gap-6 desktop:flex-row desktop:gap-6 laptop:flex-row laptop:gap-6 px-4">
+          {/* Mobile/Tablet: Toàn bộ layout gốc */}
+          <div className="flex flex-col gap-9 tablet:hidden laptop:hidden desktop:hidden">
+            {/* Section 1: Thông tin cơ bản và Swiper */}
+            <div>
+              <div className="mt-4 flex flex-col items-start gap-4">
+                <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
+                <div className="flex items-center gap-4">
+                  <div className="text-red-500 font-bold text-lg">
+                    {discountedPrice.toLocaleString()}đ
+                  </div>
+                  <div className="text-sm text-gray-500 line-through">
+                    {product.price.toLocaleString()}đ
+                  </div>
+                </div>
+              </div>
+              <div className="relative mt-4">
+                <ProductImageSwiper
+                  images={product.images.filter(
+                    (img): img is string => typeof img === "string"
+                  )}
+                  productName={product.name}
+                />
+              </div>
+            </div>
+
+            {/* Section 2 & 3: Sizes và Actions */}
+            <ProductActions
+              product={product}
+              sizes={sizes}
+              stock={stock}
+              discountedPrice={discountedPrice}
+            />
+
+            {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
+            <ProductDetailsSection />
+
+            {/* Section 5: Sản phẩm gợi ý */}
+            <div className="mb-4">
+              <ProductSection
+                products={allProducts}
+                desktopSlidesPerView={2.5}
+              />
+            </div>
+          </div>
+
+          {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
+          <div className="hidden tablet:flex tablet:flex-col tablet:w-3/5 desktop:flex desktop:flex-col desktop:w-3/4 laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
+            <DesktopImageGalleryWrapper
+              images={product.images.filter(
+                (img): img is string => typeof img === "string"
+              )}
+              productName={product.name}
+            />
+
+            {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
+            <ProductDetailsSection />
+
+            {/* Section 5: Sản phẩm gợi ý */}
+            <div className="mb-4 mt-9">
+              <ProductSection
+                products={allProducts}
+                desktopSlidesPerView={3.2}
+              />
+            </div>
+          </div>
+
+          {/* Desktop: Container 2 (Thông tin Sticky) */}
+          <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16  laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3  tablet:block tablet:sticky tablet:top-0 tablet:self-start tablet:w-2/5 pb-20">
+            <div className="mt-4 flex flex-col items-start gap-6">
+              <div className="w-full flex justify-between">
+                <div className="text-sm font-bold opacity-40">
+                  {product.category}
+                </div>
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={16} fill="black" stroke="black" />
+                  ))}
+                </div>
+              </div>
               <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
               <div className="flex items-center gap-4">
                 <div className="text-red-500 font-bold text-lg">
@@ -76,84 +149,17 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
                 </div>
               </div>
             </div>
-            <div className="relative mt-4">
-              <ProductImageSwiper
-                images={product.images.filter(
-                  (img): img is string => typeof img === "string"
-                )}
-                productName={product.name}
-              />
-            </div>
-          </div>
 
-          {/* Section 2 & 3: Sizes và Actions */}
-          <ProductActions
-            product={product}
-            sizes={sizes}
-            stock={stock}
-            discountedPrice={discountedPrice}
-          />
-
-          {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
-          <ProductDetailsSection />
-
-          {/* Section 5: Sản phẩm gợi ý */}
-          <div className="mb-4">
-            <ProductSection products={allProducts} desktopSlidesPerView={3.2} />
+            {/* Section 2 & 3: Sizes và Actions */}
+            <ProductActions
+              product={product}
+              sizes={sizes}
+              stock={stock}
+              discountedPrice={discountedPrice}
+            />
           </div>
         </div>
-
-        {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
-        <div className="hidden tablet:flex tablet:flex-col tablet:w-3/5 desktop:flex desktop:flex-col desktop:w-3/4 laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
-          <DesktopImageGalleryWrapper
-            images={product.images.filter(
-              (img): img is string => typeof img === "string"
-            )}
-            productName={product.name}
-          />
-
-          {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
-          <ProductDetailsSection />
-
-          {/* Section 5: Sản phẩm gợi ý */}
-          <div className="mb-4 mt-9 desktop:w-[80%] desktop:mx-auto laptop:w-[80%] laptop:mx-auto">
-            <ProductSection products={allProducts} desktopSlidesPerView={2.3} />
-          </div>
-        </div>
-
-        {/* Desktop: Container 2 (Thông tin Sticky) */}
-        <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16  laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3  tablet:block tablet:sticky tablet:top-0 tablet:self-start tablet:w-2/5 pb-20">
-          <div className="mt-4 flex flex-col items-start gap-6">
-            <div className="w-full flex justify-between">
-              <div className="text-sm font-bold opacity-40">
-                {product.category}
-              </div>
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={16} fill="black" stroke="black" />
-                ))}
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
-            <div className="flex items-center gap-4">
-              <div className="text-red-500 font-bold text-lg">
-                {discountedPrice.toLocaleString()}đ
-              </div>
-              <div className="text-sm text-gray-500 line-through">
-                {product.price.toLocaleString()}đ
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2 & 3: Sizes và Actions */}
-          <ProductActions
-            product={product}
-            sizes={sizes}
-            stock={stock}
-            discountedPrice={discountedPrice}
-          />
-        </div>
-      </div>
+      </Container>
     </div>
   );
 }

@@ -105,7 +105,7 @@ export default function Header({ title }: HeaderProps) {
 
   return (
     <>
-      <nav className="bg-white text-black relative z-40">
+      <nav className="bg-white text-black relative">
         <div className="w-[95%] mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center">
@@ -149,7 +149,7 @@ export default function Header({ title }: HeaderProps) {
                       {/* Panel gợi ý và kết quả tìm kiếm */}
                       <motion.div
                         ref={menuRef}
-                        className="bg-white text-black absolute top-18 right-0 w-full max-h-96 overflow-hidden flex flex-col z-[60] shadow-lg rounded-b-lg"
+                        className="bg-white text-black absolute top-18 right-0 w-full max-h-96 overflow-hidden flex flex-col z-[40] shadow-lg rounded-b-lg"
                         initial={{ y: "-8%", opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: "-8%", opacity: 0 }}
@@ -225,6 +225,15 @@ export default function Header({ title }: HeaderProps) {
                   />
                 </Link>
                 <NotificationIcon />
+                <a href="/cart" className="text-gray-400 hover:text-black">
+                  <Image
+                    src="/nav/nav_cart.svg"
+                    alt="Cart"
+                    width={120}
+                    height={40}
+                    className="h-6 w-auto"
+                  />
+                </a>
                 {isClient &&
                   (user ? (
                     <UserDropdown />

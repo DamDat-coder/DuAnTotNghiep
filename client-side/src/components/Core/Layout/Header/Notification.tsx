@@ -30,7 +30,7 @@ export default function Notification() {
     <div className="relative" ref={ref}>
       <button
         onClick={handleClick}
-        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        className={`rounded-full flex items-center justify-center transition-all ${
           isOpen ? "bg-[#009EFF]/[0.32]" : "hover:bg-gray-100"
         }`}
       >
@@ -42,7 +42,7 @@ export default function Notification() {
           className={`${isOpen ? "text-[#009EFF]" : "text-black"}`}
         />
         <span
-          className={`absolute top-[6px] right-[6px] w-2.5 h-2.5 rounded-full transition-all ${
+          className={`absolute top-[-5px] right-[-4px] w-2.5 h-2.5 rounded-full transition-all ${
             isOpen ? "bg-[#009EFF]" : hasUnread ? "bg-red-500" : "hidden"
           }`}
         />

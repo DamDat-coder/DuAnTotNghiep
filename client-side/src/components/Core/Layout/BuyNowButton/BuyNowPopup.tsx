@@ -156,7 +156,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[50]"
             onClick={onClose}
           >
             <motion.div
@@ -380,7 +380,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
             onClick={handleCloseSizeChart}
           >
             <motion.div
@@ -410,7 +410,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                 alt="Bảng kích thước"
                 width={300}
                 height={200}
-                className="w-[70vw] h-[70vh] object-contain"
+                className="w-[40vw] h-[40vh] object-contain"
               />
             </motion.div>
           </motion.div>

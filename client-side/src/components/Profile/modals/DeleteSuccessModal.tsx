@@ -18,7 +18,7 @@ export default function DeleteSuccessModal({ onClose }: Props) {
         {/* Logo */}
         <div className="mb-4">
           <Image
-            src="/profile/modal/image 689.png"
+            src="/nav/logo.svg"
             alt="GBOX logo"
             width={180}
             height={60}

@@ -44,7 +44,7 @@ export default function OrderDetail({
         <div className="flex gap-4 flex-1">
           <div className="w-[180px] h-[141px] relative shrink-0">
             <Image
-              src="/images/product.png"
+              src="/product/img/1.webp"
               alt="product"
               fill
               className="object-contain rounded"

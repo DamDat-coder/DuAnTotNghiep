@@ -53,6 +53,17 @@ export default function ProductActions({
     );
   }, [isLiked, product.id]);
 
+  useEffect(() => {
+    if (isSizeChartOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isSizeChartOpen]);
+
   const handleSizeChange = (size: string) => {
     if (sizes.find((s) => s.value === size)?.inStock) {
       setSelectedSize(size);
@@ -104,8 +115,7 @@ export default function ProductActions({
 
   return (
     <>
-      {/* Section 1: Sizes */}
-      <div className="flex flex-col tablet:py-6 tablet:gap-6 laptop:py-16 laptop:gap-16 desktop:py-16 desktop:gap-16">
+      <div className="flex flex-col gap-9 tablet:py-6 laptop:py-8 laptop:gap-py-8 desktop:py-8 desktop:gap-py-8">
         {/* Section 2: Colors */}
         <div className="">
           <h3 className="font-semibold mb-2">Màu sắc</h3>
@@ -270,7 +280,7 @@ export default function ProductActions({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
             onClick={handleCloseSizeChart}
           >
             <motion.div

@@ -46,7 +46,7 @@ export default function NewsSection({
       </div>
 
       {/* Tablet/Desktop: Grid */}
-      <div className="hidden desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8">
+      <div className="hidden desktop:grid laptop:grid desktop:grid-cols-3 gap-4 desktop:gap-8  laptop:grid-cols-3 laptop:gap-8">
         {newsItems.map((news) => (
           <div key={news.id} className="flex flex-col items-start gap-3">
             <Image

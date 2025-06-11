@@ -48,6 +48,20 @@ export default function Notification() {
             height={21}
           />
         </div>
+
+        <Image
+          src="/nav/notification.svg"
+          alt="notification"
+          width={18}
+          height={21}
+          className={`${isOpen ? "text-[#009EFF]" : "text-black"}`}
+        />
+        <span
+          className={`absolute top-[-5px] right-[-4px] w-2.5 h-2.5 rounded-full transition-all ${
+            isOpen ? "bg-[#009EFF]" : hasUnread ? "bg-red-500" : "hidden"
+          }`}
+        />
+
       </button>
 
       {isOpen && (

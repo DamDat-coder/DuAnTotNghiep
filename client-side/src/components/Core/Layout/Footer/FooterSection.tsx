@@ -6,7 +6,9 @@ import FooterContent from "./FooterContent";
 interface FooterSectionProps {
   id: string;
   title: string;
-  content: Array<string | { text: string; href?: string; icon?: React.ReactNode }>;
+  content: Array<
+    string | { text: string; href?: string; icon?: React.ReactNode }
+  >;
   activeSection: string | null;
   handleClick: (section: string) => void;
 }
@@ -21,7 +23,7 @@ export default function FooterSection({
   return (
     <div>
       {/* Mobile/Tablet: Có mũi tên và accordion */}
-      <div className="laptop:hidden desktop:hidden">
+      <div className="laptop:hidden desktop:hidden border-t-2 border-solid border-[#B0B0B0]">
         <a
           href="#"
           className="flex items-center justify-between flex-auto no-underline hover:underline focus:no-underline border-t-2 pt-4 border-[#B0B0B0]"

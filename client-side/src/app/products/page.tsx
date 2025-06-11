@@ -91,11 +91,13 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="py-3 px-6 overflow-x-hidden flex flex-col gap-6">
-      <Container>
-        <Breadcrumb />
-        <CategorySwiper categories={categories} />
-        <ProductGrid products={products} />
+    <div className="gap-14 pb-14 overflow-x-hidden flex flex-col">
+      <Container className="flex flex-col gap-[3.375rem] w-full">
+        <div>
+          <Breadcrumb />
+          <CategorySwiper categories={categories} />
+          <ProductGrid products={products} />
+        </div>
         <NewsSection newsItems={newsItems} />
       </Container>
     </div>

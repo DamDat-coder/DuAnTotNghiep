@@ -34,7 +34,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="py-0 px-6 tablet:px-4 laptop:px-0 desktop:px-0 overflow-x-hidden flex flex-col gap-20 pb-20">
+    <div className="overflow-x-hidden flex flex-col gap-14 pb-14">
       {/* Banner đầu */}
       <Banner
         status="Vừa ra mắt"
@@ -51,7 +51,7 @@ export default async function Home() {
         <MemberBenefitsBanner benefits={benefits} />
 
         {/* Banner cuối */}
-        <div className="flex flex-col flex-grow gap-[3.375rem]">
+        <div className="hidden tablet:flex laptop:flex desktop:flex w-full flex-col flex-grow gap-[3.375rem]">
           <Banner
             title="Đừng Bỏ Lỡ"
             status="Cảm giác thoải mái"
@@ -63,6 +63,17 @@ export default async function Home() {
           />
         </div>
       </Container>
+      <div className="flex flex-col tablet:hidden laptop:hidden desktop:hidden">
+        <Banner
+          title="Đừng Bỏ Lỡ"
+          status="Cảm giác thoải mái"
+          name="MLB - Áo khoác phối mũ unisex Gopcore Basic"
+          description="Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
+          image1="/product/product_sale.png"
+          image2="/banner/banner_2.png"
+          altText="Áo khoác Gopcore Basic"
+        />
+      </div>
     </div>
   );
 }

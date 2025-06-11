@@ -21,7 +21,9 @@ export default function Banner({
   altText,
 }: BannerProps) {
   return (
-    <div className="banner w-full">
+    <div
+      className="banner w-full"
+    >
       {/* Tiêu đề (nếu có) */}
       {title && (
         <h1 className="text-[1.5rem] font-bold laptop:text-[1.5rem] desktop:text-[1.5rem] desktop:font-bold pb-6">
@@ -30,7 +32,7 @@ export default function Banner({
       )}
 
       {/* Mobile/Tablet: 1 hình */}
-      <div className="laptop:hidden desktop:hidden">
+      <div className="px-4 laptop:hidden desktop:hidden">
         <Image
           src={image1}
           alt={altText}

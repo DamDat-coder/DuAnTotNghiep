@@ -7,6 +7,15 @@ import { ICartItem } from "@/types/cart";
 interface OrderItemsProps {
   orderItems: ICartItem[];
 }
+const colorMap: { [key: string]: string } = {
+  "#000000": "Đen",
+  "#87CEEB": "Xanh da trời",
+  "#FE0000": "Đỏ",
+  "#FFFFFF": "Trắng",
+  "#FFC0CB": "Hồng",
+  "#FAD2B6": "Da",
+  "#8B4513": "Nâu",
+};
 
 export default function OrderItems({ orderItems }: OrderItemsProps) {
   return (
@@ -18,7 +27,8 @@ export default function OrderItems({ orderItems }: OrderItemsProps) {
             ? item.image
             : "/product/img/" + item.image
           : "/images/placeholder.jpg";
-
+        const displayColor =
+          colorMap[item.color] || item.color || "Không xác định";
         return (
           <div
             key={`${item.id}-${item.size}`}
@@ -37,7 +47,7 @@ export default function OrderItems({ orderItems }: OrderItemsProps) {
               </h3>
               <div className="flex items-center gap-4">
                 <p className="text-sm text-[#374151]">
-                  {item.color}/{item.size}
+                  {displayColor}/{item.size}
                 </p>
                 <p className="text-sm text-[#374151]">Sl: {item.quantity}</p>
               </div>

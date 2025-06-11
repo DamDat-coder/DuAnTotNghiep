@@ -152,58 +152,59 @@ export default function Orders({
         {/* Line kéo dài toàn chiều ngang container */}
         <span className="absolute bottom-0 left-0 w-full h-[1px] bg-[#d1d1d1] z-0" />
       </div>
+      <div className="flex flex-col gap-4">
+        {orders.length === 0 ? (
+          <p className="text-center text-gray-500">Bạn chưa có đơn hàng nào.</p>
+        ) : (
+          filteredOrders.map((order) => (
+            <div
+              key={order._id}
+              className="shadow-custom-order rounded-lg bg-white p-4 relative"
+            >
+              <div className="absolute top-4 right-4">
+                {getStatusBadge(order.status)}
+              </div>
 
-      {orders.length === 0 ? (
-        <p className="text-center text-gray-500">Bạn chưa có đơn hàng nào.</p>
-      ) : (
-        filteredOrders.map((order) => (
-          <div
-            key={order._id}
-            className="shadow-custom-order rounded-lg bg-white p-4 relative"
-          >
-            <div className="absolute top-4 right-4">
-              {getStatusBadge(order.status)}
-            </div>
+              <div className="space-y-4">
+                <p className="font-bold text-sm">MÃ ĐƠN HÀNG: {order._id}</p>
+                <p className="text-sm text-gray-700">
+                  Ngày đặt:{" "}
+                  {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                </p>
+                <p className="text-sm text-gray-700">
+                  Tổng tiền: {order.totalPrice.toLocaleString("vi-VN")}₫
+                </p>
+                <p className="text-sm text-gray-700">
+                  Thanh toán:{" "}
+                  <span className="uppercase">
+                    {order.paymentMethod || "Chưa thanh toán"}
+                  </span>
+                </p>
 
-            <div className="space-y-4">
-              <p className="font-bold text-sm">MÃ ĐƠN HÀNG: {order._id}</p>
-              <p className="text-sm text-gray-700">
-                Ngày đặt:{" "}
-                {new Date(order.createdAt).toLocaleDateString("vi-VN")}
-              </p>
-              <p className="text-sm text-gray-700">
-                Tổng tiền: {order.totalPrice.toLocaleString("vi-VN")}₫
-              </p>
-              <p className="text-sm text-gray-700">
-                Thanh toán:{" "}
-                <span className="uppercase">
-                  {order.paymentMethod || "Chưa thanh toán"}
-                </span>
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setSelectedOrderId(order._id);
-                    setSelectedPaymentMethod(order.paymentMethod ?? "");
-                    setActiveTab("Chi tiết đơn hàng");
-                  }}
-                  className="px-4 py-1 border border-black text-sm rounded hover:bg-gray-100"
-                >
-                  <div className="cursor-pointer">Xem chi tiết</div>
-                </button>
-
-                {(order.status === "pending" ||
-                  order.status === "processing") && (
-                  <button className="px-4 py-1 bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600">
-                    Hủy
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedOrderId(order._id);
+                      setSelectedPaymentMethod(order.paymentMethod ?? "");
+                      setActiveTab("Chi tiết đơn hàng");
+                    }}
+                    className="px-4 py-1 border border-black text-sm rounded hover:bg-gray-100"
+                  >
+                    <div className="cursor-pointer">Xem chi tiết</div>
                   </button>
-                )}
+
+                  {(order.status === "pending" ||
+                    order.status === "processing") && (
+                    <button className="px-4 py-1 bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600">
+                      Hủy
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }

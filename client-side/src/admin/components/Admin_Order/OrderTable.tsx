@@ -1,60 +1,23 @@
 "use client";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 // Định nghĩa trạng thái đơn hàng và màu sắc tương ứng
 const STATUS = [
-  {
-    key: "processing",
-    label: "Đang xử lý",
-    color: "bg-[#E8F2FD] text-[#2998FF]",
-  },
-  {
-    key: "confirming",
-    label: "Chờ xác nhận",
-    color: "bg-[#FFF7DB] text-[#FFA800]",
-  },
-  {
-    key: "delivering",
-    label: "Đang giao",
-    color: "bg-[#DBF7E8] text-[#39C24F]",
-  },
-  {
-    key: "completed",
-    label: "Đã hoàn thành",
-    color: "bg-[#DBF7E8] text-[#449E3C]",
-  },
+  { key: "processing", label: "Đang xử lý", color: "bg-[#E8F2FD] text-[#2998FF]" },
+  { key: "confirming", label: "Chờ xác nhận", color: "bg-[#FFF7DB] text-[#FFA800]" },
+  { key: "delivering", label: "Đang giao", color: "bg-[#DBF7E8] text-[#39C24F]" },
+  { key: "completed", label: "Đã hoàn thành", color: "bg-[#DBF7E8] text-[#449E3C]" },
   { key: "cancelled", label: "Đã huỷ", color: "bg-[#FFE1E1] text-[#F75555]" },
 ];
 
-// Tạo dữ liệu mẫu (27 orders)
+// Tạo dữ liệu mẫu (50 orders)
 const customers = [
-  "Robert Fox",
-  "Brooklyn Simmons",
-  "Jacob Jones",
-  "Marvin McKinney",
-  "Arlene McCoy",
-  "Esther Howard",
-  "Darrell Steward",
-  "Bessie Cooper",
-  "Ralph Edwards",
-  "Dianne Russell",
-  "Guy Hawkins",
-  "Jenny Wilson",
-  "Eleanor Pena",
-  "Wade Warren",
-  "Ronald Richards",
-  "Courtney Henry",
-  "Cody Fisher",
-  "Cameron Williamson",
-  "Leslie Alexander",
-  "Jane Cooper",
-  "Floyd Miles",
-  "Annette Black",
-  "Theresa Webb",
-  "Savannah Nguyen",
-  "Jerome Bell",
-  "Devon Lane",
-  "Kathryn Murphy",
+  "Robert Fox", "Brooklyn Simmons", "Jacob Jones", "Marvin McKinney", "Arlene McCoy",
+  "Esther Howard", "Darrell Steward", "Bessie Cooper", "Ralph Edwards", "Dianne Russell",
+  "Guy Hawkins", "Jenny Wilson", "Eleanor Pena", "Wade Warren", "Ronald Richards",
+  "Courtney Henry", "Cody Fisher", "Cameron Williamson", "Leslie Alexander", "Jane Cooper",
+  "Floyd Miles", "Annette Black", "Theresa Webb", "Savannah Nguyen", "Jerome Bell",
+  "Devon Lane", "Kathryn Murphy"
 ];
 const products = [
   "MLB – Áo khoác phối mũ unisex Gopcore Basic",
@@ -62,77 +25,185 @@ const products = [
   "MLB – Áo hoodie unisex Essential",
   "MLB – Áo bomber unisex Classic",
 ];
-const randomStatus = () =>
-  STATUS[Math.floor(Math.random() * STATUS.length)].key;
+const randomStatus = () => STATUS[Math.floor(Math.random() * STATUS.length)].key;
 const randomDate = () => {
   const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, "0");
   const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
   return `${day}.${month}.2025`;
 };
-const mockOrders = Array.from({ length: 27 }).map((_, idx) => ({
-  id: `ODR${1000 + idx}`,
+const mockOrders = Array.from({ length: 50 }).map((_, idx) => ({
+  id: `ODR${(1000 + idx)}`,
   product: products[idx % products.length],
   customer: customers[idx % customers.length],
   date: randomDate(),
   status: randomStatus(),
 }));
 
-const getStatusInfo = (key: string) => STATUS.find((s) => s.key === key)!;
-const getNextStatus = (key: string) => {
-  const idx = STATUS.findIndex((s) => s.key === key);
-  return STATUS[(idx + 1) % STATUS.length].key;
-};
+const getStatusInfo = (key) => STATUS.find((s) => s.key === key)!;
 
 const PAGE_SIZE = 10;
+
+// Pagination Component
+function Pagination({ totalPage, currentPage, goToPage }) {
+  // Logic hiển thị các nút trang và dấu "..."
+  let pages = [];
+  if (totalPage <= 5) {
+    pages = Array.from({ length: totalPage }, (_, i) => i + 1);
+  } else if (currentPage <= 3) {
+    pages = [1, 2, 3, "...", totalPage];
+  } else if (currentPage >= totalPage - 2) {
+    pages = [1, "...", totalPage - 2, totalPage - 1, totalPage];
+  } else {
+    pages = [1, "...", currentPage, "...", totalPage];
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-8 mb-2 select-none">
+      <button
+        className="pagination-btn"
+        disabled={currentPage === 1}
+        onClick={() => goToPage(currentPage - 1)}
+      >
+        {"<"}
+      </button>
+      {pages.map((num, idx) =>
+        num === "..." ? (
+          <span
+            key={idx}
+            className="pagination-btn text-[#BDBDBD] cursor-default"
+            style={{
+              fontSize: "1.15rem",
+              fontWeight: 600,
+              border: "1px solid #E6E8EC",
+              background: "#fff",
+              userSelect: "none",
+              pointerEvents: "none",
+              lineHeight: "1.6rem",
+              paddingBottom: 2,
+            }}
+          >
+            &#8230;
+          </span>
+        ) : (
+          <button
+            key={num}
+            onClick={() => goToPage(num)}
+            className={`pagination-btn ${
+              currentPage === num
+                ? "bg-white border-[#2998FF] text-[#2998FF] font-bold"
+                : "bg-white border-[#E6E8EC] text-[#878B93]"
+            }`}
+            style={currentPage === num
+              ? { borderWidth: 2 }
+              : {}}
+          >
+            {num}
+          </button>
+        )
+      )}
+      <button
+        className="pagination-btn"
+        disabled={currentPage === totalPage}
+        onClick={() => goToPage(currentPage + 1)}
+      >
+        {">"}
+      </button>
+      <style>
+        {`
+        .pagination-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          border: 1px solid #E6E8EC;
+          background: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1rem;
+          font-weight: 500;
+          transition: 0.18s;
+          margin: 0 2px;
+        }
+        .pagination-btn:not([disabled]):hover {
+          border-color: #2998FF;
+          color: #2998FF;
+          background: #F3F8FE;
+        }
+        .pagination-btn[disabled] {
+          color: #BDBDBD;
+          cursor: not-allowed;
+          background: #fafbfc;
+        }
+        `}
+      </style>
+    </div>
+  );
+}
 
 export default function OrderContent() {
   const [search, setSearch] = useState("");
   const [orders, setOrders] = useState(mockOrders);
   const [filterStatus, setFilterStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
+  const [actionDropdown, setActionDropdown] = useState<string | null>(null);
 
   // Lọc dữ liệu
   const filtered = orders.filter(
     (o) =>
       (filterStatus === "all" || o.status === filterStatus) &&
-      (o.id.toLowerCase().includes(search.toLowerCase()) ||
+      (
+        o.id.toLowerCase().includes(search.toLowerCase()) ||
         o.customer.toLowerCase().includes(search.toLowerCase()) ||
-        o.product.toLowerCase().includes(search.toLowerCase()))
+        o.product.toLowerCase().includes(search.toLowerCase())
+      )
   );
 
   // Phân trang
   const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
-  const pageData = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Đổi trạng thái
-  const handleChangeStatus = (id: string) => {
+  const handleChangeStatus = (id, nextStatus) => {
     setOrders((prev) =>
       prev.map((order) =>
-        order.id === id
-          ? { ...order, status: getNextStatus(order.status) }
-          : order
+        order.id === id ? { ...order, status: nextStatus } : order
       )
     );
+    setStatusDropdown(null);
   };
 
   // Chuyển trang
-  const goToPage = (page: number) => {
+  const goToPage = (page) => {
     if (page < 1 || page > totalPage) return;
     setCurrentPage(page);
   };
 
   // Reset về trang 1 khi lọc/search
-  const handleFilter = (status: string) => {
+  const handleFilter = (status) => {
     setFilterStatus(status);
     setCurrentPage(1);
   };
-  const handleSearch = (v: string) => {
+  const handleSearch = (v) => {
     setSearch(v);
     setCurrentPage(1);
   };
+
+  // Xoá đơn hàng
+  const handleDeleteOrder = (id) => {
+    setOrders(prev => prev.filter(order => order.id !== id));
+    setActionDropdown(null);
+  };
+
+  // Đóng dropdown khi click ngoài
+  useEffect(() => {
+    const handler = () => {
+      setStatusDropdown(null);
+      setActionDropdown(null);
+    };
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, []);
 
   return (
     <div className="w-full min-h-screen bg-[#eaf3f8] pt-10">
@@ -146,23 +217,22 @@ export default function OrderContent() {
             <select
               className="h-10 px-4 pr-8 rounded-lg bg-[#F6F8FB] border border-[#E6E8EC] text-[#474A57] font-medium focus:outline-none"
               value={filterStatus}
-              onChange={(e) => handleFilter(e.target.value)}
+              onChange={e => handleFilter(e.target.value)}
               style={{ minWidth: 90 }}
             >
               <option value="all">Tất cả</option>
-              {STATUS.map((s) => (
-                <option key={s.key} value={s.key}>
-                  {s.label}
-                </option>
+              {STATUS.map(s => (
+                <option key={s.key} value={s.key}>{s.label}</option>
               ))}
             </select>
           </div>
-          <div className="flex-1 relative">
+          {/* Thanh tìm kiếm width 350px */}
+          <div className="relative" style={{ width: 350, maxWidth: "100%" }}>
             <input
               className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
               placeholder="Tìm kiếm"
               value={search}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={e => handleSearch(e.target.value)}
             />
             <svg
               viewBox="0 0 20 20"
@@ -170,12 +240,7 @@ export default function OrderContent() {
               className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none"
             >
               <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
-              <path
-                d="M16 16L13.5 13.5"
-                stroke="#8C94A5"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
@@ -184,44 +249,92 @@ export default function OrderContent() {
           <table className="w-full min-w-[900px] text-base">
             <thead>
               <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold">
-                <th className="py-3 text-left font-semibold">Order ID</th>
-                <th className="py-3 text-left font-semibold">Product</th>
-                <th className="py-3 text-left font-semibold">Customer</th>
-                <th className="py-3 text-left font-semibold">Date</th>
-                <th className="py-3 text-left font-semibold">Status</th>
+                <th className="py-3 text-left font-semibold">Mã đơn hàng</th>
+                <th className="py-3 text-left font-semibold">Sản phẩm</th>
+                <th className="py-3 text-left font-semibold">Người dùng</th>
+                <th className="py-3 text-left font-semibold">Ngày đặt hàng</th>
+                <th className="py-3 text-left font-semibold">Trạng thái</th>
+                <th className="py-3 text-center font-semibold" style={{ width: 60 }}>...</th>
               </tr>
             </thead>
             <tbody>
               {pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-[#BDBDBD]">
+                  <td colSpan={6} className="text-center py-10 text-[#BDBDBD]">
                     Không tìm thấy đơn hàng phù hợp
                   </td>
                 </tr>
               ) : (
                 pageData.map((order) => {
                   const s = getStatusInfo(order.status);
+                  // Chỉ cho chọn trạng thái có index >= trạng hiện tại
+                  const currentIdx = STATUS.findIndex(item => item.key === order.status);
+                  const nextStatusList = STATUS.slice(currentIdx + 1);
+
                   return (
-                    <tr
-                      key={order.id}
-                      className="border-b border-[#F1F1F1] last:border-0"
-                    >
-                      <td className="py-3 font-semibold text-[#202020]">
-                        {order.id}
-                      </td>
+                    <tr key={order.id} className="border-b border-[#F1F1F1] last:border-0 relative group">
+                      <td className="py-3 font-semibold text-[#202020]">{order.id}</td>
                       <td className="py-3">{order.product}</td>
                       <td className="py-3">{order.customer}</td>
-                      <td className="py-3 font-semibold text-[#212121]">
-                        {order.date}
-                      </td>
+                      <td className="py-3 font-semibold text-[#212121]">{order.date}</td>
                       <td className="py-3">
+                        <div className="relative inline-block">
+                          <button
+                            type="button"
+                            className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105`}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setStatusDropdown(order.id === statusDropdown ? null : order.id);
+                            }}
+                          >
+                            {s.label} <span className="ml-1 text-[#bdbdbd]">▼</span>
+                          </button>
+                          {/* Dropdown trạng thái */}
+                          {statusDropdown === order.id && nextStatusList.length > 0 && (
+                            <div
+                              className="absolute left-0 mt-2 min-w-[150px] rounded-lg shadow bg-white z-50 border border-gray-100 animate-fadeIn"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {nextStatusList.map(item => (
+                                <button
+                                  key={item.key}
+                                  onClick={() => handleChangeStatus(order.id, item.key)}
+                                  className={`w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-gray-100 ${item.color}`}
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      {/* Dấu 3 chấm nằm ngang */}
+                      <td className="py-3 text-center relative">
                         <button
-                          className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105`}
-                          onClick={() => handleChangeStatus(order.id)}
-                          title="Click để đổi trạng thái"
+                          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setActionDropdown(order.id === actionDropdown ? null : order.id);
+                          }}
                         >
-                          {s.label}
+                          <span className="text-2xl text-[#8C94A5] font-bold" style={{ fontFamily: "Arial" }}>⋯</span>
                         </button>
+                        {/* Dropdown hành động */}
+                        {actionDropdown === order.id && (
+                          <div
+                            className="absolute right-0 top-12 z-50 min-w-[100px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <button
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-t-lg"
+                              onClick={() => { setActionDropdown(null); alert("Chức năng sửa (demo)"); }}
+                            >Sửa</button>
+                            <button
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
+                              onClick={() => handleDeleteOrder(order.id)}
+                            >Xoá</button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -230,42 +343,24 @@ export default function OrderContent() {
             </tbody>
           </table>
         </div>
-        {/* Pagination: luôn ở đáy card */}
+        {/* Pagination: cách xa content phía trên, căn giữa, luôn phía dưới */}
         {totalPage > 1 && (
-          <div
-            className="absolute left-0 right-0 flex items-center justify-center gap-2"
-            style={{ bottom: 40 }}
-          >
-            <button
-              className="px-3 py-1 rounded hover:bg-gray-100 text-xl"
-              disabled={currentPage === 1}
-              onClick={() => goToPage(currentPage - 1)}
-            >
-              {"<"}
-            </button>
-            {Array.from({ length: totalPage }).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => goToPage(idx + 1)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-base font-semibold 
-                  ${
-                    currentPage === idx + 1
-                      ? "bg-[#2998FF] text-white"
-                      : "text-[#222] hover:bg-gray-100"
-                  }`}
-              >
-                {idx + 1}
-              </button>
-            ))}
-            <button
-              className="px-3 py-1 rounded hover:bg-gray-100 text-xl"
-              disabled={currentPage === totalPage}
-              onClick={() => goToPage(currentPage + 1)}
-            >
-              {">"}
-            </button>
+          <div style={{ marginTop: 30 }}>
+            <Pagination totalPage={totalPage} currentPage={currentPage} goToPage={goToPage} />
           </div>
         )}
+        {/* CSS animation for dropdown */}
+        <style>
+          {`
+          @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px);}
+            100% { opacity: 1; transform: translateY(0);}
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.15s ease;
+          }
+          `}
+        </style>
       </div>
     </div>
   );

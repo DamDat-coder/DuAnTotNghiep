@@ -13,14 +13,16 @@ import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
 interface ProductSectionProps {
   products: { data: IProduct[] } | IProduct[];
   desktopSlidesPerView?: number;
+  laptopSlidesPerView?: number;
   tabletSlidesPerView?: number;
   showLoadMore?: boolean;
 }
 
 export default function ProductSection({
   products,
-  desktopSlidesPerView = 4.5,
-  tabletSlidesPerView = 2.5,
+  desktopSlidesPerView = 4.2,
+  laptopSlidesPerView = 3.2,
+  tabletSlidesPerView = 2.2,
   showLoadMore = true,
 }: ProductSectionProps) {
   const productList = Array.isArray(products) ? products : products.data || [];
@@ -251,7 +253,7 @@ export default function ProductSection({
         {isClient && (
           <Swiper
             spaceBetween={20}
-            slidesPerView={desktopSlidesPerView}
+            slidesPerView={laptopSlidesPerView}
             loop={false}
             grabCursor={true}
             className="select-none"

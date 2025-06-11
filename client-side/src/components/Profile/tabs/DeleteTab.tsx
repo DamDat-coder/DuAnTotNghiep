@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import DeleteSuccessModal from "../Modals/DeleteSuccessModal";
-import ConfirmDeleteModal from "../Modals/ConfirmDeleteModal";
+import DeleteSuccessModal from "../modals/DeleteSuccessModal";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
 export default function DeleteTab() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);

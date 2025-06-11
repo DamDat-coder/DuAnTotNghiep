@@ -42,6 +42,7 @@ export function useCheckout() {
     const name = searchParams.get("name");
     const size = searchParams.get("size");
     const color = searchParams.get("color");
+    const image = searchParams.get("image") || "";
     const quantity = parseInt(searchParams.get("quantity") || "1", 10);
     const price = parseFloat(searchParams.get("price") || "0");
     const discountPercent = parseFloat(
@@ -61,8 +62,8 @@ export function useCheckout() {
       price,
       discountPercent,
       selected: true,
-      image: "", // Hoặc lấy từ API nếu có
-      liked: false, // Hoặc lấy từ API nếu có
+      image,
+      liked: false,
     };
   }, [searchParams]);
 

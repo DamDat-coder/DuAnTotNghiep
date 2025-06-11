@@ -47,6 +47,17 @@ table {
 	border-spacing: 0;
 }
 
+/* globals.css hoặc ProductSection.module.css */
+.swiper-container,
+.swiper {
+  z-index: 10 !important; /* Đặt z-index thấp hơn modal (z-[9999]) */
+}
+
+.swiper-slide {
+  position: relative;
+  z-index: 10 !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

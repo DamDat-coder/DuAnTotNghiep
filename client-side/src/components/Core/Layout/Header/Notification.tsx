@@ -30,29 +30,34 @@ export default function Notification() {
     <div className="relative" ref={ref}>
       <button
         onClick={handleClick}
-        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        className={`rounded-full flex items-center justify-center transition-all ${
           isOpen ? "bg-[#009EFF]/[0.32]" : "hover:bg-gray-100"
         }`}
       >
-        <Image
-          src="/nav/notification.svg"
-          alt="notification"
-          width={18}
-          height={21}
-          className={`${isOpen ? "text-[#009EFF]" : "text-black"}`}
-        />
-        <span
-          className={`absolute top-[6px] right-[6px] w-2.5 h-2.5 rounded-full transition-all ${
-            isOpen ? "bg-[#009EFF]" : hasUnread ? "bg-red-500" : "hidden"
-          }`}
-        />
+        <div className="w-[18px] h-[21px] flex items-center justify-center">
+          <Image
+            src={
+              isOpen
+                ? "/nav/notification_3.svg"
+                : hasUnread
+                ? "/nav/notification_2.svg"
+                : "/nav/notification_1.svg"
+            }
+            alt="notification"
+            width={18}
+            height={21}
+          />
+        </div>
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-[320px] bg-white shadow-xl rounded-lg z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <span className="font-semibold text-black">Thông báo</span>
-            <button className="text-sm text-gray-500 hover:text-black">
+            <button
+              className="text-sm text-gray-500 hover:text-black"
+              onClick={() => setHasUnread(false)}
+            >
               Đánh dấu đã đọc
             </button>
           </div>

@@ -117,7 +117,7 @@ export default function ProductSection({
           </div>
           <AddToCartButton product={product} />
           <div className="content flex flex-col p-4">
-            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 truncate font-description">
+            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 font-description">
               {product.name || "Sản phẩm"}
             </div>
             <div className="category text-base text-[#374151] truncate font-description">

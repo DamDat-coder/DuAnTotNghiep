@@ -13,8 +13,6 @@ interface SearchInputProps {
 export default function SearchInput({
   searchTerm,
   setSearchTerm,
-  setIsOpen,
-  isMobile,
 }: SearchInputProps) {
   const handleClear = () => {
     setSearchTerm("");
@@ -22,11 +20,9 @@ export default function SearchInput({
 
   return (
     <div
-      className={`flex items-center gap-4${
-        isMobile ? "px-6 pt-4 pb-6" : "px-4 py-2"
-      } bg-white sticky top-0 z-10 rounded-t`}
+      className="flex items-center gap-4 bg-white sticky top-0 z-10 rounded-t"
     >
-      <div className="relative bg-[#687176] w-full rounded-full flex items-center ">
+      <div className="relative w-full h-full rounded-full flex items-center ">
         <Image
           src="/nav/nav_lookup_input.svg"
           alt="Logo"

@@ -106,7 +106,7 @@ export default function Header({ title }: HeaderProps) {
   return (
     <>
       <nav className="bg-white text-black relative">
-        <div className="w-[95%] mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
+        <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center">
               <Image
@@ -127,47 +127,47 @@ export default function Header({ title }: HeaderProps) {
               <div className="flex items-center gap-3 relative">
                 <div className="w-6 h-6 relative">
                   {isLookupOpen ? (
-                    <div className="absolute -top-3 right-0 w-[19.5rem]">
-                      <motion.div
-                        ref={inputRef}
-                        initial={{ width: "24px", opacity: 0, x: 226 }}
-                        animate={{ width: "19.5rem", opacity: 1, x: 0 }}
-                        exit={{ width: "24px", opacity: 0, x: 226 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 100,
-                          damping: 20,
-                        }}
-                      >
-                        <SearchInput
-                          searchTerm={searchTerm}
-                          setSearchTerm={setSearchTerm}
-                          setIsOpen={setIsLookupOpen}
-                          isMobile={false}
-                        />
-                      </motion.div>
-                      {/* Panel gợi ý và kết quả tìm kiếm */}
-                      <motion.div
-                        ref={menuRef}
-                        className="bg-white text-black absolute top-18 right-0 w-full max-h-96 overflow-hidden flex flex-col z-[40] shadow-lg rounded-b-lg"
-                        initial={{ y: "-8%", opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: "-8%", opacity: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 100,
-                          damping: 20,
-                        }}
-                      >
-                        <div className="flex-1 overflow-y-auto px-6 py-4">
-                          {isLoading ? (
-                            <p className="text-base text-gray-500">
-                              Đang tải...
-                            </p>
-                          ) : (
-                            <div className="flex flex-col gap-6">
-                              {searchTerm.trim() === "" ? (
-                                <div>
+                    <div className="absolute -top-2 right-0 w-[15.625rem] z-[999] shadow-lg rounded-full">
+                      <div className=" bg-white z-[999] shadow-lg rounded-lg">
+                        <motion.div
+                          ref={inputRef}
+                          initial={{ width: "24px", opacity: 0, x: 226 }}
+                          animate={{ width: "15.625rem", opacity: 1, x: 0 }}
+                          exit={{ width: "24px", opacity: 0, x: 226 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 20,
+                          }}
+                        >
+                          <SearchInput
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            setIsOpen={setIsLookupOpen}
+                            isMobile={false}
+                          />
+                        </motion.div>
+                        {/* Panel gợi ý và kết quả tìm kiếm */}
+                        <motion.div
+                          ref={menuRef}
+                          className="text-black w-full max-h-96 overflow-hidden flex flex-col z-[40]"
+                          initial={{ y: "-8%", opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: "-8%", opacity: 0 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 20,
+                          }}
+                        >
+                          <div className="flex-1 overflow-y-auto px-2 py-4">
+                            {isLoading ? (
+                              <p className="text-base text-gray-500">
+                                Đang tải...
+                              </p>
+                            ) : (
+                              <div className="flex flex-col gap-6">
+                                {searchTerm.trim() === "" ? (
                                   <SearchSuggestions
                                     suggestions={suggestions}
                                     handleSuggestionClick={
@@ -181,24 +181,24 @@ export default function Header({ title }: HeaderProps) {
                                       );
                                     }}
                                   />
-                                </div>
-                              ) : (
-                                <SearchResults
-                                  filteredProducts={filteredProducts}
-                                  searchTerm={searchTerm}
-                                  isMobile={false}
-                                  products={products}
-                                />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
+                                ) : (
+                                  <SearchResults
+                                    filteredProducts={filteredProducts}
+                                    searchTerm={searchTerm}
+                                    isMobile={false}
+                                    products={products}
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      </div>
                     </div>
                   ) : (
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-black  absolute top-0 right-0 w-6 h-6"
+                      className="text-gray-400 hover:text-black absolute top-0 right-0 w-6 h-6"
                       onClick={() => setIsLookupOpen(true)}
                       aria-label="Open Lookup"
                     >

@@ -27,7 +27,7 @@ export default function SearchResults({
             (term, index) => (
               <a
                 key={index}
-                className="flex justify-center items-center px-[0.78125rem] py-3 bg-[#ededed] rounded-full text-base"
+                className="flex justify-center items-center px-[0.78125rem] py-3 rounded-full text-base"
                 href={`/products?search=${term}`}
               >
                 {term}
@@ -53,7 +53,7 @@ export default function SearchResults({
         );
         return (
           <Link key={product.id} href={`/products/${product.id}`} className="">
-            <div className="flex">
+            <div className="flex gap-2">
               <div className="w-1/3 shrink-0">
                 <Image
                   src={`/product/img/${product.images[0]}`}
@@ -65,12 +65,13 @@ export default function SearchResults({
                 />
               </div>
               <div className="w-2/3">
-                <div className="content flex flex-col">
-                  <div className="name text-sm font-bold text-[#374151] pb-2">
+                <div className="content flex flex-col gap-2">
+                  <div className="name text-sm text-[#374151] pb-2 h-[2.5rem] two-line-clamp">
                     {product.name || "Sản phẩm"}
                   </div>
+
                   <div className="price-container">
-                    <div className="discountPrice text-[1rem] font-bold text-red-500">
+                    <div className="discountPrice text-[0.875rem] font-bold text-red-500">
                       {discountPrice.toLocaleString("vi-VN")}₫
                     </div>
                   </div>

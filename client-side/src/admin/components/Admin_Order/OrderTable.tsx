@@ -153,10 +153,10 @@ export default function OrderContent() {
           </div>
         </div>
         {/* Table */}
-        <div className="overflow-x-auto rounded-[30px] flex-1">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full min-w-[900px] text-base">
             <thead>
-              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold">
+              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold" style={{ background: "#F8FAFC" }}>
                 <th className="py-3 text-left font-semibold">Mã đơn hàng</th>
                 <th className="py-3 text-left font-semibold">Sản phẩm</th>
                 <th className="py-3 text-left font-semibold">Người dùng</th>

@@ -16,21 +16,23 @@ export default function SearchSuggestions({
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2  laptop:sticky laptop:top-0 laptop:left-0 laptop:z-50  ">
+    <div className="flex flex-col gap-6">
       <h2 className="text-[1.125rem] text-[#687176]">Gợi ý hàng đầu</h2>
-      {suggestions.map((suggestion, index) => (
-        <a
-          key={index}
-          href="#"
-          className="text-base text-black hover:bg-gray-200 py-1 px-2 rounded cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault();
-            handleSuggestionClick(suggestion);
-          }}
-        >
-          {suggestion}
-        </a>
-      ))}
+      <div className="flex flex-col gap-2">
+        {suggestions.map((suggestion, index) => (
+          <a
+            key={index}
+            href="#"
+            className="text-base text-black py-1 rounded cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              handleSuggestionClick(suggestion);
+            }}
+          >
+            {suggestion}
+          </a>
+        ))}
+      </div>
     </div>
   );
 }

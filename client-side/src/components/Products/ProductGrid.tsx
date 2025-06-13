@@ -85,7 +85,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
           </div>
           <AddToCartButton product={product} />
           <div className="content flex flex-col p-4">
-            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 truncate">
+            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3rem] tablet:h-[3.5rem] laptop:h-[3.5rem] desktop:h-[3.5rem]">
               {product.name || "Sản phẩm"}
             </div>
             <div className="category text-base text-[#374151] truncate">

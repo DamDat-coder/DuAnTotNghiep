@@ -1,180 +1,221 @@
-// src/admin/components/CategoriesTable.tsx
 "use client";
+import React, { useState } from "react";
+import { FaChevronDown, FaChevronRight }  from "react-icons/fa";
+import { HiOutlineDotsHorizontal } from "react-icons/hi";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { deleteCategory } from "@/services/categoryApi";
-
-// Định nghĩa kiểu dữ liệu cho danh mục
-interface Category {
-  id: number;
+type Category = {
+  id: string;
   name: string;
   description: string;
+  parentId: string | null;
+  type: "product" | "news";
+};
+
+const mockCategories: Category[] = [
+  // Sản phẩm
+  { id: "1", name: "Products", description: "Danh mục sản phẩm", parentId: null, type: "product" },
+  { id: "2", name: "Quần áo nam", description: "Quần áo dành cho nam", parentId: "1", type: "product" },
+  { id: "3", name: "Áo sơ mi", description: "Áo sơ mi nam", parentId: "2", type: "product" },
+  { id: "4", name: "Áo khoác", description: "Áo khoác nam", parentId: "2", type: "product" },
+  { id: "5", name: "Áo khoác da", description: "Áo khoác da", parentId: "2", type: "product" },
+  { id: "6", name: "Quần áo nữ", description: "Quần áo dành cho nữ", parentId: "1", type: "product" },
+  { id: "7", name: "Quần áo nam", description: "Quần áo dành cho nam", parentId: "1", type: "product" },
+
+  // News
+  { id: "10", name: "News", description: "Danh mục tin tức", parentId: null, type: "news" },
+  { id: "11", name: "Tin tức thời trang", description: "Cập nhật thời trang", parentId: "10", type: "news" },
+  { id: "12", name: "Tin tức công nghệ", description: "Tin công nghệ mới nhất", parentId: "10", type: "news" },
+];
+
+const getChildren = (categories: Category[], parentId: string | null) =>
+  categories.filter((cat) => cat.parentId === parentId);
+
+function CategoryTree({
+  categories,
+  parentId,
+  level = 0,
+  expanded,
+  setExpanded,
+  setActionDropdown,
+  actionDropdown,
+  parentName,
+}: {
+  categories: Category[];
+  parentId: string | null;
+  level?: number;
+  expanded: string[];
+  setExpanded: (cb: (exp: string[]) => string[]) => void;
+  setActionDropdown: (id: string | null) => void;
+  actionDropdown: string | null;
+  parentName?: string;
+}) {
+  return getChildren(categories, parentId).map((cat) => {
+    const children = getChildren(categories, cat.id);
+    const isExpandable = children.length > 0;
+    const isExpanded = expanded.includes(cat.id);
+
+    return (
+      <React.Fragment key={cat.id}>
+        <tr>
+          <td className="py-2 font-medium" style={{ paddingLeft: `${level * 24 + 8}px` }}>
+            <div className="flex items-center gap-2">
+              {isExpandable ? (
+                <button
+                  onClick={() =>
+                    setExpanded((prev) =>
+                      isExpanded
+                        ? prev.filter((id) => id !== cat.id)
+                        : [...prev, cat.id]
+                    )
+                  }
+                  className="text-[#222] hover:bg-gray-100 w-5 h-5 flex items-center justify-center rounded"
+                  tabIndex={-1}
+                  type="button"
+                >
+                  {isExpanded ? (
+                    <FaChevronDown size={13} />
+                  ) : (
+                    <FaChevronRight size={13} />
+                  )}
+                </button>
+              ) : level > 0 ? (
+                <span style={{ width: 20, display: "inline-block" }} />
+              ) : null}
+              <span>{cat.name}</span>
+            </div>
+          </td>
+          <td className="py-2">{cat.description}</td>
+          <td className="py-2">{parentName || getParentName(categories, cat.parentId)}</td>
+          <td className="py-2 text-center relative">
+            <button
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+              onClick={e => {
+                e.stopPropagation();
+                setActionDropdown(actionDropdown === cat.id ? null : cat.id);
+              }}
+            >
+              <HiOutlineDotsHorizontal className="text-xl text-[#8C94A5]" />
+            </button>
+            {actionDropdown === cat.id && (
+              <div
+                className="absolute right-0 top-9 z-50 min-w-[100px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-t-lg"
+                  onClick={() => { setActionDropdown(null); alert("Chức năng sửa (demo)"); }}
+                >Sửa</button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
+                  onClick={() => { setActionDropdown(null); alert("Chức năng xoá (demo)"); }}
+                >Xoá</button>
+              </div>
+            )}
+          </td>
+        </tr>
+        {isExpanded &&
+          <CategoryTree
+            categories={categories}
+            parentId={cat.id}
+            level={level + 1}
+            expanded={expanded}
+            setExpanded={setExpanded}
+            setActionDropdown={setActionDropdown}
+            actionDropdown={actionDropdown}
+            parentName={cat.name}
+          />
+        }
+      </React.Fragment>
+    );
+  });
 }
 
-interface SortConfig {
-  key: "name";
-  direction: "asc" | "desc";
+function getParentName(categories: Category[], parentId: string | null): string {
+  if (!parentId) return "";
+  const parent = categories.find(c => c.id === parentId);
+  return parent?.name || "";
 }
 
-interface CategoriesTableProps {
-  initialCategories: Category[];
-  navigationItems: { label: string; href: string; filter?: string }[];
-  addButton: { label: string; href: string };
-}
+export default function CategoryContent() {
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<string[]>(["1", "2", "10"]); // mặc định expand các nhóm chính
+  const [actionDropdown, setActionDropdown] = useState<string | null>(null);
 
-export default function CategoriesTable({
-  initialCategories,
-  navigationItems,
-  addButton,
-}: CategoriesTableProps) {
-  const router = useRouter();
+  // Dữ liệu lọc
+  const filtered = mockCategories.filter(
+    (cat) =>
+      cat.name.toLowerCase().includes(search.toLowerCase()) ||
+      cat.description.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [sortedCategories, setSortedCategories] =
-    useState<Category[]>(initialCategories);
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Giả lập fetch dữ liệu
-  useEffect(() => {
-    setLoading(true);
-    setCategories(initialCategories);
-    setSortedCategories(initialCategories);
-    setLoading(false);
-  }, [initialCategories]);
-
-  // Hàm sắp xếp
-  const handleSort = (key: "name") => {
-    let direction: "asc" | "desc" = "asc";
-    if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === "asc"
-    ) {
-      direction = "desc";
-    }
-
-    const sorted = [...sortedCategories].sort((a, b) => {
-      if (key === "name") {
-        return direction === "asc"
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      }
-      return 0;
-    });
-
-    setSortedCategories(sorted);
-    setSortConfig({ key, direction });
-  };
-
-  // Hàm chỉnh sửa
-  const handleEdit = (categoryId: number) => {
-    router.push(`/admin/category/edit/${categoryId}`);
-  };
-
-  // ✅ Hàm xóa có gọi API thật
-  const handleDelete = async (categoryId: number) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
-
-    try {
-      setLoading(true);
-      const response = await deleteCategory(categoryId);
-      if (response.status === "success") {
-        const updated = categories.filter((c) => c.id !== categoryId);
-        setCategories(updated);
-        setSortedCategories(updated);
-        alert("Xóa danh mục thành công!");
-      } else {
-        alert("Xóa không thành công. Vui lòng thử lại.");
-      }
-    } catch (err) {
-      console.error("Lỗi khi xóa:", err);
-      alert("Đã xảy ra lỗi khi xóa danh mục.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Đóng dropdown khi click ngoài
+  React.useEffect(() => {
+    const handler = () => setActionDropdown(null);
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, []);
 
   return (
-    <>
-      <div className="flex-1 rounded-[2.125rem] px-12 py-8 bg-white overflow-x-auto overflow-y-auto">
-        {loading ? (
-          <p className="text-center text-lg">Đang tải...</p>
-        ) : error ? (
-          <p className="text-center text-lg text-red-500">{error}</p>
-        ) : (
-          <table className="w-full">
-            <thead className="sticky -top-10 bg-white shadow-sm z-10 border-b border-gray-200">
-              <tr className="text-center">
-                <th className="py-4 px-6 text-base font-medium">STT</th>
-                <th className="py-4 px-6 text-base font-medium">
-                  <button
-                    onClick={() => handleSort("name")}
-                    className="flex items-center gap-2 mx-auto"
-                  >
-                    Tên danh mục
-                    <span>
-                      {sortConfig?.key === "name" &&
-                      sortConfig.direction === "desc"
-                        ? "↓"
-                        : "↑"}
-                    </span>
-                  </button>
-                </th>
-                <th className="py-4 px-6 text-base font-medium">Mô tả</th>
-                <th className="py-4 px-6 text-base font-medium">Thao tác</th>
+    <div className="w-full min-h-screen bg-[#eaf3f8] pt-10 pb-0">
+      <div className="mx-auto w-[1126px] bg-white rounded-[34px] p-10 shadow">
+        <div className="flex items-center gap-3 w-full mb-6">
+          <div className="relative" style={{ width: 350, maxWidth: "100%" }}>
+            <input
+              className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
+              placeholder="Tìm kiếm..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none">
+              <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
+              <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
+          {/* Nút thêm danh mục */}
+          <button
+            className="ml-auto h-10 px-5 bg-[#111] text-white font-semibold rounded-lg hover:bg-[#8C94A5] transition flex items-center"
+            onClick={() => alert("Chức năng Thêm danh mục (demo)")}
+          >
+            <span className="mr-2 text-xl font-bold">+</span>
+            Thêm danh mục
+          </button>
+        </div>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px] text-base">
+            <thead>
+              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold" style={{ background: "#F8FAFC" }}>
+                <th className="py-3 text-left font-semibold" style={{ width: 320 }}>Tên danh mục</th>
+                <th className="py-3 text-left font-semibold">Mô tả danh mục</th>
+                <th className="py-3 text-left font-semibold" style={{ width: 170 }}>Danh mục cha</th>
+                <th className="py-3 text-center font-semibold" style={{ width: 60 }}>...</th>
               </tr>
             </thead>
             <tbody>
-              {sortedCategories.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="py-4 px-6 text-center text-gray-500"
-                  >
-                    Không có danh mục nào.
-                  </td>
-                </tr>
-              ) : (
-                sortedCategories.map((category, index) => (
-                  <tr
-                    key={category.id}
-                    className="hover:bg-gray-50 text-center"
-                  >
-                    <td className="py-4 px-6 text-base font-bold">
-                      {index + 1}
-                    </td>
-                    <td className="py-4 px-6 text-base font-bold">
-                      {category.name}
-                    </td>
-                    <td className="py-4 px-6 text-base font-bold">
-                      {category.description}
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="w-full flex gap-4 justify-center items-center">
-                        <button
-                          onClick={() => handleEdit(category.id)}
-                          className="px-4 py-2 bg-white text-black border border-black rounded-full hover:bg-gray-100"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDelete(category.id)}
-                          className="px-4 py-2 bg-white text-black border border-black rounded-full hover:bg-gray-100"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              <CategoryTree
+                categories={filtered}
+                parentId={null}
+                expanded={expanded}
+                setExpanded={setExpanded}
+                setActionDropdown={setActionDropdown}
+                actionDropdown={actionDropdown}
+              />
             </tbody>
           </table>
-        )}
+        </div>
       </div>
-    </>
+      {/* Dropdown animation CSS */}
+      <style>
+        {`
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(10px);}
+          100% { opacity: 1; transform: translateY(0);}
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.15s ease;
+        }
+        `}
+      </style>
+    </div>
   );
 }

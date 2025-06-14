@@ -46,20 +46,20 @@ const sidebarItems: SidebarItem[] = [
   {
     label: "Khuyến mãi",
     href: "/admin/sales",
-    icon: "/admin/sidebar/setting.svg",
-    iconActive: "/admin/sidebar/setting_active.svg",
-  },
-  {
-    label: "Tin tức",
-    href: "/admin/news",
-    icon: "/admin/sidebar/setting.svg",
-    iconActive: "/admin/sidebar/setting_active.svg",
+    icon: "/admin/sidebar/sale.svg",
+    iconActive: "/admin/sidebar/sale_active.svg",
   },
   {
     label: "Bình luận",
     href: "/admin/comments",
-    icon: "/admin/sidebar/setting.svg",
-    iconActive: "/admin/sidebar/setting_active.svg",
+    icon: "/admin/sidebar/comment.svg",
+    iconActive: "/admin/sidebar/comment_active.svg",
+  },
+  {
+    label: "Tin tức",
+    href: "/admin/news",
+    icon: "/admin/sidebar/new.svg",
+    iconActive: "/admin/sidebar/new_active.svg",
   },
   {
     label: "Cài đặt",

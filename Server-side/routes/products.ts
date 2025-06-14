@@ -7,6 +7,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getProductBySlug
 } from "../controllers/productController";
 import verifyToken from "../middlewares/verifyToken";
 import { upload } from "../utils/fileUpload";
@@ -22,6 +23,7 @@ router.use(rateLimit({
 
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
+router.get('/slug/:slug', getProductBySlug);
 router.post("/", verifyToken, verifyAdmin, upload.array("image"), createProduct);
 router.patch("/:id", verifyToken, verifyAdmin, upload.array("image"), updateProduct);
 router.delete("/:id", verifyToken, verifyAdmin, deleteProduct);

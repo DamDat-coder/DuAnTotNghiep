@@ -1,4 +1,3 @@
-// src/components/Home/FeaturedSwiper.tsx
 "use client";
 
 import { IFeaturedProducts } from "@/types/product";
@@ -6,6 +5,8 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import Image from "next/image";
+import { useState } from "react";
+
 interface FeaturedSwiperProps {
   featuredSection: IFeaturedProducts[];
   mobileSlidesPerView?: number;
@@ -23,6 +24,8 @@ export default function FeaturedSwiper({
   mobileSlidesPerView = 1.2,
   tabletSlidesPerView = 2.5,
 }: FeaturedSwiperProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   return (
     <Swiper
       spaceBetween={10}
@@ -32,7 +35,6 @@ export default function FeaturedSwiper({
         0: {
           slidesPerView: mobileSlidesPerView,
         },
-
         768: {
           slidesPerView: tabletSlidesPerView,
         },
@@ -45,22 +47,49 @@ export default function FeaturedSwiper({
         ) || { href: "/products", label: "Danh mục" };
 
         return (
-          <SwiperSlide key={product.id} className="!w-[16.8125rem]">
-            <div className="flex flex-col items-start gap-5">
+          <SwiperSlide key={product.id}>
+            <div
+              className="relative w-full h-full"
+              onMouseEnter={() => setHoveredId(product.id)}
+              onMouseLeave={() => setHoveredId(null)}
+            >
               <Image
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
                 width={120}
                 height={40}
-                className="w-[16.8125rem] h-[25.625rem] object-cover rounded select-none"
+                className="w-full h-[auto object-cover rounded select-none"
                 draggable="false"
               />
-              <Link
-                href={genderLink.href}
-                className="featured_action px-[0.7475rem] py-[0.52875rem] text-[1rem] leading-none bg-black text-white font-body rounded-full hover:opacity-70 transition-colors"
-              >
-                Shop {product.gender || "Danh mục"}
-              </Link>
+              <div
+                className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+                  hoveredId === product.id ? "opacity-80" : "opacity-0"
+                }`}
+              ></div>
+
+              <div className="absolute w-full px-20 inset-0 flex items-center justify-center transition-opacity duration-300">
+                <div className="w-full flex flex-col gap-6 items-start justify-center">
+                  <div
+                    className={`text-lg text-white transition-opacity duration-300 ${
+                      hoveredId === product.id ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    {product.description}
+                  </div>
+                  <Link
+                    className="flex items-center justify-center"
+                    href={genderLink.href}
+                  >
+                    <div
+                      className={`w-auto text-lg font-bold text-black bg-white px-6 py-3 rounded-full transition-opacity duration-300 ${
+                        hoveredId === product.id ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      Shop {product.gender || "Danh mục"}
+                    </div>
+                  </Link>
+                </div>
+              </div>
             </div>
           </SwiperSlide>
         );

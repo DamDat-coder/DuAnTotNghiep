@@ -11,7 +11,10 @@ interface AdminHeaderProps {
   pageSubtitle: string;
 }
 
-export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProps) {
+export default function AdminHeader({
+  pageTitle,
+  pageSubtitle,
+}: AdminHeaderProps) {
   const router = useRouter();
   const [admin, setAdmin] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,33 +65,43 @@ export default function AdminHeader({ pageTitle, pageSubtitle }: AdminHeaderProp
   if (!admin) return null;
 
   return (
-    <header className="flex justify-between items-center px-8 border-b w-full h-[86px] bg-[#eaf3f8]">
-      {/* Tiêu đề trang */}
-      <div className="min-w-[200px] flex flex-col justify-center h-full">
-        <h1 className="font-bold text-4xl leading-tight">{pageTitle || "Default Title"}</h1>
-        <p className="font-semibold text-base text-[#8A99AE]">{pageSubtitle || "Default Subtitle"}</p>
-      </div>
-      {/* Thông tin admin */}
-      <div className="flex items-center gap-4 bg-[#02203B] rounded-full px-6 py-3 text-white min-w-[200px] h-14">
-        <Image
-          src={admin.avatar || "/admin/admin_header/admin_header_user_avatar.svg"}
-          alt="Ảnh Hồ Sơ" 
-          width={40}
-          height={40}
-          className="rounded-full object-cover"
-        />
-        <div className="flex flex-col justify-center">
-          <span className="font-medium text-lg leading-tight">{admin.email.split("@")[0]}</span>
-          <span className="text-base text-[#CCCCCC] leading-tight">{admin.email}</span>
+    <header className="bg-[#F8FAFC] pt-8">
+      <div className="flex justify-between items-start w-full max-w-full">
+        <div>
+          <h1 className="text-[32px] font-bold leading-tight">{pageTitle}</h1>
+          <p className="text-sm text-gray-500 mt-1">{pageSubtitle}</p>
         </div>
-        <button onClick={handleLogout} className="ml-2 p-2 hover:bg-[#283a51] rounded-full transition-all">
+
+        <div className="w-[333px] h-[77px] flex items-center bg-black text-white rounded-[32px] px-4">
           <Image
-            src="/admin/admin_header/admin_header_logout.svg"
-            alt="Đăng Xuất"
-            width={24}
-            height={24}
+            src={
+              admin.avatar || "/admin/admin_header/admin_header_user_avatar.svg"
+            }
+            alt="Avatar"
+            width={40}
+            height={40}
+            className="rounded-full object-cover"
           />
-        </button>
+
+          <div className="flex flex-col justify-center leading-tight ml-6">
+            <span className="text-[16px] font-medium">
+              {admin.email.split("@")[0]}
+            </span>
+            <span className="text-[14px] text-gray-300">{admin.email}</span>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="ml-auto p-2 hover:bg-gray-800 rounded-full"
+          >
+            <Image
+              src="/admin/admin_header/admin_header_logout.svg"
+              alt="Đăng xuất"
+              width={22}
+              height={22}
+            />
+          </button>
+        </div>
       </div>
     </header>
   );

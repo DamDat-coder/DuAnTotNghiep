@@ -14,6 +14,7 @@ export interface IFeaturedProducts {
   id: string;
   banner: string;
   gender: string;
+  description: string;
 }
 
 export interface IMemberBenefit {

@@ -50,6 +50,12 @@ const productSchema = new mongoose_1.Schema({
         type: String,
         required: true,
     },
+    slug: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
     description: {
         type: String,
         required: false,
@@ -90,7 +96,20 @@ const productSchema = new mongoose_1.Schema({
             },
         },
     ],
+    is_active: {
+        type: Boolean,
+        required: true,
+        default: true,
+    },
+    salesCount: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0,
+    },
 }, { versionKey: false });
 productSchema.index({ name: 1, 'category._id': 1 });
+productSchema.index({ slug: 1 }, { unique: true });
+productSchema.index({ salesCount: -1 }); // Index for sorting by sales count (descending)
 const ProductModel = mongoose_1.default.model('Product', productSchema);
 exports.default = ProductModel;

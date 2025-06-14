@@ -139,6 +139,13 @@ table {
   z-index: 10 !important;
 }
 
+.two-line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -148,9 +155,6 @@ table {
     @apply text-[0.875rem] font-normal;
   }
 }
-
-/* ---break---
-*/
 
 @layer base {
   :root {

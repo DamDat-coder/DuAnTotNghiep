@@ -38,11 +38,12 @@ const categorySchema = new mongoose_1.Schema({
     name: {
         type: String,
         required: true,
-        unique: true,
         trim: true,
     },
-    description: {
+    slug: {
         type: String,
+        required: true,
+        unique: true,
         trim: true,
     },
     parentId: {

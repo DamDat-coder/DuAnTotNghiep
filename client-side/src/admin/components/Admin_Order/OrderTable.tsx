@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { Pagination } from "@/admin/layouts/Panigation";
 
-// Định nghĩa trạng thái đơn hàng và màu sắc tương ứng
 const STATUS = [
   { key: "processing", label: "Đang xử lý", color: "bg-[#E8F2FD] text-[#2998FF]" },
   { key: "confirming", label: "Chờ xác nhận", color: "bg-[#FFF7DB] text-[#FFA800]" },
@@ -10,7 +10,6 @@ const STATUS = [
   { key: "cancelled", label: "Đã huỷ", color: "bg-[#FFE1E1] text-[#F75555]" },
 ];
 
-// Tạo dữ liệu mẫu (50 orders)
 const customers = [
   "Robert Fox", "Brooklyn Simmons", "Jacob Jones", "Marvin McKinney", "Arlene McCoy",
   "Esther Howard", "Darrell Steward", "Bessie Cooper", "Ralph Edwards", "Dianne Russell",
@@ -31,120 +30,29 @@ const randomDate = () => {
   const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
   return `${day}.${month}.2025`;
 };
-const mockOrders = Array.from({ length: 50 }).map((_, idx) => ({
-  id: `ODR${(1000 + idx)}`,
+type OrderType = {
+  id: string;
+  product: string;
+  customer: string;
+  date: string;
+  status: string;
+};
+const mockOrders: OrderType[] = Array.from({ length: 27 }).map((_, idx) => ({
+  id: `ODR${1000 + idx}`,
   product: products[idx % products.length],
   customer: customers[idx % customers.length],
   date: randomDate(),
   status: randomStatus(),
 }));
 
-const getStatusInfo = (key) => STATUS.find((s) => s.key === key)!;
-
+const getStatusInfo = (key: string) => STATUS.find((s) => s.key === key)!;
 const PAGE_SIZE = 10;
 
-// Pagination Component
-function Pagination({ totalPage, currentPage, goToPage }) {
-  // Logic hiển thị các nút trang và dấu "..."
-  let pages = [];
-  if (totalPage <= 5) {
-    pages = Array.from({ length: totalPage }, (_, i) => i + 1);
-  } else if (currentPage <= 3) {
-    pages = [1, 2, 3, "...", totalPage];
-  } else if (currentPage >= totalPage - 2) {
-    pages = [1, "...", totalPage - 2, totalPage - 1, totalPage];
-  } else {
-    pages = [1, "...", currentPage, "...", totalPage];
-  }
-
-  return (
-    <div className="flex items-center justify-center gap-2 mt-8 mb-2 select-none">
-      <button
-        className="pagination-btn"
-        disabled={currentPage === 1}
-        onClick={() => goToPage(currentPage - 1)}
-      >
-        {"<"}
-      </button>
-      {pages.map((num, idx) =>
-        num === "..." ? (
-          <span
-            key={idx}
-            className="pagination-btn text-[#BDBDBD] cursor-default"
-            style={{
-              fontSize: "1.15rem",
-              fontWeight: 600,
-              border: "1px solid #E6E8EC",
-              background: "#fff",
-              userSelect: "none",
-              pointerEvents: "none",
-              lineHeight: "1.6rem",
-              paddingBottom: 2,
-            }}
-          >
-            &#8230;
-          </span>
-        ) : (
-          <button
-            key={num}
-            onClick={() => goToPage(num)}
-            className={`pagination-btn ${
-              currentPage === num
-                ? "bg-white border-[#2998FF] text-[#2998FF] font-bold"
-                : "bg-white border-[#E6E8EC] text-[#878B93]"
-            }`}
-            style={currentPage === num
-              ? { borderWidth: 2 }
-              : {}}
-          >
-            {num}
-          </button>
-        )
-      )}
-      <button
-        className="pagination-btn"
-        disabled={currentPage === totalPage}
-        onClick={() => goToPage(currentPage + 1)}
-      >
-        {">"}
-      </button>
-      <style>
-        {`
-        .pagination-btn {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          border: 1px solid #E6E8EC;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1rem;
-          font-weight: 500;
-          transition: 0.18s;
-          margin: 0 2px;
-        }
-        .pagination-btn:not([disabled]):hover {
-          border-color: #2998FF;
-          color: #2998FF;
-          background: #F3F8FE;
-        }
-        .pagination-btn[disabled] {
-          color: #BDBDBD;
-          cursor: not-allowed;
-          background: #fafbfc;
-        }
-        `}
-      </style>
-    </div>
-  );
-}
-
 export default function OrderContent() {
-  const [search, setSearch] = useState("");
-  const [orders, setOrders] = useState(mockOrders);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState<string>("");
+  const [orders, setOrders] = useState<OrderType[]>(mockOrders);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
   const [actionDropdown, setActionDropdown] = useState<string | null>(null);
 
@@ -164,7 +72,7 @@ export default function OrderContent() {
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Đổi trạng thái
-  const handleChangeStatus = (id, nextStatus) => {
+  const handleChangeStatus = (id: string, nextStatus: string) => {
     setOrders((prev) =>
       prev.map((order) =>
         order.id === id ? { ...order, status: nextStatus } : order
@@ -174,28 +82,28 @@ export default function OrderContent() {
   };
 
   // Chuyển trang
-  const goToPage = (page) => {
+  const goToPage = (page: number) => {
     if (page < 1 || page > totalPage) return;
     setCurrentPage(page);
   };
 
   // Reset về trang 1 khi lọc/search
-  const handleFilter = (status) => {
+  const handleFilter = (status: string) => {
     setFilterStatus(status);
     setCurrentPage(1);
   };
-  const handleSearch = (v) => {
+  const handleSearch = (v: string) => {
     setSearch(v);
     setCurrentPage(1);
   };
 
   // Xoá đơn hàng
-  const handleDeleteOrder = (id) => {
+  const handleDeleteOrder = (id: string) => {
     setOrders(prev => prev.filter(order => order.id !== id));
     setActionDropdown(null);
   };
 
-  // Đóng dropdown khi click ngoài
+  // Click ngoài để đóng dropdown
   useEffect(() => {
     const handler = () => {
       setStatusDropdown(null);
@@ -208,7 +116,7 @@ export default function OrderContent() {
   return (
     <div className="w-full min-h-screen bg-[#eaf3f8] pt-10">
       <div
-        className="mx-auto w-[1126px] bg-white rounded-[34px] p-10 shadow relative"
+        className="mx-auto w-[1126px] bg-white rounded-[34px] p-10 shadow flex flex-col"
         style={{ minHeight: 750 }}
       >
         {/* Tiêu đề & search */}
@@ -226,7 +134,7 @@ export default function OrderContent() {
               ))}
             </select>
           </div>
-          {/* Thanh tìm kiếm width 350px */}
+          {/* Thanh tìm kiếm giới hạn 350px */}
           <div className="relative" style={{ width: 350, maxWidth: "100%" }}>
             <input
               className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
@@ -245,10 +153,10 @@ export default function OrderContent() {
           </div>
         </div>
         {/* Table */}
-        <div className="overflow-x-auto rounded-[30px]">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full min-w-[900px] text-base">
             <thead>
-              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold">
+              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold" style={{ background: "#F8FAFC" }}>
                 <th className="py-3 text-left font-semibold">Mã đơn hàng</th>
                 <th className="py-3 text-left font-semibold">Sản phẩm</th>
                 <th className="py-3 text-left font-semibold">Người dùng</th>
@@ -267,10 +175,8 @@ export default function OrderContent() {
               ) : (
                 pageData.map((order) => {
                   const s = getStatusInfo(order.status);
-                  // Chỉ cho chọn trạng thái có index >= trạng hiện tại
                   const currentIdx = STATUS.findIndex(item => item.key === order.status);
                   const nextStatusList = STATUS.slice(currentIdx + 1);
-
                   return (
                     <tr key={order.id} className="border-b border-[#F1F1F1] last:border-0 relative group">
                       <td className="py-3 font-semibold text-[#202020]">{order.id}</td>
@@ -281,15 +187,15 @@ export default function OrderContent() {
                         <div className="relative inline-block">
                           <button
                             type="button"
-                            className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105`}
+                            className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105 flex items-center`}
                             onClick={e => {
                               e.stopPropagation();
                               setStatusDropdown(order.id === statusDropdown ? null : order.id);
                             }}
                           >
-                            {s.label} <span className="ml-1 text-[#bdbdbd]">▼</span>
+                            {s.label}
+                            <span className="ml-1 text-[#bdbdbd]">▼</span>
                           </button>
-                          {/* Dropdown trạng thái */}
                           {statusDropdown === order.id && nextStatusList.length > 0 && (
                             <div
                               className="absolute left-0 mt-2 min-w-[150px] rounded-lg shadow bg-white z-50 border border-gray-100 animate-fadeIn"
@@ -308,7 +214,7 @@ export default function OrderContent() {
                           )}
                         </div>
                       </td>
-                      {/* Dấu 3 chấm nằm ngang */}
+                      {/* Dấu ba chấm ngang */}
                       <td className="py-3 text-center relative">
                         <button
                           className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
@@ -317,9 +223,8 @@ export default function OrderContent() {
                             setActionDropdown(order.id === actionDropdown ? null : order.id);
                           }}
                         >
-                          <span className="text-2xl text-[#8C94A5] font-bold" style={{ fontFamily: "Arial" }}>⋯</span>
+                          <span className="text-2xl text-[#8C94A5]">⋯</span>
                         </button>
-                        {/* Dropdown hành động */}
                         {actionDropdown === order.id && (
                           <div
                             className="absolute right-0 top-12 z-50 min-w-[100px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
@@ -343,25 +248,29 @@ export default function OrderContent() {
             </tbody>
           </table>
         </div>
-        {/* Pagination: cách xa content phía trên, căn giữa, luôn phía dưới */}
+        {/* Pagination (component riêng) */}
         {totalPage > 1 && (
-          <div style={{ marginTop: 30 }}>
-            <Pagination totalPage={totalPage} currentPage={currentPage} goToPage={goToPage} />
+          <div className="flex items-center justify-center w-full mt-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPage={totalPage}
+              onPageChange={goToPage}
+            />
           </div>
         )}
-        {/* CSS animation for dropdown */}
-        <style>
-          {`
-          @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(10px);}
-            100% { opacity: 1; transform: translateY(0);}
-          }
-          .animate-fadeIn {
-            animation: fadeIn 0.15s ease;
-          }
-          `}
-        </style>
       </div>
+      {/* CSS animation for dropdown */}
+      <style>
+        {`
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(10px);}
+          100% { opacity: 1; transform: translateY(0);}
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.15s ease;
+        }
+        `}
+      </style>
     </div>
   );
 }

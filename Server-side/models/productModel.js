@@ -35,16 +35,62 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const productSchema = new mongoose_1.Schema({
-    name: { type: String, required: true },
-    price: { type: Number, required: true, min: 0 },
-    discountPercent: { type: Number, default: 0, min: 0 },
-    categoryId: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'categories',
+    category: {
+        _id: {
+            type: mongoose_1.default.Schema.Types.ObjectId,
+            ref: 'categories',
+            required: true,
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+    },
+    name: {
+        type: String,
         required: true,
     },
-    image: [{ type: String }],
+    description: {
+        type: String,
+        required: false,
+    },
+    image: [
+        {
+            type: String,
+        },
+    ],
+    variants: [
+        {
+            price: {
+                type: Number,
+                required: true,
+                min: 0,
+            },
+            color: {
+                type: String,
+                enum: ['Đen', 'Trắng', 'Xám', 'Đỏ'],
+                required: true,
+            },
+            size: {
+                type: String,
+                enum: ['S', 'M', 'L', 'XL'],
+                required: true,
+            },
+            stock: {
+                type: Number,
+                required: true,
+                min: 0,
+            },
+            discountPercent: {
+                type: Number,
+                required: true,
+                min: 0,
+                max: 100,
+                default: 0,
+            },
+        },
+    ],
 }, { versionKey: false });
-productSchema.index({ name: 1, categoryId: 1 });
+productSchema.index({ name: 1, 'category._id': 1 });
 const ProductModel = mongoose_1.default.model('Product', productSchema);
 exports.default = ProductModel;

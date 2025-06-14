@@ -18,6 +18,8 @@ export default function ProductGrid({ products }: ProductGridProps) {
   );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(products.length > 10);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,12 +65,17 @@ export default function ProductGrid({ products }: ProductGridProps) {
     }, 500);
   };
 
+  const handleBuyNow = (product: IProduct, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedProduct(product);
+    setIsPopupOpen(true);
+  };
+
   const renderProductCard = (product: IProduct) => {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <Link
-        href={`/products/${product.id}`}
+      <div
         className=" w-full flex flex-col bg-white relative"
       >
         <div className="product w-full h-auto font-description">
@@ -80,28 +87,45 @@ export default function ProductGrid({ products }: ProductGridProps) {
             className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[18.3125rem] object-cover"
             draggable={false}
           />
-          <div className="absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded">
+          <div className={`absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded ${ !product.discountPercent ? "hidden" : "block"} `}>
             -{product.discountPercent}%
           </div>
           <AddToCartButton product={product} />
-          <div className="content flex flex-col p-4">
-            <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3rem] tablet:h-[3.5rem] laptop:h-[3.5rem] desktop:h-[3.5rem]">
-              {product.name || "Sản phẩm"}
+          <div className="content flex flex-col py-4 gap-3">
+            <div>
+              <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3rem] tablet:h-[3.5rem] laptop:h-[3.5rem] desktop:h-[3.5rem]">
+                {product.name || "Sản phẩm"}
+              </div>
+              <div className="category text-base text-[#374151] truncate">
+                {product.category || "Danh mục"}
+              </div>
             </div>
-            <div className="category text-base text-[#374151] truncate">
-              {product.category || "Danh mục"}
-            </div>
-            <div className="price-container flex items-center gap-3 pt-2">
+            <div className="price-container flex items-center gap-3">
               <div className="discountPrice text-[1rem] font-bold text-red-500">
                 {discountPrice.toLocaleString("vi-VN")}₫
               </div>
-              <div className="price text-[0.875rem] text-[#374151] line-through">
+              <div className={`price text-[0.875rem] flex items-center text-[#374151] line-through ${ !product.discountPercent ? "hidden" : "block"}`}>
                 {product.price.toLocaleString("vi-VN")}₫
               </div>
             </div>
+            <div className="flex gap-3 font-heading">
+              <Link
+                href={`/products/${product.id}`}
+                className="p-3 border-solid border-black border-2 rounded text-base"
+              >
+                Xem chi tiết
+              </Link>
+              <button
+                onClick={(e) => handleBuyNow(product, e)}
+                className="p-3 border-solid border-black border-2 rounded text-white bg-black font-bold text-base"
+                aria-label={`Mua ngay sản phẩm ${product.name}`}
+              >
+                Mua ngay
+              </button>
+            </div>
           </div>
         </div>
-      </Link>
+      </div>
     );
   };
 

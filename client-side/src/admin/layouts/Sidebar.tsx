@@ -61,12 +61,6 @@ const sidebarItems: SidebarItem[] = [
     icon: "/admin/sidebar/new.svg",
     iconActive: "/admin/sidebar/new_active.svg",
   },
-  {
-    label: "Cài đặt",
-    href: "/admin/settings",
-    icon: "/admin/sidebar/setting.svg",
-    iconActive: "/admin/sidebar/setting_active.svg",
-  },
 ];
 
 export default function Sidebar() {

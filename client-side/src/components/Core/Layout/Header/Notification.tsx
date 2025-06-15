@@ -30,11 +30,11 @@ export default function Notification() {
     <div className="relative" ref={ref}>
       <button
         onClick={handleClick}
-        className={`rounded-full flex items-center justify-center transition-all ${
+        className={`rounded-full flex items-center justify-center transition-all p-[7px] ${
           isOpen ? "bg-[#009EFF]/[0.32]" : "hover:bg-gray-100"
         }`}
       >
-        <div className="w-[18px] h-[21px] flex items-center justify-center">
+        <div className="flex items-center justify-center">
           <Image
             src={
               isOpen
@@ -44,24 +44,10 @@ export default function Notification() {
                 : "/nav/notification_1.svg"
             }
             alt="notification"
-            width={18}
+            width={21}
             height={21}
           />
         </div>
-
-        <Image
-          src="/nav/notification.svg"
-          alt="notification"
-          width={18}
-          height={21}
-          className={`${isOpen ? "text-[#009EFF]" : "text-black"}`}
-        />
-        <span
-          className={`absolute top-[-5px] right-[-4px] w-2.5 h-2.5 rounded-full transition-all ${
-            isOpen ? "bg-[#009EFF]" : hasUnread ? "bg-red-500" : "hidden"
-          }`}
-        />
-
       </button>
 
       {isOpen && (

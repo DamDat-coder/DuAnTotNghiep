@@ -1,93 +1,105 @@
 "use client";
 
 import Image from "next/image";
+import { OrderDetail as OrderType } from "@/types/order";
+
 interface OrderDetailProps {
-  orderId: string;
-  paymentMethod?: string;
+  order: OrderType;
   setActiveTab?: (tab: string) => void;
 }
 
-export default function OrderDetail({
-  orderId,
-  setActiveTab,
-  paymentMethod,
-}: OrderDetailProps) {
+export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   return (
-    <div className="space-y-6 px-4 py-6">
+    <div className="w-[894px] mx-auto px-4 py-6 space-y-12">
       {/* Tiêu đề */}
       <h1 className="text-xl font-bold border-b pb-2">ĐƠN HÀNG</h1>
 
-      {/* Header: Trở lại + Mã đơn hàng + Trạng thái */}
+      {/* Header: Trở lại + Mã đơn + Trạng thái */}
       <div className="flex justify-between items-center text-sm">
         <button
-          onClick={() => {
-            if (setActiveTab) setActiveTab("Đơn hàng");
-          }}
+          onClick={() => setActiveTab?.("Đơn hàng")}
           className="flex items-center gap-2 text-gray-600 font-medium"
         >
-          <span className="text-lg">
-            <Image src="/profile/Back.svg" alt="back" width={6} height={10} />
-          </span>
+          <Image src="/profile/Back.svg" alt="back" width={6} height={10} />
           TRỞ LẠI
         </button>
-
-        <div className="text-sm flex items-center gap-2">
-          <span className="font-medium">MÃ ĐƠN HÀNG: {orderId}</span>
-          <span className="text-black">|</span>
-          <span className="text-black">ĐƠN HÀNG ĐÃ HOÀN THÀNH</span>
+        <div className="flex items-center gap-2 font-medium">
+          <span>MÃ ĐƠN HÀNG: {order.orderCode}</span>
+          <span>|</span>
+          <span>ĐƠN HÀNG ĐÃ HOÀN THÀNH</span>
         </div>
       </div>
 
-      {/* Sản phẩm */}
-      <div className="flex border-b pb-4 gap-4 items-center">
-        {/* Bên trái: hình và thông tin */}
-        <div className="flex gap-4 flex-1">
-          <div className="w-[180px] h-[141px] relative shrink-0">
-            <Image
-              src="/product/img/1.webp"
-              alt="product"
-              fill
-              className="object-contain rounded"
-            />
-          </div>
-          <div className="flex flex-col justify-evenly">
-            <p className="font-semibold leading-snug">
-              MLB – Áo khoác phối mũ unisex Gopcore Basic
-            </p>
-            <p className="text-sm text-gray-600 mt-1">SL: 1 &nbsp; Trắng/L</p>
-          </div>
-        </div>
+      {/* Danh sách sản phẩm */}
+      <div className="space-y-6">
+        {order.products.map((product, index) => (
+          <div key={index} className="flex items-center gap-8 w-full">
+            {/* Ảnh tạm hoặc placeholder */}
+            <div className="w-[94px] h-[94px] bg-gray-100 rounded shrink-0" />
 
-        {/* Bên phải: giá */}
-        <div className="text-[#FF0000] font-semibold text-sm whitespace-nowrap">
-          1,790,000₫
-        </div>
+            <div className="flex justify-between items-center w-full">
+              <div className="space-y-1">
+                <p className="font-semibold">{product.name}</p>
+                <p className="text-sm text-gray-600">SL: {product.quantity}</p>
+              </div>
+              <div className="text-[#FF0000] font-semibold text-sm whitespace-nowrap">
+                {/* Không có giá nên để trống hoặc hiển thị "-" */}— ₫
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Địa chỉ nhận hàng */}
-      <div className="space-y-2 text-sm">
-        <h2 className="text-[24px] font-bold mb-[14px]">ĐỊA CHỈ NHẬN HÀNG</h2>
-
-        <div className="ml-6 space-y-3">
-          <p>
-            <span>Tên người nhận:</span> Mỹ Chi
-          </p>
-          <p>
-            <span>Số điện thoại người nhận:</span> 0773273159
-          </p>
-          <p className="leading-relaxed">
-            <span>Địa chỉ nhận hàng:</span> 344/22, Đường Bà Điểm 4, Ấp Tiền
-            Lân, Xã Bà Điểm, Huyện Hóc Môn, TP. Hồ Chí Minh
-            <span className="ml-4 font-medium">Giao Hàng Nhanh</span>
-          </p>
-          <p>
-            <span>Phương thức Thanh toán:</span>{" "}
-            <span className="uppercase">
-              {paymentMethod || "Đang cập nhật"}
-            </span>
-          </p>
+      <div className="text-base mb-6">
+        <h2 className="text-[20px] font-bold mb-[24px]">ĐỊA CHỈ NHẬN HÀNG</h2>
+        <div className="flex justify-between items-start gap-[18px]">
+          <div className="w-[679px] space-y-[12px] leading-relaxed">
+            <p>
+              <strong>Tên người nhận:</strong> Mỹ Chi
+            </p>
+            <p>
+              <strong>Số điện thoại người nhận:</strong> 0773237159
+            </p>
+            <p>
+              <strong>Địa chỉ nhận hàng:</strong> 344/22, Đường Bà Điểm 4, Ấp
+              Tiền Lân, Xã Bà Điểm, Huyện Hóc Môn, TP. Hồ Chí Minh
+            </p>
+            <p>
+              <strong>Phương thức Thanh toán:</strong>{" "}
+              <span className="uppercase">Đang cập nhật...</span>
+            </p>
+          </div>
+          <div className="text-right whitespace-nowrap font-medium self-center">
+            Giao Hàng Nhanh
+          </div>
         </div>
       </div>
+
+      <table className="w-full text-base text-black bg-[#F8FAFC] rounded overflow-hidden">
+        <thead>
+          <tr className="text-gray-500 text-[16px] h-[64px]">
+            <th className="w-[223.5px] text-center align-middle">
+              Tổng giá sản phẩm
+            </th>
+            <th className="w-[223.5px] text-center align-middle">Tiền ship</th>
+            <th className="w-[223.5px] text-center align-middle">Giảm giá</th>
+            <th className="w-[223.5px] text-center align-middle text-black">
+              Tổng tiền
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="h-[64px] text-[15px] font-medium">
+            <td className="text-center align-middle">1.250.000₫</td>
+            <td className="text-center align-middle">15.000₫</td>
+            <td className="text-center align-middle">0</td>
+            <td className="text-center align-middle font-semibold">
+              {order.total.toLocaleString("vi-VN")}₫
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }

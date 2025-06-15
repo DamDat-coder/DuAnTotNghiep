@@ -26,7 +26,9 @@ const uploadToCloudinary = (req, res, next) => __awaiter(void 0, void 0, void 0,
             if (error)
                 return next(error);
             if (result) {
-                res.json({ secure_url: result.secure_url });
+                // Ép kiểu để thêm cloudinaryUrl vào req
+                req.cloudinaryUrl = result.secure_url;
+                next();
             }
             else {
                 next(new Error('Lỗi upload Cloudinary'));

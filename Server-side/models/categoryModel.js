@@ -51,6 +51,12 @@ const categorySchema = new mongoose_1.Schema({
         ref: "categories",
         default: null,
     },
+    image: {
+        type: String,
+        required: false,
+        trim: true,
+        default: null,
+    },
 }, {
     timestamps: true,
 });

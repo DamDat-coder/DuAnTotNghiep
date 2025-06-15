@@ -21,14 +21,14 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
         console.log(`✅ MongoDB connected`);
     }
     catch (err) {
-        console.error("❌ MongoDB connection error:", err);
+        console.error("MongoDB connection error:", err);
         process.exit(1);
     }
     mongoose.connection.on("disconnected", () => {
-        console.warn("⚠️ MongoDB disconnected!");
+        console.warn("MongoDB disconnected!");
     });
     mongoose.connection.on("reconnected", () => {
-        console.log("🔁 MongoDB reconnected!");
+        console.log("MongoDB reconnected!");
     });
 });
 module.exports = connectDB;

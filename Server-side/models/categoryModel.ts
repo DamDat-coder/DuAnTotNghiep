@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICategory extends Document {
   name: string;
-  description?: string;
+  slug: string;
   parentId?: mongoose.Types.ObjectId | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -13,11 +13,12 @@ const categorySchema: Schema<ICategory> = new Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
-    description: {
+    slug: {
       type: String,
+      required: true,
+      unique: true,
       trim: true,
     },
     parentId: {

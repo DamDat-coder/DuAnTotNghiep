@@ -6,12 +6,14 @@ import useIsMobile from "@/hooks/useIsMobile";
 import Image from "next/image";
 
 import SettingsContent from "@/components/Profile/SettingContent";
-import ProfileTab from "@/components/Profile/Tabs/ProfileTab";
-import AddressTab from "@/components/Profile/Tabs/AddressTab";
-import FavoriteTab from "@/components/Profile/Tabs/FavoriteTab";
-import DeleteTab from "@/components/Profile/Tabs/DeleteTab";
-import OrderTab from "@/components/Profile/Tabs/OrderTab";
-import OrderDetail from "@/components/Profile/Tabs/OrderDetail";
+
+import { OrderDetail as OrderDetailType } from "@/types/order"; // import đúng interface
+import ProfileTab from "@/components/Profile/tabs/ProfileTab";
+import AddressTab from "@/components/Profile/tabs/AddressTab";
+import FavoriteTab from "@/components/Profile/tabs/FavoriteTab";
+import DeleteTab from "@/components/Profile/tabs/DeleteTab";
+import OrderTab from "@/components/Profile/tabs/OrderTab";
+import OrderDetail from "@/components/Profile/tabs/OrderDetail";
 
 const tabMap: Record<string, string> = {
   profile: "Hồ sơ",
@@ -26,11 +28,11 @@ export default function ProfilePage() {
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("Hồ sơ");
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<string>("");
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetailType | null>(
+    null
+  );
 
-  // Nhận tab từ URL khi lần đầu load hoặc URL thay đổi
+  // Lấy tab từ URL
   useEffect(() => {
     const tabFromURL = searchParams.get("tab");
     if (tabFromURL && tabMap[tabFromURL]) {
@@ -52,23 +54,19 @@ export default function ProfilePage() {
         return (
           <OrderTab
             setActiveTab={setActiveTab}
-            setSelectedOrderId={setSelectedOrderId}
-            setSelectedPaymentMethod={setSelectedPaymentMethod}
+            setSelectedOrder={setSelectedOrder}
           />
         );
       case "Chi tiết đơn hàng":
-        return selectedOrderId ? (
-          <OrderDetail
-            orderId={selectedOrderId}
-            paymentMethod={selectedPaymentMethod}
-            setActiveTab={setActiveTab}
-          />
+        return selectedOrder ? (
+          <OrderDetail order={selectedOrder} setActiveTab={setActiveTab} />
         ) : null;
       default:
         return null;
     }
   };
 
+  // Mobile layout
   if (isMobile) {
     if (activeTab === "main") {
       return (
@@ -84,14 +82,12 @@ export default function ProfilePage() {
           onClick={() => setActiveTab("main")}
           className="text-sm text-gray-500 mb-4 flex items-center gap-2"
         >
-          <span>
-            <Image
-              src="/profile/Vector (Stroke).png"
-              alt="Vector icon"
-              width={7}
-              height={7}
-            />
-          </span>
+          <Image
+            src="/profile/Vector (Stroke).png"
+            alt="Vector icon"
+            width={7}
+            height={7}
+          />
           Quay lại
         </button>
         {renderTabContent()}
@@ -99,6 +95,7 @@ export default function ProfilePage() {
     );
   }
 
+  // Desktop layout
   return (
     <div className="flex min-h-screen px-0 laptop:px-[278px] laptop:pt-[80px]">
       <div className="w-1/4 border-r">

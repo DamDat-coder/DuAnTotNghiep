@@ -38,14 +38,12 @@ export default function ConfirmDeleteModal({ onClose, onConfirm }: Props) {
 
         {/* Tiêu đề */}
         <h2 className="text-[24px] font-semibold text-[#0F172A] mb-2">
-          Xác nhận xóa tài khoản?
+          Xác nhận hủy dơn hàng?{" "}
         </h2>
 
         {/* Mô tả */}
-        <p className="text-[18px] text-[#64748B] leading-relaxed mb-[24px]">
-          Bạn có chắc chắn xóa tài khoản?
-          <br />
-          Thao tác này không thể khôi phục.
+        <p className="text-[16px] text-[#64748B] leading-relaxed mb-[24px]">
+          Bạn có chắc chắn muốn hủy đơn hàng hay không?
         </p>
 
         {/* Nút hành động */}

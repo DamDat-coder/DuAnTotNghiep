@@ -12,151 +12,186 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deletePro = exports.editPro = exports.addPro = exports.getProductById = exports.getAllProducts = void 0;
-const categoryModel_1 = __importDefault(require("../models/categoryModel"));
+exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductById = exports.getAllProducts = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const productModel_1 = __importDefault(require("../models/productModel"));
+const categoryModel_1 = __importDefault(require("../models/categoryModel"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
-// lấy tất cả sản phẩm
+// Lấy tất cả sản phẩm (hỗ trợ phân trang, tìm kiếm, sắp xếp)
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, idcate, limit, sort, page } = req.query;
-    const query = {};
-    const options = {};
-    if (name)
-        query.name = new RegExp(name, "i");
-    if (idcate)
-        query["category._id"] = idcate;
-    if (limit)
-        options.limit = parseInt(limit) || 10;
-    if (sort) {
-        options.sort = { "variants.price": sort === "asc" ? 1 : -1 };
-    }
-    const pageNum = parseInt(page) || 1;
-    options.skip = (pageNum - 1) * (options.limit || 10);
     try {
-        const total = yield productModel_1.default.countDocuments(query);
-        const arr = yield productModel_1.default
-            .find(query, null, options)
-            .populate("category._id", "name")
-            .exec();
-        if (!arr.length) {
-            res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+        const { name, idcate, limit, sort, page } = req.query;
+        // Xây dựng điều kiện tìm kiếm
+        const query = {};
+        if (name) {
+            query.name = new RegExp(name, 'i');
+        }
+        if (idcate) {
+            if (!mongoose_1.default.Types.ObjectId.isValid(idcate)) {
+                res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+                return;
+            }
+            query['category._id'] = idcate;
+        }
+        const options = {};
+        const pageNum = Math.max(parseInt(page) || 1, 1);
+        const limitNum = Math.max(parseInt(limit) || 10, 1);
+        options.skip = (pageNum - 1) * limitNum;
+        options.limit = limitNum;
+        if (sort) {
+            options.sort = { 'variants.price': sort === 'asc' ? 1 : -1 };
+        }
+        const [products, total] = yield Promise.all([
+            productModel_1.default
+                .find(query)
+                .select('name slug category image variants is_active')
+                .populate('category._id', 'name slug')
+                .sort(options.sort)
+                .skip(options.skip)
+                .limit(options.limit)
+                .lean(),
+            productModel_1.default.countDocuments(query),
+        ]);
+        if (!products.length) {
+            res.status(404).json({ status: 'error', message: 'Không tìm thấy sản phẩm' });
             return;
         }
-        const result = arr.map((product) => (Object.assign(Object.assign({}, product.toObject()), { category: {
+        const result = products.map((product) => (Object.assign(Object.assign({}, product), { category: {
                 _id: product.category._id,
                 name: product.category.name,
             } })));
-        res.json({ data: result, total, page: pageNum, limit: options.limit || 10 });
+        res.status(200).json({
+            status: 'success',
+            data: result,
+            total,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(total / limitNum),
+        });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
+    catch (error) {
+        console.error('Lỗi khi lấy tất cả sản phẩm:', error);
+        res.status(500).json({ status: 'error', message: error.message });
     }
 });
 exports.getAllProducts = getAllProducts;
-// lấy sản phẩm theo id
+// Lấy sản phẩm theo ID
 const getProductById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const product = yield productModel_1.default
-            .findById(req.params.id)
-            .populate("category._id", "name")
-            .exec();
-        if (!product) {
-            res.status(404).json({ message: "Sản phẩm không tồn tại" });
+        if (!mongoose_1.default.Types.ObjectId.isValid(req.params.id)) {
+            res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
             return;
         }
-        const result = Object.assign(Object.assign({}, product.toObject()), { category: {
+        // Tìm sản phẩm theo ID
+        const product = yield productModel_1.default
+            .findById(req.params.id)
+            .populate('category._id', 'name slug')
+            .lean();
+        if (!product) {
+            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+            return;
+        }
+        const result = Object.assign(Object.assign({}, product), { category: {
                 _id: product.category._id,
                 name: product.category.name,
             } });
-        res.json(result);
+        res.status(200).json({ status: 'success', data: result });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
+    catch (error) {
+        console.error('Lỗi khi lấy sản phẩm theo ID:', error);
+        res.status(500).json({ status: 'error', message: error.message });
     }
 });
 exports.getProductById = getProductById;
-const addPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const product = req.body;
-    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-        res.status(400).json({ message: "Vui lòng upload ít nhất một ảnh" });
-        return;
-    }
-    if (!product.name ||
-        !product.category ||
-        !product.category._id ||
-        !product.variants ||
-        !Array.isArray(product.variants) ||
-        product.variants.length === 0) {
-        res.status(400).json({
-            message: "Thiếu thông tin bắt buộc: name, category._id, hoặc variants",
-        });
-        return;
-    }
-    // Validate variants
-    const validColors = ["Đen", "Trắng", "Xám", "Đỏ"];
-    const validSizes = ["S", "M", "L", "XL"];
-    for (const variant of product.variants) {
-        if (!variant.price ||
-            !variant.color ||
-            !variant.size ||
-            !validColors.includes(variant.color) ||
-            !validSizes.includes(variant.size) ||
-            variant.stock === undefined ||
-            variant.discountPercent === undefined) {
-            res.status(400).json({ message: "Thông tin variant không hợp lệ" });
+// Thêm sản phẩm mới
+const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const product = req.body;
+        if (!product.name ||
+            !product.slug ||
+            !product.category ||
+            !product.category._id ||
+            !product.variants ||
+            !Array.isArray(product.variants) ||
+            product.variants.length === 0) {
+            res.status(400).json({
+                status: 'error',
+                message: 'Thiếu thông tin bắt buộc: name, slug, category._id, hoặc variants',
+            });
             return;
         }
-    }
-    try {
-        // ✅ SỬA: Bọc upload_stream thành Promise
-        const uploadPromises = req.files.map((file) => {
-            return new Promise((resolve, reject) => {
-                const stream = cloudinary_1.default.uploader.upload_stream({ resource_type: "image", folder: "products" }, (error, result) => {
-                    if (error || !result)
-                        return reject(error);
-                    resolve(result);
-                });
-                stream.end(file.buffer);
-            });
-        });
-        const uploadResults = yield Promise.all(uploadPromises);
-        product.image = uploadResults.map((result) => result.secure_url);
-        // Validate category
-        const category = yield categoryModel_1.default.findById(product.category._id);
+        if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+            res.status(400).json({ status: 'error', message: 'Vui lòng upload ít nhất một ảnh' });
+            return;
+        }
+        const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
+        const validSizes = ['S', 'M', 'L', 'XL'];
+        for (const variant of product.variants) {
+            if (!variant.price ||
+                !variant.color ||
+                !variant.size ||
+                !validColors.includes(variant.color) ||
+                !validSizes.includes(variant.size) ||
+                variant.stock === undefined ||
+                variant.discountPercent === undefined) {
+                res.status(400).json({ status: 'error', message: 'Thông tin variant không hợp lệ' });
+                return;
+            }
+        }
+        const category = yield categoryModel_1.default.findById(product.category._id).lean();
         if (!category) {
-            res.status(404).json({ message: "Danh mục không tồn tại" });
+            res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
             return;
         }
         product.category.name = category.name;
-        // Save product
+        const uploadPromises = req.files.map((file) => new Promise((resolve, reject) => {
+            const stream = cloudinary_1.default.uploader.upload_stream({ resource_type: 'image', folder: 'products' }, (error, result) => {
+                if (error || !result)
+                    return reject(error);
+                resolve(result);
+            });
+            stream.end(file.buffer);
+        }));
+        const uploadResults = yield Promise.all(uploadPromises);
+        product.image = uploadResults.map((result) => result.secure_url);
         const newProduct = new productModel_1.default(product);
-        const data = yield newProduct.save();
-        res.status(201).json(data);
+        const savedProduct = yield newProduct.save();
+        res.status(201).json({
+            status: 'success',
+            message: 'Tạo sản phẩm thành công',
+            data: savedProduct,
+        });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
-    }
-});
-exports.addPro = addPro;
-// update sản phẩm
-const editPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const product = req.body;
-    try {
-        const existingProduct = yield productModel_1.default.findById(req.params.id);
-        if (!existingProduct) {
-            res.status(404).json({ message: "Sản phẩm không tồn tại" });
+    catch (error) {
+        console.error('Lỗi khi tạo sản phẩm:', error);
+        if (error.code === 11000) {
+            res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
             return;
         }
-        // update hình
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+exports.createProduct = createProduct;
+// Cập nhật sản phẩm
+const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const productId = req.params.id;
+        const product = req.body;
+        if (!mongoose_1.default.Types.ObjectId.isValid(productId)) {
+            res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
+            return;
+        }
+        const existingProduct = yield productModel_1.default.findById(productId);
+        if (!existingProduct) {
+            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+            return;
+        }
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-            // xóa hình khỏi Cloudinary
+            // Xóa hình ảnh cũ trên Cloudinary
             if (existingProduct.image && existingProduct.image.length > 0) {
                 const deletePromises = existingProduct.image.map((img) => {
                     var _a;
-                    const publicId = (_a = img.split("/").pop()) === null || _a === void 0 ? void 0 : _a.split(".")[0]; // Extract public_id from URL
+                    const publicId = (_a = img.split('/').pop()) === null || _a === void 0 ? void 0 : _a.split('.')[0];
                     if (publicId) {
                         return cloudinary_1.default.uploader.destroy(`products/${publicId}`).catch(() => { });
                     }
@@ -164,17 +199,15 @@ const editPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 });
                 yield Promise.all(deletePromises);
             }
-            // up hình cloudinary
-            const uploadPromises = req.files.map((file) => {
-                return new Promise((resolve, reject) => {
-                    const stream = cloudinary_1.default.uploader.upload_stream({ resource_type: "image", folder: "products" }, (error, result) => {
-                        if (error || !result)
-                            return reject(error);
-                        resolve(result);
-                    });
-                    stream.end(file.buffer);
+            // Upload hình ảnh mới
+            const uploadPromises = req.files.map((file) => new Promise((resolve, reject) => {
+                const stream = cloudinary_1.default.uploader.upload_stream({ resource_type: 'image', folder: 'products' }, (error, result) => {
+                    if (error || !result)
+                        return reject(error);
+                    resolve(result);
                 });
-            });
+                stream.end(file.buffer);
+            }));
             const uploadResults = yield Promise.all(uploadPromises);
             product.image = uploadResults.map((result) => result.secure_url);
         }
@@ -182,9 +215,9 @@ const editPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             product.image = existingProduct.image;
         }
         if (product.category && product.category._id) {
-            const category = yield categoryModel_1.default.findById(product.category._id);
+            const category = yield categoryModel_1.default.findById(product.category._id).lean();
             if (!category) {
-                res.status(404).json({ message: "Danh mục không tồn tại" });
+                res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
                 return;
             }
             product.category.name = category.name;
@@ -193,8 +226,8 @@ const editPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             product.category = existingProduct.category;
         }
         if (product.variants && Array.isArray(product.variants)) {
-            const validColors = ["Đen", "Trắng", "Xám", "Đỏ"];
-            const validSizes = ["S", "M", "L", "XL"];
+            const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
+            const validSizes = ['S', 'M', 'L', 'XL'];
             for (const variant of product.variants) {
                 if (!variant.price ||
                     !variant.color ||
@@ -203,40 +236,56 @@ const editPro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     !validSizes.includes(variant.size) ||
                     variant.stock === undefined ||
                     variant.discountPercent === undefined) {
-                    res.status(400).json({ message: "Thông tin variant không hợp lệ" });
+                    res.status(400).json({ status: 'error', message: 'Thông tin variant không hợp lệ' });
                     return;
                 }
             }
         }
-        // Update product
-        const data = yield productModel_1.default
-            .findByIdAndUpdate(req.params.id, { $set: product }, { new: true })
-            .exec();
-        if (!data) {
-            res.status(404).json({ message: "Sản phẩm không tồn tại" });
+        // Cập nhật sản phẩm trong database
+        const updatedProduct = yield productModel_1.default
+            .findByIdAndUpdate(productId, { $set: product }, { new: true, runValidators: true })
+            .populate('category._id', 'name slug');
+        if (!updatedProduct) {
+            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
             return;
         }
-        res.json(data);
+        const result = Object.assign(Object.assign({}, updatedProduct.toObject()), { category: {
+                _id: updatedProduct.category._id,
+                name: updatedProduct.category.name,
+            } });
+        res.status(200).json({
+            status: 'success',
+            message: 'Cập nhật sản phẩm thành công',
+            data: result,
+        });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
+    catch (error) {
+        console.error('Lỗi khi cập nhật sản phẩm:', error);
+        if (error.code === 11000) {
+            res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
+            return;
+        }
+        res.status(500).json({ status: 'error', message: error.message });
     }
 });
-exports.editPro = editPro;
-// DELETE product
-const deletePro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.updateProduct = updateProduct;
+// Xóa sản phẩm
+const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const data = yield productModel_1.default.findByIdAndDelete(req.params.id).exec();
-        if (!data) {
-            res.status(404).json({ message: "Sản phẩm không tồn tại" });
+        const productId = req.params.id;
+        if (!mongoose_1.default.Types.ObjectId.isValid(productId)) {
+            res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
             return;
         }
-        // xóa hìnhhình
-        if (data.image && data.image.length > 0) {
-            const deletePromises = data.image.map((img) => {
+        const product = yield productModel_1.default.findById(productId);
+        if (!product) {
+            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+            return;
+        }
+        if (product.image && product.image.length > 0) {
+            const deletePromises = product.image.map((img) => {
                 var _a;
-                const publicId = (_a = img.split("/").pop()) === null || _a === void 0 ? void 0 : _a.split(".")[0];
+                const publicId = (_a = img.split('/').pop()) === null || _a === void 0 ? void 0 : _a.split('.')[0];
                 if (publicId) {
                     return cloudinary_1.default.uploader.destroy(`products/${publicId}`).catch(() => { });
                 }
@@ -244,11 +293,16 @@ const deletePro = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             });
             yield Promise.all(deletePromises);
         }
-        res.json({ message: "Xóa sản phẩm thành công", data });
+        // Xóa sản phẩm khỏi database
+        yield productModel_1.default.findByIdAndDelete(productId);
+        res.status(200).json({
+            status: 'success',
+            message: 'Xóa sản phẩm thành công',
+        });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
+    catch (error) {
+        console.error('Lỗi khi xóa sản phẩm:', error);
+        res.status(500).json({ status: 'error', message: error.message });
     }
 });
-exports.deletePro = deletePro;
+exports.deleteProduct = deleteProduct;

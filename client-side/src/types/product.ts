@@ -1,13 +1,21 @@
 export interface IProduct {
   id: string;
   name: string;
-  categoryId: string;
-  category: string;
-  colors: string[];
-  price: number;
-  discountPercent: number;
-  images: string[] | File[];
-  sizes: { value: string; inStock: boolean }[];
+  slug: string;
+  category: {
+    _id: string | null;
+    name: string;
+  };
+  categoryId: string | null;
+  variants: {
+    price: number;
+    color: string;
+    size: string;
+    stock: number;
+    discountPercent: number;
+  }[];
+  images: string[];
+  stock: number;
 }
 
 export interface IFeaturedProducts {

@@ -8,7 +8,6 @@ import FilterGender from "./FilterGender";
 import FilterPrice from "./FilterPrice";
 import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
-import FilterBrand from "./FilterBrand";
 import { useEffect } from "react";
 
 export default function FilterPopup({
@@ -115,24 +114,22 @@ export default function FilterPopup({
               selectedSizes={selectedSizes}
               handleSizeChange={handleSizeChange}
             />
-            <FilterBrand
-              selectedBrands={selectedBrands}
-              handleBrandChange={handleBrandChange}
-            />
 
-            <div className="w-full flex h-auto justify-center gap-5 pb-3">
-              <button
-                onClick={clearFilters}
-                className="mt-2.5 w-[40%] py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-black border-2"
-              >
-                Xoá
-              </button>
-              <button
-                onClick={handleApplyFilters}
-                className="mt-2.5 w-[40%] py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black border-2 border-white"
-              >
-                Lọc sản phẩm
-              </button>
+            <div className="w-full sticky -bottom-3 h-auto  pb-3">
+              <div className="flex bg-white p-4 justify-center gap-5">
+                <button
+                  onClick={clearFilters}
+                  className="mt-2.5 w-[40%] py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-black border-2"
+                >
+                  Xoá
+                </button>
+                <button
+                  onClick={handleApplyFilters}
+                  className="mt-2.5 w-[40%] py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black border-2 border-white"
+                >
+                  Lọc sản phẩm
+                </button>
+              </div>
             </div>
           </div>
         </div>

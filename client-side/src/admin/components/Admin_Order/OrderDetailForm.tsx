@@ -50,7 +50,15 @@ export default function OrderDetailForm({ order: initialOrder }: OrderDetailForm
   };
 
   if (loading) {
-    return <div className="text-center text-lg">Đang tải...</div>;
+    return <div className="sk-chase">
+  <div className="sk-chase-dot"></div>
+  <div className="sk-chase-dot"></div>
+  <div className="sk-chase-dot"></div>
+  <div className="sk-chase-dot"></div>
+  <div className="sk-chase-dot"></div>
+  <div className="sk-chase-dot"></div>
+</div>
+;
   }
 
   if (error || !order) {

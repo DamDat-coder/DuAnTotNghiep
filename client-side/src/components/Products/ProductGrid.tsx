@@ -7,6 +7,7 @@ import Link from "next/link";
 import FilterPopup from "../Products/FilterPopup";
 import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
+import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
 
 interface ProductGridProps {
   products: IProduct[];
@@ -62,7 +63,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
       const newLength = currentLength + nextProducts.length;
       setHasMore(newLength < products.length);
       setLoading(false);
-    }, 500);
+    }, 600);
   };
 
   const handleBuyNow = (product: IProduct, e: React.MouseEvent) => {
@@ -75,9 +76,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
     const discountPrice = product.price * (1 - product.discountPercent / 100);
 
     return (
-      <div
-        className=" w-full flex flex-col bg-white relative"
-      >
+      <div className=" w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">
           <Image
             src={`/product/img/${product.images[0]}`}
@@ -87,7 +86,11 @@ export default function ProductGrid({ products }: ProductGridProps) {
             className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[18.3125rem] object-cover"
             draggable={false}
           />
-          <div className={`absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded ${ !product.discountPercent ? "hidden" : "block"} `}>
+          <div
+            className={`absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded ${
+              !product.discountPercent ? "hidden" : "block"
+            } `}
+          >
             -{product.discountPercent}%
           </div>
           <AddToCartButton product={product} />
@@ -104,7 +107,11 @@ export default function ProductGrid({ products }: ProductGridProps) {
               <div className="discountPrice text-[1rem] font-bold text-red-500">
                 {discountPrice.toLocaleString("vi-VN")}₫
               </div>
-              <div className={`price text-[0.875rem] flex items-center text-[#374151] line-through ${ !product.discountPercent ? "hidden" : "block"}`}>
+              <div
+                className={`price text-[0.875rem] flex items-center text-[#374151] line-through ${
+                  !product.discountPercent ? "hidden" : "block"
+                }`}
+              >
                 {product.price.toLocaleString("vi-VN")}₫
               </div>
             </div>
@@ -155,10 +162,27 @@ export default function ProductGrid({ products }: ProductGridProps) {
       </div>
       <div ref={observerRef} className={`h-10 ${!hasMore ? "hidden" : ""}`}>
         {loading && (
-          <p className="text-center text-gray-500">Đang tải thêm...</p>
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
         )}
       </div>
       <FilterPopup isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} />
+      {selectedProduct && (
+        <BuyNowPopup
+          product={selectedProduct}
+          isOpen={isPopupOpen}
+          onClose={() => {
+            setIsPopupOpen(false);
+            setSelectedProduct(null);
+          }}
+        />
+      )}
     </>
   );
 }

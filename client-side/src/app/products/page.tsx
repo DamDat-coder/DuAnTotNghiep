@@ -41,6 +41,8 @@ export default function ProductsPage() {
           fetchMemberBenefits(),
         ]);
 
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
         setProducts(productsData);
         setCategories(
           Array.from(new Set(productsData.map((product) => product.category)))
@@ -74,7 +76,16 @@ export default function ProductsPage() {
     return (
       <div className="py-8">
         <Container>
-          <p className="text-center text-gray-500">Đang tải...</p>
+          <Breadcrumb />
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
+          <div className="text-center p-3">Đang tải</div>
         </Container>
       </div>
     );

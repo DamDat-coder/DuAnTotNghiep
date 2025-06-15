@@ -46,7 +46,11 @@ export default function OrderPage() {
   const navigationItems = [
     { label: "Đơn hàng", href: "/admin/order", filter: "Tất cả" },
     { label: "Đã huỷ", href: "/admin/order/cancelled", filter: "cancelled" },
-    { label: "Chưa giải quyết", href: "/admin/order/pending", filter: "pending" },
+    {
+      label: "Chưa giải quyết",
+      href: "/admin/order/pending",
+      filter: "pending",
+    },
     { label: "Hoàn thành", href: "/admin/order/completed", filter: "success" },
   ];
 
@@ -55,9 +59,19 @@ export default function OrderPage() {
       <Toaster position="top-right" />
       <div className="order-page w-full mx-auto h-full flex flex-col">
         {isLoading ? (
-          <p className="text-center text-gray-500">Đang tải...</p>
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
         ) : (
-          <OrderTable initialOrders={orders} navigationItems={navigationItems} />
+          <OrderTable
+            initialOrders={orders}
+            navigationItems={navigationItems}
+          />
         )}
       </div>
     </AdminLayout>

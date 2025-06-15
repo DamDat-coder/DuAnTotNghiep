@@ -118,7 +118,16 @@ export default function Orders({
   };
 
   if (isLoading) {
-    return <p className="text-center text-gray-500 mt-4">Đang tải...</p>;
+    return (
+      <div className="sk-chase">
+        <div className="sk-chase-dot"></div>
+        <div className="sk-chase-dot"></div>
+        <div className="sk-chase-dot"></div>
+        <div className="sk-chase-dot"></div>
+        <div className="sk-chase-dot"></div>
+        <div className="sk-chase-dot"></div>
+      </div>
+    );
   }
   const filteredOrders = orders.filter((order) =>
     selectedStatus === "all" ? true : order.status === selectedStatus

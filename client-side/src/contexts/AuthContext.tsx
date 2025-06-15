@@ -66,6 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (userData.role === "admin") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
         window.location.assign("/admin/dashboard");
       }
 

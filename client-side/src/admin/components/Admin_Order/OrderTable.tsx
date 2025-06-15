@@ -1,22 +1,59 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Pagination } from "@/admin/layouts/Panigation";
+import { Pagination } from "@/admin/components/ui/Panigation";
 
 const STATUS = [
-  { key: "processing", label: "Đang xử lý", color: "bg-[#E8F2FD] text-[#2998FF]" },
-  { key: "confirming", label: "Chờ xác nhận", color: "bg-[#FFF7DB] text-[#FFA800]" },
-  { key: "delivering", label: "Đang giao", color: "bg-[#DBF7E8] text-[#39C24F]" },
-  { key: "completed", label: "Đã hoàn thành", color: "bg-[#DBF7E8] text-[#449E3C]" },
+  {
+    key: "processing",
+    label: "Đang xử lý",
+    color: "bg-[#E8F2FD] text-[#2998FF]",
+  },
+  {
+    key: "confirming",
+    label: "Chờ xác nhận",
+    color: "bg-[#FFF7DB] text-[#FFA800]",
+  },
+  {
+    key: "delivering",
+    label: "Đang giao",
+    color: "bg-[#DBF7E8] text-[#39C24F]",
+  },
+  {
+    key: "completed",
+    label: "Đã hoàn thành",
+    color: "bg-[#DBF7E8] text-[#449E3C]",
+  },
   { key: "cancelled", label: "Đã huỷ", color: "bg-[#FFE1E1] text-[#F75555]" },
 ];
 
 const customers = [
-  "Robert Fox", "Brooklyn Simmons", "Jacob Jones", "Marvin McKinney", "Arlene McCoy",
-  "Esther Howard", "Darrell Steward", "Bessie Cooper", "Ralph Edwards", "Dianne Russell",
-  "Guy Hawkins", "Jenny Wilson", "Eleanor Pena", "Wade Warren", "Ronald Richards",
-  "Courtney Henry", "Cody Fisher", "Cameron Williamson", "Leslie Alexander", "Jane Cooper",
-  "Floyd Miles", "Annette Black", "Theresa Webb", "Savannah Nguyen", "Jerome Bell",
-  "Devon Lane", "Kathryn Murphy"
+  "Robert Fox",
+  "Brooklyn Simmons",
+  "Jacob Jones",
+  "Marvin McKinney",
+  "Arlene McCoy",
+  "Esther Howard",
+  "Darrell Steward",
+  "Bessie Cooper",
+  "Ralph Edwards",
+  "Dianne Russell",
+  "Guy Hawkins",
+  "Jenny Wilson",
+  "Eleanor Pena",
+  "Wade Warren",
+  "Ronald Richards",
+  "Courtney Henry",
+  "Cody Fisher",
+  "Cameron Williamson",
+  "Leslie Alexander",
+  "Jane Cooper",
+  "Floyd Miles",
+  "Annette Black",
+  "Theresa Webb",
+  "Savannah Nguyen",
+  "Jerome Bell",
+  "Devon Lane",
+  "Kathryn Murphy",
 ];
 const products = [
   "MLB – Áo khoác phối mũ unisex Gopcore Basic",
@@ -24,7 +61,8 @@ const products = [
   "MLB – Áo hoodie unisex Essential",
   "MLB – Áo bomber unisex Classic",
 ];
-const randomStatus = () => STATUS[Math.floor(Math.random() * STATUS.length)].key;
+const randomStatus = () =>
+  STATUS[Math.floor(Math.random() * STATUS.length)].key;
 const randomDate = () => {
   const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, "0");
   const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
@@ -60,16 +98,17 @@ export default function OrderContent() {
   const filtered = orders.filter(
     (o) =>
       (filterStatus === "all" || o.status === filterStatus) &&
-      (
-        o.id.toLowerCase().includes(search.toLowerCase()) ||
+      (o.id.toLowerCase().includes(search.toLowerCase()) ||
         o.customer.toLowerCase().includes(search.toLowerCase()) ||
-        o.product.toLowerCase().includes(search.toLowerCase())
-      )
+        o.product.toLowerCase().includes(search.toLowerCase()))
   );
 
   // Phân trang
   const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
-  const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageData = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   // Đổi trạng thái
   const handleChangeStatus = (id: string, nextStatus: string) => {
@@ -99,7 +138,7 @@ export default function OrderContent() {
 
   // Xoá đơn hàng
   const handleDeleteOrder = (id: string) => {
-    setOrders(prev => prev.filter(order => order.id !== id));
+    setOrders((prev) => prev.filter((order) => order.id !== id));
     setActionDropdown(null);
   };
 
@@ -125,12 +164,14 @@ export default function OrderContent() {
             <select
               className="h-10 px-4 pr-8 rounded-lg bg-[#F6F8FB] border border-[#E6E8EC] text-[#474A57] font-medium focus:outline-none"
               value={filterStatus}
-              onChange={e => handleFilter(e.target.value)}
+              onChange={(e) => handleFilter(e.target.value)}
               style={{ minWidth: 90 }}
             >
               <option value="all">Tất cả</option>
-              {STATUS.map(s => (
-                <option key={s.key} value={s.key}>{s.label}</option>
+              {STATUS.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
               ))}
             </select>
           </div>
@@ -140,7 +181,7 @@ export default function OrderContent() {
               className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
               placeholder="Tìm kiếm"
               value={search}
-              onChange={e => handleSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
             />
             <svg
               viewBox="0 0 20 20"
@@ -148,7 +189,12 @@ export default function OrderContent() {
               className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none"
             >
               <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
-              <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M16 16L13.5 13.5"
+                stroke="#8C94A5"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
         </div>
@@ -156,13 +202,21 @@ export default function OrderContent() {
         <div className="overflow-x-auto flex-1">
           <table className="w-full min-w-[900px] text-base">
             <thead>
-              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold" style={{ background: "#F8FAFC" }}>
+              <tr
+                className="border-b border-[#F1F1F1] text-[#878B93] font-semibold"
+                style={{ background: "#F8FAFC" }}
+              >
                 <th className="py-3 text-left font-semibold">Mã đơn hàng</th>
                 <th className="py-3 text-left font-semibold">Sản phẩm</th>
                 <th className="py-3 text-left font-semibold">Người dùng</th>
                 <th className="py-3 text-left font-semibold">Ngày đặt hàng</th>
                 <th className="py-3 text-left font-semibold">Trạng thái</th>
-                <th className="py-3 text-center font-semibold" style={{ width: 60 }}>...</th>
+                <th
+                  className="py-3 text-center font-semibold"
+                  style={{ width: 60 }}
+                >
+                  ...
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -175,52 +229,68 @@ export default function OrderContent() {
               ) : (
                 pageData.map((order) => {
                   const s = getStatusInfo(order.status);
-                  const currentIdx = STATUS.findIndex(item => item.key === order.status);
+                  const currentIdx = STATUS.findIndex(
+                    (item) => item.key === order.status
+                  );
                   const nextStatusList = STATUS.slice(currentIdx + 1);
                   return (
-                    <tr key={order.id} className="border-b border-[#F1F1F1] last:border-0 relative group">
-                      <td className="py-3 font-semibold text-[#202020]">{order.id}</td>
+                    <tr
+                      key={order.id}
+                      className="border-b border-[#F1F1F1] last:border-0 relative group"
+                    >
+                      <td className="py-3 font-semibold text-[#202020]">
+                        {order.id}
+                      </td>
                       <td className="py-3">{order.product}</td>
                       <td className="py-3">{order.customer}</td>
-                      <td className="py-3 font-semibold text-[#212121]">{order.date}</td>
+                      <td className="py-3 font-semibold text-[#212121]">
+                        {order.date}
+                      </td>
                       <td className="py-3">
                         <div className="relative inline-block">
                           <button
                             type="button"
                             className={`px-4 py-1 rounded-[8px] font-medium min-w-[120px] text-sm ${s.color} border-0 outline-none transition hover:scale-105 flex items-center`}
-                            onClick={e => {
+                            onClick={(e) => {
                               e.stopPropagation();
-                              setStatusDropdown(order.id === statusDropdown ? null : order.id);
+                              setStatusDropdown(
+                                order.id === statusDropdown ? null : order.id
+                              );
                             }}
                           >
                             {s.label}
                             <span className="ml-1 text-[#bdbdbd]">▼</span>
                           </button>
-                          {statusDropdown === order.id && nextStatusList.length > 0 && (
-                            <div
-                              className="absolute left-0 mt-2 min-w-[150px] rounded-lg shadow bg-white z-50 border border-gray-100 animate-fadeIn"
-                              onClick={e => e.stopPropagation()}
-                            >
-                              {nextStatusList.map(item => (
-                                <button
-                                  key={item.key}
-                                  onClick={() => handleChangeStatus(order.id, item.key)}
-                                  className={`w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-gray-100 ${item.color}`}
-                                >
-                                  {item.label}
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                          {statusDropdown === order.id &&
+                            nextStatusList.length > 0 && (
+                              <div
+                                className="absolute left-0 mt-2 min-w-[150px] rounded-lg shadow bg-white z-50 border border-gray-100 animate-fadeIn"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {nextStatusList.map((item) => (
+                                  <button
+                                    key={item.key}
+                                    onClick={() =>
+                                      handleChangeStatus(order.id, item.key)
+                                    }
+                                    className={`w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-gray-100 ${item.color}`}
+                                  >
+                                    {item.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                         </div>
                       </td>
                       {/* Dấu ba chấm ngang */}
                       <td className="py-3 text-center relative">
                         <button
                           className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
-                          onClick={e => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            setActionDropdown(order.id === actionDropdown ? null : order.id);
+                            setActionDropdown(
+                              order.id === actionDropdown ? null : order.id
+                            );
                           }}
                         >
                           <span className="text-2xl text-[#8C94A5]">⋯</span>
@@ -228,16 +298,23 @@ export default function OrderContent() {
                         {actionDropdown === order.id && (
                           <div
                             className="absolute right-0 top-12 z-50 min-w-[100px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
-                            onClick={e => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <button
                               className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-t-lg"
-                              onClick={() => { setActionDropdown(null); alert("Chức năng sửa (demo)"); }}
-                            >Sửa</button>
+                              onClick={() => {
+                                setActionDropdown(null);
+                                alert("Chức năng sửa (demo)");
+                              }}
+                            >
+                              Sửa
+                            </button>
                             <button
                               className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
                               onClick={() => handleDeleteOrder(order.id)}
-                            >Xoá</button>
+                            >
+                              Xoá
+                            </button>
                           </div>
                         )}
                       </td>

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { FaChevronDown, FaChevronRight }  from "react-icons/fa";
-import { HiOutlineDotsHorizontal } from "react-icons/hi";
+// import { FaChevronDown, FaChevronRight }  from "react-icons/fa";
+// import { HiOutlineDotsHorizontal } from "react-icons/hi";
 
 type Category = {
   id: string;
@@ -13,18 +13,78 @@ type Category = {
 
 const mockCategories: Category[] = [
   // Sản phẩm
-  { id: "1", name: "Products", description: "Danh mục sản phẩm", parentId: null, type: "product" },
-  { id: "2", name: "Quần áo nam", description: "Quần áo dành cho nam", parentId: "1", type: "product" },
-  { id: "3", name: "Áo sơ mi", description: "Áo sơ mi nam", parentId: "2", type: "product" },
-  { id: "4", name: "Áo khoác", description: "Áo khoác nam", parentId: "2", type: "product" },
-  { id: "5", name: "Áo khoác da", description: "Áo khoác da", parentId: "2", type: "product" },
-  { id: "6", name: "Quần áo nữ", description: "Quần áo dành cho nữ", parentId: "1", type: "product" },
-  { id: "7", name: "Quần áo nam", description: "Quần áo dành cho nam", parentId: "1", type: "product" },
+  {
+    id: "1",
+    name: "Products",
+    description: "Danh mục sản phẩm",
+    parentId: null,
+    type: "product",
+  },
+  {
+    id: "2",
+    name: "Quần áo nam",
+    description: "Quần áo dành cho nam",
+    parentId: "1",
+    type: "product",
+  },
+  {
+    id: "3",
+    name: "Áo sơ mi",
+    description: "Áo sơ mi nam",
+    parentId: "2",
+    type: "product",
+  },
+  {
+    id: "4",
+    name: "Áo khoác",
+    description: "Áo khoác nam",
+    parentId: "2",
+    type: "product",
+  },
+  {
+    id: "5",
+    name: "Áo khoác da",
+    description: "Áo khoác da",
+    parentId: "2",
+    type: "product",
+  },
+  {
+    id: "6",
+    name: "Quần áo nữ",
+    description: "Quần áo dành cho nữ",
+    parentId: "1",
+    type: "product",
+  },
+  {
+    id: "7",
+    name: "Quần áo nam",
+    description: "Quần áo dành cho nam",
+    parentId: "1",
+    type: "product",
+  },
 
   // News
-  { id: "10", name: "News", description: "Danh mục tin tức", parentId: null, type: "news" },
-  { id: "11", name: "Tin tức thời trang", description: "Cập nhật thời trang", parentId: "10", type: "news" },
-  { id: "12", name: "Tin tức công nghệ", description: "Tin công nghệ mới nhất", parentId: "10", type: "news" },
+  {
+    id: "10",
+    name: "News",
+    description: "Danh mục tin tức",
+    parentId: null,
+    type: "news",
+  },
+  {
+    id: "11",
+    name: "Tin tức thời trang",
+    description: "Cập nhật thời trang",
+    parentId: "10",
+    type: "news",
+  },
+  {
+    id: "12",
+    name: "Tin tức công nghệ",
+    description: "Tin công nghệ mới nhất",
+    parentId: "10",
+    type: "news",
+  },
 ];
 
 const getChildren = (categories: Category[], parentId: string | null) =>
@@ -57,7 +117,10 @@ function CategoryTree({
     return (
       <React.Fragment key={cat.id}>
         <tr>
-          <td className="py-2 font-medium" style={{ paddingLeft: `${level * 24 + 8}px` }}>
+          <td
+            className="py-2 font-medium"
+            style={{ paddingLeft: `${level * 24 + 8}px` }}
+          >
             <div className="flex items-center gap-2">
               {isExpandable ? (
                 <button
@@ -72,11 +135,11 @@ function CategoryTree({
                   tabIndex={-1}
                   type="button"
                 >
-                  {isExpanded ? (
+                  {/* {isExpanded ? (
                     <FaChevronDown size={13} />
                   ) : (
                     <FaChevronRight size={13} />
-                  )}
+                  )} */}
                 </button>
               ) : level > 0 ? (
                 <span style={{ width: 20, display: "inline-block" }} />
@@ -85,11 +148,13 @@ function CategoryTree({
             </div>
           </td>
           <td className="py-2">{cat.description}</td>
-          <td className="py-2">{parentName || getParentName(categories, cat.parentId)}</td>
+          <td className="py-2">
+            {parentName || getParentName(categories, cat.parentId)}
+          </td>
           <td className="py-2 text-center relative">
             <button
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 setActionDropdown(actionDropdown === cat.id ? null : cat.id);
               }}
@@ -99,21 +164,31 @@ function CategoryTree({
             {actionDropdown === cat.id && (
               <div
                 className="absolute right-0 top-9 z-50 min-w-[100px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-t-lg"
-                  onClick={() => { setActionDropdown(null); alert("Chức năng sửa (demo)"); }}
-                >Sửa</button>
+                  onClick={() => {
+                    setActionDropdown(null);
+                    alert("Chức năng sửa (demo)");
+                  }}
+                >
+                  Sửa
+                </button>
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
-                  onClick={() => { setActionDropdown(null); alert("Chức năng xoá (demo)"); }}
-                >Xoá</button>
+                  onClick={() => {
+                    setActionDropdown(null);
+                    alert("Chức năng xoá (demo)");
+                  }}
+                >
+                  Xoá
+                </button>
               </div>
             )}
           </td>
         </tr>
-        {isExpanded &&
+        {isExpanded && (
           <CategoryTree
             categories={categories}
             parentId={cat.id}
@@ -124,15 +199,18 @@ function CategoryTree({
             actionDropdown={actionDropdown}
             parentName={cat.name}
           />
-        }
+        )}
       </React.Fragment>
     );
   });
 }
 
-function getParentName(categories: Category[], parentId: string | null): string {
+function getParentName(
+  categories: Category[],
+  parentId: string | null
+): string {
   if (!parentId) return "";
-  const parent = categories.find(c => c.id === parentId);
+  const parent = categories.find((c) => c.id === parentId);
   return parent?.name || "";
 }
 
@@ -164,11 +242,20 @@ export default function CategoryContent() {
               className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
               placeholder="Tìm kiếm..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none">
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none"
+            >
               <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
-              <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M16 16L13.5 13.5"
+                stroke="#8C94A5"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
           {/* Nút thêm danh mục */}
@@ -184,11 +271,29 @@ export default function CategoryContent() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-base">
             <thead>
-              <tr className="border-b border-[#F1F1F1] text-[#878B93] font-semibold" style={{ background: "#F8FAFC" }}>
-                <th className="py-3 text-left font-semibold" style={{ width: 320 }}>Tên danh mục</th>
+              <tr
+                className="border-b border-[#F1F1F1] text-[#878B93] font-semibold"
+                style={{ background: "#F8FAFC" }}
+              >
+                <th
+                  className="py-3 text-left font-semibold"
+                  style={{ width: 320 }}
+                >
+                  Tên danh mục
+                </th>
                 <th className="py-3 text-left font-semibold">Mô tả danh mục</th>
-                <th className="py-3 text-left font-semibold" style={{ width: 170 }}>Danh mục cha</th>
-                <th className="py-3 text-center font-semibold" style={{ width: 60 }}>...</th>
+                <th
+                  className="py-3 text-left font-semibold"
+                  style={{ width: 170 }}
+                >
+                  Danh mục cha
+                </th>
+                <th
+                  className="py-3 text-center font-semibold"
+                  style={{ width: 60 }}
+                >
+                  ...
+                </th>
               </tr>
             </thead>
             <tbody>

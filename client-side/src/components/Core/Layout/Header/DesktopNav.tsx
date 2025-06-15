@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const navLinks = [
+  { href: "/products?gender=Unisex", label: "Unisex" },
   { href: "/products?gender=Nam", label: "Nam" },
   { href: "/products?gender=Nữ", label: "Nữ" },
-  { href: "/products?discount=true", label: "Giảm giá" },
+  // { href: "/products?discount=true", label: "Giảm giá" },
   { href: "/posts", label: "Bài viết" },
 ];
 

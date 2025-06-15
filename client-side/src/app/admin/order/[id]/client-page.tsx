@@ -41,7 +41,14 @@ export default function OrderDetailClientPage({ id }: { id: string }) {
   return (
     <AdminLayout pageTitle={`Đơn hàng #${id}`} pageSubtitle="Chi tiết đơn hàng">
       {loading ? (
-        <div className="text-center text-lg">Đang tải...</div>
+        <div className="sk-chase">
+          <div className="sk-chase-dot"></div>
+          <div className="sk-chase-dot"></div>
+          <div className="sk-chase-dot"></div>
+          <div className="sk-chase-dot"></div>
+          <div className="sk-chase-dot"></div>
+          <div className="sk-chase-dot"></div>
+        </div>
       ) : error ? (
         <div className="text-center text-lg text-red-500">{error}</div>
       ) : (

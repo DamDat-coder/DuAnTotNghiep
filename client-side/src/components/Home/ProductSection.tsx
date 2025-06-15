@@ -9,7 +9,7 @@ import "swiper/css";
 import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
-
+import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
 interface ProductSectionProps {
   products: { data: IProduct[] } | IProduct[];
   desktopSlidesPerView?: number;
@@ -163,145 +163,147 @@ export default function ProductSection({
   };
 
   return (
-    <div>
-      <h1 className="text-[1.5rem] pb-6 font-heading font-bold">
-        Mới Nhất & Tốt Nhất
-      </h1>
+    <FadeInWhenVisible>
+      <div>
+        <h1 className="text-[1.5rem] pb-6 font-heading font-bold">
+          Mới Nhất & Tốt Nhất
+        </h1>
 
-      {/* Mobile: Swiper */}
-      <div className="block tablet:hidden overflow-x-hidden">
-        {isClient && (
-          <Swiper
-            spaceBetween={10}
-            slidesPerView={1.5}
-            loop={false}
-            grabCursor={true}
-            className="select-none"
-          >
-            {displayedProducts.map((product, index) => (
-              <SwiperSlide
-                key={product.id || `product-${index}`}
-                className="!w-[16.8125rem]"
-              >
-                {renderProductCard(product)}
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        )}
-        {!isClient && (
-          <div className="flex gap-2 overflow-x-auto">
-            {displayedProducts.map((product, index) => (
-              <div
-                key={product.id || `product-${index}`}
-                className="w-[16.8125rem] flex-shrink-0"
-              >
-                {renderProductCard(product)}
-              </div>
-            ))}
-          </div>
+        {/* Mobile: Swiper */}
+        <div className="block tablet:hidden overflow-x-hidden">
+          {isClient && (
+            <Swiper
+              spaceBetween={10}
+              slidesPerView={1.5}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide
+                  key={product.id || `product-${index}`}
+                  className="!w-[16.8125rem]"
+                >
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
+          {!isClient && (
+            <div className="flex gap-2 overflow-x-auto">
+              {displayedProducts.map((product, index) => (
+                <div
+                  key={product.id || `product-${index}`}
+                  className="w-[16.8125rem] flex-shrink-0"
+                >
+                  {renderProductCard(product)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Tablet: Swiper */}
+        <div className="hidden tablet:block laptop:hidden desktop:hidden">
+          {isClient && (
+            <Swiper
+              spaceBetween={20}
+              slidesPerView={tabletSlidesPerView}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide key={product.id || `product-${index}`}>
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
+          {!isClient && (
+            <div className="grid grid-cols-2 gap-4">
+              {displayedProducts.map((product, index) => (
+                <div key={product.id || `product-${index}`}>
+                  {renderProductCard(product)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: Swiper */}
+        <div className="hidden laptop:hidden desktop:block">
+          {isClient && (
+            <Swiper
+              spaceBetween={20}
+              slidesPerView={desktopSlidesPerView}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide key={product.id || `product-${index}`}>
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
+          {!isClient && (
+            <div className="grid grid-cols-4 gap-4">
+              {displayedProducts.map((product, index) => (
+                <div key={product.id || `product-${index}`}>
+                  {renderProductCard(product)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Laptop: Swiper */}
+        <div className="hidden desktop:hidden laptop:block">
+          {isClient && (
+            <Swiper
+              spaceBetween={20}
+              slidesPerView={laptopSlidesPerView}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide
+                  key={product.id || `product-${index}`}
+                  className="w-100%"
+                >
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
+          {!isClient && (
+            <div className="grid grid-cols-4 gap-4">
+              {displayedProducts.map((product, index) => (
+                <div key={product.id || `product-${index}`}>
+                  {renderProductCard(product)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {showLoadMore && hasMore && <div ref={observerRef} className="h-10" />}
+
+        {/* Một BuyNowPopup duy nhất */}
+        {selectedProduct && (
+          <BuyNowPopup
+            product={selectedProduct}
+            isOpen={isPopupOpen}
+            onClose={() => {
+              setIsPopupOpen(false);
+              setSelectedProduct(null);
+            }}
+          />
         )}
       </div>
-
-      {/* Tablet: Swiper */}
-      <div className="hidden tablet:block laptop:hidden desktop:hidden">
-        {isClient && (
-          <Swiper
-            spaceBetween={20}
-            slidesPerView={tabletSlidesPerView}
-            loop={false}
-            grabCursor={true}
-            className="select-none"
-          >
-            {displayedProducts.map((product, index) => (
-              <SwiperSlide key={product.id || `product-${index}`}>
-                {renderProductCard(product)}
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        )}
-        {!isClient && (
-          <div className="grid grid-cols-2 gap-4">
-            {displayedProducts.map((product, index) => (
-              <div key={product.id || `product-${index}`}>
-                {renderProductCard(product)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Desktop: Swiper */}
-      <div className="hidden laptop:hidden desktop:block">
-        {isClient && (
-          <Swiper
-            spaceBetween={20}
-            slidesPerView={desktopSlidesPerView}
-            loop={false}
-            grabCursor={true}
-            className="select-none"
-          >
-            {displayedProducts.map((product, index) => (
-              <SwiperSlide key={product.id || `product-${index}`}>
-                {renderProductCard(product)}
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        )}
-        {!isClient && (
-          <div className="grid grid-cols-4 gap-4">
-            {displayedProducts.map((product, index) => (
-              <div key={product.id || `product-${index}`}>
-                {renderProductCard(product)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Laptop: Swiper */}
-      <div className="hidden desktop:hidden laptop:block">
-        {isClient && (
-          <Swiper
-            spaceBetween={20}
-            slidesPerView={laptopSlidesPerView}
-            loop={false}
-            grabCursor={true}
-            className="select-none"
-          >
-            {displayedProducts.map((product, index) => (
-              <SwiperSlide
-                key={product.id || `product-${index}`}
-                className="w-100%"
-              >
-                {renderProductCard(product)}
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        )}
-        {!isClient && (
-          <div className="grid grid-cols-4 gap-4">
-            {displayedProducts.map((product, index) => (
-              <div key={product.id || `product-${index}`}>
-                {renderProductCard(product)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {showLoadMore && hasMore && <div ref={observerRef} className="h-10" />}
-
-      {/* Một BuyNowPopup duy nhất */}
-      {selectedProduct && (
-        <BuyNowPopup
-          product={selectedProduct}
-          isOpen={isPopupOpen}
-          onClose={() => {
-            setIsPopupOpen(false);
-            setSelectedProduct(null);
-          }}
-        />
-      )}
-    </div>
+    </FadeInWhenVisible>
   );
 }

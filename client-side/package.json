@@ -32,7 +32,8 @@
     "recharts": "^2.15.3",
     "swiper": "^11.2.5",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tinymce": "^7.9.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

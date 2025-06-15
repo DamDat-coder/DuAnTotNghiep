@@ -109,7 +109,6 @@ const productSchema = new mongoose_1.Schema({
     },
 }, { versionKey: false });
 productSchema.index({ name: 1, 'category._id': 1 });
-productSchema.index({ slug: 1 }, { unique: true });
-productSchema.index({ salesCount: -1 }); // Index for sorting by sales count (descending)
+productSchema.index({ salesCount: -1 });
 const ProductModel = mongoose_1.default.model('Product', productSchema);
 exports.default = ProductModel;

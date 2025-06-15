@@ -1,46 +1,50 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { v2 as cloudinary } from 'cloudinary';
 import categoryModel, { ICategory } from '../models/categoryModel';
 import newsModel from '../models/newsModel';
 import productModel from '../models/productModel';
 
-// Lấy tất cả danh mục
+// Get all categories
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
     const parentId = req.query.parentId as string | null;
 
     const query = parentId ? { parentId } : { parentId: null };
     const categories = await categoryModel
       .find(query)
       .sort({ createdAt: -1 })
-      .populate('parentId', 'name')
+      .populate('parentId', 'name slug')
       .lean();
+
+    const total = await categoryModel.countDocuments(query);
 
     res.status(200).json({
       status: 'success',
       data: categories,
+      total,
+      page,
     });
   } catch (error: any) {
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
-// Lấy chi tiết danh mục
+// Get category by ID
 export const getCategoryById = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      res.status(400).json({ status: 'error', message: 'ID không hợp lệ' });
+      res.status(400).json({ status: 'error', message: 'Invalid category ID' });
       return;
     }
 
     const category = await categoryModel
       .findById(req.params.id)
-      .populate('parentId', 'name')
+      .populate('parentId', 'name slug')
       .lean();
 
     if (!category) {
-      res.status(404).json({ status: 'error', message: 'Không tìm thấy danh mục' });
+      res.status(404).json({ status: 'error', message: 'Category not found' });
       return;
     }
 
@@ -50,121 +54,94 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
   }
 };
 
-// Tạo danh mục mới
+// Create a new category
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('req.body:', req.body);
+    const { name, slug, parentId, image } = req.body;
 
-    const { name, description, parentId } = req.body;
-
-    if (!name) {
-      console.error('Missing name field');
-      res.status(400).json({
-        status: 'error',
-        message: 'Tên danh mục là bắt buộc',
-      });
+    if (!name || !slug) {
+      res.status(400).json({ status: 'error', message: 'Name and slug are required' });
       return;
     }
 
     if (name.length > 100) {
-      console.error('Name too long:', name);
-      res.status(400).json({
-        status: 'error',
-        message: 'Tên danh mục tối đa 100 ký tự',
-      });
+      res.status(400).json({ status: 'error', message: 'Category name must not exceed 100 characters' });
       return;
     }
 
     if (parentId && !mongoose.Types.ObjectId.isValid(parentId)) {
-      console.error('Invalid parentId:', parentId);
-      res.status(400).json({ status: 'error', message: 'parentId không hợp lệ' });
+      res.status(400).json({ status: 'error', message: 'Invalid parentId' });
       return;
     }
 
     if (parentId) {
       const parentExists = await categoryModel.findById(parentId).lean();
       if (!parentExists) {
-        console.error('Parent category not found:', parentId);
-        res.status(404).json({ status: 'error', message: 'Danh mục cha không tồn tại' });
+        res.status(404).json({ status: 'error', message: 'Parent category not found' });
         return;
       }
     }
 
-    const imageUrl = (req as Request & { cloudinaryUrl?: string }).cloudinaryUrl || null;
-    const newCategory = new categoryModel({ name, description, parentId: parentId || null, image: imageUrl });
+    const newCategory = new categoryModel({ name, slug, parentId: parentId || null, image: image || null });
     const savedCategory = await newCategory.save();
 
     res.status(201).json({
       status: 'success',
-      message: 'Tạo danh mục thành công',
+      message: 'Category created successfully',
       data: savedCategory,
     });
   } catch (error: any) {
-    console.error('Create category error:', error);
     if (error.code === 11000) {
-      res.status(409).json({ status: 'error', message: 'Tên danh mục đã tồn tại' });
+      res.status(409).json({ status: 'error', message: 'Category name or slug already exists' });
       return;
     }
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
-// Cập nhật danh mục
+// Update a category
 export const updateCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('req.body:', req.body);
-
     const id = req.params.id;
-    const { name, description, parentId } = req.body;
+    const { name, slug, parentId, image } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.error('Invalid category ID:', id);
-      res.status(400).json({ status: 'error', message: 'ID không hợp lệ' });
+      res.status(400).json({ status: 'error', message: 'Invalid category ID' });
       return;
     }
 
     if (name && name.length > 100) {
-      console.error('Name too long:', name);
-      res.status(400).json({
-        status: 'error',
-        message: 'Tên danh mục tối đa 100 ký tự',
-      });
+      res.status(400).json({ status: 'error', message: 'Category name must not exceed 100 characters' });
       return;
     }
 
     if (parentId && !mongoose.Types.ObjectId.isValid(parentId)) {
-      console.error('Invalid parentId:', parentId);
-      res.status(400).json({ status: 'error', message: 'parentId không hợp lệ' });
+      res.status(400).json({ status: 'error', message: 'Invalid parentId' });
       return;
     }
 
     if (parentId) {
       const parentExists = await categoryModel.findById(parentId).lean();
       if (!parentExists) {
-        console.error('Parent category not found:', parentId);
-        res.status(404).json({ status: 'error', message: 'Danh mục cha không tồn tại' });
+        res.status(404).json({ status: 'error', message: 'Parent category not found' });
         return;
       }
       if (parentId === id) {
-        console.error('Category cannot be its own parent:', id);
-        res.status(400).json({ status: 'error', message: 'Danh mục không thể là cha của chính nó' });
+        res.status(400).json({ status: 'error', message: 'Category cannot be its own parent' });
         return;
       }
       const hasCycle = await checkCycle(id, parentId);
       if (hasCycle) {
-        console.error('Cycle detected in category hierarchy');
-        res.status(400).json({ status: 'error', message: 'Phát hiện vòng lặp trong phân cấp' });
+        res.status(400).json({ status: 'error', message: 'Detected cycle in category hierarchy' });
         return;
       }
     }
 
-    const updateFields: any = { updatedAt: Date.now() };
+    const updateFields: Partial<ICategory> = { updatedAt: new Date() };
     if (name !== undefined) updateFields.name = name;
-    if (description !== undefined) updateFields.description = description;
+    if (slug !== undefined) updateFields.slug = slug;
     if (parentId !== undefined) updateFields.parentId = parentId || null;
-    const cloudinaryUrl = (req as Request & { cloudinaryUrl?: string }).cloudinaryUrl;
-    if (cloudinaryUrl) updateFields.image = cloudinaryUrl;
-
+    if (image !== undefined) updateFields.image = image || null;
 
     const updatedCategory = await categoryModel.findByIdAndUpdate(
       id,
@@ -173,39 +150,37 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     );
 
     if (!updatedCategory) {
-      console.error('Category not found:', id);
-      res.status(404).json({ status: 'error', message: 'Không tìm thấy danh mục' });
+      res.status(404).json({ status: 'error', message: 'Category not found' });
       return;
     }
 
     res.status(200).json({
       status: 'success',
-      message: 'Cập nhật danh mục thành công',
+      message: 'Category updated successfully',
       data: updatedCategory,
     });
   } catch (error: any) {
-    console.error('Update category error:', error);
     if (error.code === 11000) {
-      res.status(409).json({ status: 'error', message: 'Tên danh mục đã tồn tại' });
+      res.status(409).json({ status: 'error', message: 'Category name or slug already exists' });
       return;
     }
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
-// Xóa danh mục
+// Delete a category
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ status: 'error', message: 'ID không hợp lệ' });
+      res.status(400).json({ status: 'error', message: 'Invalid category ID' });
       return;
     }
 
     const hasChildren = await categoryModel.findOne({ parentId: id }).lean();
     if (hasChildren) {
-      res.status(400).json({ status: 'error', message: 'Không thể xóa danh mục có danh mục con' });
+      res.status(400).json({ status: 'error', message: 'Cannot delete category with subcategories' });
       return;
     }
 
@@ -215,32 +190,24 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     if (newsCount > 0 || productCount > 0) {
       res.status(400).json({
         status: 'error',
-        message: `Danh mục đang được sử dụng (${newsCount} tin tức, ${productCount} sản phẩm)`,
+        message: `Category is in use (${newsCount} news, ${productCount} products)`,
       });
       return;
     }
 
     const deletedCategory = await categoryModel.findByIdAndDelete(id);
     if (!deletedCategory) {
-      res.status(404).json({ status: 'error', message: 'Không tìm thấy danh mục' });
+      res.status(404).json({ status: 'error', message: 'Category not found' });
       return;
     }
 
-    // Xóa ảnh trên Cloudinary nếu có
-    if (deletedCategory.image) {
-      const publicId = deletedCategory.image.split('/').pop()?.split('.')[0];
-      if (publicId) {
-        await cloudinary.uploader.destroy(`categories/${publicId}`);
-      }
-    }
-
-    res.status(200).json({ status: 'success', message: 'Xóa danh mục thành công' });
+    res.status(200).json({ status: 'success', message: 'Category deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
-// Hàm kiểm tra vòng lặp trong phân cấp
+// Check for cycles in category hierarchy
 const checkCycle = async (categoryId: string, parentId: string): Promise<boolean> => {
   let currentId: string | undefined | null = parentId;
   while (currentId) {

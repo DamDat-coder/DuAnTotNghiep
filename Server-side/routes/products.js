@@ -22,4 +22,4 @@ router.get('/slug/:slug', productController_1.getProductBySlug);
 router.post("/", verifyToken_1.default, verifyAdmin_1.default, cloudinaryUpload_1.default, productController_1.createProduct);
 router.patch("/:id", verifyToken_1.default, verifyAdmin_1.default, cloudinaryUpload_1.default, productController_1.updateProduct);
 router.delete("/:id", verifyToken_1.default, verifyAdmin_1.default, productController_1.deleteProduct);
-exports.default = router;
+module.exports = router;

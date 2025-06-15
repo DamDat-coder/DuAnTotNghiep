@@ -18,6 +18,7 @@ import { IProduct } from "@/types/product";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import NotificationIcon from "./Notification";
+import { debounce } from "lodash";
 
 interface HeaderProps {
   title: string;
@@ -34,50 +35,60 @@ export default function Header({ title }: HeaderProps) {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const inputRef = useRef<HTMLDivElement>(null); // Ref cho vùng input
-  const menuRef = useRef<HTMLDivElement>(null); // Ref cho panel gợi ý/kết quả
+  const inputRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const lookupButtonRef = useRef<HTMLButtonElement>(null); // Ref cho nút tìm kiếm
 
   // Xác định client-side rendering
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Lấy danh sách sản phẩm từ API khi component mount
+  // Lấy danh sách sản phẩm từ API
   useEffect(() => {
     const loadProducts = async () => {
-      setIsLoading(true);
-      const data = await fetchProducts();
-      setProducts(data);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const data = await fetchProducts({ limit: 50 }); // Giới hạn số sản phẩm để tối ưu
+        setProducts(data.products || []);
+      } catch (error) {
+        console.error("Lỗi khi tải sản phẩm:", error);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadProducts();
   }, []);
 
-  // Lọc sản phẩm khi searchTerm thay đổi
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
+  // Debounce tìm kiếm để cải thiện hiệu suất
+  const debouncedSearch = debounce((term: string) => {
+    if (term.trim() === "") {
       setFilteredProducts([]);
     } else {
       const filtered = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        product.name.toLowerCase().includes(term.toLowerCase())
       );
       setFilteredProducts(filtered);
     }
+  }, 300);
+
+  // Lọc sản phẩm khi searchTerm thay đổi
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    return () => debouncedSearch.cancel(); // Hủy debounce khi unmount
   }, [searchTerm, products]);
 
-  // Đóng menu khi nhấn ra ngoài
+  // Đóng menu tìm kiếm khi nhấn ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
+      const target = event.target as Node;
       if (
         !inputRef.current?.contains(target) &&
         !menuRef.current?.contains(target) &&
-        !target.closest('button[aria-label="Open Lookup"]')
+        !lookupButtonRef.current?.contains(target)
       ) {
-        console.log("Closing lookup, target:", target);
         setIsLookupOpen(false);
-      } else {
-        console.log("Click inside, target:", target);
       }
     };
     if (isLookupOpen) {
@@ -88,27 +99,25 @@ export default function Header({ title }: HeaderProps) {
     };
   }, [isLookupOpen, setIsLookupOpen]);
 
-  // Debug trạng thái isLookupOpen
+  // Debug trạng thái tìm kiếm
   useEffect(() => {
     if (isLookupOpen) {
-      console.log("Lookup is active");
-      console.log("Search term:", searchTerm);
-      console.log("inputRef:", inputRef.current);
-      console.log("menuRef:", menuRef.current);
+      console.log("Lookup is active", { searchTerm, inputRef: inputRef.current, menuRef: menuRef.current });
     }
   }, [isLookupOpen, searchTerm]);
 
   const suggestions = products.map((product) => product.name).slice(0, 3);
   const handleSuggestionClick = (suggestion: string) => {
     setSearchTerm(suggestion);
+    setIsLookupOpen(false); // Đóng menu sau khi chọn gợi ý
   };
 
   return (
     <>
-      <nav className="bg-white text-black relative">
+      <nav className="bg-white text-black relative" aria-label="Main navigation">
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center" aria-label="Trang chủ">
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -127,17 +136,13 @@ export default function Header({ title }: HeaderProps) {
                 <div className="w-6 h-6 relative">
                   {isLookupOpen ? (
                     <div className="absolute -top-2 right-0 w-[15.625rem] z-[999] shadow-lg rounded-full">
-                      <div className=" bg-white z-[999] shadow-lg rounded-lg">
+                      <div className="bg-white z-[999] shadow-lg rounded-lg">
                         <motion.div
                           ref={inputRef}
                           initial={{ width: "24px", opacity: 0, x: 226 }}
                           animate={{ width: "15.625rem", opacity: 1, x: 0 }}
                           exit={{ width: "24px", opacity: 0, x: 226 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 100,
-                            damping: 20,
-                          }}
+                          transition={{ type: "spring", stiffness: 100, damping: 20 }}
                         >
                           <SearchInput
                             searchTerm={searchTerm}
@@ -146,22 +151,17 @@ export default function Header({ title }: HeaderProps) {
                             isMobile={false}
                           />
                         </motion.div>
-                        {/* Panel gợi ý và kết quả tìm kiếm */}
                         <motion.div
                           ref={menuRef}
                           className="text-black w-full max-h-96 overflow-hidden flex flex-col z-[40]"
                           initial={{ y: "-8%", opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           exit={{ y: "-8%", opacity: 0 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 100,
-                            damping: 20,
-                          }}
+                          transition={{ type: "spring", stiffness: 100, damping: 20 }}
                         >
                           <div className="flex-1 overflow-y-auto px-2 py-4">
                             {isLoading ? (
-                              <div className="sk-chase">
+                              <div className="sk-chase" role="status" aria-label="Đang tải">
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
@@ -169,21 +169,15 @@ export default function Header({ title }: HeaderProps) {
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                               </div>
+                            ) : filteredProducts.length === 0 && searchTerm.trim() !== "" ? (
+                              <p className="text-center text-gray-500">Không tìm thấy sản phẩm</p>
                             ) : (
                               <div className="flex flex-col gap-6">
                                 {searchTerm.trim() === "" ? (
                                   <SearchSuggestions
                                     suggestions={suggestions}
-                                    handleSuggestionClick={
-                                      handleSuggestionClick
-                                    }
-                                    onClick={function (
-                                      suggestion: string
-                                    ): void {
-                                      throw new Error(
-                                        "Function not implemented."
-                                      );
-                                    }}
+                                    handleSuggestionClick={handleSuggestionClick}
+                                    onClick={handleSuggestionClick} // Sửa placeholder lỗi
                                   />
                                 ) : (
                                   <SearchResults
@@ -202,15 +196,17 @@ export default function Header({ title }: HeaderProps) {
                   ) : (
                     <button
                       type="button"
+                      ref={lookupButtonRef}
                       className="text-gray-400 hover:text-black absolute top-0 right-0 w-6 h-6"
                       onClick={() => setIsLookupOpen(true)}
-                      aria-label="Open Lookup"
+                      aria-label="Mở tìm kiếm"
+                      aria-expanded={isLookupOpen}
                     >
                       <Image
                         src="/nav/nav_lookup.svg"
-                        alt="Lookup"
-                        width={120}
-                        height={40}
+                        alt="Tìm kiếm"
+                        width={24}
+                        height={24}
                         className="h-6 w-auto"
                       />
                     </button>
@@ -219,53 +215,57 @@ export default function Header({ title }: HeaderProps) {
                 <Link
                   href="/profile?tab=favorite"
                   className="text-gray-400 hover:text-black hidden tablet:hidden laptop:block desktop:block"
+                  aria-label="Danh sách yêu thích"
                 >
                   <Image
                     src="/nav/nav_like_desktop.svg"
-                    alt="Like"
-                    width={120}
-                    height={40}
+                    alt="Yêu thích"
+                    width={24}
+                    height={24}
                     className="h-[1.05rem] w-auto"
                   />
                 </Link>
                 <NotificationIcon />
-                <a href="/cart" className="text-gray-400 hover:text-black">
+                <Link href="/cart" className="text-gray-400 hover:text-black" aria-label="Giỏ hàng">
                   <Image
                     src="/nav/nav_cart.svg"
-                    alt="Cart"
-                    width={120}
-                    height={40}
+                    alt="Giỏ hàng"
+                    width={24}
+                    height={24}
                     className="h-6 w-auto"
                   />
-                </a>
+                </Link>
                 {isClient &&
                   (user ? (
                     <UserDropdown />
                   ) : (
                     <button
                       type="button"
-                      className="hidden tablet:hidden laptop:block desktop:block text-gray-400 hover:text-black "
+                      className="hidden tablet:hidden laptop:block desktop:block text-gray-400 hover:text-black"
                       onClick={() => setIsLoginOpen(true)}
+                      aria-label="Đăng nhập"
                     >
                       <Image
                         src="/nav/nav_user.svg"
-                        alt="User"
-                        width={120}
-                        height={40}
+                        alt="Người dùng"
+                        width={24}
+                        height={24}
                         className="h-6 w-auto"
                       />
                     </button>
                   ))}
                 <button
                   type="button"
-                  className="laptop:hidden desktop:hidden text-gray-400 hover:text-black "
+                  className="laptop:hidden desktop:hidden text-gray-400 hover:text-black"
                   onClick={() => setIsMenuOpen(true)}
+                  aria-label="Mở menu di động"
+                  aria-expanded={isMenuOpen}
                 >
                   <Image
                     src="/nav/nav_bugger.svg"
                     alt="Menu"
-                    width={120}
-                    height={40}
+                    width={24}
+                    height={24}
                     className="h-6 w-auto"
                   />
                 </button>
@@ -275,17 +275,22 @@ export default function Header({ title }: HeaderProps) {
         </div>
       </nav>
 
-      {/* Render các popup ở cấp cao nhất */}
       <MobileMenu isOpen={isMenuOpen} setIsOpen={setIsMenuOpen} />
       <LoginPopup
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
-        onOpenRegister={() => setIsRegisterOpen(true)}
+        onOpenRegister={() => {
+          setIsLoginOpen(false);
+          setIsRegisterOpen(true);
+        }}
       />
       <RegisterPopup
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
-        onOpenLogin={() => setIsLoginOpen(true)}
+        onOpenLogin={() => {
+          setIsRegisterOpen(false);
+          setIsLoginOpen(true);
+        }}
       />
     </>
   );

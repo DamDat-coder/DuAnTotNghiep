@@ -28,4 +28,4 @@ router.post("/", verifyToken, verifyAdmin, uploadToCloudinary, createProduct);
 router.patch("/:id", verifyToken, verifyAdmin, uploadToCloudinary, updateProduct);
 router.delete("/:id", verifyToken, verifyAdmin, deleteProduct);
 
-export default router;
+module.exports = router;

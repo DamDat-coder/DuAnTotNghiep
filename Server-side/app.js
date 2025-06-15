@@ -6,7 +6,7 @@ const path = require("path");
 const helmet = require("helmet");
 const cors = require("cors");
 const multer = require("multer");
-
+// This change is used to allow PR reset main
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const categoriesRouter = require("./routes/categories");

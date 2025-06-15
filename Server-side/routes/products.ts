@@ -10,7 +10,7 @@ import {
   getProductBySlug
 } from "../controllers/productController";
 import verifyToken from "../middlewares/verifyToken";
-import { upload } from "../utils/fileUpload";
+import uploadToCloudinary from "../middlewares/cloudinaryUpload";
 import verifyAdmin from "../middlewares/verifyAdmin";
 
 const router = express.Router();
@@ -24,8 +24,8 @@ router.use(rateLimit({
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 router.get('/slug/:slug', getProductBySlug);
-router.post("/", verifyToken, verifyAdmin, upload.array("image"), createProduct);
-router.patch("/:id", verifyToken, verifyAdmin, upload.array("image"), updateProduct);
+router.post("/", verifyToken, verifyAdmin, uploadToCloudinary, createProduct);
+router.patch("/:id", verifyToken, verifyAdmin, uploadToCloudinary, updateProduct);
 router.delete("/:id", verifyToken, verifyAdmin, deleteProduct);
 
 export default router;

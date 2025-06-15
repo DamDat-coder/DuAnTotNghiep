@@ -15,16 +15,16 @@ const connectDB = async (): Promise<void> => {
 
     console.log(`✅ MongoDB connected`);
   } catch (err: unknown) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("MongoDB connection error:", err);
     process.exit(1); 
   }
 
   mongoose.connection.on("disconnected", () => {
-    console.warn("⚠️ MongoDB disconnected!");
+    console.warn("MongoDB disconnected!");
   });
 
   mongoose.connection.on("reconnected", () => {
-    console.log("🔁 MongoDB reconnected!");
+    console.log("MongoDB reconnected!");
   });
 };
 

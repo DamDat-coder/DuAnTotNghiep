@@ -14,32 +14,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getCategoryById = exports.getAllCategories = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
+const cloudinary_1 = require("cloudinary");
 const categoryModel_1 = __importDefault(require("../models/categoryModel"));
 const newsModel_1 = __importDefault(require("../models/newsModel"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 // Lấy tất cả danh mục
 const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const page = Math.max(parseInt(req.query.page) || 1, 1);
-        // const limit = Math.max(parseInt(req.query.limit as string) || 10, 1);
-        // const skip = (page - 1) * limit;
         const parentId = req.query.parentId;
         const query = parentId ? { parentId } : { parentId: null };
         const categories = yield categoryModel_1.default
             .find(query)
-            // .skip(skip)
-            // .limit(limit)
             .sort({ createdAt: -1 })
             .populate('parentId', 'name')
             .lean();
-        const total = yield categoryModel_1.default.countDocuments(query);
         res.status(200).json({
             status: 'success',
             data: categories,
-            total,
-            page,
-            // limit,
-            // totalPages: Math.ceil(total / limit),
         });
     }
     catch (error) {
@@ -103,7 +94,8 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 return;
             }
         }
-        const newCategory = new categoryModel_1.default({ name, description, parentId: parentId || null });
+        const imageUrl = req.cloudinaryUrl || null;
+        const newCategory = new categoryModel_1.default({ name, description, parentId: parentId || null, image: imageUrl });
         const savedCategory = yield newCategory.save();
         res.status(201).json({
             status: 'success',
@@ -171,6 +163,9 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             updateFields.description = description;
         if (parentId !== undefined)
             updateFields.parentId = parentId || null;
+        const cloudinaryUrl = req.cloudinaryUrl;
+        if (cloudinaryUrl)
+            updateFields.image = cloudinaryUrl;
         const updatedCategory = yield categoryModel_1.default.findByIdAndUpdate(id, updateFields, { new: true, runValidators: true });
         if (!updatedCategory) {
             console.error('Category not found:', id);
@@ -195,6 +190,7 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.updateCategory = updateCategory;
 // Xóa danh mục
 const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const id = req.params.id;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
@@ -219,6 +215,13 @@ const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (!deletedCategory) {
             res.status(404).json({ status: 'error', message: 'Không tìm thấy danh mục' });
             return;
+        }
+        // Xóa ảnh trên Cloudinary nếu có
+        if (deletedCategory.image) {
+            const publicId = (_a = deletedCategory.image.split('/').pop()) === null || _a === void 0 ? void 0 : _a.split('.')[0];
+            if (publicId) {
+                yield cloudinary_1.v2.uploader.destroy(`categories/${publicId}`);
+            }
         }
         res.status(200).json({ status: 'success', message: 'Xóa danh mục thành công' });
     }

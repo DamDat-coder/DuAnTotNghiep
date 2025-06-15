@@ -10,7 +10,7 @@ import RefreshTokenModel from "../models/refreshTokenModel";
 // Load environment variables
 dotenv.config();
 
-// Định nghĩa kiểu cho AuthRequest để thêm userId
+// Định nghĩa kiểu cho AuthRequest để thêm userId 
 interface AuthRequest extends Request {
   userId?: string;
 }

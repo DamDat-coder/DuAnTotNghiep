@@ -34,7 +34,10 @@ export default function UserDropdown() {
       onMouseLeave={() => setIsDropdownOpen(false)}
     >
       <div className="flex items-center space-x-2 cursor-pointer ">
-        <span className="text-gray-700">Hi, {user.name}</span>
+        <span className="text-gray-700 w-24 overflow-hidden text-ellipsis whitespace-nowrap">
+          Hi, {user.name?.split(" ").pop()}
+        </span>
+
         <Image
           src="/nav/nav_user.svg"
           alt="Logo"

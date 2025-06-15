@@ -121,7 +121,6 @@ export default function Header({ title }: HeaderProps) {
             </Link>
 
             <DesktopNav />
-
             <div className="flex items-center gap-3">
               {/* Desktop Actions */}
               <div className="flex items-center gap-3 relative">
@@ -162,9 +161,14 @@ export default function Header({ title }: HeaderProps) {
                         >
                           <div className="flex-1 overflow-y-auto px-2 py-4">
                             {isLoading ? (
-                              <p className="text-base text-gray-500">
-                                Đang tải...
-                              </p>
+                              <div className="sk-chase">
+                                <div className="sk-chase-dot"></div>
+                                <div className="sk-chase-dot"></div>
+                                <div className="sk-chase-dot"></div>
+                                <div className="sk-chase-dot"></div>
+                                <div className="sk-chase-dot"></div>
+                                <div className="sk-chase-dot"></div>
+                              </div>
                             ) : (
                               <div className="flex flex-col gap-6">
                                 {searchTerm.trim() === "" ? (

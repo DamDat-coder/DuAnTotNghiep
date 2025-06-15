@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 interface PaginationProps {
   currentPage: number;
@@ -35,18 +36,24 @@ export const Pagination: React.FC<PaginationProps> = ({
         className="w-12 h-12 rounded-[12px] border border-[#E6E8EC] bg-white flex items-center justify-center text-xl font-semibold hover:bg-[#f2f7fb] transition disabled:opacity-40"
         onClick={() => onPageChange(currentPage - 1)}
       >
-        {"<"}
+        <Image
+          src="/admin/pagination/chevron-left.svg"
+          width={24}
+          height={24}
+          alt="Left arrow"
+        />
       </button>
       {pages.map((p, idx) =>
         typeof p === "number" ? (
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`w-12 h-12 rounded-[12px] border border-[#E6E8EC] flex items-center justify-center text-xl font-semibold
-            ${currentPage === p
+            className={`w-12 h-12 rounded-[12px] border border-[#E6E8EC] flex items-center justify-center text-[18px] font-bold
+            ${
+              currentPage === p
                 ? "bg-[#F1F8FF] text-[#2563eb] border-[#9dc7ec]"
                 : "bg-white text-[#687385] hover:bg-[#f2f7fb]"
-              }`}
+            }`}
           >
             {p}
           </button>
@@ -64,7 +71,12 @@ export const Pagination: React.FC<PaginationProps> = ({
         className="w-12 h-12 rounded-[12px] border border-[#E6E8EC] bg-white flex items-center justify-center text-xl font-semibold hover:bg-[#f2f7fb] transition disabled:opacity-40"
         onClick={() => onPageChange(currentPage + 1)}
       >
-        {">"}
+        <Image
+          src="/admin/pagination/chevron-right.svg"
+          width={24}
+          height={24}
+          alt="Right arrow"
+        />
       </button>
     </div>
   );

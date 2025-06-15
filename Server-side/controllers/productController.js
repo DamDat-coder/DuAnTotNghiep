@@ -17,7 +17,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const categoryModel_1 = __importDefault(require("../models/categoryModel"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
-// Lấy tất cả sản phẩm admin
+// Lấy tất cả sản phẩm 
 const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, limit, sort, page, } = req.query;
@@ -86,7 +86,7 @@ exports.getAllProductsAdmin = getAllProductsAdmin;
 // Lấy tất cả sản phẩm (hỗ trợ phân trang, tìm kiếm, sắp xếp, và lọc theo nhiều tiêu chí)
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, idcate, sort, priceRange, color, size, is_active, } = req.query;
+        const { name, id_cate, sort, priceRange, color, size, is_active, } = req.query;
         // Xây dựng điều kiện tìm kiếm
         const query = {};
         // Kiểm tra sản phẩm
@@ -104,13 +104,27 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (name) {
             query.name = new RegExp(name, 'i');
         }
-        // Lọc theo danh mục
-        if (idcate) {
-            if (!mongoose_1.default.Types.ObjectId.isValid(idcate)) {
+        // Lọc theo danh mục (bao gồm danh mục cha và tất cả danh mục con)
+        if (id_cate) {
+            const categoryIdStr = String(id_cate);
+            if (!mongoose_1.default.Types.ObjectId.isValid(categoryIdStr)) {
                 res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
                 return;
             }
-            query['category._id'] = idcate;
+            // Lấy tất cả danh mục con của danh mục cha (bao gồm các cấp)
+            const categoryIds = [categoryIdStr];
+            const findChildCategories = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
+                const children = yield categoryModel_1.default
+                    .find({ parentid: new mongoose_1.default.Types.ObjectId(parentId) })
+                    .select('_id')
+                    .lean();
+                for (const child of children) {
+                    categoryIds.push(child._id.toString());
+                    yield findChildCategories(child._id.toString());
+                }
+            });
+            yield findChildCategories(id_cate);
+            query['category._id'] = { $in: categoryIds.map(id => new mongoose_1.default.Types.ObjectId(id)) };
         }
         // Lọc theo màu sắc
         if (color) {
@@ -166,6 +180,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             }
             options.sort = sortOptions[sort];
         }
+        // Lấy tất cả sản phẩm
         const products = yield productModel_1.default
             .find(query)
             .select('name slug category image variants is_active salesCount')

@@ -99,7 +99,8 @@ const productSchema: Schema<IProduct> = new Schema(
 );
 
 productSchema.index({ name: 1, 'category._id': 1 });
-productSchema.index({ salesCount: -1 });
+productSchema.index({ slug: 1 }, { unique: true });
+productSchema.index({ salesCount: -1 }); // Index for sorting by sales count (descending)
 
 const ProductModel: Model<IProduct> = mongoose.model<IProduct>('Product', productSchema);
 

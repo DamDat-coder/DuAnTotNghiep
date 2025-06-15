@@ -7,10 +7,11 @@ interface FilterPriceProps {
 }
 
 const priceOptions: PriceOption[] = [
-  { value: "0-100000", label: "Dưới 100.000₫" },
-  { value: "100000-300000", label: "100.000₫ - 300.000₫" },
-  { value: "300000-500000", label: "300.000₫ - 500.000₫" },
-  { value: "500000+", label: "Trên 500.000₫" },
+  { value: "0-500000", label: "Dưới 500k" },
+  { value: "500000-1000000", label: "Từ 500k đến 1 triệu" },
+  { value: "1000000-2000000", label: "Từ 1 triệu đến 2 triệu" },
+  { value: "2000000-4000000", label: "Từ 2 triệu đến 4 triệu" },
+  { value: "4000000+", label: "Từ 4 triệu trở lên" },
 ];
 
 export default function FilterPrice({ selectedPrices, handlePriceChange }: FilterPriceProps) {

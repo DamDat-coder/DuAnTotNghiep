@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { v2 as cloudinary } from 'cloudinary';
 import categoryModel, { ICategory } from '../models/categoryModel';
 import newsModel from '../models/newsModel';
 import productModel from '../models/productModel';
@@ -7,29 +8,18 @@ import productModel from '../models/productModel';
 // Lấy tất cả danh mục
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-    // const limit = Math.max(parseInt(req.query.limit as string) || 10, 1);
-    // const skip = (page - 1) * limit;
     const parentId = req.query.parentId as string | null;
 
     const query = parentId ? { parentId } : { parentId: null };
     const categories = await categoryModel
       .find(query)
-      // .skip(skip)
-      // .limit(limit)
       .sort({ createdAt: -1 })
       .populate('parentId', 'name')
       .lean();
 
-    const total = await categoryModel.countDocuments(query);
-
     res.status(200).json({
       status: 'success',
       data: categories,
-      total,
-      page,
-      // limit,
-      // totalPages: Math.ceil(total / limit),
     });
   } catch (error: any) {
     res.status(500).json({ status: 'error', message: error.message });
@@ -100,7 +90,8 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    const newCategory = new categoryModel({ name, description, parentId: parentId || null });
+    const imageUrl = (req as Request & { cloudinaryUrl?: string }).cloudinaryUrl || null;
+    const newCategory = new categoryModel({ name, description, parentId: parentId || null, image: imageUrl });
     const savedCategory = await newCategory.save();
 
     res.status(201).json({
@@ -171,6 +162,9 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     if (name !== undefined) updateFields.name = name;
     if (description !== undefined) updateFields.description = description;
     if (parentId !== undefined) updateFields.parentId = parentId || null;
+    const cloudinaryUrl = (req as Request & { cloudinaryUrl?: string }).cloudinaryUrl;
+    if (cloudinaryUrl) updateFields.image = cloudinaryUrl;
+
 
     const updatedCategory = await categoryModel.findByIdAndUpdate(
       id,
@@ -198,6 +192,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
+
 // Xóa danh mục
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -229,6 +224,14 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     if (!deletedCategory) {
       res.status(404).json({ status: 'error', message: 'Không tìm thấy danh mục' });
       return;
+    }
+
+    // Xóa ảnh trên Cloudinary nếu có
+    if (deletedCategory.image) {
+      const publicId = deletedCategory.image.split('/').pop()?.split('.')[0];
+      if (publicId) {
+        await cloudinary.uploader.destroy(`categories/${publicId}`);
+      }
     }
 
     res.status(200).json({ status: 'success', message: 'Xóa danh mục thành công' });

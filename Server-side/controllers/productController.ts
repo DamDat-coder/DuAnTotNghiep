@@ -5,7 +5,7 @@ import categoryModel from '../models/categoryModel';
 import cloudinary from '../config/cloudinary';
 import { UploadApiResponse } from 'cloudinary';
 
-// Lấy tất cả sản phẩm admin
+// Lấy tất cả sản phẩm 
 export const getAllProductsAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
@@ -90,7 +90,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
   try {
     const {
       name,
-      idcate,
+      id_cate,
       sort,
       priceRange,
       color,
@@ -109,7 +109,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       }
       query.is_active = is_active === 'true';
     } else {
-      query.is_active = true; 
+      query.is_active = true;
     }
 
     // Tìm kiếm theo tên sản phẩm
@@ -117,13 +117,29 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       query.name = new RegExp(name as string, 'i');
     }
 
-    // Lọc theo danh mục
-    if (idcate) {
-      if (!mongoose.Types.ObjectId.isValid(idcate as string)) {
+    // Lọc theo danh mục (bao gồm danh mục cha và tất cả danh mục con)
+    if (id_cate) {
+      const categoryIdStr = String(id_cate);
+      if (!mongoose.Types.ObjectId.isValid(categoryIdStr)) {
         res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
         return;
       }
-      query['category._id'] = idcate;
+
+      // Lấy tất cả danh mục con của danh mục cha (bao gồm các cấp)
+      const categoryIds = [categoryIdStr];
+      const findChildCategories = async (parentId: string) => {
+        const children = await categoryModel
+          .find({ parentid: new mongoose.Types.ObjectId(parentId) })
+          .select('_id')
+          .lean();
+        for (const child of children) {
+          categoryIds.push(child._id.toString());
+          await findChildCategories(child._id.toString());
+        }
+      };
+
+      await findChildCategories(id_cate as string);
+      query['category._id'] = { $in: categoryIds.map(id => new mongoose.Types.ObjectId(id)) };
     }
 
     // Lọc theo màu sắc
@@ -187,6 +203,8 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       options.sort = sortOptions[sort as string];
     }
 
+
+    // Lấy tất cả sản phẩm
     const products = await productModel
       .find(query)
       .select('name slug category image variants is_active salesCount')
@@ -216,7 +234,6 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
-
 // Lấy sản phẩm theo ID
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {

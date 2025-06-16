@@ -38,16 +38,23 @@ const categorySchema = new mongoose_1.Schema({
     name: {
         type: String,
         required: true,
-        unique: true,
         trim: true,
     },
-    description: {
+    slug: {
         type: String,
+        required: true,
+        unique: true,
         trim: true,
     },
     parentId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "categories",
+        default: null,
+    },
+    image: {
+        type: String,
+        required: false,
+        trim: true,
         default: null,
     },
 }, {

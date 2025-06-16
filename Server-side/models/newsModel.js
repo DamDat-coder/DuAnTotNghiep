@@ -37,11 +37,16 @@ const mongoose_1 = __importStar(require("mongoose"));
 const newsSchema = new mongoose_1.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
-    image: { type: String, default: null },
-    author: { type: mongoose_1.Schema.Types.ObjectId, ref: "users", required: true },
-    category: { type: mongoose_1.Schema.Types.ObjectId, ref: "categories", required: true },
+    slug: { type: String, required: true, unique: true },
+    thumbnail: { type: String, default: null },
+    user_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "users", required: true },
+    category_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "categories", required: true },
+    tags: [{ type: String }],
+    news_image: [{ type: String }],
+    is_published: { type: Boolean, default: false },
+    published_at: { type: Date, default: null },
 }, {
     timestamps: true,
     versionKey: false,
 });
-exports.default = mongoose_1.default.model('news', newsSchema);
+exports.default = mongoose_1.default.model("news", newsSchema);

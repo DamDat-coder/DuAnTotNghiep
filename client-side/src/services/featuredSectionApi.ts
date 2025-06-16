@@ -1,12 +1,12 @@
-import { IFeaturedProducts } from "../types";
+import { IFeaturedProducts } from "../types/product";
 import { fetchWithAuth } from "./api";
 
 // Lấy featured section
 export async function fetchFeaturedSection(): Promise<IFeaturedProducts[]> {
-  const TEMP2_URL = "https://67e0f65058cc6bf785238ee0.mockapi.io/";
+  const TEMP2_URL = "https://67e3b0622ae442db76d1204c.mockapi.io";
   try {
     const temp = await fetchWithAuth<any>(
-      `${TEMP2_URL}/memberBenefit`,
+      `${TEMP2_URL}/feature`,
       { cache: "no-store" },
       false
     );
@@ -14,6 +14,7 @@ export async function fetchFeaturedSection(): Promise<IFeaturedProducts[]> {
       id: e.id,
       banner: e.banner || "",
       gender: e.gender || "unknown",
+      description: e.description || "unknown",
     }));
     return data;
   } catch (error) {

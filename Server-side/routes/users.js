@@ -6,16 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const userController_1 = require("../controllers/userController");
 const verifyToken_1 = __importDefault(require("../middlewares/verifyToken"));
-const fileUpload_1 = require("../utils/fileUpload");
+const verifyAdmin_1 = __importDefault(require("../middlewares/verifyAdmin"));
 const router = (0, express_1.Router)();
-// Public routes
-router.post("/register", fileUpload_1.upload.single("avatar"), userController_1.register);
+// Public
+router.post("/register", userController_1.register);
 router.post("/login", userController_1.login);
 router.post("/refresh", userController_1.refresh);
-// Protected routes
-router.get("/userinfo", verifyToken_1.default, userController_1.getUser);
-router.get("/", userController_1.getAllUser);
-router.put("/update", verifyToken_1.default, fileUpload_1.upload.single("avatar"), userController_1.updateUser);
-router.delete("/delete", verifyToken_1.default, userController_1.deleteUser);
-// Xuất CommonJS thay vì export default
+// Người dùng đăng nhập
+router.get("/me", verifyToken_1.default, userController_1.getUser);
+router.put("/update", verifyToken_1.default, userController_1.updateUser);
+router.delete("/delete", verifyToken_1.default, userController_1.disableUser);
+// Admin
+router.get("/", verifyToken_1.default, verifyAdmin_1.default, userController_1.getAllUser);
 module.exports = router;

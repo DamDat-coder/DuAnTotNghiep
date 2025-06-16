@@ -55,10 +55,25 @@ export default function OrderPage() {
     loadOrders();
   }, []);
 
+<<<<<<< HEAD
+=======
+  const navigationItems = [
+    { label: "Đơn hàng", href: "/admin/order", filter: "Tất cả" },
+    { label: "Đã huỷ", href: "/admin/order/cancelled", filter: "cancelled" },
+    {
+      label: "Chưa giải quyết",
+      href: "/admin/order/pending",
+      filter: "pending",
+    },
+    { label: "Hoàn thành", href: "/admin/order/completed", filter: "success" },
+  ];
+
+>>>>>>> 21d7035d588ae8679eb05d2093e92a1366d82c92
   return (
     <AdminLayout pageTitle="Đơn hàng" pageSubtitle="Quản lý các đơn hàng.">
       <Toaster position="top-right" />
       <div className="order-page w-full mx-auto h-full flex flex-col">
+<<<<<<< HEAD
         {loading ? (
           <div className="text-center py-8 text-gray-500">Đang tải...</div>
         ) : orders.length === 0 ? (
@@ -76,6 +91,22 @@ export default function OrderPage() {
               </>
             )}
           </OrderTableWrapper>
+=======
+        {isLoading ? (
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
+        ) : (
+          <OrderTable
+            initialOrders={orders}
+            navigationItems={navigationItems}
+          />
+>>>>>>> 21d7035d588ae8679eb05d2093e92a1366d82c92
         )}
       </div>
     </AdminLayout>

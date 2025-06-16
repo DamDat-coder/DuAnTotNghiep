@@ -73,8 +73,8 @@ export default function CommentControlBar({
             <input
               type="text"
               value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Tìm kiếm bình luận"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm"
               className="w-full h-full pl-10 pr-10 border border-gray-300 rounded-[12px] text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <Image
@@ -84,19 +84,17 @@ export default function CommentControlBar({
               alt="search"
               className="absolute top-1/2 left-3 transform -translate-y-1/2"
             />
-            {search && (
-              <button
-                onClick={() => handleSearch("")}
-                className="absolute top-1/2 right-3 transform -translate-y-1/2"
-              >
-                <Image
-                  src="/admin_user/close.svg"
-                  width={14}
-                  height={14}
-                  alt="clear"
-                />
-              </button>
-            )}
+            <button
+              onClick={() => setSearch("")}
+              className="absolute top-1/2 right-3 transform -translate-y-1/2"
+            >
+              <Image
+                src="/admin_user/close.svg"
+                width={14}
+                height={14}
+                alt="clear"
+              />
+            </button>
           </div>
         </div>
       </div>

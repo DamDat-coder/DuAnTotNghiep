@@ -9,39 +9,32 @@ interface TableCommentWrapperProps {
 
 export default function TableCommentWrapper({
   children,
-}: TableCommentWrapperProps) {
-  const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
-
-  const filteredComments = dummyComments.filter((c) => {
-    const matchesFilter = filter === "all" || c.status === filter;
-    const matchesSearch =
-      c.author.toLowerCase().includes(search.toLowerCase()) ||
-      c.content.toLowerCase().includes(search.toLowerCase()) ||
-      c.product.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
+}: {
+  children: ReactNode;
+}) {
   return (
     <div className="space-y-4 mt-6">
-      <CommentControlBar
-        onFilterChange={(val) => setFilter(val)}
-        onSearchChange={(val) => setSearch(val)}
-      />
-
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
-        <table className="min-w-full text-sm text-left">
+        <table className="min-w-full text-[16px] text-left font-description">
           <thead className="bg-[#F8FAFC] text-[#94A3B8]">
             <tr className="overflow-hidden">
-              <th className="w-[180px] px-4 py-0 rounded-tl-[12px] rounded-bl-[12px]">
+              <th className="w-[180px] px-4 h-[64px] align-middle rounded-tl-[12px] rounded-bl-[12px]">
                 Người gửi
               </th>
-              <th className="w-[330px] px-4 py-0">Nội dung bình luận</th>
-              <th className="w-[200px] px-4 py-0">Sản phẩm/ Bài viết</th>
-              <th className="w-[140px] px-4 py-0">Thời gian</th>
-              <th className="w-[156px] px-4 py-0">Trạng thái</th>
-              <th className="w-[56px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px]">
-                <div className="flex items-center justify-end h-[64px]">
+              <th className="w-[330px] px-4 h-[64px] align-middle">
+                Nội dung bình luận
+              </th>
+              <th className="w-[200px] px-4 h-[64px] align-middle">
+                Sản phẩm/ Bài viết
+              </th>
+              <th className="w-[140px] px-4 h-[64px] align-middle">
+                Thời gian
+              </th>
+              <th className="w-[156px] px-4 h-[64px] align-middle">
+                Trạng thái
+              </th>
+              <th className="w-[56px] px-4 h-[64px] align-middle rounded-tr-[12px] rounded-br-[12px]">
+                <div className="flex items-center justify-end h-full">
                   <Image
                     src="/admin_user/dots.svg"
                     width={24}
@@ -53,7 +46,7 @@ export default function TableCommentWrapper({
             </tr>
           </thead>
 
-          <tbody>{children(filteredComments)}</tbody>
+          <tbody className="font-semibold">{children}</tbody>
         </table>
       </div>
     </div>

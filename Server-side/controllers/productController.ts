@@ -5,7 +5,7 @@ import categoryModel from '../models/categoryModel';
 import cloudinary from '../config/cloudinary';
 import { UploadApiResponse } from 'cloudinary';
 
-// Lấy tất cả sản phẩm 
+// Lấy tất cả sản phẩm bên admin
 export const getAllProductsAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
@@ -85,7 +85,7 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
-// Lấy tất cả sản phẩm (hỗ trợ phân trang, tìm kiếm, sắp xếp, và lọc theo nhiều tiêu chí)
+// Lấy tất cả sản phẩm 
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
@@ -98,13 +98,13 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       is_active,
     } = req.query;
 
-    // Xây dựng điều kiện tìm kiếm
+    // Build search conditions
     const query: any = {};
 
-    // Kiểm tra sản phẩm
+    // Check is_active status
     if (is_active !== undefined) {
       if (is_active !== 'true' && is_active !== 'false') {
-        res.status(400).json({ status: 'error', message: 'Giá trị is_active không hợp lệ, phải là true hoặc false' });
+        res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
         return;
       }
       query.is_active = is_active === 'true';
@@ -112,21 +112,21 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       query.is_active = true;
     }
 
-    // Tìm kiếm theo tên sản phẩm
+    // Search by product name
     if (name) {
       query.name = new RegExp(name as string, 'i');
     }
 
-    // Lọc theo danh mục (bao gồm danh mục cha và tất cả danh mục con)
+    // Filter by category (including parent and all child categories)
     if (id_cate) {
       const categoryIdStr = String(id_cate);
       if (!mongoose.Types.ObjectId.isValid(categoryIdStr)) {
-        res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+        res.status(400).json({ status: 'error', message: 'Invalid category ID' });
         return;
       }
 
-      // Lấy tất cả danh mục con của danh mục cha (bao gồm các cấp)
-      const categoryIds = [categoryIdStr];
+      // Get all child categories of the parent (including nested levels) and include parent
+      const categoryIds = [categoryIdStr]; 
       const findChildCategories = async (parentId: string) => {
         const children = await categoryModel
           .find({ parentid: new mongoose.Types.ObjectId(parentId) })
@@ -138,32 +138,36 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
         }
       };
 
-      await findChildCategories(id_cate as string);
+      await findChildCategories(categoryIdStr);
+      if (categoryIds.length === 1) {
+        console.warn(`No child categories found for parent ID ${categoryIdStr}`);
+      }
+
       query['category._id'] = { $in: categoryIds.map(id => new mongoose.Types.ObjectId(id)) };
     }
 
-    // Lọc theo màu sắc
+    // Filter by color
     if (color) {
       const colors = (color as string).split(',').map(c => c.trim());
       const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
       if (!colors.every(c => validColors.includes(c))) {
-        res.status(400).json({ status: 'error', message: 'Một hoặc nhiều màu sắc không hợp lệ' });
+        res.status(400).json({ status: 'error', message: 'One or more colors are invalid' });
         return;
       }
       query['variants.color'] = { $in: colors };
     }
 
-    // Lọc theo kích cỡ
+    // Filter by size
     if (size) {
       const validSizes = ['S', 'M', 'L', 'XL'];
       if (!validSizes.includes(size as string)) {
-        res.status(400).json({ status: 'error', message: 'Kích cỡ không hợp lệ' });
+        res.status(400).json({ status: 'error', message: 'Invalid size' });
         return;
       }
       query['variants.size'] = size;
     }
 
-    // Lọc theo khoảng giá
+    // Filter by price range
     if (priceRange) {
       const ranges = (priceRange as string).split(',').map(r => r.trim());
       const priceFilters: { [key: string]: any } = {
@@ -176,7 +180,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
       const priceQueries = ranges.map(range => {
         if (!priceFilters[range]) {
-          throw new Error(`Khoảng giá không hợp lệ: ${range}`);
+          throw new Error(`Invalid price range: ${range}`);
         }
         return priceFilters[range];
       });
@@ -186,7 +190,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    // Sắp xếp
+    // Sorting options
     const options: any = {};
     if (sort) {
       const sortOptions: { [key: string]: any } = {
@@ -197,31 +201,32 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       };
 
       if (!sortOptions[sort as string]) {
-        res.status(400).json({ status: 'error', message: 'Tùy chọn sắp xếp không hợp lệ' });
+        res.status(400).json({ status: 'error', message: 'Invalid sort option' });
         return;
       }
       options.sort = sortOptions[sort as string];
     }
 
-
-    // Lấy tất cả sản phẩm
+    // Fetch all products
     const products = await productModel
       .find(query)
-      .select('name slug category image variants is_active salesCount')
+      .select('name slug category image variants is_active salesCount discountPercent')
       .sort(options.sort)
       .lean();
 
     if (!products.length) {
-      res.status(404).json({ status: 'error', message: 'Không tìm thấy sản phẩm' });
+      res.status(404).json({ status: 'error', message: 'No products found' });
       return;
     }
 
+    // Map response to include category details and image array
     const result = products.map((product) => ({
       ...product,
       category: {
         _id: product.category._id,
         name: product.category.name,
       },
+      image: product.image || [], // Ensure image is an array
     }));
 
     res.status(200).json({
@@ -230,7 +235,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       total: products.length,
     });
   } catch (error: any) {
-    console.error('Lỗi khi lấy tất cả sản phẩm:', error);
+    console.error('Error fetching all products:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
@@ -550,4 +555,4 @@ export const lockProduct = async (req: Request, res: Response): Promise<void> =>
     console.error('Lỗi khi khóa/mở khóa sản phẩm:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
-};
+}; 

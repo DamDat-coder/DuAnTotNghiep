@@ -1,24 +1,10 @@
-export interface IFilterPopupProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  onApplyFilters?: (filters: FilterState) => void;
-}
-
-export interface FilterState {
-  sort: string | null;
-  gender: string | null;
-  prices: string[];
-  colors: string[];
-  sizes: string[];
-  brands: string[];
-}
-
-export interface SortOption {
+export interface ColorOption {
   value: string;
   label: string;
+  color: string;
 }
 
-export interface GenderOption {
+export interface CategoryOption {
   value: string;
   label: string;
 }
@@ -28,13 +14,13 @@ export interface PriceOption {
   label: string;
 }
 
-export interface ColorOption {
+export interface SortOption {
   value: string;
   label: string;
-  color: string;
 }
 
-export interface BrandOption {
-  value: string;
-  label: string;
+export interface IFilterPopupProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  onApplyFilters?: (filters: any) => void;
 }

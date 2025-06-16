@@ -60,7 +60,7 @@ export default function SaleControlBar() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm mã khuyến mãi"
+              placeholder="Tìm kiếm"
               className="w-full h-full pl-10 pr-10 border border-gray-300 rounded-[12px] text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <Image

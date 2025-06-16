@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const navLinks = [
-  { href: "/products?gender=Unisex", label: "Unisex" },
-  { href: "/products?gender=Nam", label: "Nam" },
-  { href: "/products?gender=Nữ", label: "Nữ" },
+  { href: "/products?category=Unisex", label: "Unisex" },
+  { href: "/products?category=Nam", label: "Nam" },
+  { href: "/products?category=Nữ", label: "Nữ" },
   // { href: "/products?discount=true", label: "Giảm giá" },
   { href: "/posts", label: "Bài viết" },
 ];
@@ -22,7 +22,7 @@ export default function DesktopNav() {
         const linkSearchParams = new URLSearchParams(
           link.href.split("?")[1] || ""
         );
-        const linkGender = linkSearchParams.get("gender");
+        const linkCategory = linkSearchParams.get("category");
         const linkDiscount = linkSearchParams.get("discount");
 
         // Kiểm tra xem link có phải là link hiện tại không
@@ -30,8 +30,8 @@ export default function DesktopNav() {
           link.href === "/"
             ? pathname === "/"
             : pathname === "/products" &&
-              (linkGender
-                ? searchParams.get("gender") === linkGender
+              (linkCategory
+                ? searchParams.get("category") === linkCategory
                 : linkDiscount
                 ? searchParams.get("discount") === linkDiscount
                 : false);

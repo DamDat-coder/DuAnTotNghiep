@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Pagination } from "../../layouts/Panigation";
+import { Pagination } from "../ui/Panigation";
 import Image from "next/image";
 
 // Data mẫu
@@ -38,7 +38,10 @@ export default function ProductContent() {
       p.id.toLowerCase().includes(search.toLowerCase())
   );
   const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
-  const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageData = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   // Đổi trạng thái
   const handleToggleStatus = (id: string) => {
@@ -49,7 +52,7 @@ export default function ProductContent() {
 
   // Xoá sản phẩm
   const handleDelete = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setProducts((prev) => prev.filter((p) => p.id !== id));
     setActionDropdown(null);
   };
 
@@ -91,11 +94,20 @@ export default function ProductContent() {
               className="w-full h-10 px-4 pr-10 rounded-lg border border-[#E6E8EC] bg-[#F6F8FB] text-base focus:outline-none"
               placeholder="Tìm kiếm sản phẩm..."
               value={search}
-              onChange={e => handleSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
             />
-            <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none">
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              className="w-5 h-5 text-[#8C94A5] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none"
+            >
               <circle cx="9" cy="9" r="7" stroke="#8C94A5" strokeWidth="2" />
-              <path d="M16 16L13.5 13.5" stroke="#8C94A5" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M16 16L13.5 13.5"
+                stroke="#8C94A5"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
           {/* Nút thêm sản phẩm: Giữ nguyên code của bạn */}
@@ -127,7 +139,12 @@ export default function ProductContent() {
                 <th className="py-3 text-left font-semibold">Lượt bán</th>
                 <th className="py-3 text-left font-semibold">Giá</th>
                 <th className="py-3 text-center font-semibold">Trạng thái</th>
-                <th className="py-3 text-center font-semibold" style={{ width: 60 }}>...</th>
+                <th
+                  className="py-3 text-center font-semibold"
+                  style={{ width: 60 }}
+                >
+                  ...
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -139,7 +156,10 @@ export default function ProductContent() {
                 </tr>
               ) : (
                 pageData.map((p) => (
-                  <tr key={p.id} className="border-b border-[#F1F1F1] last:border-0">
+                  <tr
+                    key={p.id}
+                    className="border-b border-[#F1F1F1] last:border-0"
+                  >
                     <td className="py-3 flex items-center gap-2 font-medium">
                       <Image
                         src="/product/product_2.png"
@@ -152,7 +172,11 @@ export default function ProductContent() {
                     </td>
                     <td className="py-3">{p.category}</td>
                     <td className="py-3">
-                      <span className={p.stock < 10 ? "text-[#F75555] font-bold" : ""}>
+                      <span
+                        className={
+                          p.stock < 10 ? "text-[#F75555] font-bold" : ""
+                        }
+                      >
                         {p.stock}
                       </span>
                     </td>
@@ -161,13 +185,17 @@ export default function ProductContent() {
                     {/* Toggle trạng thái */}
                     <td className="py-3 text-center">
                       <button
-                        className={`w-12 h-6 rounded-full flex items-center ${p.status ? "bg-[#2998ff]" : "bg-gray-200"} transition`}
+                        className={`w-12 h-6 rounded-full flex items-center ${
+                          p.status ? "bg-[#2998ff]" : "bg-gray-200"
+                        } transition`}
                         onClick={() => handleToggleStatus(p.id)}
                         title={p.status ? "Đang bán" : "Ngừng bán"}
                         style={{ padding: 2 }}
                       >
                         <span
-                          className={`block h-5 w-5 rounded-full bg-white shadow transition ${p.status ? "translate-x-6" : "translate-x-0"}`}
+                          className={`block h-5 w-5 rounded-full bg-white shadow transition ${
+                            p.status ? "translate-x-6" : "translate-x-0"
+                          }`}
                           style={{ boxShadow: "0 1px 3px #0002" }}
                         />
                       </button>
@@ -176,9 +204,11 @@ export default function ProductContent() {
                     <td className="py-3 text-center relative">
                       <button
                         className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
-                        onClick={e => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          setActionDropdown(p.id === actionDropdown ? null : p.id);
+                          setActionDropdown(
+                            p.id === actionDropdown ? null : p.id
+                          );
                         }}
                       >
                         <span className="text-2xl text-[#8C94A5]">⋯</span>
@@ -186,16 +216,23 @@ export default function ProductContent() {
                       {actionDropdown === p.id && (
                         <div
                           className="absolute right-0 top-12 z-50 min-w-[100px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
-                          onClick={e => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <button
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-t-lg"
-                            onClick={() => { setActionDropdown(null); alert("Chức năng sửa (demo)"); }}
-                          >Sửa</button>
+                            onClick={() => {
+                              setActionDropdown(null);
+                              alert("Chức năng sửa (demo)");
+                            }}
+                          >
+                            Sửa
+                          </button>
                           <button
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
                             onClick={() => handleDelete(p.id)}
-                          >Xoá</button>
+                          >
+                            Xoá
+                          </button>
                         </div>
                       )}
                     </td>

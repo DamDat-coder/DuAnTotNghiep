@@ -1,3 +1,103 @@
+// "use client";
+
+// import Image from "next/image";
+// import Link from "next/link";
+// import { IProduct } from "@/types/product";
+
+// interface BannerProps {
+//   product: IProduct;
+//   status?: string;
+//   description?: string;
+//   className?: string;
+// }
+
+// export default function Banner({
+//   product,
+//   status = "Mới ra mắt",
+//   description = "Khám phá sản phẩm thời trang mới nhất với phong cách độc đáo.",
+//   className = "",
+// }: BannerProps) {
+//   const image1 = product.images[0]
+//     ? `/product/img/${product.images[0]}`
+//     : "/placeholder-image.jpg";
+//   const image2 = product.images[1]
+//     ? `/product/img/${product.images[1]}`
+//     : "/placeholder-image.jpg";
+
+//   // Hàm tìm variant giá thấp nhất (nếu cần hiển thị giá)
+//   const getLowestPriceVariant = (
+//     variants: IProduct["variants"]
+//   ): { price: number; discountPercent: number } => {
+//     if (!variants || variants.length === 0) {
+//       return { price: 0, discountPercent: 0 };
+//     }
+//     return variants.reduce((lowest, variant) => {
+//       return variant.price < lowest.price ? variant : lowest;
+//     }, variants[0]);
+//   };
+
+//   const { price, discountPercent } = getLowestPriceVariant(product.variants);
+//   const discountPrice = Math.round(price * (1 - discountPercent / 100));
+
+//   return (
+//     <section
+//       className={`relative w-full h-[20rem] tablet:h-[30rem] flex flex-col tablet:flex-row gap-4 px-4 py-8 bg-gray-100 ${className}`}
+//       aria-label={`Banner quảng cáo sản phẩm ${product.name}`}
+//     >
+//       {/* Hình ảnh */}
+//       <div className="flex w-full tablet:w-1/2 gap-4">
+//         <div className="relative w-1/2 h-[15rem] tablet:h-[25rem]">
+//           <Image
+//             src={image1}
+//             alt={`Hình ảnh 1 của ${product.name}`}
+//             fill
+//             className="object-cover rounded"
+//             priority
+//           />
+//         </div>
+//         <div className="relative w-1/2 h-[15rem] tablet:h-[25rem]">
+//           <Image
+//             src={image2}
+//             alt={`Hình ảnh 2 của ${product.name}`}
+//             fill
+//             className="object-cover rounded"
+//           />
+//         </div>
+//       </div>
+
+//       {/* Nội dung */}
+//       <div className="w-full tablet:w-1/2 flex flex-col justify-center items-start px-4">
+//         <span className="text-sm text-red-500 font-bold uppercase">
+//           {status}
+//         </span>
+//         <h2 className="text-2xl tablet:text-4xl font-bold text-[#374151] mt-2">
+//           {product.name}
+//         </h2>
+//         <p className="text-base text-gray-600 mt-4">{description}</p>
+//         {discountPrice > 0 && (
+//           <div className="mt-4 flex items-center gap-2">
+//             <span className="text-lg font-bold text-red-500">
+//               {discountPrice.toLocaleString("vi-VN")}₫
+//             </span>
+//             {discountPercent > 0 && (
+//               <span className="text-sm text-gray-500 line-through">
+//                 {price.toLocaleString("vi-VN")}₫
+//               </span>
+//             )}
+//           </div>
+//         )}
+//         <Link
+//           href={`/products/${product.id}`}
+//           className="mt-6 px-6 py-3 bg-black text-white font-bold rounded hover:bg-gray-800"
+//           aria-label={`Mua sản phẩm ${product.name}`}
+//         >
+//           Shop
+//         </Link>
+//       </div>
+//     </section>
+//   );
+// }
+
 // src/components/Banner.tsx
 import Image from "next/image";
 import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";

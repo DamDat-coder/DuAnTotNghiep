@@ -1,36 +1,23 @@
-// src/components/FilterPopup.tsx
 "use client";
 
-import { useFilter } from "@/hooks/useFilter";
-import { IFilterPopupProps } from "@/types/filter";
+import { useEffect, useState } from "react";
 import FilterSort from "./FilterSort";
-import FilterGender from "./FilterGender";
+import FilterCategory from "./FilterCategory";
 import FilterPrice from "./FilterPrice";
 import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
-import { useEffect } from "react";
+import { IFilterPopupProps } from "@/types/filter";
 
 export default function FilterPopup({
   isOpen,
   setIsOpen,
   onApplyFilters,
 }: IFilterPopupProps) {
-  const {
-    selectedSort,
-    setSelectedSort,
-    selectedGender,
-    setSelectedGender,
-    selectedPrices,
-    handlePriceChange,
-    selectedColors,
-    handleColorChange,
-    selectedSizes,
-    handleSizeChange,
-    selectedBrands,
-    handleBrandChange,
-    clearFilters,
-    getFilters,
-  } = useFilter();
+  const [selectedSort, setSelectedSort] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,14 +32,30 @@ export default function FilterPopup({
 
   const handleApplyFilters = () => {
     if (onApplyFilters) {
-      onApplyFilters(getFilters());
+      onApplyFilters({
+        sort: selectedSort,
+        id_cate: selectedCategory,
+        priceRange: selectedPrice,
+        color: selectedColor,
+        size: selectedSize,
+      });
     }
     setIsOpen(false);
   };
 
+  const clearFilters = () => {
+    setSelectedSort(null);
+    setSelectedCategory(null);
+    setSelectedPrice(null);
+    setSelectedColor(null);
+    setSelectedSize(null);
+    if (onApplyFilters) {
+      onApplyFilters({});
+    }
+  };
+
   return (
     <>
-      {/* Overlay cho desktop */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 desktop:block laptop:block hidden"
@@ -67,7 +70,6 @@ export default function FilterPopup({
         } laptop:inset-auto laptop:w-[35%] laptop:right-0 laptop:top-0 laptop:h-full desktop:inset-auto desktop:w-[25%] desktop:right-0 desktop:top-0 desktop:h-full`}
       >
         <div className="flex flex-col h-full gap-6 px-6">
-          {/* Header */}
           <div className="flex justify-between items-center pt-[1.625rem] sticky top-0 bg-white z-10">
             <h2 className="text-base">Lọc sản phẩm</h2>
             <button
@@ -92,36 +94,35 @@ export default function FilterPopup({
             </button>
           </div>
 
-          {/* Nội dung cuộn */}
           <div className="flex-1 overflow-y-auto">
             <FilterSort
               selectedSort={selectedSort}
               setSelectedSort={setSelectedSort}
             />
-            <FilterGender
-              selectedGender={selectedGender}
-              setSelectedGender={setSelectedGender}
+            <FilterCategory
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
             />
             <FilterPrice
-              selectedPrices={selectedPrices}
-              handlePriceChange={handlePriceChange}
+              selectedPrice={selectedPrice}
+              setSelectedPrice={setSelectedPrice}
             />
             <FilterColor
-              selectedColors={selectedColors}
-              handleColorChange={handleColorChange}
+              selectedColor={selectedColor}
+              setSelectedColor={setSelectedColor}
             />
             <FilterSize
-              selectedSizes={selectedSizes}
-              handleSizeChange={handleSizeChange}
+              selectedSize={selectedSize}
+              setSelectedSize={setSelectedSize}
             />
 
-            <div className="w-full sticky -bottom-3 h-auto  pb-3">
-              <div className="flex bg-white p-4 justify-center gap-5">
+            <div className="w-full sticky bottom-0 bg-white pb-3">
+              <div className="flex p-4 justify-center gap-5">
                 <button
                   onClick={clearFilters}
                   className="mt-2.5 w-[40%] py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-black border-2"
                 >
-                  Xoá
+                  Xóa
                 </button>
                 <button
                   onClick={handleApplyFilters}

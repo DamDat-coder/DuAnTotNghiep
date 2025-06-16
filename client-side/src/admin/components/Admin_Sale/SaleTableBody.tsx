@@ -1,5 +1,6 @@
 import { Switch } from "@/components/ui/switch";
 import { Sale } from "@/types/sale";
+import Image from "next/image";
 
 export default function SaleTableBody({
   sales,
@@ -15,11 +16,28 @@ export default function SaleTableBody({
           key={sale.id}
           className="border-b hover:bg-[#F9FAFB] transition-colors duration-150"
         >
-          <td className="w-[180px] px-4 py-4 font-medium">{sale.code}</td>
-          <td className="w-[368px] px-4 py-4">{sale.discount}</td>
-          <td className="w-[230px] px-4 py-4">{sale.time}</td>
-          <td className="w-[140px] px-4 py-4">{sale.usage}</td>
-          <td className="w-[96px] px-4 py-4">
+          {/* Mã giảm giá */}
+          <td className="px-4 h-[64px] whitespace-normal break-words">
+            {sale.code}
+          </td>
+
+          {/* Mức giảm */}
+          <td className="px-4 h-[64px] whitespace-normal break-words">
+            {sale.discount}
+          </td>
+
+          {/* Thời gian */}
+          <td className="px-4 h-[64px] whitespace-normal break-words">
+            {sale.time}
+          </td>
+
+          {/* Số lượt sử dụng */}
+          <td className="px-4 h-[64px] whitespace-normal break-words">
+            {sale.usage}
+          </td>
+
+          {/* Trạng thái Switch */}
+          <td className="px-4 h-[64px]">
             <Switch
               checked={sale.active}
               onCheckedChange={(value) => onToggleActive(sale.id, value)}
@@ -28,8 +46,17 @@ export default function SaleTableBody({
               <span className="pointer-events-none absolute left-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 data-[state=checked]:translate-x-6" />
             </Switch>
           </td>
-          <td className="w-[64px] px-4 py-4 text-right">
-            <span className="text-xl font-semibold text-gray-500">...</span>
+
+          {/* Hành động (3 chấm) */}
+          <td className="w-[56px] px-4 h-[64px] rounded-tr-[12px] rounded-br-[12px]">
+            <div className="flex items-center justify-end h-full">
+              <Image
+                src="/admin_user/dots.svg"
+                width={24}
+                height={24}
+                alt="three_dot"
+              />
+            </div>
           </td>
         </tr>
       ))}

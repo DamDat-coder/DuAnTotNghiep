@@ -28,18 +28,26 @@ const filteredUsers = users.filter((user) => {
       <UserControlBar onFilterChange={setFilter} onSearchChange={setSearch} />
 
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
-        <table className="min-w-full text-sm text-left">
+        <table className="min-w-full text-[16px]  text-left">
           <thead className="bg-[#F8FAFC] text-[#94A3B8]">
             <tr className="overflow-hidden">
-              <th className="w-[77px] px-4 py-0 rounded-tl-[12px] rounded-bl-[12px]">
+              <th className="w-[77px] px-4 h-[64px] align-middle py-0 rounded-tl-[12px] rounded-bl-[12px]">
                 STT
               </th>
-              <th className="w-[196px] px-4 py-0">Họ và tên</th>
-              <th className="w-[291px] px-4 py-0">Email</th>
-              <th className="w-[196px] px-4 py-0">SĐT</th>
-              <th className="w-[135px] px-4 py-0">Vai trò</th>
-              <th className="w-[96px] px-4 py-0">Trạng thái</th>
-              <th className="w-[64px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px]">
+              <th className="w-[196px] h-[64px] align-middle px-4 py-0">
+                Họ và tên
+              </th>
+              <th className="w-[291px] h-[64px] align-middle px-4 py-0">
+                Email
+              </th>
+              <th className="w-[196px] h-[64px] align-middle px-4 py-0">SĐT</th>
+              <th className="w-[135px] h-[64px] align-middle px-4 py-0">
+                Vai trò
+              </th>
+              <th className="w-[96px] h-[64px] align-middle px-4 py-0">
+                Trạng thái
+              </th>
+              <th className="w-[64px] h-[64px] align-middle px-4 py-0 rounded-tr-[12px] rounded-br-[12px]">
                 <div className="flex items-center justify-end h-[64px]">
                   <Image
                     src="/admin_user/dots.svg"
@@ -51,7 +59,7 @@ const filteredUsers = users.filter((user) => {
               </th>
             </tr>
           </thead>
-          <tbody>{children(filteredUsers)}</tbody>
+          <tbody className="font-semibold">{children(filteredUsers)}</tbody>
         </table>
       </div>
     </div>

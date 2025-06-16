@@ -38,15 +38,20 @@ const userSchema = new mongoose_1.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     name: { type: String, required: true },
-    address: { type: String, default: null },
+    addresses: [{
+            street: { type: String, required: true },
+            city: { type: String, required: true },
+            country: { type: String, required: true },
+            is_default: { type: Boolean, default: false }
+        }],
     phone: {
-        type: String,
+        type: Number,
         default: null,
         unique: true,
-        sparse: true,
+        sparse: true
     },
-    avatar: { type: String, default: null },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    is_active: { type: Boolean, default: true }
 }, { versionKey: false });
 const UserModel = mongoose_1.default.model('User', userSchema);
 exports.default = UserModel;

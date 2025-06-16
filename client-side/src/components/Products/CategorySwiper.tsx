@@ -5,13 +5,18 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import Link from "next/link";
 import "swiper/css";
 
+interface Category {
+  _id: string;
+  name: string;
+}
+
 interface CategorySwiperProps {
-  categories: string[];
+  categories: Category[];
 }
 
 export default function CategorySwiper({ categories }: CategorySwiperProps) {
   const searchParams = useSearchParams();
-  const currentCategory = searchParams.get("category");
+  const currentIdCate = searchParams.get("id_cate");
 
   return (
     <Swiper
@@ -30,25 +35,25 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
         <Link
           href={`/products`}
           className={`text-base hover:text-black ${
-            !currentCategory ? "text-black font-bold" : "text-gray-700"
+            !currentIdCate ? "text-black font-bold" : "text-gray-700"
           }`}
         >
           Tất cả
         </Link>
       </SwiperSlide>
 
-      {categories.map((category, index) => {
-        const isActive = currentCategory === category.toLowerCase();
+      {categories.map((category) => {
+        const isActive = currentIdCate === category._id;
 
         return (
-          <SwiperSlide key={index} className="!w-auto">
+          <SwiperSlide key={category._id} className="!w-auto">
             <Link
-              href={`/products?category=${category.toLowerCase()}`}
+              href={`/products?id_cate=${encodeURIComponent(category._id)}`}
               className={`text-base hover:text-black ${
                 isActive ? "text-black font-bold" : "text-gray-700"
               }`}
             >
-              {category}
+              {category.name}
             </Link>
           </SwiperSlide>
         );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { fetchProducts } from "@/services/productApi";
 import { fetchMemberBenefits } from "@/services/memberBenefitApi";
 import Container from "@/components/Core/Container";
@@ -19,11 +19,17 @@ interface News {
   benefit?: string;
 }
 
+interface Category {
+  _id: string;
+  name: string;
+}
+
 export default function ProductsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [products, setProducts] = useState<IProduct[]>([]);
   const [newsItems, setNewsItems] = useState<News[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +38,16 @@ export default function ProductsPage() {
       try {
         setLoading(true);
         const query = {
-          gender: searchParams.get("gender") || undefined,
-          discount: searchParams.get("discount") === "true" ? true : undefined,
+          id_cate: searchParams.get("id_cate") || undefined,
+          color: searchParams.get("color") || undefined,
+          size: searchParams.get("size") || undefined,
+          priceRange: searchParams.get("priceRange") || undefined,
+          sort:
+            (searchParams.get("sort") as
+              | "price-asc"
+              | "price-desc"
+              | "newest"
+              | "best-seller") || undefined,
         };
 
         const [productsData, memberBenefits] = await Promise.all([
@@ -41,10 +55,23 @@ export default function ProductsPage() {
           fetchMemberBenefits(),
         ]);
 
-        setProducts(productsData);
-        setCategories(
-          Array.from(new Set(productsData.map((product) => product.category)))
-        );
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        setProducts(productsData.products);
+        const uniqueCategories = Array.from(
+          new Set(
+            productsData.products
+              .filter((product) => product.category._id)
+              .map((product) => ({
+                _id: product.category._id as string,
+                name: product.category.name,
+              }))
+              .map((cat) => JSON.stringify(cat))
+          )
+        ).map((cat) => JSON.parse(cat) as Category);
+
+        uniqueCategories.sort((a, b) => a._id.localeCompare(b._id));
+        setCategories(uniqueCategories);
 
         const news = memberBenefits.map((item, index) => ({
           ...item,
@@ -67,14 +94,45 @@ export default function ProductsPage() {
       }
     }
 
+    setProducts([]); // Reset products khi searchParams thay đổi
     loadData();
   }, [searchParams]);
+
+  const handleApplyFilters = (filters: {
+    sort?: string;
+    id_cate?: string;
+    priceRange?: string;
+    color?: string;
+    size?: string;
+  }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (value) {
+          params.set(key, value);
+        } else {
+          params.delete(key);
+        }
+      }
+    });
+
+    router.push(`/products?${params.toString()}`);
+  };
 
   if (loading) {
     return (
       <div className="py-8">
         <Container>
-          <p className="text-center text-gray-500">Đang tải...</p>
+          <Breadcrumb />
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
+          <div className="text-center p-3">Đang tải</div>
         </Container>
       </div>
     );
@@ -96,7 +154,7 @@ export default function ProductsPage() {
         <div>
           <Breadcrumb />
           <CategorySwiper categories={categories} />
-          <ProductGrid products={products} />
+          <ProductGrid products={products} onApplyFilters={handleApplyFilters} />
         </div>
         <NewsSection newsItems={newsItems} />
       </Container>

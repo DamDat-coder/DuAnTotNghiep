@@ -10,54 +10,55 @@ interface Props {
 export default function ConfirmDeleteModal({ onClose, onConfirm }: Props) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-sm p-6 relative text-center">
+      <div className="bg-white w-[500px] h-[508px] rounded-lg shadow-lg relative text-center flex flex-col items-center pt-[60px] px-6">
         {/* Nút đóng */}
         <button onClick={onClose} className="absolute top-4 right-4 text-black">
           <Image src="/profile/Group.png" alt="Đóng" width={20} height={20} />
         </button>
 
         {/* Logo */}
-        <div className="mb-4">
+        <div className="mb-[40px]">
           <Image
-            src="/nav/logo.svg"
+            src="/profile/modal/image 689.png"
             alt="GBOX logo"
-            width={180}
-            height={60}
-            className="mx-auto"
+            width={204}
+            height={65}
           />
         </div>
 
-        {/* Icon confirm */}
-        <div className="mb-4">
+        {/* Icon dấu X */}
+        <div className="mb-[24px]">
           <Image
             src="/profile/modal/Capa_1.svg"
             alt="X icon"
-            width={60}
-            height={60}
-            className="mx-auto"
+            width={80}
+            height={80}
           />
         </div>
 
         {/* Tiêu đề */}
-        <h2 className="text-lg font-semibold mb-2">Xác nhận xóa tài khoản?</h2>
+        <h2 className="text-[24px] font-semibold text-[#0F172A] mb-2">
+          Xác nhận xóa tài khoản?
+        </h2>
 
         {/* Mô tả */}
-        <p className="text-sm text-gray-600 leading-relaxed">
+        <p className="text-[18px] text-[#64748B] leading-relaxed mb-[24px]">
           Bạn có chắc chắn xóa tài khoản?
           <br />
           Thao tác này không thể khôi phục.
         </p>
 
-        <div className="mt-6 flex justify-center gap-4">
+        {/* Nút hành động */}
+        <div className="flex gap-[24px]">
           <button
             onClick={onClose}
-            className="w-[180px] py-2 border border-black rounded hover:bg-gray-100"
+            className="w-[149px] h-[49px] border border-black rounded hover:bg-gray-100"
           >
             Hủy
           </button>
           <button
             onClick={onConfirm}
-            className="w-[180px] py-2 bg-black text-white rounded hover:bg-gray-800"
+            className="w-[149px] h-[49px] bg-black text-white rounded hover:bg-gray-800"
           >
             Đồng ý
           </button>

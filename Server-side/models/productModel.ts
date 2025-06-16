@@ -6,6 +6,7 @@ export interface IProduct extends Document {
     name: string;
   };
   name: string;
+  slug: string;
   description?: string;
   image: string[];
   variants: {
@@ -15,6 +16,8 @@ export interface IProduct extends Document {
     stock: number;
     discountPercent: number;
   }[];
+  is_active: boolean;
+  salesCount: number;
 }
 
 const productSchema: Schema<IProduct> = new Schema(
@@ -33,6 +36,12 @@ const productSchema: Schema<IProduct> = new Schema(
     name: {
       type: String,
       required: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
     description: {
       type: String,
@@ -74,11 +83,23 @@ const productSchema: Schema<IProduct> = new Schema(
         },
       },
     ],
+    is_active: {
+      type: Boolean,
+      required: true,
+      default: true,
+    },
+    salesCount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
   },
   { versionKey: false }
 );
 
 productSchema.index({ name: 1, 'category._id': 1 });
+productSchema.index({ salesCount: -1 }); 
 
 const ProductModel: Model<IProduct> = mongoose.model<IProduct>('Product', productSchema);
 

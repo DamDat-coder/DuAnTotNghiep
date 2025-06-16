@@ -1,18 +1,56 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { API_BASE_URL } from "@/services/api";
 
-const navLinks = [
-  { href: "/products?gender=Nam", label: "Nam" },
-  { href: "/products?gender=Nữ", label: "Nữ" },
-  { href: "/products?discount=true", label: "Giảm giá" },
-  { href: "/posts", label: "Bài viết" },
-];
+interface Category {
+  _id: string;
+  name: string;
+  parentid: string | null;
+}
 
 export default function DesktopNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/categories`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          throw new Error("Không thể lấy danh mục");
+        }
+        const data = await res.json();
+        // Lọc danh mục có parentid === null
+        const rootCategories = data.data.filter(
+          (cat: Category) => cat.parentid === null
+        );
+        setCategories(rootCategories);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
+      }
+    }
+
+    fetchCategories();
+  }, []);
+
+  // Tạo danh sách liên kết động từ danh mục và liên kết tĩnh
+  let navLinks = [
+    ...categories.map((cat) => ({
+      href: `/products?id_cate=${cat._id}`,
+      label: cat.name,
+    })),
+  ];
+
+  if (error) {
+    console.error(error);
+  }
 
   return (
     <div className="hidden laptop:flex desktop:flex items-center space-x-6">
@@ -21,19 +59,15 @@ export default function DesktopNav() {
         const linkSearchParams = new URLSearchParams(
           link.href.split("?")[1] || ""
         );
-        const linkGender = linkSearchParams.get("gender");
-        const linkDiscount = linkSearchParams.get("discount");
+        const linkIdCate = linkSearchParams.get("id_cate");
 
         // Kiểm tra xem link có phải là link hiện tại không
         const isActive =
-          link.href === "/"
-            ? pathname === "/"
-            : pathname === "/products" &&
-              (linkGender
-                ? searchParams.get("gender") === linkGender
-                : linkDiscount
-                ? searchParams.get("discount") === linkDiscount
-                : false);
+          link.href === "/posts"
+            ? pathname === "/posts"
+            : pathname === "/products" && linkIdCate
+            ? searchParams.get("id_cate") === linkIdCate
+            : false;
 
         return (
           <Link

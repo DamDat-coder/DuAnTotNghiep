@@ -1,4 +1,4 @@
-import { IMemberBenefit } from "../types";
+import { IMemberBenefit } from "../types/product";
 import { fetchWithAuth } from "./api";
 
 // Lấy lợi ích thành viên

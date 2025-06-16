@@ -56,7 +56,14 @@ export default function AdminHeader({
           </p>
         </div>
         <div className="flex items-center gap-3 bg-[#02203B] rounded-full px-5 py-2 text-white min-w-[280px] h-14 justify-center">
-          <p>Đang tải...</p>
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
         </div>
       </header>
     );

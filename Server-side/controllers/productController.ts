@@ -78,7 +78,7 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
       total,
       page: pageNum,
       limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: Math.ceil(total / limitNum),  
     });
   } catch (error: any) {
     console.error('Lỗi khi lấy tất cả sản phẩm:', error);
@@ -98,10 +98,9 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       is_active,
     } = req.query;
 
-    // Build search conditions
     const query: any = {};
 
-    // Check is_active status
+    // is_active
     if (is_active !== undefined) {
       if (is_active !== 'true' && is_active !== 'false') {
         res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
@@ -112,12 +111,12 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       query.is_active = true;
     }
 
-    // Search by product name
+    // name
     if (name) {
       query.name = new RegExp(name as string, 'i');
     }
 
-    // Filter by category (including parent and all child categories)
+    // id_cate
     if (id_cate) {
       const categoryIdStr = String(id_cate);
       if (!mongoose.Types.ObjectId.isValid(categoryIdStr)) {
@@ -125,120 +124,144 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
         return;
       }
 
-      // Get all child categories of the parent (including nested levels) and include parent
-      const categoryIds = [categoryIdStr]; 
+      const categoryIds = [categoryIdStr];
       const findChildCategories = async (parentId: string) => {
-        const children = await categoryModel
-          .find({ parentid: new mongoose.Types.ObjectId(parentId) })
-          .select('_id')
-          .lean();
+        const children = await categoryModel.find({ parentid: new mongoose.Types.ObjectId(parentId) }).select('_id').lean();
         for (const child of children) {
-          categoryIds.push(child._id.toString());
-          await findChildCategories(child._id.toString());
+          const childId = child._id.toString();
+          categoryIds.push(childId);
+          await findChildCategories(childId);
         }
       };
 
       await findChildCategories(categoryIdStr);
-      if (categoryIds.length === 1) {
-        console.warn(`No child categories found for parent ID ${categoryIdStr}`);
-      }
-
       query['category._id'] = { $in: categoryIds.map(id => new mongoose.Types.ObjectId(id)) };
     }
 
-    // Filter by color
+    // color + size + priceRange cần gộp vào một filter của variant
+    const variantConditions: any[] = [];
+
+    // color
     if (color) {
-      const colors = (color as string).split(',').map(c => c.trim());
       const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
-      if (!colors.every(c => validColors.includes(c))) {
-        res.status(400).json({ status: 'error', message: 'One or more colors are invalid' });
+      if (!validColors.includes(color as string)) {
+        res.status(400).json({ status: 'error', message: 'Invalid color' });
         return;
       }
-      query['variants.color'] = { $in: colors };
+      variantConditions.push({ 'variants.color': color });
     }
 
-    // Filter by size
+    // size
     if (size) {
       const validSizes = ['S', 'M', 'L', 'XL'];
       if (!validSizes.includes(size as string)) {
         res.status(400).json({ status: 'error', message: 'Invalid size' });
         return;
       }
-      query['variants.size'] = size;
+      variantConditions.push({ 'variants.size': size });
     }
 
-    // Filter by price range
+    // priceRange
+    let priceMatch: any = null;
     if (priceRange) {
-      const ranges = (priceRange as string).split(',').map(r => r.trim());
       const priceFilters: { [key: string]: any } = {
-        'under-500k': { 'variants.price': { $lt: 500000 } },
-        '500k-1m': { 'variants.price': { $gte: 500000, $lte: 1000000 } },
-        '1m-2m': { 'variants.price': { $gte: 1000000, $lte: 2000000 } },
-        '2m-4m': { 'variants.price': { $gte: 2000000, $lte: 4000000 } },
-        'over-4m': { 'variants.price': { $gt: 4000000 } },
+        'under-500k': { $lt: 500000 },
+        '500k-1m': { $gte: 500000, $lte: 1000000 },
+        '1m-2m': { $gte: 1000000, $lte: 2000000 },
+        '2m-4m': { $gte: 2000000, $lte: 4000000 },
+        'over-4m': { $gt: 4000000 },
       };
-
-      const priceQueries = ranges.map(range => {
-        if (!priceFilters[range]) {
-          throw new Error(`Invalid price range: ${range}`);
-        }
-        return priceFilters[range];
-      });
-
-      if (priceQueries.length > 0) {
-        query.$or = priceQueries;
-      }
-    }
-
-    // Sorting options
-    const options: any = {};
-    if (sort) {
-      const sortOptions: { [key: string]: any } = {
-        'price-asc': { 'variants.price': 1 },
-        'price-desc': { 'variants.price': -1 },
-        'newest': { _id: -1 },
-        'best-seller': { salesCount: -1 },
-      };
-
-      if (!sortOptions[sort as string]) {
-        res.status(400).json({ status: 'error', message: 'Invalid sort option' });
+      const filter = priceFilters[priceRange as string];
+      if (!filter) {
+        res.status(400).json({ status: 'error', message: `Invalid price range: ${priceRange}` });
         return;
       }
-      options.sort = sortOptions[sort as string];
+      priceMatch = filter;
     }
 
-    // Fetch all products
-    const products = await productModel
-      .find(query)
-      .select('name slug category image variants is_active salesCount discountPercent')
-      .sort(options.sort)
-      .lean();
+    const pipeline: any[] = [
+      { $match: query },
+      { $unwind: '$variants' },
+      {
+        $addFields: {
+          'variants.discountedPrice': {
+            $multiply: [
+              '$variants.price',
+              { $subtract: [1, { $divide: ['$variants.discountPercent', 100] }] }
+            ]
+          }
+        }
+      },
+    ];
+
+    // $match theo variant cùng lúc
+    const variantMatch: any = {};
+    for (const condition of variantConditions) {
+      Object.assign(variantMatch, condition);
+    }
+    if (priceMatch) {
+      variantMatch['variants.discountedPrice'] = priceMatch;
+    }
+    if (Object.keys(variantMatch).length > 0) {
+      pipeline.push({ $match: variantMatch });
+    }
+
+    // group lại thành sản phẩm
+    pipeline.push({
+      $group: {
+        _id: '$_id',
+        name: { $first: '$name' },
+        slug: { $first: '$slug' },
+        category: { $first: '$category' },
+        image: { $first: '$image' },
+        variants: { $push: '$variants' },
+        is_active: { $first: '$is_active' },
+        salesCount: { $first: '$salesCount' },
+        minDiscountedPrice: { $min: '$variants.discountedPrice' },
+      }
+    });
+
+    // sort
+    if (sort === 'price-asc' || sort === 'price-desc') {
+      pipeline.push({ $sort: { minDiscountedPrice: sort === 'price-asc' ? 1 : -1 } });
+    } else {
+      const sortOptions: { [key: string]: any } = {
+        newest: { _id: -1 },
+        'best-seller': { salesCount: -1 }
+      };
+      if (sort && sortOptions[sort as string]) {
+        pipeline.push({ $sort: sortOptions[sort as string] });
+      }
+    }
+
+    const products = await productModel.aggregate(pipeline);
 
     if (!products.length) {
       res.status(404).json({ status: 'error', message: 'No products found' });
       return;
     }
 
-    // Map response to include category details and image array
-    const result = products.map((product) => ({
+    const result = products.map(product => ({
       ...product,
       category: {
         _id: product.category._id,
         name: product.category.name,
       },
-      image: product.image || [], // Ensure image is an array
+      image: product.image || [],
     }));
 
     res.status(200).json({
       status: 'success',
       data: result,
-      total: products.length,
+      total: result.length,
     });
   } catch (error: any) {
     console.error('Error fetching all products:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
+
+
 // Lấy sản phẩm theo ID
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {

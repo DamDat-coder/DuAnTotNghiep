@@ -6,13 +6,13 @@ import FilterCategory from "./FilterCategory";
 import FilterPrice from "./FilterPrice";
 import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
-import { IFilterPopupProps } from "@/types/filter";
+import { FilterPopupProps } from "@/types/filter";
 
 export default function FilterPopup({
   isOpen,
   setIsOpen,
   onApplyFilters,
-}: IFilterPopupProps) {
+}: FilterPopupProps) {
   const [selectedSort, setSelectedSort] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
@@ -30,16 +30,15 @@ export default function FilterPopup({
     };
   }, [isOpen]);
 
-  const handleApplyFilters = () => {
-    if (onApplyFilters) {
-      onApplyFilters({
-        sort: selectedSort,
-        id_cate: selectedCategory,
-        priceRange: selectedPrice,
-        color: selectedColor,
-        size: selectedSize,
-      });
-    }
+  const handleApply = () => {
+    // Gửi tất cả bộ lọc, bao gồm id_cate hiện tại
+    onApplyFilters({
+      sort: selectedSort || undefined,
+      id_cate: selectedCategory || undefined, // Giữ id_cate hiện tại
+      priceRange: selectedPrice || undefined,
+      color: selectedColor || undefined,
+      size: selectedSize || undefined,
+    });
     setIsOpen(false);
   };
 
@@ -125,7 +124,7 @@ export default function FilterPopup({
                   Xóa
                 </button>
                 <button
-                  onClick={handleApplyFilters}
+                  onClick={handleApply}
                   className="mt-2.5 w-[40%] py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black border-2 border-white"
                 >
                   Lọc sản phẩm

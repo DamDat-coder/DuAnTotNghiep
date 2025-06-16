@@ -1,15 +1,11 @@
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { IProduct } from "../types/product";
 
-interface PaginatedProducts {
+interface ProductResponse {
   products: IProduct[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  total: number; // Giữ lại total để biết số lượng sản phẩm
 }
 
-// Ánh xạ tên danh mục sang categoryId
 const categoryMap: Record<string, string> = {
   Nam: "684d09c1543e02998d9df014",
   Nữ: "684d09d5543e02998d9df016",
@@ -21,14 +17,12 @@ export async function fetchProducts(
     category?: string;
     name?: string;
     id_cate?: string;
-    limit?: number;
-    page?: number;
     sort?: "price-asc" | "price-desc" | "newest" | "best-seller";
     color?: string;
     size?: string;
     priceRange?: string;
   } = {}
-): Promise<PaginatedProducts> {
+): Promise<ProductResponse> {
   try {
     const queryParams = new URLSearchParams();
     if (query.category && categoryMap[query.category]) {
@@ -36,13 +30,11 @@ export async function fetchProducts(
     }
     if (query.name) queryParams.append("name", query.name);
     if (query.id_cate) queryParams.append("id_cate", query.id_cate);
-    if (query.limit) queryParams.append("limit", String(query.limit));
-    if (query.page) queryParams.append("page", String(query.page));
     if (query.sort) queryParams.append("sort", query.sort);
     if (query.color) queryParams.append("color", query.color);
     if (query.size) queryParams.append("size", query.size);
     if (query.priceRange) queryParams.append("priceRange", query.priceRange);
-    queryParams.append("is_active", "true"); // Chỉ lấy sản phẩm đang hoạt động
+    queryParams.append("is_active", "true"); // Giữ is_active
 
     const url = `${API_BASE_URL}/products?${queryParams.toString()}`;
     const response = await fetchWithAuth<any>(
@@ -55,7 +47,7 @@ export async function fetchProducts(
       id: e._id,
       name: e.name,
       slug: e.slug,
-      description: e.description || "", // Thêm description
+      description: e.description || "",
       category: {
         _id: e.category?._id || null,
         name: e.category?.name || "Không rõ",
@@ -67,36 +59,32 @@ export async function fetchProducts(
         size: v.size,
         stock: v.stock,
         discountPercent: v.discountPercent ?? 0,
+        discountedPrice: v.discountedPrice ?? 0,
       })),
       images: e.image || [],
       stock: e.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) || 0,
-      is_active: e.is_active ?? true, // Thêm is_active
-      salesCount: e.salesCount || 0, // Thêm salesCount
+      is_active: e.is_active ?? true,
+      salesCount: e.salesCount || 0,
     }));
 
     return {
       products,
       total: response.total || 0,
-      page: response.page || 1,
-      limit: query.limit || response.limit || 10, // Lấy limit từ query hoặc response
-      totalPages: response.totalPages || 1,
     };
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm:", error);
     return {
       products: [],
       total: 0,
-      page: 1,
-      limit: query.limit || 10,
-      totalPages: 1,
     };
   }
 }
 
+// Các hàm khác (addProduct, fetchProductById, editProduct, deleteProduct, fetchProductBySlug) giữ nguyên
 export async function addProduct(product: {
   name: string;
   slug: string;
-  description?: string; // Thêm description
+  description?: string;
   categoryId: string;
   variants: {
     price: number;
@@ -106,7 +94,7 @@ export async function addProduct(product: {
     discountPercent?: number;
   }[];
   images: File[];
-  is_active?: boolean; // Thêm is_active
+  is_active?: boolean;
 }): Promise<IProduct | null> {
   try {
     if (
@@ -138,7 +126,7 @@ export async function addProduct(product: {
     product.images.forEach((image) => {
       formData.append("image", image);
     });
-    formData.append("is_active", String(product.is_active ?? true)); // Thêm is_active
+    formData.append("is_active", String(product.is_active ?? true));
 
     const res = await fetchWithAuth<any>(`${API_BASE_URL}/products`, {
       method: "POST",
@@ -229,7 +217,7 @@ export async function editProduct(
   product: {
     name?: string;
     slug?: string;
-    description?: string; // Thêm description
+    description?: string;
     categoryId?: string;
     variants?: {
       price: number;
@@ -239,7 +227,7 @@ export async function editProduct(
       discountPercent?: number;
     }[];
     images?: File[];
-    is_active?: boolean; // Thêm is_active
+    is_active?: boolean;
   }
 ): Promise<IProduct | null> {
   try {

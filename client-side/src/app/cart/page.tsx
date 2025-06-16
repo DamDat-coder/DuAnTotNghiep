@@ -10,6 +10,19 @@ import { IProduct } from "@/types/product";
 import { fetchProducts } from "@/services/productApi";
 import CartTablet from "@/components/Cart/CartTablet";
 
+const getLowestPriceVariant = (product: IProduct) => {
+  if (!product.variants || product.variants.length === 0) {
+    return { price: 0, discountPercent: 0, discountedPrice: 0 };
+  }
+  return product.variants.reduce(
+    (min, variant) =>
+      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
+        ? variant
+        : min,
+    product.variants[0]
+  );
+};
+
 export default function Cart() {
   const cart = useCart();
   const dispatch = useCartDispatch();
@@ -45,9 +58,9 @@ export default function Cart() {
   useEffect(() => {
     async function getSuggestedProducts() {
       try {
-        const products = await fetchProducts();
-        console.log("Fetched suggested products:", products);
-        setSuggestedProducts(products || []);
+        const response = await fetchProducts();
+        console.log("Fetched suggested products:", response);
+        setSuggestedProducts(response?.products || []);
       } catch (error) {
         console.error("Failed to fetch suggested products:", error);
         setSuggestedProducts([]);

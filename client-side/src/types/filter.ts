@@ -19,8 +19,21 @@ export interface SortOption {
   label: string;
 }
 
-export interface IFilterPopupProps {
+export interface FilterPopupProps {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  onApplyFilters?: (filters: any) => void;
+  setIsOpen: (open: boolean) => void;
+  onApplyFilters: (filters: {
+    sort?: string;
+    id_cate?: string;
+    priceRange?: string;
+    color?: string;
+    size?: string;
+  }) => void;
+  currentFilters: {
+    sort?: string;
+    id_cate?: string;
+    priceRange?: string;
+    color?: string;
+    size?: string;
+  };
 }

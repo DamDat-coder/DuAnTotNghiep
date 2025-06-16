@@ -6,7 +6,6 @@ import {
   getProductById,
   createProduct,
   updateProduct,
-  deleteProduct,
   getAllProductsAdmin,
   getProductBySlug
 } from "../controllers/productController";
@@ -27,6 +26,5 @@ router.get("/:id", getProductById);
 router.get('/:slug', getProductBySlug);
 router.post("/", verifyToken, verifyAdmin, createProduct);
 router.patch("/:id", verifyToken, verifyAdmin,  updateProduct);
-router.delete("/:id", verifyToken, verifyAdmin, deleteProduct);
 
 module.exports = router;

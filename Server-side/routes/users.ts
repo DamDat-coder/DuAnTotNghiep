@@ -4,29 +4,26 @@ import {
   login,
   refresh,
   getUser,
-  getAllUser,
   updateUser,
-  deleteUser,
+  disableUser,
+  getAllUser,
 } from "../controllers/userController";
 import verifyToken from "../middlewares/verifyToken";
 import verifyAdmin from "../middlewares/verifyAdmin";
 
-
-
 const router = Router();
 
-// Public routes
+// Public
 router.post("/register", register);
-router.post("/register",  register);
 router.post("/login", login);
 router.post("/refresh", refresh);
 
-// Protected routes
-router.get("/userinfo", verifyToken, getUser);
-router.get("/", getAllUser);
+// Người dùng đăng nhập
+router.get("/me", verifyToken, getUser);
 router.put("/update", verifyToken, updateUser);
-router.put("/update", verifyToken, updateUser);
-router.delete("/delete", verifyToken, deleteUser);
+router.delete("/delete", verifyToken, disableUser );
 
-// Xuất CommonJS thay vì export default
+// Admin
+router.get("/", verifyToken, verifyAdmin, getAllUser);
+
 module.exports = router;

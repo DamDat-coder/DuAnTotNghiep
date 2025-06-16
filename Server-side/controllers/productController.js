@@ -17,7 +17,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const categoryModel_1 = __importDefault(require("../models/categoryModel"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
-// Lấy tất cả sản phẩm 
+// Lấy tất cả sản phẩm bên admin
 const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, limit, sort, page, } = req.query;
@@ -83,16 +83,16 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.getAllProductsAdmin = getAllProductsAdmin;
-// Lấy tất cả sản phẩm (hỗ trợ phân trang, tìm kiếm, sắp xếp, và lọc theo nhiều tiêu chí)
+// Lấy tất cả sản phẩm 
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, id_cate, sort, priceRange, color, size, is_active, } = req.query;
-        // Xây dựng điều kiện tìm kiếm
+        // Build search conditions
         const query = {};
-        // Kiểm tra sản phẩm
+        // Check is_active status
         if (is_active !== undefined) {
             if (is_active !== 'true' && is_active !== 'false') {
-                res.status(400).json({ status: 'error', message: 'Giá trị is_active không hợp lệ, phải là true hoặc false' });
+                res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
                 return;
             }
             query.is_active = is_active === 'true';
@@ -100,18 +100,18 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         else {
             query.is_active = true;
         }
-        // Tìm kiếm theo tên sản phẩm
+        // Search by product name
         if (name) {
             query.name = new RegExp(name, 'i');
         }
-        // Lọc theo danh mục (bao gồm danh mục cha và tất cả danh mục con)
+        // Filter by category (including parent and all child categories)
         if (id_cate) {
             const categoryIdStr = String(id_cate);
             if (!mongoose_1.default.Types.ObjectId.isValid(categoryIdStr)) {
-                res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+                res.status(400).json({ status: 'error', message: 'Invalid category ID' });
                 return;
             }
-            // Lấy tất cả danh mục con của danh mục cha (bao gồm các cấp)
+            // Get all child categories of the parent (including nested levels) and include parent
             const categoryIds = [categoryIdStr];
             const findChildCategories = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
                 const children = yield categoryModel_1.default
@@ -123,29 +123,32 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
                     yield findChildCategories(child._id.toString());
                 }
             });
-            yield findChildCategories(id_cate);
+            yield findChildCategories(categoryIdStr);
+            if (categoryIds.length === 1) {
+                console.warn(`No child categories found for parent ID ${categoryIdStr}`);
+            }
             query['category._id'] = { $in: categoryIds.map(id => new mongoose_1.default.Types.ObjectId(id)) };
         }
-        // Lọc theo màu sắc
+        // Filter by color
         if (color) {
             const colors = color.split(',').map(c => c.trim());
             const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
             if (!colors.every(c => validColors.includes(c))) {
-                res.status(400).json({ status: 'error', message: 'Một hoặc nhiều màu sắc không hợp lệ' });
+                res.status(400).json({ status: 'error', message: 'One or more colors are invalid' });
                 return;
             }
             query['variants.color'] = { $in: colors };
         }
-        // Lọc theo kích cỡ
+        // Filter by size
         if (size) {
             const validSizes = ['S', 'M', 'L', 'XL'];
             if (!validSizes.includes(size)) {
-                res.status(400).json({ status: 'error', message: 'Kích cỡ không hợp lệ' });
+                res.status(400).json({ status: 'error', message: 'Invalid size' });
                 return;
             }
             query['variants.size'] = size;
         }
-        // Lọc theo khoảng giá
+        // Filter by price range
         if (priceRange) {
             const ranges = priceRange.split(',').map(r => r.trim());
             const priceFilters = {
@@ -157,7 +160,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             };
             const priceQueries = ranges.map(range => {
                 if (!priceFilters[range]) {
-                    throw new Error(`Khoảng giá không hợp lệ: ${range}`);
+                    throw new Error(`Invalid price range: ${range}`);
                 }
                 return priceFilters[range];
             });
@@ -165,7 +168,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 query.$or = priceQueries;
             }
         }
-        // Sắp xếp
+        // Sorting options
         const options = {};
         if (sort) {
             const sortOptions = {
@@ -175,25 +178,26 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 'best-seller': { salesCount: -1 },
             };
             if (!sortOptions[sort]) {
-                res.status(400).json({ status: 'error', message: 'Tùy chọn sắp xếp không hợp lệ' });
+                res.status(400).json({ status: 'error', message: 'Invalid sort option' });
                 return;
             }
             options.sort = sortOptions[sort];
         }
-        // Lấy tất cả sản phẩm
+        // Fetch all products
         const products = yield productModel_1.default
             .find(query)
-            .select('name slug category image variants is_active salesCount')
+            .select('name slug category image variants is_active salesCount discountPercent')
             .sort(options.sort)
             .lean();
         if (!products.length) {
-            res.status(404).json({ status: 'error', message: 'Không tìm thấy sản phẩm' });
+            res.status(404).json({ status: 'error', message: 'No products found' });
             return;
         }
+        // Map response to include category details and image array
         const result = products.map((product) => (Object.assign(Object.assign({}, product), { category: {
                 _id: product.category._id,
                 name: product.category.name,
-            } })));
+            }, image: product.image || [] })));
         res.status(200).json({
             status: 'success',
             data: result,
@@ -201,7 +205,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
     }
     catch (error) {
-        console.error('Lỗi khi lấy tất cả sản phẩm:', error);
+        console.error('Error fetching all products:', error);
         res.status(500).json({ status: 'error', message: error.message });
     }
 });

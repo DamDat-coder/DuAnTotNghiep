@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lockProduct = exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProducts = exports.getAllProductsAdmin = void 0;
+exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProducts = exports.getAllProductsAdmin = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const categoryModel_1 = __importDefault(require("../models/categoryModel"));
@@ -423,44 +423,6 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.updateProduct = updateProduct;
-// Xóa sản phẩm
-const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const productId = req.params.id;
-        if (!mongoose_1.default.Types.ObjectId.isValid(productId)) {
-            res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
-            return;
-        }
-        const product = yield productModel_1.default.findById(productId);
-        if (!product) {
-            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
-            return;
-        }
-        if (product.image && product.image.length > 0) {
-            const deletePromises = product.image.map((img) => {
-                var _a;
-                const publicId = (_a = img.split('/').pop()) === null || _a === void 0 ? void 0 : _a.split('.')[0];
-                if (publicId) {
-                    return cloudinary_1.default.uploader.destroy(`products/${publicId}`).catch((err) => {
-                        console.error(`Lỗi khi xóa ảnh ${publicId}:`, err);
-                    });
-                }
-                return Promise.resolve();
-            });
-            yield Promise.all(deletePromises);
-        }
-        yield productModel_1.default.findByIdAndDelete(productId);
-        res.status(200).json({
-            status: 'success',
-            message: 'Xóa sản phẩm thành công',
-        });
-    }
-    catch (error) {
-        console.error('Lỗi khi xóa sản phẩm:', error);
-        res.status(500).json({ status: 'error', message: error.message });
-    }
-});
-exports.deleteProduct = deleteProduct;
 // Khóa/Mở khóa sản phẩm
 const lockProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

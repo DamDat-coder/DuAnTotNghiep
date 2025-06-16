@@ -261,7 +261,6 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
   }
 };
 
-
 // Lấy sản phẩm theo ID
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -487,47 +486,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
       return;
     }
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-};
-
-// Xóa sản phẩm
-export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const productId = req.params.id;
-
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
-      return;
-    }
-
-    const product = await productModel.findById(productId);
-    if (!product) {
-      res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
-      return;
-    }
-
-    if (product.image && product.image.length > 0) {
-      const deletePromises = product.image.map((img) => {
-        const publicId = img.split('/').pop()?.split('.')[0];
-        if (publicId) {
-          return cloudinary.uploader.destroy(`products/${publicId}`).catch((err) => {
-            console.error(`Lỗi khi xóa ảnh ${publicId}:`, err);
-          });
-        }
-        return Promise.resolve();
-      });
-      await Promise.all(deletePromises);
-    }
-
-    await productModel.findByIdAndDelete(productId);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Xóa sản phẩm thành công',
-    });
-  } catch (error: any) {
-    console.error('Lỗi khi xóa sản phẩm:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };

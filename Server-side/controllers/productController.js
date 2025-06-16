@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lockProduct = exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProducts = exports.getAllProductsAdmin = void 0;
+exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProducts = exports.getAllProductsAdmin = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const categoryModel_1 = __importDefault(require("../models/categoryModel"));
@@ -87,9 +87,8 @@ exports.getAllProductsAdmin = getAllProductsAdmin;
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, id_cate, sort, priceRange, color, size, is_active, } = req.query;
-        // Build search conditions
         const query = {};
-        // Check is_active status
+        // is_active
         if (is_active !== undefined) {
             if (is_active !== 'true' && is_active !== 'false') {
                 res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
@@ -100,108 +99,131 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         else {
             query.is_active = true;
         }
-        // Search by product name
+        // name
         if (name) {
             query.name = new RegExp(name, 'i');
         }
-        // Filter by category (including parent and all child categories)
+        // id_cate
         if (id_cate) {
             const categoryIdStr = String(id_cate);
             if (!mongoose_1.default.Types.ObjectId.isValid(categoryIdStr)) {
                 res.status(400).json({ status: 'error', message: 'Invalid category ID' });
                 return;
             }
-            // Get all child categories of the parent (including nested levels) and include parent
             const categoryIds = [categoryIdStr];
             const findChildCategories = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
-                const children = yield categoryModel_1.default
-                    .find({ parentid: new mongoose_1.default.Types.ObjectId(parentId) })
-                    .select('_id')
-                    .lean();
+                const children = yield categoryModel_1.default.find({ parentid: new mongoose_1.default.Types.ObjectId(parentId) }).select('_id').lean();
                 for (const child of children) {
-                    categoryIds.push(child._id.toString());
-                    yield findChildCategories(child._id.toString());
+                    const childId = child._id.toString();
+                    categoryIds.push(childId);
+                    yield findChildCategories(childId);
                 }
             });
             yield findChildCategories(categoryIdStr);
-            if (categoryIds.length === 1) {
-                console.warn(`No child categories found for parent ID ${categoryIdStr}`);
-            }
             query['category._id'] = { $in: categoryIds.map(id => new mongoose_1.default.Types.ObjectId(id)) };
         }
-        // Filter by color
+        // color + size + priceRange cần gộp vào một filter của variant
+        const variantConditions = [];
+        // color
         if (color) {
-            const colors = color.split(',').map(c => c.trim());
             const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
-            if (!colors.every(c => validColors.includes(c))) {
-                res.status(400).json({ status: 'error', message: 'One or more colors are invalid' });
+            if (!validColors.includes(color)) {
+                res.status(400).json({ status: 'error', message: 'Invalid color' });
                 return;
             }
-            query['variants.color'] = { $in: colors };
+            variantConditions.push({ 'variants.color': color });
         }
-        // Filter by size
+        // size
         if (size) {
             const validSizes = ['S', 'M', 'L', 'XL'];
             if (!validSizes.includes(size)) {
                 res.status(400).json({ status: 'error', message: 'Invalid size' });
                 return;
             }
-            query['variants.size'] = size;
+            variantConditions.push({ 'variants.size': size });
         }
-        // Filter by price range
+        // priceRange
+        let priceMatch = null;
         if (priceRange) {
-            const ranges = priceRange.split(',').map(r => r.trim());
             const priceFilters = {
-                'under-500k': { 'variants.price': { $lt: 500000 } },
-                '500k-1m': { 'variants.price': { $gte: 500000, $lte: 1000000 } },
-                '1m-2m': { 'variants.price': { $gte: 1000000, $lte: 2000000 } },
-                '2m-4m': { 'variants.price': { $gte: 2000000, $lte: 4000000 } },
-                'over-4m': { 'variants.price': { $gt: 4000000 } },
+                'under-500k': { $lt: 500000 },
+                '500k-1m': { $gte: 500000, $lte: 1000000 },
+                '1m-2m': { $gte: 1000000, $lte: 2000000 },
+                '2m-4m': { $gte: 2000000, $lte: 4000000 },
+                'over-4m': { $gt: 4000000 },
             };
-            const priceQueries = ranges.map(range => {
-                if (!priceFilters[range]) {
-                    throw new Error(`Invalid price range: ${range}`);
-                }
-                return priceFilters[range];
-            });
-            if (priceQueries.length > 0) {
-                query.$or = priceQueries;
-            }
-        }
-        // Sorting options
-        const options = {};
-        if (sort) {
-            const sortOptions = {
-                'price-asc': { 'variants.price': 1 },
-                'price-desc': { 'variants.price': -1 },
-                'newest': { _id: -1 },
-                'best-seller': { salesCount: -1 },
-            };
-            if (!sortOptions[sort]) {
-                res.status(400).json({ status: 'error', message: 'Invalid sort option' });
+            const filter = priceFilters[priceRange];
+            if (!filter) {
+                res.status(400).json({ status: 'error', message: `Invalid price range: ${priceRange}` });
                 return;
             }
-            options.sort = sortOptions[sort];
+            priceMatch = filter;
         }
-        // Fetch all products
-        const products = yield productModel_1.default
-            .find(query)
-            .select('name slug category image variants is_active salesCount discountPercent')
-            .sort(options.sort)
-            .lean();
+        const pipeline = [
+            { $match: query },
+            { $unwind: '$variants' },
+            {
+                $addFields: {
+                    'variants.discountedPrice': {
+                        $multiply: [
+                            '$variants.price',
+                            { $subtract: [1, { $divide: ['$variants.discountPercent', 100] }] }
+                        ]
+                    }
+                }
+            },
+        ];
+        // $match theo variant cùng lúc
+        const variantMatch = {};
+        for (const condition of variantConditions) {
+            Object.assign(variantMatch, condition);
+        }
+        if (priceMatch) {
+            variantMatch['variants.discountedPrice'] = priceMatch;
+        }
+        if (Object.keys(variantMatch).length > 0) {
+            pipeline.push({ $match: variantMatch });
+        }
+        // group lại thành sản phẩm
+        pipeline.push({
+            $group: {
+                _id: '$_id',
+                name: { $first: '$name' },
+                slug: { $first: '$slug' },
+                category: { $first: '$category' },
+                image: { $first: '$image' },
+                variants: { $push: '$variants' },
+                is_active: { $first: '$is_active' },
+                salesCount: { $first: '$salesCount' },
+                minDiscountedPrice: { $min: '$variants.discountedPrice' },
+            }
+        });
+        // sort
+        if (sort === 'price-asc' || sort === 'price-desc') {
+            pipeline.push({ $sort: { minDiscountedPrice: sort === 'price-asc' ? 1 : -1 } });
+        }
+        else {
+            const sortOptions = {
+                newest: { _id: -1 },
+                'best-seller': { salesCount: -1 }
+            };
+            if (sort && sortOptions[sort]) {
+                pipeline.push({ $sort: sortOptions[sort] });
+            }
+        }
+        const products = yield productModel_1.default.aggregate(pipeline);
         if (!products.length) {
             res.status(404).json({ status: 'error', message: 'No products found' });
             return;
         }
-        // Map response to include category details and image array
-        const result = products.map((product) => (Object.assign(Object.assign({}, product), { category: {
+        const result = products.map(product => (Object.assign(Object.assign({}, product), { category: {
                 _id: product.category._id,
                 name: product.category.name,
             }, image: product.image || [] })));
         res.status(200).json({
             status: 'success',
             data: result,
-            total: products.length,
+            total: result.length,
         });
     }
     catch (error) {
@@ -401,44 +423,6 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.updateProduct = updateProduct;
-// Xóa sản phẩm
-const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const productId = req.params.id;
-        if (!mongoose_1.default.Types.ObjectId.isValid(productId)) {
-            res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
-            return;
-        }
-        const product = yield productModel_1.default.findById(productId);
-        if (!product) {
-            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
-            return;
-        }
-        if (product.image && product.image.length > 0) {
-            const deletePromises = product.image.map((img) => {
-                var _a;
-                const publicId = (_a = img.split('/').pop()) === null || _a === void 0 ? void 0 : _a.split('.')[0];
-                if (publicId) {
-                    return cloudinary_1.default.uploader.destroy(`products/${publicId}`).catch((err) => {
-                        console.error(`Lỗi khi xóa ảnh ${publicId}:`, err);
-                    });
-                }
-                return Promise.resolve();
-            });
-            yield Promise.all(deletePromises);
-        }
-        yield productModel_1.default.findByIdAndDelete(productId);
-        res.status(200).json({
-            status: 'success',
-            message: 'Xóa sản phẩm thành công',
-        });
-    }
-    catch (error) {
-        console.error('Lỗi khi xóa sản phẩm:', error);
-        res.status(500).json({ status: 'error', message: error.message });
-    }
-});
-exports.deleteProduct = deleteProduct;
 // Khóa/Mở khóa sản phẩm
 const lockProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

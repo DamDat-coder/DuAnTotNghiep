@@ -12,20 +12,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateSlug = void 0;
-const categoryModel_1 = __importDefault(require("../models/categoryModel"));
-const generateSlug = (name) => __awaiter(void 0, void 0, void 0, function* () {
-    let slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
-    let uniqueSlug = slug;
-    let counter = 1;
-    while (yield categoryModel_1.default.findOne({ slug: uniqueSlug })) {
-        uniqueSlug = `${slug}-${counter}`;
-        counter++;
-    }
-    return uniqueSlug;
+exports.deleteImageFromCloudinary = exports.uploadMultipleImagesToCloudinary = exports.uploadImageToCloudinary = void 0;
+const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const uploadImageToCloudinary = (fileBase64) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield cloudinary_1.default.uploader.upload(fileBase64, {
+        folder: "news_images",
+    });
 });
-exports.generateSlug = generateSlug;
+exports.uploadImageToCloudinary = uploadImageToCloudinary;
+const uploadMultipleImagesToCloudinary = (imageList) => __awaiter(void 0, void 0, void 0, function* () {
+    const uploadPromises = imageList.map((image) => cloudinary_1.default.uploader.upload(image, { folder: "news_images" }));
+    const results = yield Promise.all(uploadPromises);
+    return results.map((res) => res.secure_url);
+});
+exports.uploadMultipleImagesToCloudinary = uploadMultipleImagesToCloudinary;
+const deleteImageFromCloudinary = (imageUrl) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const parts = imageUrl.split('/');
+        const publicIdWithExtension = parts.slice(parts.indexOf('upload') + 1).join('/');
+        const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, '');
+        yield cloudinary_1.default.uploader.destroy(publicId);
+    }
+    catch (error) {
+        console.error('Lỗi xoá ảnh Cloudinary:', error);
+    }
+});
+exports.deleteImageFromCloudinary = deleteImageFromCloudinary;

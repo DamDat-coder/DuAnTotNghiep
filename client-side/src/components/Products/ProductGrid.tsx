@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import FilterPopup from "./FilterPopup";
 import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
@@ -15,16 +16,23 @@ interface ProductGridProps {
 
 const getLowestPriceVariant = (product: IProduct) => {
   if (!product.variants || product.variants.length === 0) {
-    return { price: 0, discountPercent: 0 };
+    return { price: 0, discountPercent: 0, discountedPrice: 0 };
   }
+  console.log(product.variants[0]);
   return product.variants.reduce(
-    (max, variant) =>
-      variant.price > max.price ? variant : max,
+    (min, variant) =>
+      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
+        ? variant
+        : min,
     product.variants[0]
   );
+  
 };
 
-export default function ProductGrid({ products, onApplyFilters }: ProductGridProps) {
+export default function ProductGrid({
+  products,
+  onApplyFilters,
+}: ProductGridProps) {
   const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
     products.slice(0, 10)
   );
@@ -33,6 +41,16 @@ export default function ProductGrid({ products, onApplyFilters }: ProductGridPro
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Truyền id_cate hiện tại cho FilterPopup
+  const currentFilters = {
+    id_cate: searchParams.get("id_cate") || undefined,
+    sort: searchParams.get("sort") || undefined,
+    priceRange: searchParams.get("priceRange") || undefined,
+    color: searchParams.get("color") || undefined,
+    size: searchParams.get("size") || undefined,
+  };
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const PRODUCTS_PER_PAGE = 10;
@@ -89,14 +107,17 @@ export default function ProductGrid({ products, onApplyFilters }: ProductGridPro
   };
 
   const renderProductCard = (product: IProduct) => {
-    const { price, discountPercent } = getLowestPriceVariant(product);
-    const discountPrice = price * (1 - discountPercent / 100);
+    const { price, discountPercent, discountedPrice } = getLowestPriceVariant(product);
 
     return (
       <div className="w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">
           <Image
-            src={product.images[0] ? `/product/img/${product.images[0]}` : "/placeholder.jpg"}
+            src={
+              product.images[0]
+                ? `/product/img/${product.images[0]}`
+                : "/placeholder.jpg"
+            }
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}
@@ -121,8 +142,8 @@ export default function ProductGrid({ products, onApplyFilters }: ProductGridPro
               </div>
             </div>
             <div className="price-container flex items-center gap-3">
-              <div className="discountPrice text-[1rem] font-bold text-red-500">
-                {discountPrice.toLocaleString("vi-VN")}₫
+              <div className="discountedPrice text-[1rem] font-bold text-red-500">
+                {discountedPrice.toLocaleString("vi-VN")}₫
               </div>
               <div
                 className={`price text-[0.875rem] flex items-center text-[#374151] line-through ${
@@ -192,7 +213,8 @@ export default function ProductGrid({ products, onApplyFilters }: ProductGridPro
       <FilterPopup
         isOpen={isFilterOpen}
         setIsOpen={setIsFilterOpen}
-        onApplyFilters={onApplyFilters}
+        onApplyFilters={onApplyFilters ?? (() => {})}
+        currentFilters={currentFilters}
       />
       {selectedProduct && (
         <BuyNowPopup

@@ -20,7 +20,7 @@ export async function fetchProducts(
   query: {
     category?: string;
     name?: string;
-    idcate?: string;
+    id_cate?: string;
     limit?: number;
     page?: number;
     sort?: "price-asc" | "price-desc" | "newest" | "best-seller";
@@ -32,18 +32,19 @@ export async function fetchProducts(
   try {
     const queryParams = new URLSearchParams();
     if (query.category && categoryMap[query.category]) {
-      queryParams.append("idcate", categoryMap[query.category]);
+      queryParams.append("id_cate", categoryMap[query.category]);
     }
     if (query.name) queryParams.append("name", query.name);
-    if (query.idcate) queryParams.append("idcate", query.idcate);
+    if (query.id_cate) queryParams.append("id_cate", query.id_cate);
     if (query.limit) queryParams.append("limit", String(query.limit));
     if (query.page) queryParams.append("page", String(query.page));
     if (query.sort) queryParams.append("sort", query.sort);
     if (query.color) queryParams.append("color", query.color);
     if (query.size) queryParams.append("size", query.size);
     if (query.priceRange) queryParams.append("priceRange", query.priceRange);
+    queryParams.append("is_active", "true"); // Chỉ lấy sản phẩm đang hoạt động
 
-    const url = `${API_BASE_URL}/products/?${queryParams.toString()}`;
+    const url = `${API_BASE_URL}/products?${queryParams.toString()}`;
     const response = await fetchWithAuth<any>(
       url,
       { cache: "no-store" },
@@ -54,6 +55,7 @@ export async function fetchProducts(
       id: e._id,
       name: e.name,
       slug: e.slug,
+      description: e.description || "", // Thêm description
       category: {
         _id: e.category?._id || null,
         name: e.category?.name || "Không rõ",
@@ -68,13 +70,15 @@ export async function fetchProducts(
       })),
       images: e.image || [],
       stock: e.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) || 0,
+      is_active: e.is_active ?? true, // Thêm is_active
+      salesCount: e.salesCount || 0, // Thêm salesCount
     }));
 
     return {
       products,
       total: response.total || 0,
       page: response.page || 1,
-      limit: response.limit || 10,
+      limit: query.limit || response.limit || 10, // Lấy limit từ query hoặc response
       totalPages: response.totalPages || 1,
     };
   } catch (error) {
@@ -83,7 +87,7 @@ export async function fetchProducts(
       products: [],
       total: 0,
       page: 1,
-      limit: 10,
+      limit: query.limit || 10,
       totalPages: 1,
     };
   }
@@ -92,6 +96,7 @@ export async function fetchProducts(
 export async function addProduct(product: {
   name: string;
   slug: string;
+  description?: string; // Thêm description
   categoryId: string;
   variants: {
     price: number;
@@ -101,6 +106,7 @@ export async function addProduct(product: {
     discountPercent?: number;
   }[];
   images: File[];
+  is_active?: boolean; // Thêm is_active
 }): Promise<IProduct | null> {
   try {
     if (
@@ -117,6 +123,7 @@ export async function addProduct(product: {
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("slug", product.slug);
+    if (product.description) formData.append("description", product.description);
     formData.append("category[_id]", product.categoryId);
     product.variants.forEach((variant, index) => {
       formData.append(`variants[${index}][price]`, variant.price.toString());
@@ -131,6 +138,7 @@ export async function addProduct(product: {
     product.images.forEach((image) => {
       formData.append("image", image);
     });
+    formData.append("is_active", String(product.is_active ?? true)); // Thêm is_active
 
     const res = await fetchWithAuth<any>(`${API_BASE_URL}/products`, {
       method: "POST",
@@ -141,6 +149,7 @@ export async function addProduct(product: {
       id: res.data._id,
       name: res.data.name,
       slug: res.data.slug,
+      description: res.data.description || "",
       category: {
         _id: res.data.category?._id || null,
         name: res.data.category?.name || "Không rõ",
@@ -157,6 +166,8 @@ export async function addProduct(product: {
       stock:
         res.data.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) ||
         0,
+      is_active: res.data.is_active ?? true,
+      salesCount: res.data.salesCount || 0,
     };
   } catch (error: any) {
     console.error("Lỗi khi thêm sản phẩm:", error);
@@ -183,6 +194,7 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
       id: response.data._id,
       name: response.data.name,
       slug: response.data.slug,
+      description: response.data.description || "",
       category: {
         _id: response.data.category?._id || null,
         name: response.data.category?.name || "Không rõ",
@@ -201,6 +213,8 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
           (sum: number, v: any) => sum + v.stock,
           0
         ) || 0,
+      is_active: response.data.is_active ?? true,
+      salesCount: response.data.salesCount || 0,
     };
 
     return product;
@@ -215,6 +229,7 @@ export async function editProduct(
   product: {
     name?: string;
     slug?: string;
+    description?: string; // Thêm description
     categoryId?: string;
     variants?: {
       price: number;
@@ -224,12 +239,14 @@ export async function editProduct(
       discountPercent?: number;
     }[];
     images?: File[];
+    is_active?: boolean; // Thêm is_active
   }
 ): Promise<IProduct | null> {
   try {
     const formData = new FormData();
     if (product.name) formData.append("name", product.name);
     if (product.slug) formData.append("slug", product.slug);
+    if (product.description) formData.append("description", product.description);
     if (product.categoryId)
       formData.append("category[_id]", product.categoryId);
     if (product.variants) {
@@ -249,6 +266,8 @@ export async function editProduct(
         formData.append("image", image);
       });
     }
+    if (product.is_active !== undefined)
+      formData.append("is_active", String(product.is_active));
 
     const res = await fetchWithAuth<any>(`${API_BASE_URL}/products/${id}`, {
       method: "PATCH",
@@ -259,6 +278,7 @@ export async function editProduct(
       id: res.data._id,
       name: res.data.name,
       slug: res.data.slug,
+      description: res.data.description || "",
       category: {
         _id: res.data.category?._id || null,
         name: res.data.category?.name || "Không rõ",
@@ -275,6 +295,8 @@ export async function editProduct(
       stock:
         res.data.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) ||
         0,
+      is_active: res.data.is_active ?? true,
+      salesCount: res.data.salesCount || 0,
     };
 
     return updatedProduct;
@@ -318,6 +340,7 @@ export async function fetchProductBySlug(
       id: response.data._id,
       name: response.data.name,
       slug: response.data.slug,
+      description: response.data.description || "",
       category: {
         _id: response.data.category?._id || null,
         name: response.data.category?.name || "Không rõ",
@@ -336,6 +359,8 @@ export async function fetchProductBySlug(
           (sum: number, v: any) => sum + v.stock,
           0
         ) || 0,
+      is_active: response.data.is_active ?? true,
+      salesCount: response.data.salesCount || 0,
     };
 
     return product;

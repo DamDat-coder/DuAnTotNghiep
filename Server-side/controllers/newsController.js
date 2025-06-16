@@ -13,98 +13,132 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getNewsDetail = exports.getNewsList = exports.deleteNews = exports.updateNews = exports.createNews = void 0;
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const newsModel_1 = __importDefault(require("../models/newsModel"));
+const cloudinaryUpload_1 = require("../utils/cloudinaryUpload");
 // Thêm tin tức
 const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { title, content, category } = req.body;
-        if (!title || !content) {
-            if (req.file)
-                fs_1.default.unlinkSync(req.file.path);
-            throw new Error("Tiêu đề và nội dung là bắt buộc");
+        const { title, content, category_id, slug, tags, thumbnail, news_image, user_id } = req.body;
+        if (!title || !content || !category_id || !slug || !user_id) {
+            throw new Error("Tiêu đề, nội dung, danh mục, slug và người tạo là bắt buộc");
         }
+        if (!mongoose_1.default.Types.ObjectId.isValid(user_id) || !mongoose_1.default.Types.ObjectId.isValid(category_id)) {
+            throw new Error("user_id hoặc category_id không hợp lệ");
+        }
+        const thumbnailResult = thumbnail ? yield (0, cloudinaryUpload_1.uploadImageToCloudinary)(thumbnail) : null;
+        const imageList = Array.isArray(news_image) ? news_image : [];
+        const uploadedImages = imageList.length > 0 ? yield (0, cloudinaryUpload_1.uploadMultipleImagesToCloudinary)(imageList) : [];
         const news = new newsModel_1.default({
             title,
             content,
-            image: req.file ? `/images/${req.file.filename}` : null,
-            author: req.userId,
-            category,
+            slug,
+            thumbnail: (thumbnailResult === null || thumbnailResult === void 0 ? void 0 : thumbnailResult.secure_url) || null,
+            user_id,
+            category_id,
+            tags: tags || [],
+            news_image: uploadedImages,
+            is_published: false,
         });
         const data = yield news.save();
         const populatedNews = yield newsModel_1.default
             .findById(data._id)
-            .populate("author", "name email", "users") // Collection name: "users"
-            .populate("category", "name description", "categories"); // Collection name: "categories"
+            .populate("user_id", "name email")
+            .populate("category_id", "name");
         res.status(201).json({ message: "Tạo tin tức thành công", news: populatedNews });
     }
     catch (error) {
-        if (req.file)
-            fs_1.default.unlinkSync(req.file.path);
-        res.status(400).json({ message: error.message });
+        if (error.code === 11000) {
+            res.status(400).json({ message: "Slug đã tồn tại" });
+        }
+        else {
+            res.status(400).json({ message: error.message });
+        }
     }
 });
 exports.createNews = createNews;
-// Sửa tin tức
+// Cập nhật tin tức
 const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { title, content, category } = req.body;
-        const updates = { updatedAt: Date.now() };
+        const { title, content, category_id, slug, tags, thumbnail, news_image, is_published } = req.body;
+        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+            res.status(400).json({ message: "ID tin tức không hợp lệ" });
+            return;
+        }
+        const news = yield newsModel_1.default.findById(id);
+        if (!news) {
+            res.status(404).json({ message: "Không tìm thấy tin tức" });
+            return;
+        }
+        const updates = {};
         if (title)
             updates.title = title;
         if (content)
             updates.content = content;
-        if (category)
-            updates.category = category;
-        if (req.file)
-            updates.image = `/images/${req.file.filename}`;
-        const news = yield newsModel_1.default.findById(id);
-        if (!news) {
-            if (req.file)
-                fs_1.default.unlinkSync(req.file.path);
-            res.status(404).json({ message: "Không tìm thấy tin tức" });
-            return;
+        if (slug)
+            updates.slug = slug;
+        if (tags)
+            updates.tags = tags;
+        if (typeof is_published === "boolean") {
+            updates.is_published = is_published;
+            updates.published_at = is_published ? new Date() : null;
         }
-        // Xóa ảnh cũ nếu cập nhật ảnh mới
-        if (req.file && news.image) {
-            const oldImagePath = path_1.default.join(__dirname, "../public", news.image);
-            if (fs_1.default.existsSync(oldImagePath)) {
-                fs_1.default.unlinkSync(oldImagePath);
+        if (category_id) {
+            if (!mongoose_1.default.Types.ObjectId.isValid(category_id)) {
+                throw new Error("category_id không hợp lệ");
             }
+            updates.category_id = new mongoose_1.default.Types.ObjectId(category_id);
+        }
+        if (thumbnail) {
+            if (news.thumbnail)
+                yield (0, cloudinaryUpload_1.deleteImageFromCloudinary)(news.thumbnail);
+            const thumbnailResult = yield (0, cloudinaryUpload_1.uploadImageToCloudinary)(thumbnail);
+            updates.thumbnail = thumbnailResult.secure_url;
+        }
+        if (Array.isArray(news_image) && news_image.length > 0) {
+            for (const img of news.news_image || []) {
+                yield (0, cloudinaryUpload_1.deleteImageFromCloudinary)(img);
+            }
+            const uploadedImages = yield (0, cloudinaryUpload_1.uploadMultipleImagesToCloudinary)(news_image);
+            updates.news_image = uploadedImages;
         }
         const updatedNews = yield newsModel_1.default
             .findByIdAndUpdate(id, { $set: updates }, { new: true })
-            .populate("author", "name email", "users") // Collection name: "users"
-            .populate("category", "name description", "categories"); // Collection name: "categories"
+            .populate("user_id", "name email")
+            .populate("category_id", "name");
         res.status(200).json({ message: "Cập nhật tin tức thành công", news: updatedNews });
     }
     catch (error) {
-        if (req.file)
-            fs_1.default.unlinkSync(req.file.path);
-        res.status(400).json({ message: error.message });
+        if (error.code === 11000) {
+            res.status(400).json({ message: "Slug đã tồn tại" });
+        }
+        else {
+            res.status(400).json({ message: error.message });
+        }
     }
 });
 exports.updateNews = updateNews;
-// Xóa tin tức
+// Xoá tin tức
 const deleteNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
+        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+            res.status(400).json({ message: "ID tin tức không hợp lệ" });
+            return;
+        }
         const news = yield newsModel_1.default.findById(id);
         if (!news) {
             res.status(404).json({ message: "Không tìm thấy tin tức" });
             return;
         }
-        // Xóa ảnh nếu có
-        if (news.image) {
-            const imagePath = path_1.default.join(__dirname, "../public", news.image);
-            if (fs_1.default.existsSync(imagePath)) {
-                fs_1.default.unlinkSync(imagePath);
-            }
+        if (news.thumbnail)
+            yield (0, cloudinaryUpload_1.deleteImageFromCloudinary)(news.thumbnail);
+        for (const img of news.news_image || []) {
+            yield (0, cloudinaryUpload_1.deleteImageFromCloudinary)(img);
         }
         yield newsModel_1.default.findByIdAndDelete(id);
-        res.status(200).json({ message: "Xóa tin tức thành công" });
+        res.status(200).json({ message: "Xoá tin tức thành công" });
     }
     catch (error) {
         res.status(500).json({ message: error.message });
@@ -114,18 +148,21 @@ exports.deleteNews = deleteNews;
 // Lấy danh sách tin tức
 const getNewsList = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { page = "1", limit = "10", category } = req.query;
+        const { page = "1", limit = "10", category_id } = req.query;
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
         const query = {};
-        if (category) {
-            query.category = category;
+        if (category_id) {
+            if (!mongoose_1.default.Types.ObjectId.isValid(category_id)) {
+                throw new Error("category_id không hợp lệ");
+            }
+            query.category_id = category_id;
         }
         const news = yield newsModel_1.default
             .find(query)
-            .populate("author", "name email", "users") // Collection name: "users"
-            .populate("category", "name description", "categories") // Collection name: "categories"
+            .populate("user_id", "name email")
+            .populate("category_id", "name")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limitNum);
@@ -146,10 +183,14 @@ exports.getNewsList = getNewsList;
 const getNewsDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
+        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+            res.status(400).json({ message: "ID tin tức không hợp lệ" });
+            return;
+        }
         const news = yield newsModel_1.default
             .findById(id)
-            .populate("author", "name email", "users") // Collection name: "users"
-            .populate("category", "name description", "categories"); // Collection name: "categories"
+            .populate("user_id", "name email")
+            .populate("category_id", "name");
         if (!news) {
             res.status(404).json({ message: "Không tìm thấy tin tức" });
             return;

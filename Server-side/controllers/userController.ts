@@ -227,7 +227,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 };
 
 
-// Khóa người dùng (không khóa admin)
+// Khóa người dùng 
 export const disableUser  = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).userId;

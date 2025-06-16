@@ -49,7 +49,7 @@ export default function Header({ title }: HeaderProps) {
     const loadProducts = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchProducts({ limit: 50 }); // Giới hạn số sản phẩm để tối ưu
+        const data = await fetchProducts();
         setProducts(data.products || []);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
@@ -102,7 +102,11 @@ export default function Header({ title }: HeaderProps) {
   // Debug trạng thái tìm kiếm
   useEffect(() => {
     if (isLookupOpen) {
-      console.log("Lookup is active", { searchTerm, inputRef: inputRef.current, menuRef: menuRef.current });
+      console.log("Lookup is active", {
+        searchTerm,
+        inputRef: inputRef.current,
+        menuRef: menuRef.current,
+      });
     }
   }, [isLookupOpen, searchTerm]);
 
@@ -114,7 +118,10 @@ export default function Header({ title }: HeaderProps) {
 
   return (
     <>
-      <nav className="bg-white text-black relative" aria-label="Main navigation">
+      <nav
+        className="bg-white text-black relative"
+        aria-label="Main navigation"
+      >
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center" aria-label="Trang chủ">
@@ -133,6 +140,7 @@ export default function Header({ title }: HeaderProps) {
             <div className="flex items-center gap-3">
               {/* Desktop Actions */}
               <div className="flex items-center gap-3 relative">
+                {/* Tìm kiếm */}
                 <div className="w-6 h-6 relative">
                   {isLookupOpen ? (
                     <div className="absolute -top-2 right-0 w-[15.625rem] z-[999] shadow-lg rounded-full">
@@ -142,7 +150,11 @@ export default function Header({ title }: HeaderProps) {
                           initial={{ width: "24px", opacity: 0, x: 226 }}
                           animate={{ width: "15.625rem", opacity: 1, x: 0 }}
                           exit={{ width: "24px", opacity: 0, x: 226 }}
-                          transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 20,
+                          }}
                         >
                           <SearchInput
                             searchTerm={searchTerm}
@@ -157,11 +169,19 @@ export default function Header({ title }: HeaderProps) {
                           initial={{ y: "-8%", opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           exit={{ y: "-8%", opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 20,
+                          }}
                         >
                           <div className="flex-1 overflow-y-auto px-2 py-4">
                             {isLoading ? (
-                              <div className="sk-chase" role="status" aria-label="Đang tải">
+                              <div
+                                className="sk-chase"
+                                role="status"
+                                aria-label="Đang tải"
+                              >
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
@@ -169,14 +189,19 @@ export default function Header({ title }: HeaderProps) {
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                               </div>
-                            ) : filteredProducts.length === 0 && searchTerm.trim() !== "" ? (
-                              <p className="text-center text-gray-500">Không tìm thấy sản phẩm</p>
+                            ) : filteredProducts.length === 0 &&
+                              searchTerm.trim() !== "" ? (
+                              <p className="text-center text-gray-500">
+                                Không tìm thấy sản phẩm
+                              </p>
                             ) : (
                               <div className="flex flex-col gap-6">
                                 {searchTerm.trim() === "" ? (
                                   <SearchSuggestions
                                     suggestions={suggestions}
-                                    handleSuggestionClick={handleSuggestionClick}
+                                    handleSuggestionClick={
+                                      handleSuggestionClick
+                                    }
                                     onClick={handleSuggestionClick} // Sửa placeholder lỗi
                                   />
                                 ) : (
@@ -212,6 +237,8 @@ export default function Header({ title }: HeaderProps) {
                     </button>
                   )}
                 </div>
+
+                {/* Yêu thích */}
                 <Link
                   href="/profile?tab=favorite"
                   className="text-gray-400 hover:text-black hidden tablet:hidden laptop:block desktop:block"
@@ -225,8 +252,16 @@ export default function Header({ title }: HeaderProps) {
                     className="h-[1.05rem] w-auto"
                   />
                 </Link>
+
+                {/* Thông báo */}
                 <NotificationIcon />
-                <Link href="/cart" className="text-gray-400 hover:text-black" aria-label="Giỏ hàng">
+
+                {/* Giỏ hàng */}
+                <Link
+                  href="/cart"
+                  className="text-gray-400 hover:text-black"
+                  aria-label="Giỏ hàng"
+                >
                   <Image
                     src="/nav/nav_cart.svg"
                     alt="Giỏ hàng"
@@ -235,6 +270,8 @@ export default function Header({ title }: HeaderProps) {
                     className="h-6 w-auto"
                   />
                 </Link>
+
+                {/* Người dùng */}
                 {isClient &&
                   (user ? (
                     <UserDropdown />

@@ -1,12 +1,16 @@
-// src/components/ProductDetailsSection.tsx
 "use client";
 
 import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+import { IProduct } from "@/types/product";
 
-export default function ProductDetailsSection() {
+interface ProductDetailsSectionProps {
+  product: IProduct;
+}
+
+export default function ProductDetailsSection({ product }: ProductDetailsSectionProps) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const handleSectionClick = (section: string) => {
@@ -18,7 +22,7 @@ export default function ProductDetailsSection() {
       id: "product_details",
       title: "Chi tiết sản phẩm",
       content: [
-        "Được làm từ chất liệu da cao cấp, chiếc áo Basic Collar không chỉ mang đến vẻ ngoài sành điệu mà còn đảm bảo độ bền bỉ và thoải mái khi mặc. Thiết kế cổ điển cùng đường may tinh tế giúp tôn lên vẻ cá tính, sành điệu nhưng vẫn phù hợp với nhiều phong cách khác nhau. Dễ dàng phối cùng áo thun, quần jeans hay giày sneakers, đây chắc chắn là item không thể thiếu trong tủ đồ của những tín đồ thời trang yêu thích sự năng động và thời thượng.",
+        product.description || "Chưa có mô tả sản phẩm.",
       ],
     },
     {
@@ -81,7 +85,7 @@ export default function ProductDetailsSection() {
               <span>TanNhutHa - Oct 29, 2024</span>
             </div>
             <p className="line-clamp-3">
-              They are very narrow and somewhat stiff. I've only worn them for 1 day, so maybe I need to break them in more. So far, I like the regular DN's much better.
+              Sản phẩm chất lượng, màu sắc đẹp, đúng như mô tả.
             </p>
             <a href="#" className="text-[1rem] text-black hover:underline">
               Xem thêm

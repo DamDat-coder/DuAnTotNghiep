@@ -11,7 +11,7 @@ import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
 async function getHomeData() {
   try {
     const [productsData, featuredSection, benefits] = await Promise.all([
-      fetchProducts({ sort: "newest", limit: 20 }),
+      fetchProducts({ sort: "newest" }),
       fetchFeaturedSection(),
       fetchMemberBenefits(),
     ]);

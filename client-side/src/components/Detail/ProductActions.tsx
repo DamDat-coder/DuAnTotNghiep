@@ -19,22 +19,26 @@ export default function ProductActions({
   stock,
   discountedPrice,
 }: ProductActionsProps) {
-  const [selectedSize, setSelectedSize] = useState<string | null>("XL");
-  const [selectedColor, setSelectedColor] = useState<string | null>(null); // State cho màu sắc
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const dispatch = useCartDispatch();
   const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
 
-  // Dữ liệu giả lập cho màu sắc
-  const mockColors = [
-    { hex: "#000000", name: "Black" },
-    { hex: "#87CEEB", name: "Sky Blue" },
-    { hex: "#FE0000", name: "Red" },
-    { hex: "#FFFFFF", name: "White" },
-    { hex: "#FFC0CB", name: "Pink" },
-    { hex: "#FAD2B6", name: "Peach" },
-    { hex: "#8B4513", name: "Saddle Brown" },
-  ];
+  // Lấy danh sách màu sắc từ variants
+  const colors = Array.from(new Set(product.variants.map((v) => v.color))).map(
+    (color) => ({
+      name: color,
+      hex:
+        color === "Xám"
+          ? "#808080"
+          : color === "Đen"
+          ? "#000000"
+          : color === "Đỏ"
+          ? "#FF0000"
+          : "#FFFFFF",
+    })
+  );
 
   useEffect(() => {
     const savedLikes = JSON.parse(
@@ -75,21 +79,29 @@ export default function ProductActions({
   };
 
   const handleAddToCart = () => {
+    if (!selectedColor) {
+      alert("Vui lòng chọn màu sắc trước!");
+      return;
+    }
     if (!selectedSize) {
       alert("Vui lòng chọn size trước!");
       return;
     }
-    if (!selectedColor) {
-      alert("Vui lòng chọn màu sắc trước!");
+
+    const variant = product.variants.find(
+      (v) => v.size === selectedSize && v.color === selectedColor
+    );
+    if (!variant || variant.stock === 0) {
+      alert("Sản phẩm này hiện không có sẵn!");
       return;
     }
 
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: discountedPrice,
-      discountPercent: product.discountPercent,
-      image: typeof product.images[0] === "string" ? product.images[0] : "",
+      price: variant.discountedPrice || variant.price,
+      discountPercent: variant.discountPercent,
+      image: product.images[0] || "",
       quantity: 1,
       size: selectedSize,
       color: selectedColor,
@@ -117,35 +129,24 @@ export default function ProductActions({
     <>
       <div className="flex flex-col gap-9 tablet:py-6 laptop:py-8 laptop:gap-py-8 desktop:py-8 desktop:gap-py-8">
         {/* Section 2: Colors */}
-        <div className="">
+        <div>
           <h3 className="font-semibold mb-2">Màu sắc</h3>
           <div className="flex gap-3 flex-wrap">
-            {mockColors.map((color) => {
-              const isSelected = selectedColor === color.hex;
-              const tickColor = [
-                "#FFFFFF",
-                "#87CEEB",
-                "#FFC0CB",
-                "#FAD2B6",
-              ].includes(color.hex)
-                ? "black"
-                : "white";
+            {colors.map((color) => {
+              const isSelected = selectedColor === color.name;
+              const tickColor = color.hex === "#FFFFFF" ? "black" : "white";
               return (
                 <div
-                  key={color.hex}
-                  onClick={() => handleColorChange(color.hex)}
-                  className={`w-8 h-8 rounded-full cursor-pointer border-2 relative ${
-                    isSelected
-                      ? "border-black border-2 border-solid"
-                      : "border-gray-300 border-2 border-solid"
-                  }`}
+                  key={color.name}
+                  onClick={() => handleColorChange(color.name)}
+                  className={`w-8 h-8 rounded-full cursor-pointer border-2 relative `}
                   style={{ backgroundColor: color.hex }}
                   aria-label={`Chọn màu ${color.name}`}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
-                      handleColorChange(color.hex);
+                      handleColorChange(color.name);
                     }
                   }}
                 >
@@ -251,7 +252,7 @@ export default function ProductActions({
             />
           </button>
         </div>
-        <div className=" flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <Image
               src="/product/product_section3_delivery.svg"

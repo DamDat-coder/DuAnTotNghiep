@@ -7,7 +7,7 @@ interface AuthRequest extends Request {
 
 const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader) {
     res.status(403).json({ message: "Token không hợp lệ hoặc thiếu" });
     return;
   }
@@ -22,7 +22,8 @@ const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void 
       });
       return;
     }
-    req.userId = decoded.id;
+    console.log(decoded.userId);
+    req.userId = decoded.userId;
     next();
   });
 };

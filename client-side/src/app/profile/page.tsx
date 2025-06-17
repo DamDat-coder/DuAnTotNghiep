@@ -11,7 +11,6 @@ import { OrderDetail as OrderDetailType } from "@/types/order"; // import đúng
 import ProfileTab from "@/components/Profile/tabs/ProfileTab";
 import AddressTab from "@/components/Profile/tabs/AddressTab";
 import FavoriteTab from "@/components/Profile/tabs/FavoriteTab";
-import DeleteTab from "@/components/Profile/tabs/DeleteTab";
 import OrderTab from "@/components/Profile/tabs/OrderTab";
 import OrderDetail from "@/components/Profile/tabs/OrderDetail";
 
@@ -19,7 +18,6 @@ const tabMap: Record<string, string> = {
   profile: "Hồ sơ",
   address: "Địa chỉ",
   favorite: "Yêu thích",
-  delete: "Xóa tài khoản",
   order: "Đơn hàng",
   detail: "Chi tiết đơn hàng",
 };
@@ -48,8 +46,6 @@ export default function ProfilePage() {
         return <AddressTab />;
       case "Yêu thích":
         return <FavoriteTab />;
-      case "Xóa tài khoản":
-        return <DeleteTab />;
       case "Đơn hàng":
         return (
           <OrderTab

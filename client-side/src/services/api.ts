@@ -22,14 +22,19 @@ export async function refreshToken(): Promise<boolean> {
       method: "POST",
       credentials: "include",
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const data = await res.json();
-    if (isBrowser()) {
-      localStorage.setItem("accessToken", data.accessToken);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
     }
+
+    const data = await res.json();
+
+    if (!data.accessToken) {
+      throw new Error("No access token in refresh response");
+    }
+
     return true;
-  } catch (error) {
-    console.error("Error refreshing token:", error);
+  } catch (error: any) {
     return false;
   }
 }

@@ -23,5 +23,10 @@ export interface AuthContextType {
   logout: () => void;
   openLoginWithData: boolean;
   setOpenLoginWithData: (value: boolean) => void;
-  registerFormData: { name: string; email: string; password: string } | null;
+  registerFormData: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  } | null;
 }

@@ -8,17 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -28,98 +17,98 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const userModel_1 = __importDefault(require("../models/userModel"));
 const refreshTokenModel_1 = __importDefault(require("../models/refreshTokenModel"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 // Đăng ký
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, password, name, addresses, phone } = req.body;
+        const { email, password, name, addresses = [], phone } = req.body;
+        // Kiểm tra đầu vào
         if (!email || !password || !name) {
-            res.status(400).json({ message: "Email, mật khẩu và tên là bắt buộc" });
+            res.status(400).json({ message: "Email, mật khẩu và họ tên là bắt buộc." });
             return;
         }
-        if (password.length < 6) {
-            res.status(400).json({ message: "Mật khẩu phải dài ít nhất 6 ký tự" });
-            return;
-        }
-        if (yield userModel_1.default.findOne({ email })) {
-            res.status(409).json({ message: "Email đã tồn tại" });
-            return;
-        }
-        if (phone && (yield userModel_1.default.findOne({ phone }))) {
-            res.status(409).json({ message: "Số điện thoại đã tồn tại" });
+        // Kiểm tra tồn tại email hoặc số điện thoại (chỉ nếu phone khác null)
+        const existingUser = yield userModel_1.default.findOne({
+            $or: [
+                { email },
+                ...(phone ? [{ phone }] : [])
+            ]
+        });
+        if (existingUser) {
+            res.status(409).json({ message: "Email hoặc số điện thoại đã tồn tại." });
             return;
         }
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
-        const newUser = new userModel_1.default({
+        const newUser = yield userModel_1.default.create({
             email,
             password: hashedPassword,
             name,
-            addresses: addresses || [],
-            phone: phone || null,
-            role: "user",
+            addresses,
+            phone: phone || null, // Nếu không có thì để null rõ ràng
         });
-        const data = yield newUser.save();
-        const _a = data.toObject(), { password: _ } = _a, userData = __rest(_a, ["password"]);
-        const jwtSecret = process.env.JWT_SECRET || "default_secret";
-        const accessToken = jsonwebtoken_1.default.sign({ id: data._id }, jwtSecret, { expiresIn: "1h" });
-        const refreshToken = jsonwebtoken_1.default.sign({ id: data._id }, jwtSecret, { expiresIn: "30d" });
-        yield refreshTokenModel_1.default.create({
-            userId: data._id,
-            token: refreshToken,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        res.status(201).json({
+            message: "Đăng ký thành công.",
+            user: {
+                _id: newUser._id,
+                email: newUser.email,
+                name: newUser.name,
+                phone: newUser.phone,
+                role: newUser.role,
+                is_active: newUser.is_active,
+            },
         });
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-        });
-        res.status(201).json({ message: "Đăng ký thành công", accessToken, user: userData });
     }
     catch (error) {
-        res.status(400).json({ message: error.message });
+        console.error("Register error:", error);
+        res.status(500).json({ message: "Đã xảy ra lỗi máy chủ." });
     }
 });
 exports.register = register;
-// Đăng nhập
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { identifier, password } = req.body;
-        if (!identifier || !password) {
-            res.status(400).json({ message: "Vui lòng cung cấp email hoặc số điện thoại và mật khẩu" });
+        const { email, password } = req.body;
+        if (!email || !password) {
+            res.status(400).json({ message: "Vui lòng nhập email hoặc số điện thoại và mật khẩu." });
             return;
         }
-        const user = yield userModel_1.default.findOne({
-            $or: [{ email: identifier }, { phone: identifier }],
-        });
+        let user;
+        // Kiểm tra nếu là số => tìm theo phone
+        if (/^\d+$/.test(email)) {
+            user = yield userModel_1.default.findOne({ phone: Number(email) });
+        }
+        else {
+            // Ngược lại tìm theo email
+            user = yield userModel_1.default.findOne({ email });
+        }
         if (!user) {
-            res.status(404).json({ message: "Email hoặc số điện thoại không tồn tại" });
+            res.status(401).json({ message: "Tài khoản không tồn tại." });
             return;
         }
-        if (!user.is_active) {
-            res.status(403).json({ message: "Tài khoản đã bị khóa" });
+        const isPasswordValid = yield bcryptjs_1.default.compare(password, user.password);
+        if (!isPasswordValid) {
+            res.status(401).json({ message: "Mật khẩu không đúng." });
             return;
         }
-        if (!(yield bcryptjs_1.default.compare(password, user.password))) {
-            res.status(401).json({ message: "Mật khẩu không đúng" });
-            return;
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET chưa được cấu hình.");
         }
-        const jwtSecret = process.env.JWT_SECRET || "default_secret";
-        const accessToken = jsonwebtoken_1.default.sign({ id: user._id }, jwtSecret, { expiresIn: "1h" });
-        const refreshToken = jsonwebtoken_1.default.sign({ id: user._id }, jwtSecret, { expiresIn: "30d" });
-        yield refreshTokenModel_1.default.create({
-            userId: user._id,
-            token: refreshToken,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        const token = jsonwebtoken_1.default.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.status(200).json({
+            message: "Đăng nhập thành công.",
+            token,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role
+            }
         });
-        const _a = user.toObject(), { password: _ } = _a, userData = __rest(_a, ["password"]);
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-        });
-        res.json({ message: "Đăng nhập thành công", accessToken, user: userData });
     }
     catch (error) {
-        res.status(400).json({ message: error.message });
+        console.error("Login error:", error);
+        res.status(500).json({ message: "Đã xảy ra lỗi máy chủ." });
     }
 });
 exports.login = login;
@@ -128,7 +117,7 @@ const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const refreshToken = req.cookies.refreshToken;
         if (!refreshToken) {
-            res.status(400).json({ message: "Thiếu Refresh Token" });
+            res.status(400).json({ message: "Thiếu refresh token." });
             return;
         }
         const jwtSecret = process.env.JWT_SECRET || "default_secret";
@@ -138,26 +127,28 @@ const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             token: refreshToken,
         });
         if (!tokenDoc) {
-            res.status(401).json({ message: "Refresh Token không hợp lệ" });
+            res.status(401).json({ message: "Refresh token không hợp lệ." });
             return;
         }
         const accessToken = jsonwebtoken_1.default.sign({ id: decoded.id }, jwtSecret, { expiresIn: "1h" });
-        res.json({ accessToken, message: "Làm mới token thành công" });
+        res.json({ accessToken, message: "Làm mới token thành công." });
     }
     catch (error) {
         res.status(401).json({
-            message: error.name === "TokenExpiredError" ? "Refresh Token đã hết hạn" : "Refresh Token không hợp lệ",
+            message: error.name === "TokenExpiredError"
+                ? "Refresh token đã hết hạn."
+                : "Refresh token không hợp lệ.",
         });
     }
 });
 exports.refresh = refresh;
-// Lấy thông tin người dùng
+// Lấy thông tin cá nhân
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.userId;
         const user = yield userModel_1.default.findById(userId).select("-password");
         if (!user) {
-            res.status(404).json({ message: "Không tìm thấy người dùng" });
+            res.status(404).json({ message: "Không tìm thấy người dùng." });
             return;
         }
         res.json(user);
@@ -167,7 +158,7 @@ const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getUser = getUser;
-// Lấy tất cả người dùng
+// Lấy tất cả người dùng (admin)
 const getAllUser = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield userModel_1.default.find().select("-password");
@@ -178,59 +169,59 @@ const getAllUser = (_req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getAllUser = getAllUser;
-// Cập nhật thông tin người dùng (user thường hoặc admin)
+// Cập nhật thông tin người dùng
 const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const requesterId = req.userId;
         const requesterRole = req.role;
         const { name, addresses, phone, password, is_active, userId } = req.body;
-        const targetUserId = requesterRole === 'admin' && userId ? userId : requesterId;
+        const targetUserId = requesterRole === "admin" && userId ? userId : requesterId;
         const updates = {};
         if (name)
             updates.name = name;
         if (addresses)
             updates.addresses = addresses;
         if (phone) {
-            const existingPhoneUser = yield userModel_1.default.findOne({ phone, _id: { $ne: targetUserId } });
-            if (existingPhoneUser) {
-                res.status(409).json({ message: "Số điện thoại đã được sử dụng" });
+            const daTonTai = yield userModel_1.default.findOne({ phone, _id: { $ne: targetUserId } });
+            if (daTonTai) {
+                res.status(409).json({ message: "Số điện thoại đã được sử dụng." });
                 return;
             }
             updates.phone = phone;
         }
         if (password) {
             if (password.length < 6) {
-                res.status(400).json({ message: "Mật khẩu mới phải dài ít nhất 6 ký tự" });
+                res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự." });
                 return;
             }
             updates.password = yield bcryptjs_1.default.hash(password, 10);
         }
-        if (requesterRole === 'admin' && typeof is_active === 'boolean') {
+        if (requesterRole === "admin" && typeof is_active === "boolean") {
             updates.is_active = is_active;
         }
         const updatedUser = yield userModel_1.default.findByIdAndUpdate(targetUserId, { $set: updates }, { new: true, select: "-password" });
         if (!updatedUser) {
-            res.status(404).json({ message: "Không tìm thấy người dùng" });
+            res.status(404).json({ message: "Không tìm thấy người dùng." });
             return;
         }
-        res.json({ message: "Cập nhật thông tin thành công", user: updatedUser });
+        res.json({ message: "Cập nhật thông tin thành công.", user: updatedUser });
     }
     catch (error) {
         res.status(400).json({ message: error.message });
     }
 });
 exports.updateUser = updateUser;
-// Khóa người dùng 
+// Khóa tài khoản
 const disableUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.userId;
         const user = yield userModel_1.default.findById(userId);
         if (!user) {
-            res.status(404).json({ message: "Không tìm thấy người dùng" });
+            res.status(404).json({ message: "Không tìm thấy người dùng." });
             return;
         }
         if (user.role === "admin") {
-            res.status(403).json({ message: "Không thể khóa tài khoản admin" });
+            res.status(403).json({ message: "Không thể khóa tài khoản admin." });
             return;
         }
         user.is_active = false;
@@ -239,7 +230,7 @@ const disableUser = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
         });
-        res.json({ message: "Tài khoản đã bị khóa thành công" });
+        res.json({ message: "Tài khoản đã bị khóa thành công." });
     }
     catch (error) {
         res.status(500).json({ message: error.message });

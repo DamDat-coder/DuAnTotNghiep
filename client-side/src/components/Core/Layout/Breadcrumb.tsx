@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { fetchProductById } from "@/services/productApi";
+import { IProduct } from "@/types/product";
 
 export default function Breadcrumb() {
-  const pathname = usePathname(); // Lấy đường dẫn hiện tại
+  const pathname = usePathname();
+  const [productName, setProductName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Chia nhỏ pathname thành các đoạn
   const pathSegments = pathname.split("/").filter((segment) => segment);
@@ -13,6 +18,27 @@ export default function Breadcrumb() {
   if (pathname === "/") {
     return null;
   }
+
+  // Lấy tên sản phẩm nếu đường dẫn là chi tiết sản phẩm
+  useEffect(() => {
+    if (pathSegments[0] === "products" && pathSegments.length === 2) {
+      const productId = pathSegments[1];
+      setIsLoading(true);
+      fetchProductById(productId)
+        .then((product: IProduct | null) => {
+          if (product) {
+            setProductName(product.name);
+          } else {
+            setProductName(null);
+          }
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setProductName(null);
+          setIsLoading(false);
+        });
+    }
+  }, [pathname]);
 
   return (
     <nav className="text-base">
@@ -28,16 +54,27 @@ export default function Breadcrumb() {
         {pathSegments.map((segment, index) => {
           const href = `/${pathSegments.slice(0, index + 1).join("/")}`;
           const isLast = index === pathSegments.length - 1;
-          const label =
-            segment === "products"
-              ? "Sản phẩm"
-              : segment.charAt(0).toUpperCase() + segment.slice(1); // Viết hoa chữ đầu
+          let label: string;
+
+          // Xử lý label cho đoạn cuối nếu là chi tiết sản phẩm
+          if (
+            isLast &&
+            pathSegments[0] === "products" &&
+            pathSegments.length === 2
+          ) {
+            label = isLoading ? "Đang tải..." : productName || segment;
+          } else {
+            label =
+              segment === "products"
+                ? "Sản phẩm"
+                : segment.charAt(0).toUpperCase() + segment.slice(1);
+          }
 
           return (
             <li key={href} className="flex items-center gap-2">
               <span className="text-[#d1d1d1]">{">"}</span>
               {isLast ? (
-                <span className="text-black">{label}</span> // Trang hiện tại màu đen
+                <span className="text-black font-bold">{label}</span>
               ) : (
                 <Link href={href} className="text-[#d1d1d1] hover:underline">
                   {label}

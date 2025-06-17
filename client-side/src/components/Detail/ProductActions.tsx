@@ -10,20 +10,37 @@ interface ProductActionsProps {
   product: IProduct;
   sizes: { value: string; inStock: boolean }[];
   stock: number;
-  discountedPrice: number;
 }
 
 export default function ProductActions({
   product,
   sizes,
   stock,
-  discountedPrice,
 }: ProductActionsProps) {
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  // Khởi tạo với variant đầu tiên
+  const firstVariant = product.variants[0];
+  const [selectedSize, setSelectedSize] = useState<string | null>(
+    firstVariant?.size || null
+  );
+  const [selectedColor, setSelectedColor] = useState<string | null>(
+    firstVariant?.color || null
+  );
   const [isLiked, setIsLiked] = useState(false);
   const dispatch = useCartDispatch();
   const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
+  const [selectedVariant, setSelectedVariant] = useState<{
+    price: number;
+    discountedPrice?: number;
+    discountPercent: number;
+  } | null>(
+    firstVariant
+      ? {
+          price: firstVariant.price,
+          discountedPrice: firstVariant.discountedPrice || firstVariant.price,
+          discountPercent: firstVariant.discountPercent,
+        }
+      : null
+  );
 
   // Lấy danh sách màu sắc từ variants
   const colors = Array.from(new Set(product.variants.map((v) => v.color))).map(
@@ -39,6 +56,39 @@ export default function ProductActions({
           : "#FFFFFF",
     })
   );
+
+  // Lấy danh sách kích thước khả dụng dựa trên màu sắc đã chọn
+  const availableSizes = selectedColor
+    ? product.variants
+        .filter((v) => v.color === selectedColor && v.stock > 0)
+        .map((v) => v.size)
+    : sizes.map((s) => s.value);
+
+  // Cập nhật giá tiền khi chọn màu và kích thước
+  useEffect(() => {
+    if (selectedColor && selectedSize) {
+      const variant = product.variants.find(
+        (v) => v.color === selectedColor && v.size === selectedSize
+      );
+      if (variant) {
+        setSelectedVariant({
+          price: variant.price,
+          discountedPrice: variant.discountedPrice || variant.price,
+          discountPercent: variant.discountPercent,
+        });
+      } else {
+        setSelectedVariant(null);
+      }
+    } else {
+      // Nếu chưa chọn đủ màu và kích thước, giữ variant đầu tiên
+      const lowestVariant = product.variants[0];
+      setSelectedVariant({
+        price: lowestVariant.price,
+        discountedPrice: lowestVariant.discountedPrice || lowestVariant.price,
+        discountPercent: lowestVariant.discountPercent,
+      });
+    }
+  }, [selectedColor, selectedSize, product.variants]);
 
   useEffect(() => {
     const savedLikes = JSON.parse(
@@ -69,13 +119,19 @@ export default function ProductActions({
   }, [isSizeChartOpen]);
 
   const handleSizeChange = (size: string) => {
-    if (sizes.find((s) => s.value === size)?.inStock) {
+    if (
+      sizes.find((s) => s.value === size)?.inStock &&
+      (!selectedColor || availableSizes.includes(size))
+    ) {
       setSelectedSize(size);
     }
   };
 
   const handleColorChange = (color: string) => {
     setSelectedColor(color);
+    if (selectedSize && !availableSizes.includes(selectedSize)) {
+      setSelectedSize(null);
+    }
   };
 
   const handleAddToCart = () => {
@@ -128,6 +184,25 @@ export default function ProductActions({
   return (
     <>
       <div className="flex flex-col gap-9 tablet:py-6 laptop:py-8 laptop:gap-py-8 desktop:py-8 desktop:gap-py-8">
+        {/* Giá tiền động */}
+        {selectedVariant && (
+          <div className="flex items-center gap-4">
+            <div className="text-red-500 font-bold text-lg">
+              {(
+                selectedVariant.discountedPrice || selectedVariant.price
+              ).toLocaleString("vi-VN")}
+              ₫
+            </div>
+            <div
+              className={`text-sm text-gray-500 line-through ${
+                !selectedVariant.discountPercent ? "hidden" : "block"
+              }`}
+            >
+              {selectedVariant.price.toLocaleString("vi-VN")}₫
+            </div>
+          </div>
+        )}
+
         {/* Section 2: Colors */}
         <div>
           <h3 className="font-semibold mb-2">Màu sắc</h3>
@@ -190,22 +265,26 @@ export default function ProductActions({
             </div>
           </div>
           <div className="pt-3 flex flex-wrap gap-2 mt-2">
-            {sizes.map((size) => (
-              <button
-                key={size.value}
-                onClick={() => handleSizeChange(size.value)}
-                className={`px-4 py-2 border rounded-sm text-sm font-medium ${
-                  selectedSize === size.value && size.inStock
-                    ? "bg-black text-white"
-                    : !size.inStock
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "hover:bg-gray-100"
-                }`}
-                disabled={!size.inStock}
-              >
-                Size {size.value}
-              </button>
-            ))}
+            {sizes.map((size) => {
+              const isAvailable =
+                !selectedColor || availableSizes.includes(size.value);
+              return (
+                <button
+                  key={size.value}
+                  onClick={() => handleSizeChange(size.value)}
+                  className={`px-4 py-2 border rounded-sm text-sm font-medium ${
+                    selectedSize === size.value && isAvailable
+                      ? "bg-black text-white"
+                      : !isAvailable || !size.inStock
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
+                      : "hover:bg-gray-100"
+                  }`}
+                  disabled={!isAvailable || !size.inStock}
+                >
+                  Size {size.value}
+                </button>
+              );
+            })}
           </div>
           <div className="pt-3 text-red-500 text-sm font-medium">
             Còn {stock} sản phẩm

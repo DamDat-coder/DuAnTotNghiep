@@ -26,7 +26,7 @@ interface HeaderProps {
 
 export default function Header({ title }: HeaderProps) {
   const { isOpen: isMenuOpen, setIsOpen: setIsMenuOpen } = useMenu();
-  const { user } = useAuth();
+  const { user, openLoginWithData, setOpenLoginWithData, registerFormData } = useAuth();
   const { isLookupOpen, setIsLookupOpen } = useLookup();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -37,12 +37,20 @@ export default function Header({ title }: HeaderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const inputRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const lookupButtonRef = useRef<HTMLButtonElement>(null); // Ref cho nút tìm kiếm
+  const lookupButtonRef = useRef<HTMLButtonElement>(null);
 
   // Xác định client-side rendering
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Mở LoginPopup khi đăng ký thất bại
+  useEffect(() => {
+    if (openLoginWithData) {
+      setIsLoginOpen(true);
+      setOpenLoginWithData(false); // Reset sau khi mở
+    }
+  }, [openLoginWithData, setOpenLoginWithData]);
 
   // Lấy danh sách sản phẩm từ API
   useEffect(() => {
@@ -76,7 +84,7 @@ export default function Header({ title }: HeaderProps) {
   // Lọc sản phẩm khi searchTerm thay đổi
   useEffect(() => {
     debouncedSearch(searchTerm);
-    return () => debouncedSearch.cancel(); // Hủy debounce khi unmount
+    return () => debouncedSearch.cancel();
   }, [searchTerm, products]);
 
   // Đóng menu tìm kiếm khi nhấn ra ngoài
@@ -113,7 +121,7 @@ export default function Header({ title }: HeaderProps) {
   const suggestions = products.map((product) => product.name).slice(0, 3);
   const handleSuggestionClick = (suggestion: string) => {
     setSearchTerm(suggestion);
-    setIsLookupOpen(false); // Đóng menu sau khi chọn gợi ý
+    setIsLookupOpen(false);
   };
 
   return (
@@ -137,10 +145,8 @@ export default function Header({ title }: HeaderProps) {
             </Link>
 
             <DesktopNav />
-            <div className="flex items-center gap-3">
-              {/* Desktop Actions */}
+            <div className="flex items-center gap-3 w-[13.9375rem] justify-end">
               <div className="flex items-center gap-3 relative">
-                {/* Tìm kiếm */}
                 <div className="w-6 h-6 relative">
                   {isLookupOpen ? (
                     <div className="absolute -top-2 right-0 w-[15.625rem] z-[999] shadow-lg rounded-full">
@@ -202,7 +208,7 @@ export default function Header({ title }: HeaderProps) {
                                     handleSuggestionClick={
                                       handleSuggestionClick
                                     }
-                                    onClick={handleSuggestionClick} // Sửa placeholder lỗi
+                                    onClick={handleSuggestionClick}
                                   />
                                 ) : (
                                   <SearchResults
@@ -238,7 +244,6 @@ export default function Header({ title }: HeaderProps) {
                   )}
                 </div>
 
-                {/* Yêu thích */}
                 <Link
                   href="/profile?tab=favorite"
                   className="text-gray-400 hover:text-black hidden tablet:hidden laptop:block desktop:block"
@@ -253,10 +258,8 @@ export default function Header({ title }: HeaderProps) {
                   />
                 </Link>
 
-                {/* Thông báo */}
                 <NotificationIcon />
 
-                {/* Giỏ hàng */}
                 <Link
                   href="/cart"
                   className="text-gray-400 hover:text-black"
@@ -271,7 +274,6 @@ export default function Header({ title }: HeaderProps) {
                   />
                 </Link>
 
-                {/* Người dùng */}
                 {isClient &&
                   (user ? (
                     <UserDropdown />
@@ -320,6 +322,7 @@ export default function Header({ title }: HeaderProps) {
           setIsLoginOpen(false);
           setIsRegisterOpen(true);
         }}
+        initialFormData={registerFormData}
       />
       <RegisterPopup
         isOpen={isRegisterOpen}

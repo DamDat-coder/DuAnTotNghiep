@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../../contexts/AuthContext";
+import { log } from "console";
 
 interface RegisterPopupProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export default function RegisterPopup({
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    identifier: "",
+    email: "",
     password: "",
     keepLoggedIn: false,
   });
@@ -45,11 +46,17 @@ export default function RegisterPopup({
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
+      console.log(
+        formData.name,
+        formData.email,
+        formData.password,
+        formData.keepLoggedIn
+      );
+
       const success = await register(
         formData.name,
-        formData.identifier,
+        formData.email,
         formData.password,
         formData.keepLoggedIn
       );
@@ -79,7 +86,7 @@ export default function RegisterPopup({
 
       {/* Modal */}
       <motion.div
-        className="relative w-[636px] bg-white rounded-lg p-6"
+        className="relative w-[636px] bg-white rounded-lg"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -100,7 +107,7 @@ export default function RegisterPopup({
         </button>
 
         {/* Logo + heading */}
-        <div className="flex flex-col items-center mt-[60px] mb-[60px] gap-0">
+        <div className="flex flex-col items-center mt-[60px] mb-[60px] gap-0 px-[7.5rem]">
           <Image
             src="/nav/logo.svg"
             alt="Logo"
@@ -137,18 +144,18 @@ export default function RegisterPopup({
               />
             </div>
 
-            {/* Số điện thoại */}
+            {/* Email */}
             <div className="w-[396px] mb-3">
               <label className="block text-sm font-bold mb-1">
-                Số điện thoại <span className="text-red-500">*</span>
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                name="identifier"
-                value={formData.identifier}
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="Nhập số điện thoại"
+                placeholder="Nhập Email"
                 className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm"
               />
             </div>

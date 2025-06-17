@@ -13,19 +13,6 @@ interface ProductDetailProps {
   params: { id: string };
 }
 
-const getLowestPriceVariant = (product: IProduct) => {
-  if (!product.variants || product.variants.length === 0) {
-    return { price: 0, discountPercent: 0, discountedPrice: 0 };
-  }
-  return product.variants.reduce(
-    (min, variant) =>
-      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
-        ? variant
-        : min,
-    product.variants[0]
-  );
-};
-
 export default async function ProductDetail({ params }: ProductDetailProps) {
   const { id } = await params;
 
@@ -36,10 +23,9 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
   try {
     product = await fetchProductById(id);
     if (!product) throw new Error("Không tìm thấy sản phẩm.");
-    // Lấy sản phẩm cùng danh mục gốc
     suggestedProducts = await fetchProducts({
       id_cate: product.categoryId || undefined,
-    }).then((res) => res.products.filter((p) => p.id !== id)); // Loại sản phẩm hiện tại
+    }).then((res) => res.products.filter((p) => p.id !== id));
   } catch (err) {
     error = "Có lỗi xảy ra khi tải dữ liệu.";
   }
@@ -54,16 +40,12 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
     );
   }
 
-  const { price, discountPercent, discountedPrice } =
-    getLowestPriceVariant(product);
-  // Lấy sizes động từ variants
   const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
     (size) => ({
       value: size,
       inStock: product.variants.some((v) => v.size === size && v.stock > 0),
     })
   );
-  // Tính tổng stock
   const stock = product.variants.reduce((sum, v) => sum + v.stock, 0);
 
   return (
@@ -78,18 +60,6 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             <div>
               <div className="mt-4 flex flex-col items-start gap-4">
                 <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
-                <div className="flex items-center gap-4">
-                  <div className="text-red-500 font-bold text-lg">
-                    {(discountedPrice || price).toLocaleString("vi-VN")}₫
-                  </div>
-                  <div
-                    className={`text-sm text-gray-500 line-through ${
-                      !discountPercent ? "hidden" : "block"
-                    }`}
-                  >
-                    {price.toLocaleString("vi-VN")}₫
-                  </div>
-                </div>
               </div>
               <div className="relative mt-4">
                 <ProductImageSwiper
@@ -106,7 +76,6 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
               product={product}
               sizes={sizes}
               stock={stock}
-              discountedPrice={discountedPrice || price}
             />
 
             {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
@@ -150,18 +119,6 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
                 </div>
               </div>
               <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
-              <div className="flex items-center gap-4">
-                <div className="text-red-500 font-bold text-lg">
-                  {(discountedPrice || price).toLocaleString("vi-VN")}₫
-                </div>
-                <div
-                  className={`text-sm text-gray-500 line-through ${
-                    !discountPercent ? "hidden" : "block"
-                  }`}
-                >
-                  {price.toLocaleString("vi-VN")}₫
-                </div>
-              </div>
             </div>
 
             {/* Section 2 & 3: Sizes và Actions */}
@@ -169,7 +126,6 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
               product={product}
               sizes={sizes}
               stock={stock}
-              discountedPrice={discountedPrice || price}
             />
           </div>
         </div>

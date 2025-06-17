@@ -28,6 +28,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     return null;
   });
+  const [registerFormData, setRegisterFormData] = useState<{
+    name: string;
+    email: string;
+    password: string;
+  } | null>(null);
+  const [openLoginWithData, setOpenLoginWithData] = useState(false);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -44,12 +50,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loginHandler = async (
-    identifier: string,
+    email: string,
     password: string,
     keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      const result = await login(identifier, password);
+      console.log(email, password);
+      const result = await login(email, password);
       if (!result) {
         throw new Error("Email hoặc mật khẩu không đúng.");
       }
@@ -80,30 +87,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const registerHandler = async (
     name: string,
-    identifier: string,
+    email: string,
     password: string,
     keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      const result = await register(name, identifier, password);
+      console.log(name, email, password);
+      const result = await register(name, email, password);
       if (!result) {
         throw new Error("Không thể đăng ký tài khoản.");
       }
 
-      const { user: userData, accessToken } = result;
-      setUser(userData);
-
       if (keepLoggedIn) {
+        const { user: userData, accessToken } = result;
+        setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
       } else {
-        sessionStorage.setItem("user", JSON.stringify(userData));
-        sessionStorage.setItem("accessToken", accessToken);
+        // Mở LoginPopup với dữ liệu vừa đăng ký
+        setRegisterFormData({ name, email, password });
+        setOpenLoginWithData(true);
       }
 
       return true;
     } catch (error) {
       console.error("Lỗi đăng ký:", error);
+      // Mở LoginPopup với dữ liệu form đã nhập
+      setRegisterFormData({ name, email, password });
+      setOpenLoginWithData(true);
       throw new Error("Có lỗi xảy ra khi đăng ký.");
     }
   };
@@ -142,6 +153,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login: loginHandler,
         register: registerHandler,
         logout: logoutHandler,
+        openLoginWithData,
+        setOpenLoginWithData,
+        registerFormData,
       }}
     >
       {children}

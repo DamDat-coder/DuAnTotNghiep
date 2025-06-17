@@ -3,7 +3,6 @@ export interface IUser {
   name: string;
   email: string;
   phone: string | null;
-  avatar: string | null;
   active: boolean;
   role: "user" | "admin";
 }
@@ -11,15 +10,18 @@ export interface IUser {
 export interface AuthContextType {
   user: IUser | null;
   login: (
-    identifier: string,
+    email: string,
     password: string,
     keepLoggedIn: boolean
   ) => Promise<boolean>;
   register: (
     name: string,
-    identifier: string,
+    email: string,
     password: string,
     keepLoggedIn: boolean
   ) => Promise<boolean>;
   logout: () => void;
+  openLoginWithData: boolean;
+  setOpenLoginWithData: (value: boolean) => void;
+  registerFormData: { name: string; email: string; password: string } | null;
 }

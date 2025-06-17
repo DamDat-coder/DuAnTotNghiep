@@ -4,14 +4,20 @@ import { isBrowser } from "../utils";
 
 // Hàm đăng nhập
 export async function login(
-  identifier: string,
+  email: string,
   password: string
 ): Promise<{ user: IUser; accessToken: string } | null> {
   try {
+    console.log(email, password);
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
       credentials: "include",
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -21,41 +27,42 @@ export async function login(
       email: data.user.email,
       name: data.user.name,
       phone: data.user.phone,
-      avatar: data.user.avatar,
       role: data.user.role,
+      active: true,
     };
+    console.log(data);
+    
     if (isBrowser()) {
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.token);
     }
-    return { user, accessToken: data.accessToken };
+    return { user, accessToken: data.token };
   } catch (error) {
     console.error("Error logging in:", error);
     return null;
   }
 }
 
-// Hàm đăng ký
 export async function register(
   name: string,
-  identifier: string,
-  password: string,
-  phone?: string,
-  avatar?: File
+  email: string,
+  password: string
 ): Promise<{ user: IUser; accessToken: string } | null> {
   try {
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", identifier);
-    formData.append("password", password);
-    if (phone && phone.trim() !== "") formData.append("phone", phone);
-    if (avatar) formData.append("avatar", avatar);
-
     const url = `${API_BASE_URL}/users/register`;
+
     const res = await fetch(url, {
       method: "POST",
-      body: formData,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
       credentials: "include",
     });
+
     if (!res.ok) {
       let errorData;
       try {
@@ -68,18 +75,21 @@ export async function register(
         errorData.message || "Email, mật khẩu hoặc tên không hợp lệ."
       );
     }
+
     const data = await res.json();
     const user: IUser = {
       id: data.user._id,
       name: data.user.name || "",
       phone: data.user.phone || null,
-      email: data.user.email || identifier,
-      avatar: data.user.avatar || null,
+      email: data.user.email || email,
       role: data.user.role || "user",
+      active: false,
     };
-    if (isBrowser()) {
+
+    if (typeof window !== "undefined") {
       localStorage.setItem("accessToken", data.accessToken);
     }
+
     return { user, accessToken: data.accessToken };
   } catch (error: any) {
     console.error("Error registering:", error);
@@ -102,8 +112,8 @@ export async function fetchUser(): Promise<IUser | null> {
       email: data.email,
       name: data.name,
       phone: data.phone || null,
-      avatar: data.avatar || null,
       role: data.role,
+      active: data.active,
     };
   } catch (error) {
     console.error("fetchUser - Error:", error);
@@ -130,6 +140,7 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
       password: userData.password,
       avatar: userData.avatar,
       role: userData.role,
+      active: userData.active,
     }));
 
     return users;

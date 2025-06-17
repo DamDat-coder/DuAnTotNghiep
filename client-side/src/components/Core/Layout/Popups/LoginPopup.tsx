@@ -10,22 +10,35 @@ interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenRegister: () => void;
+  initialFormData?: { name: string; email: string; password: string } | null;
 }
 
 export default function LoginPopup({
   isOpen,
   onClose,
   onOpenRegister,
+  initialFormData,
 }: LoginPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    identifier: "",
+    email: "",
     password: "",
     keepLoggedIn: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+
+  // Điền sẵn thông tin từ initialFormData khi component mount
+  useEffect(() => {
+    if (initialFormData) {
+      setFormData({
+        email: initialFormData.email,
+        password: initialFormData.password,
+        keepLoggedIn: false, // Không giữ lại keepLoggedIn
+      });
+    }
+  }, [initialFormData]);
 
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", isOpen);
@@ -45,8 +58,9 @@ export default function LoginPopup({
     setError(null);
     setLoading(true);
     try {
+      console.log(formData.email, formData.password, formData.keepLoggedIn);
       const success = await login(
-        formData.identifier,
+        formData.email,
         formData.password,
         formData.keepLoggedIn
       );
@@ -71,7 +85,7 @@ export default function LoginPopup({
         onClick={onClose}
       />
       <motion.div
-        className="relative w-[636px] bg-white rounded-[8px] p-6"
+        className="relative w-[636px] bg-white rounded-[8px]"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -90,8 +104,7 @@ export default function LoginPopup({
           </svg>
         </button>
 
-        <div className="flex flex-col items-center mt-[60px] mb-[60px] gap-0">
-          {/* Logo */}
+        <div className="flex flex-col items-center mt-[60px] mb-[60px] gap-0 px-[7.5rem]">
           <Image
             src="/nav/logo.svg"
             alt="Logo"
@@ -101,7 +114,6 @@ export default function LoginPopup({
             draggable={false}
           />
 
-          {/* Tiêu đề */}
           <div className="text-center mb-[40px]">
             <h2 className="text-[24px] font-bold mb-1">Đăng nhập</h2>
             <p className="text-base w-[396px] text-[#707070]">
@@ -109,21 +121,20 @@ export default function LoginPopup({
             </p>
           </div>
 
-          {/* Form */}
           <form
             onSubmit={handleSubmit}
             className="w-full flex flex-col items-center"
           >
             <div className="mb-[12px] w-[396px]">
               <label className="block text-sm font-bold mb-1">
-                Số điện thoại <span className="text-red-500">*</span>
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                name="identifier"
-                value={formData.identifier}
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                placeholder="Nhập số điện thoại"
+                placeholder="Nhập email"
                 required
                 className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
@@ -145,9 +156,9 @@ export default function LoginPopup({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-[34px] right-3 text-gray-400"
+                className="absolute top-[2.375rem] right-3 text-gray-400"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
 

@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader) {
         res.status(403).json({ message: "Token không hợp lệ hoặc thiếu" });
         return;
     }
@@ -19,7 +19,8 @@ const verifyToken = (req, res, next) => {
             });
             return;
         }
-        req.userId = decoded.id;
+        console.log(decoded.userId);
+        req.userId = decoded.userId;
         next();
     });
 };

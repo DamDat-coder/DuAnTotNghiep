@@ -10,7 +10,12 @@ interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenRegister: () => void;
-  initialFormData?: { name: string; email: string; password: string } | null;
+  initialFormData?: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  } | null;
 }
 
 export default function LoginPopup({
@@ -29,21 +34,39 @@ export default function LoginPopup({
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  // Điền sẵn thông tin từ initialFormData khi component mount
+  // Populate form from initialFormData
   useEffect(() => {
     if (initialFormData) {
       setFormData({
         email: initialFormData.email,
         password: initialFormData.password,
-        keepLoggedIn: false, // Không giữ lại keepLoggedIn
+        keepLoggedIn: false,
       });
     }
   }, [initialFormData]);
 
+  // Lock scroll when popup open
   useEffect(() => {
-    document.body.classList.toggle("overflow-hidden", isOpen);
-    return () => document.body.classList.remove("overflow-hidden");
-  }, [isOpen]);
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+
+      // Reset form when popup closes (if not using initialFormData)
+      if (!initialFormData) {
+        setFormData({
+          email: "",
+          password: "",
+          keepLoggedIn: false,
+        });
+        setError(null);
+      }
+    }
+
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isOpen, initialFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -58,13 +81,22 @@ export default function LoginPopup({
     setError(null);
     setLoading(true);
     try {
-      console.log(formData.email, formData.password, formData.keepLoggedIn);
       const success = await login(
         formData.email,
         formData.password,
         formData.keepLoggedIn
       );
-      if (success) onClose();
+      if (success) {
+        onClose();
+
+        // Reset form on success
+        setFormData({
+          email: "",
+          password: "",
+          keepLoggedIn: false,
+        });
+        setError(null);
+      }
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi đăng nhập.");
     } finally {
@@ -85,7 +117,7 @@ export default function LoginPopup({
         onClick={onClose}
       />
       <motion.div
-        className="relative w-[636px] bg-white rounded-[8px]"
+        className="relative w-[636px] h-[90%] bg-white rounded-[8px]"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -151,6 +183,7 @@ export default function LoginPopup({
                 onChange={handleChange}
                 placeholder="Nhập mật khẩu"
                 required
+                autoComplete="new-password"
                 className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
               <button
@@ -165,11 +198,17 @@ export default function LoginPopup({
             <div className="flex justify-between items-center w-[396px] mb-[40px] text-sm">
               <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
-                  type="checkbox"
+                  type="radio"
                   name="keepLoggedIn"
                   checked={formData.keepLoggedIn}
-                  onChange={handleChange}
-                  className="appearance-none w-4 h-4 rounded-full border border-gray-400 checked:bg-black checked:border-black focus:outline-none"
+                  onChange={() => {}}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      keepLoggedIn: !prev.keepLoggedIn,
+                    }))
+                  }
+                  className="w-4 h-4 rounded-full text-black border-gray-400 accent-black"
                 />
                 Duy trì đăng nhập
               </label>

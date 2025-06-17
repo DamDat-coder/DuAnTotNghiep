@@ -285,3 +285,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     transform: scale(1.0); 
   } 
 }
+/* globals.css */
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-hidden {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}

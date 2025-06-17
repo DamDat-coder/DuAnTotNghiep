@@ -23,7 +23,7 @@ router.use(rateLimit({
 router.get("/", getAllProducts);
 router.get("/admin", getAllProductsAdmin);
 router.get("/:id", getProductById);
-router.get('/:slug', getProductBySlug);
+router.get('/slug/:slug', getProductBySlug);
 router.post("/", verifyToken, verifyAdmin, createProduct);
 router.patch("/:id", verifyToken, verifyAdmin,  updateProduct);
 

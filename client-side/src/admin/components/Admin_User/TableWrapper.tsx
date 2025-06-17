@@ -12,13 +12,16 @@ export default function TableWrapper({ users, children }: Props) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  const filteredUsers = users.filter((user) => {
-    const matchesRole = filter === "all" || user.role === filter;
-    const matchesSearch =
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase());
-    return matchesRole && matchesSearch;
-  });
+const filteredUsers = users.filter((user) => {
+  const matchFilter = filter === "all" || user.role === filter;
+  const name = user.name || "";
+  const email = user.email || "";
+  const matchSearch =
+    name.toLowerCase().includes(search.toLowerCase()) ||
+    email.toLowerCase().includes(search.toLowerCase());
+  return matchFilter && matchSearch;
+});
+
 
   return (
     <div className="space-y-4 mt-6">

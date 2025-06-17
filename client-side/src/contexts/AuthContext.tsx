@@ -32,13 +32,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     name: string;
     email: string;
     password: string;
+    confirmPassword: string;
   } | null>(null);
   const [openLoginWithData, setOpenLoginWithData] = useState(false);
 
   useEffect(() => {
     const initializeAuth = async () => {
       const accessToken = localStorage.getItem("accessToken");
-      console.log("initializeAuth - accessToken:", accessToken);
       if (accessToken) {
         console.log("Initializing auth check...");
         await checkAuth();
@@ -50,13 +50,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loginHandler = async (
-    email: string,
+    identifier: string,
     password: string,
     keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      console.log(email, password);
-      const result = await login(email, password);
+      const result = await login(identifier, password);
       if (!result) {
         throw new Error("Email hoặc mật khẩu không đúng.");
       }
@@ -67,14 +66,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
-      } else {
-        sessionStorage.setItem("user", JSON.stringify(userData));
-        sessionStorage.setItem("accessToken", accessToken);
       }
 
       if (userData.role === "admin") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
         window.location.assign("/admin/dashboard");
       }
 
@@ -98,14 +92,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("Không thể đăng ký tài khoản.");
       }
 
+      const { user: userData, accessToken } = result;
+
       if (keepLoggedIn) {
-        const { user: userData, accessToken } = result;
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
       } else {
         // Mở LoginPopup với dữ liệu vừa đăng ký
-        setRegisterFormData({ name, email, password });
+        setRegisterFormData({ name, email, password, confirmPassword: password });
         setOpenLoginWithData(true);
       }
 
@@ -113,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Lỗi đăng ký:", error);
       // Mở LoginPopup với dữ liệu form đã nhập
-      setRegisterFormData({ name, email, password });
+      setRegisterFormData({ name, email, password, confirmPassword: password });
       setOpenLoginWithData(true);
       throw new Error("Có lỗi xảy ra khi đăng ký.");
     }
@@ -123,8 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
   };
 

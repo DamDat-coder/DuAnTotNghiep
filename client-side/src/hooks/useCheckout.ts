@@ -28,7 +28,6 @@ export function useCheckout() {
         }));
       } else {
         toast.error("Vui lòng đăng nhập để thanh toán!");
-        router.push("/login");
       }
     }
     checkAuth();

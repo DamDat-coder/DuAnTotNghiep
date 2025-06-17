@@ -1,55 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { IProduct } from "@/types/product";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Giả lập dữ liệu sizes và colors
-const mockSizes = [
-  { value: "S", inStock: true },
-  { value: "M", inStock: true },
-  { value: "XL", inStock: true },
-  { value: "2XL", inStock: true },
-  { value: "3XL", inStock: false },
-];
-const mockColors = ["Trắng", "Xanh navy"];
-
-// Hàm xử lý dữ liệu stock
-const getSizesFromStock = (
-  stock: { size: string; color: string; quantity: number }[]
-): { value: string; inStock: boolean }[] => {
-  const sizeMap = new Map<string, boolean>();
-  stock.forEach((item) => {
-    sizeMap.set(
-      item.size,
-      sizeMap.get(item.size) || false || item.quantity > 0
-    );
-  });
-  return Array.from(sizeMap.entries()).map(([value, inStock]) => ({
-    value,
-    inStock,
-  }));
-};
-
-// Hàm xử lý dữ liệu màu sắc
-const getColorsFromStock = (
-  stock: { size: string; color: string; quantity: number }[]
-): string[] => {
-  return [...new Set(stock.map((item) => item.color))];
-};
-
-// Hàm kiểm tra số lượng tồn kho tối đa
-const getMaxQuantity = (
-  stock: { size: string; color: string; quantity: number }[],
-  selectedSize: string,
-  selectedColor: string
-): number => {
-  const item = stock.find(
-    (s) => s.size === selectedSize && s.color === selectedColor
-  );
-  return item ? item.quantity : 0;
-};
+import { IProduct } from "@/types/product";
+import { useCartDispatch } from "@/contexts/CartContext";
 
 interface BuyNowPopupProps {
   product: IProduct;
@@ -59,10 +16,18 @@ interface BuyNowPopupProps {
 
 const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   const router = useRouter();
-  const [selectedSize, setSelectedSize] = useState<string>("");
-  const [selectedColor, setSelectedColor] = useState<string>("");
-  const [quantity, setQuantity] = useState<number>(1);
-  const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
+  const dispatch = useCartDispatch();
+  // Tìm variant đầu tiên có stock > 0
+  const firstAvailableVariant = product.variants.find((v) => v.stock > 0);
+
+  const [selectedSize, setSelectedSize] = useState(
+    firstAvailableVariant?.size || ""
+  );
+  const [selectedColor, setSelectedColor] = useState(
+    firstAvailableVariant?.color || ""
+  );
+  const [quantity, setQuantity] = useState(1);
+  const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
   // Ngăn scroll khi popup hoặc bảng kích thước mở
   useEffect(() => {
@@ -76,45 +41,80 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     };
   }, [isOpen, isSizeChartOpen]);
 
-  // Xử lý sizes
-  const sizes = Array.isArray(product.sizes)
-    ? product.sizes.map((size) =>
-        typeof size === "string" ? { value: size, inStock: true } : size
-      )
-    : mockSizes;
+  // Lấy danh sách kích thước và màu sắc từ variants
+  const sizes = Array.from(
+    new Set(product.variants.map((v) => v.size))
+  ).map((size) => ({
+    value: size,
+    inStock: product.variants.some((v) => v.size === size && v.stock > 0),
+  }));
 
-  // Xử lý colors
-  const colors =
-    Array.isArray(product.colors) && product.colors.length > 0
-      ? product.colors
-      : mockColors;
+  const colors = Array.from(new Set(product.variants.map((v) => v.color)));
 
   // Ánh xạ màu sắc
   const colorMap: { [key: string]: string } = {
     Trắng: "#FFFFFF",
     "Xanh navy": "#000080",
+    Đen: "#000000",
+    Đỏ: "#FF0000",
+    Xám: "#808080",
   };
 
+  // Lấy variant hiện tại
+  const selectedVariant = product.variants.find(
+    (v) => v.size === selectedSize && v.color === selectedColor
+  );
+
+  // Giới hạn số lượng dựa trên stock
+  const maxQuantity = selectedVariant ? selectedVariant.stock : 0;
+
+  useEffect(() => {
+    if (quantity > maxQuantity) {
+      setQuantity(Math.max(1, maxQuantity));
+    }
+  }, [maxQuantity, quantity]);
+
+  // Xử lý xác nhận mua ngay
   const handleConfirm = () => {
-    // Validate dữ liệu
-    if (!selectedSize) {
-      toast.error("Vui lòng chọn kích thước!");
+    const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    if (!accessToken) {
+      alert("Bạn vui lòng đăng nhập trước khi mua hàng!");
       return;
     }
     if (!selectedColor) {
       toast.error("Vui lòng chọn màu sắc!");
       return;
     }
+    if (!selectedSize) {
+      toast.error("Vui lòng chọn kích thước!");
+      return;
+    }
     if (quantity < 1) {
       toast.error("Số lượng phải lớn hơn 0!");
       return;
     }
+    if (!selectedVariant || selectedVariant.stock < quantity) {
+      toast.error("Sản phẩm không đủ hàng!");
+      return;
+    }
 
-    // Xử lý hình ảnh
-    const image =
-      Array.isArray(product.images) && typeof product.images[0] === "string"
-        ? product.images[0]
-        : ""; // Giá trị mặc định nếu không có hình ảnh
+    // Tạo cartItem
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: selectedVariant.discountedPrice,
+      discountPercent: selectedVariant.discountPercent,
+      image: product.images[0] || "",
+      quantity,
+      size: selectedSize,
+      color: selectedColor,
+      liked: false,
+      selected: true,
+    };
+
+    // Thêm vào giỏ hàng
+    dispatch({ type: "add", item: cartItem });
+    toast.success("Đã thêm vào giỏ hàng!");
 
     // Tạo query params
     const query = new URLSearchParams({
@@ -123,10 +123,10 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       size: selectedSize,
       color: selectedColor,
       quantity: quantity.toString(),
-      price: product.price.toString(),
-      discountPercent: product.discountPercent.toString(),
+      price: selectedVariant.discountedPrice.toString(),
+      discountPercent: selectedVariant.discountPercent.toString(),
       buyNow: "true",
-      image,
+      image: product.images[0] || "",
     }).toString();
 
     // Chuyển hướng đến checkout
@@ -145,8 +145,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     setIsSizeChartOpen(false);
   };
 
-  const discountedPrice = product.price * (1 - product.discountPercent / 100);
-
   return (
     <>
       {/* Popup chính */}
@@ -156,7 +154,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[50]"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
             onClick={onClose}
           >
             <motion.div
@@ -167,7 +165,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
               className="flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg w-[100%] max-w-[80%] laptop:max-w-[80%] relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Nút đóng popup */}
+              {/* Nút đóng */}
               <button
                 onClick={onClose}
                 className="absolute top-5 right-5 text-gray-500 hover:text-gray-700 text-xl font-bold"
@@ -205,11 +203,13 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-red-500 font-bold text-lg">
-                      {discountedPrice.toLocaleString("vi-VN")}₫
+                      {(selectedVariant?.discountedPrice || product.variants[0]?.discountedPrice || 0).toLocaleString("vi-VN")}₫
                     </p>
-                    <p className="text-sm text-[#374151] line-through">
-                      {product.price.toLocaleString("vi-VN")}₫
-                    </p>
+                    {selectedVariant && selectedVariant.discountPercent > 0 && (
+                      <p className="text-sm text-[#374151] line-through">
+                        {selectedVariant.price.toLocaleString("vi-VN")}₫
+                      </p>
+                    )}
                   </div>
                 </div>
 

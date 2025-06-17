@@ -1,19 +1,38 @@
-// src/components/Home/ProductGrid.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import FilterPopup from "../Products/FilterPopup";
+import { useSearchParams } from "next/navigation";
+import FilterPopup from "./FilterPopup";
 import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
 
 interface ProductGridProps {
   products: IProduct[];
+  onApplyFilters?: (filters: any) => void;
 }
 
-export default function ProductGrid({ products }: ProductGridProps) {
+const getLowestPriceVariant = (product: IProduct) => {
+  if (!product.variants || product.variants.length === 0) {
+    return { price: 0, discountPercent: 0, discountedPrice: 0 };
+  }
+  console.log(product.variants[0]);
+  return product.variants.reduce(
+    (min, variant) =>
+      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
+        ? variant
+        : min,
+    product.variants[0]
+  );
+  
+};
+
+export default function ProductGrid({
+  products,
+  onApplyFilters,
+}: ProductGridProps) {
   const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
     products.slice(0, 10)
   );
@@ -22,9 +41,24 @@ export default function ProductGrid({ products }: ProductGridProps) {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Truyền id_cate hiện tại cho FilterPopup
+  const currentFilters = {
+    id_cate: searchParams.get("id_cate") || undefined,
+    sort: searchParams.get("sort") || undefined,
+    priceRange: searchParams.get("priceRange") || undefined,
+    color: searchParams.get("color") || undefined,
+    size: searchParams.get("size") || undefined,
+  };
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const PRODUCTS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setDisplayedProducts(products.slice(0, 10));
+    setHasMore(products.length > 10);
+  }, [products]);
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -73,13 +107,17 @@ export default function ProductGrid({ products }: ProductGridProps) {
   };
 
   const renderProductCard = (product: IProduct) => {
-    const discountPrice = product.price * (1 - product.discountPercent / 100);
+    const { price, discountPercent, discountedPrice } = getLowestPriceVariant(product);
 
     return (
-      <div className=" w-full flex flex-col bg-white relative">
+      <div className="w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">
           <Image
-            src={`/product/img/${product.images[0]}`}
+            src={
+              product.images[0]
+                ? `/product/img/${product.images[0]}`
+                : "/placeholder.jpg"
+            }
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}
@@ -88,10 +126,10 @@ export default function ProductGrid({ products }: ProductGridProps) {
           />
           <div
             className={`absolute top-[0.5rem] left-[0.5rem] bg-red-500 text-white text-[0.75rem] font-bold px-2 py-1 rounded ${
-              !product.discountPercent ? "hidden" : "block"
+              !discountPercent ? "hidden" : "block"
             } `}
           >
-            -{product.discountPercent}%
+            -{discountPercent}%
           </div>
           <AddToCartButton product={product} />
           <div className="content flex flex-col py-4 gap-3">
@@ -100,19 +138,19 @@ export default function ProductGrid({ products }: ProductGridProps) {
                 {product.name || "Sản phẩm"}
               </div>
               <div className="category text-base text-[#374151] truncate">
-                {product.category || "Danh mục"}
+                {product.category.name || "Danh mục"}
               </div>
             </div>
             <div className="price-container flex items-center gap-3">
-              <div className="discountPrice text-[1rem] font-bold text-red-500">
-                {discountPrice.toLocaleString("vi-VN")}₫
+              <div className="discountedPrice text-[1rem] font-bold text-red-500">
+                {discountedPrice.toLocaleString("vi-VN")}₫
               </div>
               <div
                 className={`price text-[0.875rem] flex items-center text-[#374151] line-through ${
-                  !product.discountPercent ? "hidden" : "block"
+                  !discountPercent ? "hidden" : "block"
                 }`}
               >
-                {product.price.toLocaleString("vi-VN")}₫
+                {price.toLocaleString("vi-VN")}₫
               </div>
             </div>
             <div className="flex gap-3 font-heading">
@@ -153,7 +191,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
           />
         </button>
       </div>
-      <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4 desktop:grid-cols-4  laptop:grid-cols-4 justify-center overflow-x-hidden pt-2">
+      <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4 desktop:grid-cols-4 laptop:grid-cols-4 justify-center overflow-x-hidden pt-2">
         {displayedProducts.map((product) => (
           <div key={product.id} className="w-full">
             {renderProductCard(product)}
@@ -172,7 +210,12 @@ export default function ProductGrid({ products }: ProductGridProps) {
           </div>
         )}
       </div>
-      <FilterPopup isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} />
+      <FilterPopup
+        isOpen={isFilterOpen}
+        setIsOpen={setIsFilterOpen}
+        onApplyFilters={onApplyFilters ?? (() => {})}
+        currentFilters={currentFilters}
+      />
       {selectedProduct && (
         <BuyNowPopup
           product={selectedProduct}

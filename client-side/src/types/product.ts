@@ -1,7 +1,9 @@
+// types/product.ts
 export interface IProduct {
   id: string;
   name: string;
   slug: string;
+  description: string; // Thêm trường mô tả
   category: {
     _id: string | null;
     name: string;
@@ -13,11 +15,13 @@ export interface IProduct {
     size: string;
     stock: number;
     discountPercent: number;
+    discountedPrice: number;
   }[];
   images: string[];
   stock: number;
+  is_active: boolean; // Thêm trường trạng thái
+  salesCount: number; // Thêm trường số lượng bán
 }
-
 export interface IFeaturedProducts {
   id: string;
   banner: string;

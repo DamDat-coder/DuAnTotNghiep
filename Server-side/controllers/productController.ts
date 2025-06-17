@@ -5,7 +5,7 @@ import categoryModel from '../models/categoryModel';
 import cloudinary from '../config/cloudinary';
 import { UploadApiResponse } from 'cloudinary';
 
-// Lấy tất cả sản phẩm 
+// Lấy tất cả sản phẩm bên admin
 export const getAllProductsAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
@@ -78,14 +78,14 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
       total,
       page: pageNum,
       limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: Math.ceil(total / limitNum),  
     });
   } catch (error: any) {
     console.error('Lỗi khi lấy tất cả sản phẩm:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
-// Lấy tất cả sản phẩm (hỗ trợ phân trang, tìm kiếm, sắp xếp, và lọc theo nhiều tiêu chí)
+// Lấy tất cả sản phẩm 
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
@@ -98,13 +98,12 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       is_active,
     } = req.query;
 
-    // Xây dựng điều kiện tìm kiếm
     const query: any = {};
 
-    // Kiểm tra sản phẩm
+    // is_active
     if (is_active !== undefined) {
       if (is_active !== 'true' && is_active !== 'false') {
-        res.status(400).json({ status: 'error', message: 'Giá trị is_active không hợp lệ, phải là true hoặc false' });
+        res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
         return;
       }
       query.is_active = is_active === 'true';
@@ -112,128 +111,156 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       query.is_active = true;
     }
 
-    // Tìm kiếm theo tên sản phẩm
+    // name
     if (name) {
       query.name = new RegExp(name as string, 'i');
     }
 
-    // Lọc theo danh mục (bao gồm danh mục cha và tất cả danh mục con)
+    // id_cate
     if (id_cate) {
       const categoryIdStr = String(id_cate);
       if (!mongoose.Types.ObjectId.isValid(categoryIdStr)) {
-        res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+        res.status(400).json({ status: 'error', message: 'Invalid category ID' });
         return;
       }
 
-      // Lấy tất cả danh mục con của danh mục cha (bao gồm các cấp)
       const categoryIds = [categoryIdStr];
       const findChildCategories = async (parentId: string) => {
-        const children = await categoryModel
-          .find({ parentid: new mongoose.Types.ObjectId(parentId) })
-          .select('_id')
-          .lean();
+        const children = await categoryModel.find({ parentid: new mongoose.Types.ObjectId(parentId) }).select('_id').lean();
         for (const child of children) {
-          categoryIds.push(child._id.toString());
-          await findChildCategories(child._id.toString());
+          const childId = child._id.toString();
+          categoryIds.push(childId);
+          await findChildCategories(childId);
         }
       };
 
-      await findChildCategories(id_cate as string);
+      await findChildCategories(categoryIdStr);
       query['category._id'] = { $in: categoryIds.map(id => new mongoose.Types.ObjectId(id)) };
     }
 
-    // Lọc theo màu sắc
+    // color + size + priceRange cần gộp vào một filter của variant
+    const variantConditions: any[] = [];
+
+    // color
     if (color) {
-      const colors = (color as string).split(',').map(c => c.trim());
       const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
-      if (!colors.every(c => validColors.includes(c))) {
-        res.status(400).json({ status: 'error', message: 'Một hoặc nhiều màu sắc không hợp lệ' });
+      if (!validColors.includes(color as string)) {
+        res.status(400).json({ status: 'error', message: 'Invalid color' });
         return;
       }
-      query['variants.color'] = { $in: colors };
+      variantConditions.push({ 'variants.color': color });
     }
 
-    // Lọc theo kích cỡ
+    // size
     if (size) {
       const validSizes = ['S', 'M', 'L', 'XL'];
       if (!validSizes.includes(size as string)) {
-        res.status(400).json({ status: 'error', message: 'Kích cỡ không hợp lệ' });
+        res.status(400).json({ status: 'error', message: 'Invalid size' });
         return;
       }
-      query['variants.size'] = size;
+      variantConditions.push({ 'variants.size': size });
     }
 
-    // Lọc theo khoảng giá
+    // priceRange
+    let priceMatch: any = null;
     if (priceRange) {
-      const ranges = (priceRange as string).split(',').map(r => r.trim());
       const priceFilters: { [key: string]: any } = {
-        'under-500k': { 'variants.price': { $lt: 500000 } },
-        '500k-1m': { 'variants.price': { $gte: 500000, $lte: 1000000 } },
-        '1m-2m': { 'variants.price': { $gte: 1000000, $lte: 2000000 } },
-        '2m-4m': { 'variants.price': { $gte: 2000000, $lte: 4000000 } },
-        'over-4m': { 'variants.price': { $gt: 4000000 } },
+        'under-500k': { $lt: 500000 },
+        '500k-1m': { $gte: 500000, $lte: 1000000 },
+        '1m-2m': { $gte: 1000000, $lte: 2000000 },
+        '2m-4m': { $gte: 2000000, $lte: 4000000 },
+        'over-4m': { $gt: 4000000 },
       };
-
-      const priceQueries = ranges.map(range => {
-        if (!priceFilters[range]) {
-          throw new Error(`Khoảng giá không hợp lệ: ${range}`);
-        }
-        return priceFilters[range];
-      });
-
-      if (priceQueries.length > 0) {
-        query.$or = priceQueries;
-      }
-    }
-
-    // Sắp xếp
-    const options: any = {};
-    if (sort) {
-      const sortOptions: { [key: string]: any } = {
-        'price-asc': { 'variants.price': 1 },
-        'price-desc': { 'variants.price': -1 },
-        'newest': { _id: -1 },
-        'best-seller': { salesCount: -1 },
-      };
-
-      if (!sortOptions[sort as string]) {
-        res.status(400).json({ status: 'error', message: 'Tùy chọn sắp xếp không hợp lệ' });
+      const filter = priceFilters[priceRange as string];
+      if (!filter) {
+        res.status(400).json({ status: 'error', message: `Invalid price range: ${priceRange}` });
         return;
       }
-      options.sort = sortOptions[sort as string];
+      priceMatch = filter;
     }
 
+    const pipeline: any[] = [
+      { $match: query },
+      { $unwind: '$variants' },
+      {
+        $addFields: {
+          'variants.discountedPrice': {
+            $multiply: [
+              '$variants.price',
+              { $subtract: [1, { $divide: ['$variants.discountPercent', 100] }] }
+            ]
+          }
+        }
+      },
+    ];
 
-    // Lấy tất cả sản phẩm
-    const products = await productModel
-      .find(query)
-      .select('name slug category image variants is_active salesCount')
-      .sort(options.sort)
-      .lean();
+    // $match theo variant cùng lúc
+    const variantMatch: any = {};
+    for (const condition of variantConditions) {
+      Object.assign(variantMatch, condition);
+    }
+    if (priceMatch) {
+      variantMatch['variants.discountedPrice'] = priceMatch;
+    }
+    if (Object.keys(variantMatch).length > 0) {
+      pipeline.push({ $match: variantMatch });
+    }
+
+    // group lại thành sản phẩm
+    pipeline.push({
+      $group: {
+        _id: '$_id',
+        name: { $first: '$name' },
+        slug: { $first: '$slug' },
+        category: { $first: '$category' },
+        image: { $first: '$image' },
+        variants: { $push: '$variants' },
+        is_active: { $first: '$is_active' },
+        salesCount: { $first: '$salesCount' },
+        minDiscountedPrice: { $min: '$variants.discountedPrice' },
+      }
+    });
+
+    // sort
+    if (sort === 'price-asc' || sort === 'price-desc') {
+      pipeline.push({ $sort: { minDiscountedPrice: sort === 'price-asc' ? 1 : -1 } });
+    } else {
+      const sortOptions: { [key: string]: any } = {
+        newest: { _id: -1 },
+        'best-seller': { salesCount: -1 }
+      };
+      if (sort && sortOptions[sort as string]) {
+        pipeline.push({ $sort: sortOptions[sort as string] });
+      }
+    }
+
+    const products = await productModel.aggregate(pipeline);
 
     if (!products.length) {
-      res.status(404).json({ status: 'error', message: 'Không tìm thấy sản phẩm' });
+      res.status(404).json({ status: 'error', message: 'No products found' });
       return;
     }
 
-    const result = products.map((product) => ({
+    const result = products.map(product => ({
       ...product,
       category: {
         _id: product.category._id,
         name: product.category.name,
       },
+      image: product.image || [],
     }));
 
     res.status(200).json({
       status: 'success',
       data: result,
-      total: products.length,
+      total: result.length,
     });
   } catch (error: any) {
-    console.error('Lỗi khi lấy tất cả sản phẩm:', error);
+    console.error('Error fetching all products:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
+
 // Lấy sản phẩm theo ID
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -463,47 +490,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// Xóa sản phẩm
-export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const productId = req.params.id;
-
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
-      return;
-    }
-
-    const product = await productModel.findById(productId);
-    if (!product) {
-      res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
-      return;
-    }
-
-    if (product.image && product.image.length > 0) {
-      const deletePromises = product.image.map((img) => {
-        const publicId = img.split('/').pop()?.split('.')[0];
-        if (publicId) {
-          return cloudinary.uploader.destroy(`products/${publicId}`).catch((err) => {
-            console.error(`Lỗi khi xóa ảnh ${publicId}:`, err);
-          });
-        }
-        return Promise.resolve();
-      });
-      await Promise.all(deletePromises);
-    }
-
-    await productModel.findByIdAndDelete(productId);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Xóa sản phẩm thành công',
-    });
-  } catch (error: any) {
-    console.error('Lỗi khi xóa sản phẩm:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-};
-
 // Khóa/Mở khóa sản phẩm
 export const lockProduct = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -550,4 +536,4 @@ export const lockProduct = async (req: Request, res: Response): Promise<void> =>
     console.error('Lỗi khi khóa/mở khóa sản phẩm:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
-};
+}; 

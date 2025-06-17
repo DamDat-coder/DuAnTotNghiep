@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function SettingsContent({ activeTab, setActiveTab }: Props) {
-  const accountTabs = ["Hồ sơ", "Địa chỉ", "Yêu thích", "Xóa tài khoản"];
+  const accountTabs = ["Hồ sơ", "Địa chỉ", "Yêu thích"];
   const [showAccountMenu, setShowAccountMenu] = useState(true);
 
   return (

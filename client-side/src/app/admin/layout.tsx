@@ -1,4 +1,25 @@
-// app/admin/layout.tsx
-export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+// src/app/admin/layout.tsx
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+
+export default function AdminRootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+
+
+  if (!user || user.role !== "admin") return null;
+
+  return (
+    <AdminLayout pageTitle="Admin" pageSubtitle="Quản lý hệ thống">
+      {children}
+    </AdminLayout>
+  );
 }

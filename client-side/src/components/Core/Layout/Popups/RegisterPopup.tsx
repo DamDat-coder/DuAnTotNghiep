@@ -12,14 +12,16 @@ interface RegisterPopupProps {
   onOpenLogin: () => void;
 }
 
-export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: RegisterPopupProps) {
+export default function RegisterPopup({
+  isOpen,
+  onClose,
+  onOpenLogin,
+}: RegisterPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: "", // Thêm name
+    name: "",
     identifier: "",
     password: "",
-    confirmPassword: "",
     keepLoggedIn: false,
   });
   const [error, setError] = useState<string | null>(null);
@@ -27,14 +29,8 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
   const { register } = useAuth();
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
+    document.body.classList.toggle("overflow-hidden", isOpen);
+    return () => document.body.classList.remove("overflow-hidden");
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,25 +46,18 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
     setError(null);
     setLoading(true);
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Mật khẩu và xác nhận mật khẩu không khớp.");
-      setLoading(false);
-      return;
-    }
-
     try {
       const success = await register(
-        formData.name, // Thêm name
+        formData.name,
         formData.identifier,
         formData.password,
         formData.keepLoggedIn
       );
       if (success) {
-        alert("Đăng ký thành công!");
         onClose();
       }
     } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.");
+      setError(err.message || "Có lỗi xảy ra khi đăng ký.");
     } finally {
       setLoading(false);
     }
@@ -78,6 +67,7 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Overlay */}
       <motion.div
         className="absolute inset-0 bg-black"
         initial={{ opacity: 0 }}
@@ -86,158 +76,155 @@ export default function RegisterPopup({ isOpen, onClose, onOpenLogin }: Register
         transition={{ duration: 0.3 }}
         onClick={onClose}
       />
+
+      {/* Modal */}
       <motion.div
-        className="relative bg-white p-6 px-36 shadow-lg w-full max-w-md desktop:max-w-2xl laptop:max-w-2xl"
+        className="relative w-[636px] bg-white rounded-lg p-6"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
       >
+        {/* Close button */}
         <button
-          type="button"
-          className="absolute top-4 right-4 p-2 text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none"
           onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-black hover:text-gray-700"
         >
-          <svg
-            className="size-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+          <svg className="size-6" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
 
-        <div className="flex flex-col gap-6">
-          <div className="mt-8 flex justify-center">
-            <Image
-              src="/nav/logo.svg"
-              alt="Logo"
-              width={0}
-              height={0}
-              className="h-8 w-auto"
-              draggable={false}
-              loading="lazy"
-            />
-          </div>
-          <div>
-            <h2 className="text-2xl font-medium text-center">Đăng ký</h2>
-            <p className="text-base text-[#707070] text-center">
+        {/* Logo + heading */}
+        <div className="flex flex-col items-center mt-[60px] mb-[60px] gap-0">
+          <Image
+            src="/nav/logo.svg"
+            alt="Logo"
+            width={0}
+            height={0}
+            className="h-8 w-auto mb-[40px]"
+            draggable={false}
+          />
+          <div className="text-center mb-[40px]">
+            <h2 className="text-[24px] font-bold mb-1">Đăng ký</h2>
+            <p className="text-base w-[396px] text-[#707070]">
               Trở thành thành viên để có được những sản phẩm và giá tốt nhất.
             </p>
           </div>
-          {error && <p className="text-red-500 text-center">{error}</p>}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-medium">Họ và tên</label>
+          {error && (
+            <p className="text-sm text-center text-red-500 mb-4">{error}</p>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col items-center">
+            {/* Họ và tên */}
+            <div className="w-[396px] mb-3">
+              <label className="block text-sm font-bold mb-1">
+                Họ và tên <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Nhập họ và tên"
                 required
+                placeholder="Nhập họ và tên"
+                className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium">Email hoặc Số điện thoại</label>
+
+            {/* Số điện thoại */}
+            <div className="w-[396px] mb-3">
+              <label className="block text-sm font-bold mb-1">
+                Số điện thoại <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="identifier"
                 value={formData.identifier}
                 onChange={handleChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Nhập email hoặc số điện thoại"
                 required
+                placeholder="Nhập số điện thoại"
+                className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm"
               />
             </div>
-            <div className="relative">
-              <label className="block text-sm font-medium">Mật khẩu</label>
+
+            {/* Mật khẩu */}
+            <div className="w-[396px] mb-3 relative">
+              <label className="block text-sm font-bold mb-1">
+                Nhập mật khẩu <span className="text-red-500">*</span>
+              </label>
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full mt-1 p-2 pr-[0.75rem] border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+                required
                 placeholder="Nhập mật khẩu"
-                required
+                className="w-full h-[45px] border border-gray-300 rounded px-4 pr-10 text-sm"
               />
               <button
                 type="button"
-                className="absolute text-[#D1D1D1] right-2 py-[0.875rem]"
                 onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-[36px] right-3 text-gray-400"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <div className="relative">
-              <label className="block text-sm font-medium">Xác nhận mật khẩu</label>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full mt-1 p-2 pr-[0.75rem] border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Xác nhận mật khẩu"
-                required
-              />
-              <button
-                type="button"
-                className="absolute text-[#D1D1D1] right-2 py-[0.875rem]"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            <div className="flex justify-between items-center gap-[0.5625rem]">
+
+            {/* Checkbox: điều khoản */}
+            <div className="w-[396px] mb-[40px]">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   name="keepLoggedIn"
                   checked={formData.keepLoggedIn}
                   onChange={handleChange}
-                  className="h-4 w-4 accent-black border-black"
+                  className="appearance-none w-4 h-4 text-[#888888] rounded-full border border-gray-400 checked:bg-black checked:border-black"
                 />
-                Duy trì đăng nhập
+                Tôi đồng ý với Chính sách Bảo mật và Các Điều khoản{" "}
               </label>
-              <a href="#" className="text-sm text-blue-500 hover:underline">
-                Quên mật khẩu?
-              </a>
             </div>
+
+            {/* Đăng ký button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 bg-black text-white font-medium rounded hover:bg-gray-800 disabled:opacity-50"
+              className="w-[396px] h-[49px] bg-black text-white text-base rounded font-medium hover:bg-gray-800 mb-[12px]"
             >
               {loading ? "Đang đăng ký..." : "Đăng ký"}
             </button>
-          </form>
-          <p className="text-center text-sm">
-            Đã có tài khoản?{" "}
-            <button
-              type="button"
-              className="text-blue-500 hover:underline"
-              onClick={() => {
-                onClose();
-                onOpenLogin();
-              }}
-            >
-              Đăng nhập
+
+            {/* Đã có tài khoản? */}
+            <p className="text-sm mb-[12px]">
+              Đã có tài khoản?{" "}
+              <button
+                type="button"
+                className="text-black font-bold hover:underline"
+                onClick={() => {
+                  onClose();
+                  onOpenLogin();
+                }}
+              >
+                Đăng nhập
+              </button>
+            </p>
+
+            {/* Đăng ký bằng Google */}
+            <button className="w-[396px] h-[49px] border border-[#000000] py-2 flex items-center justify-center gap-2 rounded text-sm hover:bg-gray-100">
+              <Image
+                src="/user/google.svg"
+                alt="Google"
+                width={20}
+                height={20}
+              />
+              <span className="font-medium">Sign in with Google</span>
             </button>
-          </p>
-          <p className="text-center text-sm text-[#707070]">
-            Bằng cách đăng ký, bạn đồng ý với{" "}
-            <a href="#" className="text-blue-500 hover:underline">
-              Điều khoản sử dụng
-            </a>{" "}
-            và{" "}
-            <a href="#" className="text-blue-500 hover:underline">
-              Chính sách bảo mật
-            </a>
-            .
-          </p>
+          </form>
         </div>
       </motion.div>
     </div>

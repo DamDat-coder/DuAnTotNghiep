@@ -1,10 +1,17 @@
 export interface IUser {
   id: string;
-  name: string;
   email: string;
+  name: string;
   phone: string | null;
-  active: boolean;
   role: "user" | "admin";
+  active: boolean;
+  addresses?: {
+    street: string;
+    ward: string;
+    district: string;
+    province: string;
+    is_default: boolean;
+  }[];
 }
 
 export interface AuthContextType {

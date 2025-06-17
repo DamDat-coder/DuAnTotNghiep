@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import ProductControlBar from "./ProductControlBar";
 import ProductBody from "./ProductBody";
 import Image from "next/image";
-import { Pagination } from "@/admin/layouts/Panigation";
+import { Pagination } from "../ui/Panigation";
 
 export default function ProductTableWrapper({
   products,
@@ -13,7 +13,10 @@ export default function ProductTableWrapper({
   onDeleteProduct,
 }) {
   const [localProducts, setLocalProducts] = useState(
-    products.map((p) => ({ ...p, active: p.active ?? true }))
+    (Array.isArray(products) ? products : []).map((p) => ({
+      ...p,
+      active: typeof p.is_active === "boolean" ? p.is_active : true,
+    }))
   );
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -22,7 +25,12 @@ export default function ProductTableWrapper({
   const pageSize = 10;
 
   useEffect(() => {
-    setLocalProducts(products.map((p) => ({ ...p, active: p.active ?? true })));
+    setLocalProducts(
+      (Array.isArray(products) ? products : []).map((p) => ({
+        ...p,
+        active: typeof p.is_active === "boolean" ? p.is_active : true,
+      }))
+    );
   }, [products]);
 
   // Filter + search
@@ -40,7 +48,6 @@ export default function ProductTableWrapper({
   const totalPage = Math.ceil(filtered.length / pageSize);
   const pageData = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // Toggle trạng thái
   const handleToggleStatus = (id: string) => {
     setLocalProducts((prev) =>
       prev.map((p) => (p._id === id ? { ...p, active: !p.active } : p))
@@ -55,7 +62,6 @@ export default function ProductTableWrapper({
         onAddProduct={onAddProduct}
       />
 
-      {/* GIAO DIỆN TABLE CỦA BẠN GIỮ NGUYÊN, KHÔNG ĐỤNG VÀO */}
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
         <table className="min-w-full text-sm text-left">
           <thead className="bg-[#F8FAFC] text-[#94A3B8]">

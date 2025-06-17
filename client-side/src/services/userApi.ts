@@ -8,36 +8,40 @@ export async function login(
   password: string
 ): Promise<{ user: IUser; accessToken: string } | null> {
   try {
-    console.log(email, password);
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
+      body: JSON.stringify({ email, password }),
       credentials: "include",
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+    }
+
     const data = await res.json();
+    console.log("Login response:", data);
     const user: IUser = {
       id: data.user._id,
       email: data.user.email,
       name: data.user.name,
-      phone: data.user.phone,
+      phone: data.user.phone || null,
       role: data.user.role,
-      active: true,
+      active: data.user.is_active,
     };
-    console.log(data);
-    
+
     if (isBrowser()) {
-      localStorage.setItem("accessToken", data.token);
+      localStorage.setItem("accessToken", data.accessToken);
+      console.log("Stored accessToken:", data.accessToken);
+      console.log("Cookies after login:", document.cookie);
     }
-    return { user, accessToken: data.token };
-  } catch (error) {
-    console.error("Error logging in:", error);
+
+    return { user, accessToken: data.accessToken };
+  } catch (error: any) {
+    console.error("Error logging in:", error.message);
     return null;
   }
 }
@@ -49,7 +53,6 @@ export async function register(
 ): Promise<{ user: IUser; accessToken: string } | null> {
   try {
     const url = `${API_BASE_URL}/users/register`;
-
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -83,12 +86,8 @@ export async function register(
       phone: data.user.phone || null,
       email: data.user.email || email,
       role: data.user.role || "user",
-      active: false,
+      active: false, // Lỗi: Không nên hard-code
     };
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("accessToken", data.accessToken);
-    }
 
     return { user, accessToken: data.accessToken };
   } catch (error: any) {
@@ -100,7 +99,7 @@ export async function register(
 // Lấy thông tin user
 export async function fetchUser(): Promise<IUser | null> {
   try {
-    const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/userinfo`, {
+    const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/me`, {
       cache: "no-store",
     });
     if (!data || !data._id) {
@@ -113,14 +112,12 @@ export async function fetchUser(): Promise<IUser | null> {
       name: data.name,
       phone: data.phone || null,
       role: data.role,
-      active: data.active,
+      active: data.is_active,
     };
-  } catch (error) {
-    console.error("fetchUser - Error:", error);
+  } catch (error: any) {
     return null;
   }
 }
-
 // Lấy danh sách tất cả user
 export async function fetchAllUsers(): Promise<IUser[] | null> {
   try {
@@ -136,16 +133,18 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
       id: userData._id,
       email: userData.email,
       name: userData.name,
-      phone: userData.phone,
-      password: userData.password,
-      avatar: userData.avatar,
+      phone: userData.phone || null,
+      avatar: userData.avatar || null,
       role: userData.role,
-      active: userData.active,
+      active: userData.is_active,
     }));
 
     return users;
-  } catch (error) {
-    console.error("Error fetching all users:", error);
+  } catch (error: any) {
+    if (error.message.includes("403")) {
+      console.warn("User does not have admin privileges");
+      return null;
+    }
     return null;
   }
 }

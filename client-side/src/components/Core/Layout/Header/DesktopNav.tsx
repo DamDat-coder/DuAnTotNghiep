@@ -53,7 +53,7 @@ export default function DesktopNav() {
   }
 
   return (
-    <div className="hidden laptop:flex desktop:flex items-center space-x-6">
+    <div className="hidden laptop:flex desktop:flex items-center gap-5">
       {navLinks.map((link) => {
         // Tạo URLSearchParams từ link.href
         const linkSearchParams = new URLSearchParams(

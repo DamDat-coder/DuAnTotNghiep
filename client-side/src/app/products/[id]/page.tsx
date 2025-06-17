@@ -1,8 +1,5 @@
-// app/products/[id]/page.tsx
 import { fetchProductById, fetchProducts } from "@/services/productApi";
-import { fetchCategories } from "@/services/categoryApi";
 import { IProduct } from "@/types/product";
-import { ICategory } from "@/types/category";
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductImageSwiper from "@/components/Detail/ProductImageSwiper";
@@ -16,19 +13,33 @@ interface ProductDetailProps {
   params: { id: string };
 }
 
+const getLowestPriceVariant = (product: IProduct) => {
+  if (!product.variants || product.variants.length === 0) {
+    return { price: 0, discountPercent: 0, discountedPrice: 0 };
+  }
+  return product.variants.reduce(
+    (min, variant) =>
+      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
+        ? variant
+        : min,
+    product.variants[0]
+  );
+};
+
 export default async function ProductDetail({ params }: ProductDetailProps) {
   const { id } = await params;
 
   let product: IProduct | null = null;
-  let suggestedProducts: ICategory[] = [];
-  let allProducts: IProduct[] = [];
+  let suggestedProducts: IProduct[] = [];
   let error: string | null = null;
 
   try {
     product = await fetchProductById(id);
     if (!product) throw new Error("Không tìm thấy sản phẩm.");
-    suggestedProducts = await fetchCategories();
-    allProducts = await fetchProducts();
+    // Lấy sản phẩm cùng danh mục gốc
+    suggestedProducts = await fetchProducts({
+      id_cate: product.categoryId || undefined,
+    }).then((res) => res.products.filter((p) => p.id !== id)); // Loại sản phẩm hiện tại
   } catch (err) {
     error = "Có lỗi xảy ra khi tải dữ liệu.";
   }
@@ -43,16 +54,17 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
     );
   }
 
-  const discountedPrice = product.price * (1 - product.discountPercent / 100);
-  const sizes = [
-    { value: "S", inStock: true },
-    { value: "M", inStock: true },
-    { value: "L", inStock: true },
-    { value: "XL", inStock: true },
-    { value: "2XL", inStock: true },
-    { value: "3XL", inStock: false },
-  ];
-  const stock = 1;
+  const { price, discountPercent, discountedPrice } =
+    getLowestPriceVariant(product);
+  // Lấy sizes động từ variants
+  const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
+    (size) => ({
+      value: size,
+      inStock: product.variants.some((v) => v.size === size && v.stock > 0),
+    })
+  );
+  // Tính tổng stock
+  const stock = product.variants.reduce((sum, v) => sum + v.stock, 0);
 
   return (
     <div className="min-h-screen pb-14">
@@ -68,10 +80,14 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
                 <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
                 <div className="flex items-center gap-4">
                   <div className="text-red-500 font-bold text-lg">
-                    {discountedPrice.toLocaleString()}đ
+                    {(discountedPrice || price).toLocaleString("vi-VN")}₫
                   </div>
-                  <div className="text-sm text-gray-500 line-through">
-                    {product.price.toLocaleString()}đ
+                  <div
+                    className={`text-sm text-gray-500 line-through ${
+                      !discountPercent ? "hidden" : "block"
+                    }`}
+                  >
+                    {price.toLocaleString("vi-VN")}₫
                   </div>
                 </div>
               </div>
@@ -90,23 +106,20 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
               product={product}
               sizes={sizes}
               stock={stock}
-              discountedPrice={discountedPrice}
+              discountedPrice={discountedPrice || price}
             />
 
             {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
-            <ProductDetailsSection />
+            <ProductDetailsSection product={product} />
 
             {/* Section 5: Sản phẩm gợi ý */}
             <div className="mb-4">
-              <ProductSection
-                products={allProducts}
-                desktopSlidesPerView={2.5}
-              />
+              <ProductSection products={suggestedProducts} />
             </div>
           </div>
 
           {/* Desktop: Container 1 (Ảnh, Section 4, Section 5) */}
-          <div className="hidden tablet:flex tablet:flex-col tablet:w-3/5 desktop:flex desktop:flex-col desktop:w-3/4 laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
+          <div className="hidden overflow-hidden tablet:flex tablet:flex-col tablet:w-3/5 desktop:flex desktop:flex-col desktop:w-3/4 laptop:flex laptop:flex-col laptop:w-2/3 overflow-x-hidden">
             <DesktopImageGalleryWrapper
               images={product.images.filter(
                 (img): img is string => typeof img === "string"
@@ -115,23 +128,20 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             />
 
             {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
-            <ProductDetailsSection />
+            <ProductDetailsSection product={product} />
 
             {/* Section 5: Sản phẩm gợi ý */}
             <div className="mb-4 mt-9">
-              <ProductSection
-                products={allProducts}
-                desktopSlidesPerView={3.2}
-              />
+              <ProductSection products={suggestedProducts} />
             </div>
           </div>
 
           {/* Desktop: Container 2 (Thông tin Sticky) */}
-          <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16  laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3  tablet:block tablet:sticky tablet:top-0 tablet:self-start tablet:w-2/5 pb-20">
+          <div className="hidden desktop:block desktop:sticky desktop:top-0 desktop:self-start desktop:w-1/4 gap-16 laptop:block laptop:sticky laptop:top-0 laptop:self-start laptop:w-1/3 tablet:block tablet:sticky tablet:top-0 tablet:self-start tablet:w-2/5 pb-20">
             <div className="mt-4 flex flex-col items-start gap-6">
               <div className="w-full flex justify-between">
                 <div className="text-sm font-bold opacity-40">
-                  {product.category}
+                  {product.category?.name || "Danh mục"}
                 </div>
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
@@ -142,10 +152,14 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
               <h2 className="text-2xl font-bold flex-1">{product.name}</h2>
               <div className="flex items-center gap-4">
                 <div className="text-red-500 font-bold text-lg">
-                  {discountedPrice.toLocaleString()}đ
+                  {(discountedPrice || price).toLocaleString("vi-VN")}₫
                 </div>
-                <div className="text-sm text-gray-500 line-through">
-                  {product.price.toLocaleString()}đ
+                <div
+                  className={`text-sm text-gray-500 line-through ${
+                    !discountPercent ? "hidden" : "block"
+                  }`}
+                >
+                  {price.toLocaleString("vi-VN")}₫
                 </div>
               </div>
             </div>
@@ -155,7 +169,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
               product={product}
               sizes={sizes}
               stock={stock}
-              discountedPrice={discountedPrice}
+              discountedPrice={discountedPrice || price}
             />
           </div>
         </div>

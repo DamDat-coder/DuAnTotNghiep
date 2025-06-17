@@ -1,5 +1,4 @@
-// src/components/FilterSort.tsx
-import { SortOption } from "@/types";
+import { SortOption } from "@/types/filter";
 
 interface FilterSortProps {
   selectedSort: string | null;
@@ -7,9 +6,9 @@ interface FilterSortProps {
 }
 
 const sortOptions: SortOption[] = [
-  { value: "popular", label: "Phổ biến nhất" },
-  { value: "priceLowToHigh", label: "Giá: Thấp đến cao" },
-  { value: "priceHighToLow", label: "Giá: Cao đến thấp" },
+  { value: "best-seller", label: "Phổ biến nhất" },
+  { value: "price-asc", label: "Giá: Thấp đến cao" },
+  { value: "price-desc", label: "Giá: Cao đến thấp" },
   { value: "newest", label: "Mới nhất" },
 ];
 

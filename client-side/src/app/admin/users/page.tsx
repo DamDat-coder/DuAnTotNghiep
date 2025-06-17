@@ -23,13 +23,16 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
-  const filteredUsers = users.filter((user) => {
-    const matchFilter = filter === "all" || user.role === filter;
-    const matchSearch =
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
+const filteredUsers = users.filter((user) => {
+  const matchFilter = filter === "all" || user.role === filter;
+  const name = user.name || "";
+  const email = user.email || "";
+  const matchSearch =
+    name.toLowerCase().includes(search.toLowerCase()) ||
+    email.toLowerCase().includes(search.toLowerCase());
+  return matchFilter && matchSearch;
+});
+
 
   const totalPage = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice(

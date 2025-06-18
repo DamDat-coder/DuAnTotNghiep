@@ -1,11 +1,11 @@
 // app/admin/products/page.tsx
 import ProductsTable from "@/admin/components/Admin_Products/ProductsTable";
-import AdminLayout, { NavigationItem } from "@/admin/layouts/AdminLayout";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchProducts } from "@/services/productApi";
 
 async function fetchProductsData() {
   try {
-    const products = await fetchProducts();
+    const { products } = await fetchProducts();
     return { products, error: null };
   } catch (err) {
     return { products: [], error: "Không thể tải danh sách sản phẩm." };
@@ -15,10 +15,6 @@ async function fetchProductsData() {
 export default async function ProductsPage() {
   const { products, error } = await fetchProductsData();
 
-  const navigationItems: NavigationItem[] = [
-    { label: "Danh sách sản phẩm", href: "/admin/products/list" },
-  ];
-
   return (
     <AdminLayout pageTitle="Sản phẩm" pageSubtitle="Quản lý sản phẩm.">
       <div className="products-page w-full mx-auto h-full flex flex-col">
@@ -27,7 +23,6 @@ export default async function ProductsPage() {
         ) : (
           <ProductsTable
             initialProducts={products}
-            navigationItems={navigationItems}
             addButton={{ label: "Thêm sản phẩm", href: "/admin/products/add" }}
           />
         )}

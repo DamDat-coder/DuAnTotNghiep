@@ -58,11 +58,7 @@ export async function register(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-      }),
+      body: JSON.stringify({ name, email, password }),
       credentials: "include",
     });
 
@@ -86,7 +82,7 @@ export async function register(
       phone: data.user.phone || null,
       email: data.user.email || email,
       role: data.user.role || "user",
-      active: false, // Lỗi: Không nên hard-code
+      active: data.user.is_active,
     };
 
     return { user, accessToken: data.accessToken };
@@ -96,7 +92,7 @@ export async function register(
   }
 }
 
-// Lấy thông tin user
+// Lấy thông tin user (endpoint: /users/me)
 export async function fetchUser(): Promise<IUser | null> {
   try {
     const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/me`, {
@@ -118,6 +114,7 @@ export async function fetchUser(): Promise<IUser | null> {
     return null;
   }
 }
+
 // Lấy danh sách tất cả user
 export async function fetchAllUsers(): Promise<IUser[] | null> {
   try {

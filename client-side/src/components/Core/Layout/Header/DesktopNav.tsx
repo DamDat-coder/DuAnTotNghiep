@@ -40,13 +40,21 @@ export default function DesktopNav() {
     fetchCategories();
   }, []);
 
-  // Tạo danh sách liên kết động từ danh mục và liên kết tĩnh
-  let navLinks = [
-    ...categories.map((cat) => ({
+  // Tạo danh sách liên kết động từ danh mục
+  const navLinks = categories.map((cat) => {
+    // Xử lý đặc biệt cho danh mục "Bài viết"
+    if (cat._id === "684d0f12543e02998d9df097" || cat.name === "Bài viết") {
+      return {
+        href: "/posts",
+        label: cat.name,
+      };
+    }
+    // Các danh mục khác
+    return {
       href: `/products?id_cate=${cat._id}`,
       label: cat.name,
-    })),
-  ];
+    };
+  });
 
   if (error) {
     console.error(error);

@@ -42,12 +42,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   }, [isOpen, isSizeChartOpen]);
 
   // Lấy danh sách kích thước và màu sắc từ variants
-  const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
-    (size) => ({
-      value: size,
-      inStock: product.variants.some((v) => v.size === size && v.stock > 0),
-    })
-  );
+  const sizes = Array.from(
+    new Set(product.variants.map((v) => v.size))
+  ).map((size) => ({
+    value: size,
+    inStock: product.variants.some((v) => v.size === size && v.stock > 0),
+  }));
 
   const colors = Array.from(new Set(product.variants.map((v) => v.color)));
 
@@ -76,28 +76,25 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
   // Xử lý xác nhận mua ngay
   const handleConfirm = () => {
-    const accessToken =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken")
-        : null;
+    const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     if (!accessToken) {
       alert("Bạn vui lòng đăng nhập trước khi mua hàng!");
       return;
     }
     if (!selectedColor) {
-      alert("Vui lòng chọn màu sắc!");
+      toast.error("Vui lòng chọn màu sắc!");
       return;
     }
     if (!selectedSize) {
-      alert("Vui lòng chọn kích thước!");
+      toast.error("Vui lòng chọn kích thước!");
       return;
     }
     if (quantity < 1) {
-      alert("Số lượng phải lớn hơn 0!");
+      toast.error("Số lượng phải lớn hơn 0!");
       return;
     }
     if (!selectedVariant || selectedVariant.stock < quantity) {
-      alert("Sản phẩm không đủ hàng!");
+      toast.error("Sản phẩm không đủ hàng!");
       return;
     }
 
@@ -157,7 +154,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[50]"
             onClick={onClose}
           >
             <motion.div
@@ -206,12 +203,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-red-500 font-bold text-lg">
-                      {(
-                        selectedVariant?.discountedPrice ||
-                        product.variants[0]?.discountedPrice ||
-                        0
-                      ).toLocaleString("vi-VN")}
-                      ₫
+                      {(selectedVariant?.discountedPrice || product.variants[0]?.discountedPrice || 0).toLocaleString("vi-VN")}₫
                     </p>
                     {selectedVariant && selectedVariant.discountPercent > 0 && (
                       <p className="text-sm text-[#374151] line-through">
@@ -365,11 +357,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                       +
                     </button>
                   </div>
-                  {selectedVariant && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Còn {maxQuantity} sản phẩm
-                    </p>
-                  )}
                 </div>
 
                 {/* Nút xác nhận */}

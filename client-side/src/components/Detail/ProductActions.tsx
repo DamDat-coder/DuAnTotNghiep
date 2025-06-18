@@ -295,10 +295,10 @@ export default function ProductActions({
       {/* Section 3: Actions */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <div className="relative w-full">
+          <div className="relative w-[95%]">
             <button
               onClick={handleAddToCart}
-              className="relative z-10 bg-black text-white w-full px-6 py-2 text-sm font-medium flex items-center justify-between"
+              className="relative z-10 bg-black text-white w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between"
             >
               <span>THÊM VÀO GIỎ HÀNG</span>
               <Image
@@ -308,7 +308,7 @@ export default function ProductActions({
                 height={20}
               />
             </button>
-            <div className="absolute bottom-[-0.3rem] right-[-0.3rem] bg-white border-2 border-black border-solid w-full px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
+            <div className="absolute bottom-[-0.3rem] right-[1rem] bg-white border-2 border-black border-solid w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
               <span>THÊM VÀO GIỎ HÀNG</span>
               <Image
                 src="/product/product_addToCart_angle.svg"
@@ -318,16 +318,20 @@ export default function ProductActions({
               />
             </div>
           </div>
-          <button onClick={toggleLike} className="mt-1 ml-4">
+          <button
+            onClick={toggleLike}
+            className="w-11 h-11 border-2 border-solid border-black flex justify-center items-center"
+          >
             <Image
               src={
                 isLiked
-                  ? "/product/product_like_active.svg"
-                  : "/product/product_like_square.svg"
+                  ? "/product/product_like_active_detail.svg"
+                  : "/product/product_like_detail.svg"
               }
               alt={isLiked ? "Đã thích" : "Thích"}
-              width={45}
-              height={45}
+              width={30}
+              height={30}
+              className="w-4 h-4"
             />
           </button>
         </div>

@@ -21,13 +21,7 @@ export const useAuth = (): AuthContextType => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : null;
-    }
-    return null;
-  });
+  const [user, setUser] = useState<IUser | null>(null); // Khởi tạo user là null
   const [registerFormData, setRegisterFormData] = useState<{
     name: string;
     email: string;
@@ -42,8 +36,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (accessToken) {
         console.log("Initializing auth check...");
         await checkAuth();
+        console.log(checkAuth());
+        
       } else {
-        console.log("No stored user or accessToken, skipping checkAuth");
+        console.log("No accessToken, skipping checkAuth");
       }
     };
     initializeAuth();
@@ -64,7 +60,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(userData);
 
       if (keepLoggedIn) {
-        localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
       }
 
@@ -96,7 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (keepLoggedIn) {
         setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
       } else {
         // Mở LoginPopup với dữ liệu vừa đăng ký
@@ -116,7 +110,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logoutHandler = () => {
     setUser(null);
-    localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
   };
@@ -127,7 +120,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await fetchUser();
       if (userData) {
         setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
       } else {
         console.warn("checkAuth - fetchUser returned null, logging out");
         logoutHandler();

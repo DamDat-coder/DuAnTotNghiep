@@ -131,7 +131,7 @@ export default function Header({ title }: HeaderProps) {
         aria-label="Main navigation"
       >
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-16 items-center gap-[32%] relative">
             <Link href="/" className="flex items-center" aria-label="Trang chủ">
               <Image
                 src="/nav/logo.svg"
@@ -145,7 +145,7 @@ export default function Header({ title }: HeaderProps) {
             </Link>
 
             <DesktopNav />
-            <div className="flex items-center gap-3 w-[13.9375rem] justify-end">
+            <div className="flex items-center gap-3 w-[13.9375rem] justify-end absolute right-0">
               <div className="flex items-center gap-3 relative">
                 <div className="w-6 h-6 relative">
                   {isLookupOpen ? (

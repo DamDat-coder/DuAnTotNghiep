@@ -16,5 +16,10 @@ export default function AdminRootLayout({
 
   if (!user || user.role !== "admin") return null;
 
-  return <div> {children}</div>;
+  return (
+    <div>
+      {children}
+    </div>
+  );
+
 }

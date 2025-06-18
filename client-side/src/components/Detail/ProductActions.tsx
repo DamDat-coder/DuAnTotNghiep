@@ -5,6 +5,7 @@ import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
+import WishlistButton from "../Core/Layout/WishlistButton/WishlistButton";
 
 interface ProductActionsProps {
   product: IProduct;
@@ -318,22 +319,12 @@ export default function ProductActions({
               />
             </div>
           </div>
-          <button
-            onClick={toggleLike}
-            className="w-11 h-11 border-2 border-solid border-black flex justify-center items-center"
-          >
-            <Image
-              src={
-                isLiked
-                  ? "/product/product_like_active_detail.svg"
-                  : "/product/product_like_detail.svg"
-              }
-              alt={isLiked ? "Đã thích" : "Thích"}
-              width={30}
-              height={30}
-              className="w-4 h-4"
+          <div className="z-40 w-11 h-11 border-2 border-solid border-black flex justify-center items-center">
+            <WishlistButton
+              product={product}
+              variant="black"
             />
-          </button>
+          </div>
         </div>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">

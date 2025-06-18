@@ -22,10 +22,10 @@ export const useCheckout = () => {
   );
   const [discountCode, setDiscountCode] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [shippingFee, setShippingFee] = useState(0);
+  const [shippingFee, setShippingFee] = useState(25000); // Mặc định standard
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const total = subtotal - discount + shippingFee;
+  const [total, setTotal] = useState(subtotal - discount + shippingFee);
 
   // Khởi tạo formData
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -45,10 +45,12 @@ export const useCheckout = () => {
     province: "",
     district: "",
     ward: "",
-    address: ""
+    address: "",
   });
 
+  // Đồng bộ formData với user
   useEffect(() => {
+    console.log("User in useCheckout:", user); // Debug
     if (user) {
       setFormData((prev) => ({
         ...prev,
@@ -57,7 +59,14 @@ export const useCheckout = () => {
         phone: user.phone || "",
       }));
     }
+    console.log("FormData after sync:", formData); // Debug
   }, [user]);
+
+  // Cập nhật total khi subtotal, discount, hoặc shippingFee thay đổi
+  useEffect(() => {
+    setTotal(subtotal - discount + shippingFee);
+    console.log("Updated total:", { subtotal, discount, shippingFee, total }); // Debug
+  }, [subtotal, discount, shippingFee]);
 
   // Xử lý thay đổi input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,17 +84,21 @@ export const useCheckout = () => {
     } else if (name === "district") {
       setFormData((prev) => ({ ...prev, ward: "" }));
     }
+    console.log("Select changed:", { name, value: option ? option.value : "" }); // Debug
   };
 
   // Xử lý thay đổi phương thức vận chuyển
   const handleShippingChange = (method: string) => {
     setShippingMethod(method);
-    setShippingFee(method === "standard" ? 30000 : 50000); // Ví dụ
+    const newFee = method === "standard" ? 25000 : 35000;
+    setShippingFee(newFee);
+    console.log("Shipping changed:", { method, shippingFee: newFee }); // Debug
   };
 
   // Xử lý thay đổi phương thức thanh toán
   const handlePaymentChange = (method: string) => {
     setPaymentMethod(method);
+    console.log("Payment method changed:", method); // Debug
   };
 
   // Xử lý áp dụng mã giảm giá
@@ -97,6 +110,7 @@ export const useCheckout = () => {
       setDiscount(0);
       toast.error("Mã giảm giá không hợp lệ!");
     }
+    console.log("Discount applied:", { discountCode, discount }); // Debug
   };
 
   // Xử lý submit form
@@ -107,7 +121,6 @@ export const useCheckout = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
       toast.error("Vui lòng đăng nhập trước khi thanh toán!");
-      router.push("/login");
       return;
     }
 
@@ -126,7 +139,7 @@ export const useCheckout = () => {
       province: "",
       district: "",
       ward: "",
-      address: ""
+      address: "",
     };
     if (!formData.fullName) newErrors.fullName = "Vui lòng nhập họ và tên";
     if (!formData.email) newErrors.email = "Vui lòng nhập email";
@@ -153,8 +166,6 @@ export const useCheckout = () => {
         paymentMethod,
         total,
       });
-      // Gọi API để tạo đơn hàng
-      // Ví dụ: createOrder({ ... });
       toast.success("Đơn hàng đã được xác nhận!");
       router.push("/order-confirmation");
     }

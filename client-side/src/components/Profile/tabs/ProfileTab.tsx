@@ -1,8 +1,10 @@
+"use client";
 import { useEffect, useState } from "react";
 import ChangePasswordModal from "../modals/ChangePasswordModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAddressData } from "@/hooks/useAddressData";
 import PhoneVerifyModal from "../modals/PhoneVerifyModal";
+
 export default function ProfileTab() {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phone, setPhone] = useState("");
@@ -11,14 +13,19 @@ export default function ProfileTab() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-
   const [street, setStreet] = useState("");
   const [district, setDistrict] = useState("");
   const [ward, setWard] = useState("");
   const [province, setProvince] = useState("");
 
-  const { provinces, districts, wards, setProvinceCode, setDistrictCode } =
-    useAddressData();
+  const {
+    provinces,
+    districts,
+    wards,
+    setProvinceCode,
+    setDistrictCode,
+    setWardCode,
+  } = useAddressData();
 
   useEffect(() => {
     if (user) {
@@ -38,16 +45,25 @@ export default function ProfileTab() {
         const selectedDistrict = districts.find(
           (d) => d.name === defaultAddress.district
         );
+        const selectedWard = wards.find((w) => w.name === defaultAddress.ward);
         setProvinceCode(selectedProvince?.code ?? null);
         setDistrictCode(selectedDistrict?.code ?? null);
+        setWardCode(selectedWard?.code ?? null);
       }
     }
-  }, [user, provinces, districts, setProvinceCode, setDistrictCode]);
+  }, [
+    user,
+    provinces,
+    districts,
+    wards,
+    setProvinceCode,
+    setDistrictCode,
+    setWardCode,
+  ]);
 
   return (
     <div>
       <h1 className="text-xl font-semibold mb-4">HỒ SƠ CÁ NHÂN</h1>
-
       <div className="col-span-9 text-gray-500">
         <div className="space-y-6">
           <input
@@ -66,7 +82,6 @@ export default function ProfileTab() {
             placeholder="Email"
           />
 
-          {/* Password */}
           <div>
             <label className="block font-medium mb-2">Password</label>
             <div className="flex justify-between gap-2">
@@ -80,7 +95,6 @@ export default function ProfileTab() {
             </div>
           </div>
 
-          {/* Số điện thoại */}
           <div>
             <label className="block font-medium mb-2">Số điện thoại</label>
             <div className="flex justify-between gap-2">
@@ -100,16 +114,13 @@ export default function ProfileTab() {
               initialPhone={phone}
               onVerified={(newPhone) => {
                 setPhone(newPhone);
-                // TODO: Gọi API cập nhật vào user nếu muốn
               }}
             />
           )}
 
-          {/* Địa chỉ */}
           <div>
             <label className="block font-medium mb-4">Địa chỉ</label>
             <div className="space-y-4">
-              {/* Tỉnh / Thành */}
               <div className="space-y-1">
                 <label className="text-sm text-gray-700 font-medium">
                   Tỉnh / Thành
@@ -137,7 +148,6 @@ export default function ProfileTab() {
                 </select>
               </div>
 
-              {/* Quận / Huyện */}
               <div className="space-y-1">
                 <label className="text-sm text-gray-700 font-medium">
                   Quận / Huyện
@@ -165,7 +175,6 @@ export default function ProfileTab() {
                 </select>
               </div>
 
-              {/* Phường / Xã */}
               <div className="space-y-1">
                 <label className="text-sm text-gray-700 font-medium">
                   Phường / Xã
@@ -173,7 +182,13 @@ export default function ProfileTab() {
                 <select
                   id="ward"
                   value={ward}
-                  onChange={(e) => setWard(e.target.value)}
+                  onChange={(e) => {
+                    const selected = wards.find(
+                      (w) => w.name === e.target.value
+                    );
+                    setWard(e.target.value);
+                    setWardCode(selected?.code ?? null);
+                  }}
                   disabled={!district}
                   className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -186,7 +201,6 @@ export default function ProfileTab() {
                 </select>
               </div>
 
-              {/* Địa chỉ chi tiết */}
               <div className="space-y-1">
                 <label className="text-sm text-gray-700 font-medium">
                   Địa chỉ

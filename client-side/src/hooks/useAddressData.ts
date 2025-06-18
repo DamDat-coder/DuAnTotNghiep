@@ -24,18 +24,29 @@ export function useAddressData() {
 
   const [provinceCode, setProvinceCode] = useState<number | null>(null);
   const [districtCode, setDistrictCode] = useState<number | null>(null);
+  const [wardCode, setWardCode] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/p/")
       .then((res) => res.json())
-      .then(setProvinces);
+      .then(setProvinces)
+      .catch(() => setProvinces([]));
   }, []);
 
   useEffect(() => {
     if (provinceCode) {
       fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`)
         .then((res) => res.json())
-        .then((data) => setDistricts(data.districts));
+        .then((data) => {
+          setDistricts(data.districts);
+          setDistrictCode(null); // reset khi đổi tỉnh
+          setWards([]);
+          setWardCode(null);
+        })
+        .catch(() => {
+          setDistricts([]);
+          setWards([]);
+        });
     } else {
       setDistricts([]);
       setWards([]);
@@ -46,7 +57,11 @@ export function useAddressData() {
     if (districtCode) {
       fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`)
         .then((res) => res.json())
-        .then((data) => setWards(data.wards));
+        .then((data) => {
+          setWards(data.wards);
+          setWardCode(null); // reset khi đổi quận
+        })
+        .catch(() => setWards([]));
     } else {
       setWards([]);
     }
@@ -56,7 +71,11 @@ export function useAddressData() {
     provinces,
     districts,
     wards,
+    provinceCode,
+    districtCode,
+    wardCode,
     setProvinceCode,
     setDistrictCode,
+    setWardCode,
   };
 }

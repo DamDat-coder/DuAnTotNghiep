@@ -14,12 +14,7 @@ export default function AdminRootLayout({
   const { user } = useAuth();
   const router = useRouter();
 
-
   if (!user || user.role !== "admin") return null;
 
-  return (
-    <AdminLayout pageTitle="Admin" pageSubtitle="Quản lý hệ thống">
-      {children}
-    </AdminLayout>
-  );
+  return <div> {children}</div>;
 }

@@ -2,32 +2,49 @@
 "use client";
 
 import { useState } from "react";
-import { FilterState } from "@/types";
 
-export function useFilter(initialState: FilterState = {
-  sort: null,
-  gender: null,
-  prices: [],
-  colors: [],
-  sizes: [],
-  brands: [],
-}) {
-  const [selectedSort, setSelectedSort] = useState<string | null>(initialState.sort);
-  const [selectedGender, setSelectedGender] = useState<string | null>(initialState.gender);
-  const [selectedPrices, setSelectedPrices] = useState<string[]>(initialState.prices);
-  const [selectedColors, setSelectedColors] = useState<string[]>(initialState.colors);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>(initialState.sizes);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>(initialState.brands);
+export function useFilter(
+  initialState = {
+    sort: null,
+    gender: null,
+    prices: [],
+    colors: [],
+    sizes: [],
+    brands: [],
+  }
+) {
+  const [selectedSort, setSelectedSort] = useState<string | null>(
+    initialState.sort
+  );
+  const [selectedGender, setSelectedGender] = useState<string | null>(
+    initialState.gender
+  );
+  const [selectedPrices, setSelectedPrices] = useState<string[]>(
+    initialState.prices
+  );
+  const [selectedColors, setSelectedColors] = useState<string[]>(
+    initialState.colors
+  );
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(
+    initialState.sizes
+  );
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(
+    initialState.brands
+  );
 
   const handlePriceChange = (priceValue: string) => {
     setSelectedPrices((prev) =>
-      prev.includes(priceValue) ? prev.filter((p) => p !== priceValue) : [...prev, priceValue]
+      prev.includes(priceValue)
+        ? prev.filter((p) => p !== priceValue)
+        : [...prev, priceValue]
     );
   };
 
   const handleColorChange = (colorValue: string) => {
     setSelectedColors((prev) =>
-      prev.includes(colorValue) ? prev.filter((c) => c !== colorValue) : [...prev, colorValue]
+      prev.includes(colorValue)
+        ? prev.filter((c) => c !== colorValue)
+        : [...prev, colorValue]
     );
   };
 
@@ -39,7 +56,9 @@ export function useFilter(initialState: FilterState = {
 
   const handleBrandChange = (brandValue: string) => {
     setSelectedBrands((prev) =>
-      prev.includes(brandValue) ? prev.filter((b) => b !== brandValue) : [...prev, brandValue]
+      prev.includes(brandValue)
+        ? prev.filter((b) => b !== brandValue)
+        : [...prev, brandValue]
     );
   };
 
@@ -52,7 +71,7 @@ export function useFilter(initialState: FilterState = {
     setSelectedBrands([]);
   };
 
-  const getFilters = (): FilterState => ({
+  const getFilters = () => ({
     sort: selectedSort,
     gender: selectedGender,
     prices: selectedPrices,

@@ -23,9 +23,9 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
   try {
     product = await fetchProductById(id);
     if (!product) throw new Error("Không tìm thấy sản phẩm.");
-    suggestedProducts = await fetchProducts({
-      id_cate: product.categoryId || undefined,
-    }).then((res) => res.products.filter((p) => p.id !== id));
+    suggestedProducts = await fetchProducts().then((res) =>
+      res.products.filter((p) => p.id !== id)
+    );
   } catch (err) {
     error = "Có lỗi xảy ra khi tải dữ liệu.";
   }
@@ -72,11 +72,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             </div>
 
             {/* Section 2 & 3: Sizes và Actions */}
-            <ProductActions
-              product={product}
-              sizes={sizes}
-              stock={stock}
-            />
+            <ProductActions product={product} sizes={sizes} stock={stock} />
 
             {/* Section 4: Chi tiết sản phẩm, Kích thước, Đánh giá */}
             <ProductDetailsSection product={product} />
@@ -122,11 +118,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
             </div>
 
             {/* Section 2 & 3: Sizes và Actions */}
-            <ProductActions
-              product={product}
-              sizes={sizes}
-              stock={stock}
-            />
+            <ProductActions product={product} sizes={sizes} stock={stock} />
           </div>
         </div>
       </Container>

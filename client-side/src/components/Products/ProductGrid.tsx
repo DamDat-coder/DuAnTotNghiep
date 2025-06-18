@@ -51,11 +51,11 @@ export default function ProductGrid({
   };
   const observerRef = useRef<HTMLDivElement | null>(null);
 
-  const PRODUCTS_PER_PAGE = 10;
+  const PRODUCTS_PER_PAGE = 8;
 
   useEffect(() => {
-    setDisplayedProducts(products.slice(0, 10));
-    setHasMore(products.length > 10);
+    setDisplayedProducts(products.slice(0, 8));
+    setHasMore(products.length > 8);
   }, [products]);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function ProductGrid({
           loadMoreProducts();
         }
       },
-      { rootMargin: "600px" }
+      { rootMargin: "100px" }
     );
 
     const currentRef = observerRef.current;

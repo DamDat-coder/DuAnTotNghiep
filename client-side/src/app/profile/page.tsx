@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
   // Desktop layout
   return (
-    <div className=" hidden laptop:flex desktop:flex min-h-screen px-0 desktop:px-[278px] desktop:pt-[80px] ">
+    <div className=" hidden laptop:flex desktop:flex min-h-screen px-0 desktop:px-[278px] laptop:px-[278px] ">
       <div className="w-1/4 border-r laptop:gap-col-1">
         <SettingsContent activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>

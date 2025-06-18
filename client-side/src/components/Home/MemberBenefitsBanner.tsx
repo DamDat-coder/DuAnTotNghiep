@@ -3,6 +3,8 @@ import { IMemberBenefit } from "@/types/product";
 import MemberBenefitsSwiper from "./MemberBenefitsSwiper";
 import Image from "next/image";
 import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
+import Link from "next/link";
+
 interface MemberBenefitsBannerProps {
   benefits: IMemberBenefit[];
   mobileSlidesPerView?: number;
@@ -57,9 +59,12 @@ export default function MemberBenefitsBanner({
                 <div className="text-[1.5rem] font-heading font-bold text-white flex flex-wrap">
                   {benefit.benefit}
                 </div>
-                <button className="text-[1rem] px-[0.7475rem] py-[0.52875rem] bg-black text-white font-body rounded-full hover:opacity-70 transition-colors w-fit">
+                <Link
+                  href="/products?id_cate=684d09e4543e02998d9df018"
+                  className="text-[1rem] px-[0.7475rem] py-[0.52875rem] bg-white text-black font-body rounded-full hover:opacity-70 transition-colors w-fit"
+                >
                   Shop
-                </button>
+                </Link>
               </div>
             </div>
           ))}

@@ -12,18 +12,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, name, addresses = [], phone } = req.body;
 
-    // Kiểm tra đầu vào
     if (!email || !password || !name) {
-      res.status(400).json({ message: "Email, mật khẩu và họ tên là bắt buộc." });
+      res
+        .status(400)
+        .json({ message: "Email, mật khẩu và họ tên là bắt buộc." });
       return;
     }
 
-    // Kiểm tra tồn tại email hoặc số điện thoại (chỉ nếu phone khác null)
     const existingUser = await UserModel.findOne({
-      $or: [
-        { email },
-        ...(phone ? [{ phone }] : [])
-      ]
+      $or: [{ email }, ...(phone ? [{ phone }] : [])],
     });
 
     if (existingUser) {
@@ -37,11 +34,38 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       password: hashedPassword,
       name,
       addresses,
-      phone: phone || null, // Nếu không có thì để null rõ ràng
+      phone: phone || null,
+    });
+
+    const accessToken = jwt.sign(
+      { userId: newUser._id, role: newUser.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: newUser._id },
+      process.env.JWT_SECRET!,
+      { expiresIn: "30d" }
+    );
+
+    await RefreshTokenModel.create({
+      userId: newUser._id,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/", // Đảm bảo cookie áp dụng cho toàn bộ domain
     });
 
     res.status(201).json({
       message: "Đăng ký thành công.",
+      accessToken,
       user: {
         _id: newUser._id,
         email: newUser.email,
@@ -62,11 +86,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ message: "Vui lòng nhập email hoặc số điện thoại và mật khẩu." });
+      res.status(400).json({
+        message: "Vui lòng nhập email hoặc số điện thoại và mật khẩu.",
+      });
       return;
     }
 
-    let user;
+    let user: IUser | null;
 
     // Kiểm tra nếu là số => tìm theo phone
     if (/^\d+$/.test(email)) {
@@ -81,6 +107,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Kiểm tra trạng thái tài khoản
+    if (!user.is_active) {
+      res.status(403).json({ message: "Tài khoản đã bị khóa." });
+      return;
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       res.status(401).json({ message: "Mật khẩu không đúng." });
@@ -91,22 +123,51 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       throw new Error("JWT_SECRET chưa được cấu hình.");
     }
 
-    const token = jwt.sign(
+    // Tạo access token
+    const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" }
     );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    // Xóa refresh token cũ
+    await RefreshTokenModel.deleteMany({ userId: user._id });
+
+    // Lưu refresh token mới
+    await RefreshTokenModel.create({
+      userId: user._id,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    // Thiết lập cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    res.cookie("refreshToken", refreshToken, {
+      /* options */
+    });
 
     res.status(200).json({
       message: "Đăng nhập thành công.",
-      token,
+      accessToken, // Trả về access token
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -114,17 +175,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-
 // Làm mới token
 export const refresh = async (req: Request, res: Response): Promise<void> => {
+  const refreshToken = req.cookies.refreshToken;
+  console.log("Received refresh token:", refreshToken);
+  if (!refreshToken) {
+    res.status(400).json({ message: "Thiếu Refresh Token" });
+    return;
+  }
+
   try {
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!refreshToken) {
-      res.status(400).json({ message: "Thiếu refresh token." });
-      return;
-    }
-
     const jwtSecret = process.env.JWT_SECRET || "default_secret";
     const decoded = jwt.verify(refreshToken, jwtSecret) as { id: string };
 
@@ -134,17 +194,20 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!tokenDoc) {
-      res.status(401).json({ message: "Refresh token không hợp lệ." });
+      res.status(401).json({ message: "Refresh Token không hợp lệ" });
       return;
     }
 
-    const accessToken = jwt.sign({ id: decoded.id }, jwtSecret, { expiresIn: "1h" });
-    res.json({ accessToken, message: "Làm mới token thành công." });
+    const accessToken = jwt.sign({ id: decoded.id }, jwtSecret, {
+      expiresIn: "1h",
+    });
+    res.json({ accessToken, message: "Làm mới token thành công" });
   } catch (error: any) {
     res.status(401).json({
-      message: error.name === "TokenExpiredError"
-        ? "Refresh token đã hết hạn."
-        : "Refresh token không hợp lệ.",
+      message:
+        error.name === "TokenExpiredError"
+          ? "Refresh Token đã hết hạn"
+          : "Refresh Token không hợp lệ",
     });
   }
 };
@@ -180,7 +243,10 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 
 
 // Lấy tất cả người dùng (admin)
-export const getAllUser = async (_req: Request, res: Response): Promise<void> => {
+export const getAllUser = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const users = await UserModel.find().select("-password");
     res.json(users);
@@ -190,13 +256,17 @@ export const getAllUser = async (_req: Request, res: Response): Promise<void> =>
 };
 
 // Cập nhật thông tin người dùng
-export const updateUser = async (req: Request, res: Response): Promise<void> => {
+export const updateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const requesterId = (req as any).userId;
     const requesterRole = (req as any).role;
 
     const { name, addresses, phone, password, is_active, userId } = req.body;
-    const targetUserId = requesterRole === "admin" && userId ? userId : requesterId;
+    const targetUserId =
+      requesterRole === "admin" && userId ? userId : requesterId;
 
     const updates: Partial<IUser> = {};
 
@@ -204,7 +274,10 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     if (addresses) updates.addresses = addresses;
 
     if (phone) {
-      const daTonTai = await UserModel.findOne({ phone, _id: { $ne: targetUserId } });
+      const daTonTai = await UserModel.findOne({
+        phone,
+        _id: { $ne: targetUserId },
+      });
       if (daTonTai) {
         res.status(409).json({ message: "Số điện thoại đã được sử dụng." });
         return;
@@ -242,7 +315,10 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 };
 
 // Khóa tài khoản
-export const disableUser = async (req: Request, res: Response): Promise<void> => {
+export const disableUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const userId = (req as any).userId;
     const user = await UserModel.findById(userId);

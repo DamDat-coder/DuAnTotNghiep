@@ -5,7 +5,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../../contexts/AuthContext";
-import { log } from "console";
 
 interface RegisterPopupProps {
   isOpen: boolean;
@@ -19,10 +18,12 @@ export default function RegisterPopup({
   onOpenLogin,
 }: RegisterPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     keepLoggedIn: false,
   });
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export default function RegisterPopup({
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "radio" ? checked : value,
     }));
   };
 
@@ -46,14 +47,14 @@ export default function RegisterPopup({
     e.preventDefault();
     setError(null);
     setLoading(true);
-    try {
-      console.log(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.keepLoggedIn
-      );
 
+    if (formData.password !== formData.confirmPassword) {
+      setError("Mật khẩu và nhập lại mật khẩu không khớp.");
+      setLoading(false);
+      return;
+    }
+
+    try {
       const success = await register(
         formData.name,
         formData.email,
@@ -61,6 +62,13 @@ export default function RegisterPopup({
         formData.keepLoggedIn
       );
       if (success) {
+        setFormData({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          keepLoggedIn: false,
+        });
         onClose();
       }
     } catch (err: any) {
@@ -69,6 +77,17 @@ export default function RegisterPopup({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -86,7 +105,7 @@ export default function RegisterPopup({
 
       {/* Modal */}
       <motion.div
-        className="relative w-[636px] bg-white rounded-lg"
+        className="relative w-[636px] h-[90%] overflow-y-scroll bg-white rounded-lg scroll-hidden"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -95,7 +114,7 @@ export default function RegisterPopup({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-black hover:text-gray-700"
+          className="absolute top-4 right-4 p-2 text-black cursor-pointer"
         >
           <svg className="size-6" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -140,7 +159,7 @@ export default function RegisterPopup({
                 onChange={handleChange}
                 required
                 placeholder="Nhập họ và tên"
-                className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm"
+                className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
 
@@ -150,13 +169,13 @@ export default function RegisterPopup({
                 Email <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
+                type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
                 placeholder="Nhập Email"
-                className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm"
+                className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
 
@@ -171,29 +190,60 @@ export default function RegisterPopup({
                 value={formData.password}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
                 placeholder="Nhập mật khẩu"
-                className="w-full h-[45px] border border-gray-300 rounded px-4 pr-10 text-sm"
+                className="w-full h-[45px] border border-gray-300 rounded px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute top-[36px] right-3 text-gray-400"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
 
-            {/* Checkbox: điều khoản */}
+            {/* Nhập lại mật khẩu */}
+            <div className="w-[396px] mb-3 relative">
+              <label className="block text-sm font-bold mb-1">
+                Nhập lại mật khẩu <span className="text-red-500">*</span>
+              </label>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                placeholder="Nhập lại mật khẩu"
+                className="w-full h-[45px] border border-gray-300 rounded px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute top-[36px] right-3 text-gray-400"
+              >
+                {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+              </button>
+            </div>
+
+            {/* Radio: Duy trì đăng nhập */}
             <div className="w-[396px] mb-[40px]">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
-                  type="checkbox"
+                  type="radio"
                   name="keepLoggedIn"
                   checked={formData.keepLoggedIn}
-                  onChange={handleChange}
-                  className="appearance-none w-4 h-4 text-[#888888] rounded-full border border-gray-400 checked:bg-black checked:border-black"
+                  onChange={() => {}} // để không warning
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      keepLoggedIn: !prev.keepLoggedIn,
+                    }))
+                  }
+                  className="w-4 h-4 rounded-full text-black border-gray-400 accent-black"
                 />
-                Tôi đồng ý với Chính sách Bảo mật và Các Điều khoản{" "}
+                Duy trì đăng nhập
               </label>
             </div>
 

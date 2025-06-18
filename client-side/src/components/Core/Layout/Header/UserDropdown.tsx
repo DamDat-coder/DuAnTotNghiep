@@ -49,47 +49,46 @@ export default function UserDropdown() {
 
       {/* Dropdown */}
       <div
-        className={`absolute right-0 top-full w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-all duration-300 ease-out transform ${
+        className={`absolute right-0 top-full w-[13rem] bg-white rounded-lg shadow-lg z-50 transition-all duration-300 ease-out transform ${
           isDropdownOpen
             ? "opacity-100 translate-y-0 visible"
             : "opacity-0 -translate-y-2 invisible pointer-events-none"
         }`}
       >
-        <Link
-          href="/profile"
-          className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg"
-        >
-          Thông tin người dùng
-        </Link>
-        <hr />
-        <Link
-          href="/profile?tab=order"
-          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-        >
-          Đơn hàng
-        </Link>
-        <hr />
-        <button
-          type="button"
-          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-          onClick={() => {
-            logout();
-            setIsDropdownOpen(false);
-          }}
-        >
-          Quên mật khẩu
-        </button>
-        <hr />
-        <button
-          type="button"
-          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
-          onClick={() => {
-            logout();
-            setIsDropdownOpen(false);
-          }}
-        >
-          Đăng xuất
-        </button>
+        <div className="flex flex-col py-3 px-4 gap-2">
+          <Link
+            href="/profile"
+            className="block px-4 py-2 text-[0.875rem] font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg"
+          >
+            Thông tin người dùng
+          </Link>
+          <Link
+            href="/profile?tab=order"
+            className="block px-4 py-2 text-[0.875rem] font-medium text-gray-700 hover:bg-gray-100"
+          >
+            Đơn hàng
+          </Link>
+          <button
+            type="button"
+            className="block w-full text-[0.875rem] font-medium text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+            onClick={() => {
+              logout();
+              setIsDropdownOpen(false);
+            }}
+          >
+            Đổi mật khẩu
+          </button>
+          <button
+            type="button"
+            className="block w-full text-[0.875rem] font-medium text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg"
+            onClick={() => {
+              logout();
+              setIsDropdownOpen(false);
+            }}
+          >
+            Đăng xuất
+          </button>
+        </div>
       </div>
     </div>
   );

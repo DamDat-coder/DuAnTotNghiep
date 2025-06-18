@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import FilterPopup from "./FilterPopup";
 import { IProduct } from "@/types/product";
-import AddToCartButton from "../Cart/AddToCartButton";
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
 
 interface ProductGridProps {
@@ -26,7 +25,6 @@ const getLowestPriceVariant = (product: IProduct) => {
         : min,
     product.variants[0]
   );
-  
 };
 
 export default function ProductGrid({
@@ -107,7 +105,8 @@ export default function ProductGrid({
   };
 
   const renderProductCard = (product: IProduct) => {
-    const { price, discountPercent, discountedPrice } = getLowestPriceVariant(product);
+    const { price, discountPercent, discountedPrice } =
+      getLowestPriceVariant(product);
 
     return (
       <div className="w-full flex flex-col bg-white relative">
@@ -131,7 +130,14 @@ export default function ProductGrid({
           >
             -{discountPercent}%
           </div>
-          <AddToCartButton product={product} />
+          <div className="absolute top-[0.5rem] right-[0.5rem] w-8 h-8 rounded-full bg-[#D9D9D9] flex justify-center items-center">
+            <Image
+              src="/product/product_like.svg"
+              width={16}
+              height={16}
+              alt="option"
+            />
+          </div>
           <div className="content flex flex-col py-4 gap-3">
             <div>
               <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3rem] tablet:h-[3.5rem] laptop:h-[3.5rem] desktop:h-[3.5rem]">

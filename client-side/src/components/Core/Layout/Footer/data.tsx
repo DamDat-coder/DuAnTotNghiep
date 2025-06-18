@@ -36,15 +36,15 @@ export const footerSections: FooterSection[] = [
         icon: <MapPin size={16} />,
         text: "Đ. Tô Ký, Tân Hưng Thuận, Quận 12, HCM",
       },
-      { icon: <Mail size={16} />, text: "dsun.agency@gmail.com" },
-      { icon: <Phone size={16} />, text: "0705 768 791" },
+      { icon: <Mail size={16} />, text: "style.for.you@gmail.com" },
+      { icon: <Phone size={16} />, text: "0707 654 435" },
     ],
   },
   {
     id: "about_us",
     title: "Về chúng tôi",
     content: [
-      "GBOX cung cấp dịch vụ thuê nơi chụp với không gian căn hộ sang trọng và view đẹp. Chúng tôi cam kết mang đến cho bạn không gian hoàn hảo để tạo nên những bức ảnh ấn tượng với mức giá hợp lý.",
+      "Với Shop4Real – nơi bạn tìm thấy phong cách riêng trong từng thiết kế thời trang. Chúng tôi không chỉ bán quần áo, mà còn đồng hành cùng bạn thể hiện cá tính – từ năng động đường phố, thanh lịch công sở đến độc đáo, cá tính. Bộ sưu tập luôn được chọn lọc kỹ lưỡng theo xu hướng mới nhất.",
     ],
   },
 ];

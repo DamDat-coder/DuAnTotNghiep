@@ -38,7 +38,7 @@ export default function OrderBody({
             <td className="px-4 py-4 w-[380px] truncate">{productNames}</td>
             <td className="px-4 py-4 w-[200px] truncate">{userInfo}</td>
             <td className="px-4 py-4 w-[156px] font-semibold text-[#212121]">
-              {order.date || "Không xác định"}
+              {/* {order.date || "Không xác định"} */}
             </td>
             <td className="px-4 py-4 w-[156px] align-middle">
               <span

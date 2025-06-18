@@ -14,7 +14,6 @@ export default function AdminRootLayout({
   const { user } = useAuth();
   const router = useRouter();
 
-
   if (!user || user.role !== "admin") return null;
 
   return (
@@ -22,4 +21,5 @@ export default function AdminRootLayout({
       {children}
     </div>
   );
+
 }

@@ -1,10 +1,10 @@
-// src/components/Cart/CartDesktop.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
 import { ICartItem } from "@/types/cart";
 import { useCartDispatch } from "@/contexts/CartContext";
+import toast from "react-hot-toast";
 
 interface CartDesktopProps {
   cartItems: ICartItem[];
@@ -31,6 +31,28 @@ export default function CartDesktop({
       type: "update",
       item: { ...item, selected },
     });
+  };
+
+  const checkSelect = () => {
+    // Kiểm tra có sản phẩm được chọn không
+    if (selectedItemsCount === 0) {
+      alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      return;
+    }
+
+    // Kiểm tra đăng nhập
+    const accessToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
+    if (!accessToken) {
+      alert("Bạn vui lòng đăng nhập trước khi thanh toán!");
+      router.push("/login");
+      return;
+    }
+
+    // Chuyển hướng đến checkout
+    router.push("/checkout");
   };
 
   // Tính số sản phẩm và tổng tiền chỉ cho các mục được chọn
@@ -102,9 +124,10 @@ export default function CartDesktop({
           </div>
         </div>
         <button
-          onClick={() => router.push("/checkout")}
+          onClick={checkSelect}
           className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800 mt-4"
           disabled={selectedItemsCount === 0}
+          aria-label="Thanh toán các sản phẩm đã chọn"
         >
           Thanh toán
         </button>

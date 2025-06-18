@@ -18,8 +18,8 @@ export default function AdminRootLayout({
   if (!user || user.role !== "admin") return null;
 
   return (
-    <AdminLayout pageTitle="Admin" pageSubtitle="Quản lý hệ thống">
+    <div>
       {children}
-    </AdminLayout>
+    </div>
   );
 }

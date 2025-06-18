@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import FilterPopup from "./FilterPopup";
 import { IProduct } from "@/types/product";
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
+import WishlistButton from "../Core/Layout/WishlistButton/WishlistButton";
 
 interface ProductGridProps {
   products: IProduct[];
@@ -130,12 +131,11 @@ export default function ProductGrid({
           >
             -{discountPercent}%
           </div>
-          <div className="absolute top-[0.5rem] right-[0.5rem] w-8 h-8 rounded-full bg-[#D9D9D9] flex justify-center items-center">
-            <Image
-              src="/product/product_like.svg"
-              width={16}
-              height={16}
-              alt="option"
+          <div className="absolute top-[0.5rem] right-[0.5rem] w-8 h-8 rounded-full flex justify-center items-center cursor-pointer bg-[#D9D9D9]">
+            <WishlistButton
+              product={product}
+              variant="white"
+              borderColor="white"
             />
           </div>
           <div className="content flex flex-col py-4 gap-3">

@@ -21,7 +21,7 @@ export const useAuth = (): AuthContextType => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(null); // Khởi tạo user là null
+  const [user, setUser] = useState<IUser | null>(null);
   const [registerFormData, setRegisterFormData] = useState<{
     name: string;
     email: string;
@@ -36,8 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (accessToken) {
         console.log("Initializing auth check...");
         await checkAuth();
-        console.log(checkAuth());
-        
       } else {
         console.log("No accessToken, skipping checkAuth");
       }
@@ -93,7 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
         localStorage.setItem("accessToken", accessToken);
       } else {
-        // Mở LoginPopup với dữ liệu vừa đăng ký
         setRegisterFormData({ name, email, password, confirmPassword: password });
         setOpenLoginWithData(true);
       }
@@ -101,7 +98,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch (error) {
       console.error("Lỗi đăng ký:", error);
-      // Mở LoginPopup với dữ liệu form đã nhập
       setRegisterFormData({ name, email, password, confirmPassword: password });
       setOpenLoginWithData(true);
       throw new Error("Có lỗi xảy ra khi đăng ký.");

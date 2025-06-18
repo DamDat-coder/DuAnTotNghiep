@@ -115,3 +115,45 @@ export async function deleteCategory(id: number): Promise<SingleCategoryResponse
   });
   return (res as Response).json();
 }
+
+export async function fetchCategoryById(id: string): Promise<ICategory | null> {
+  try {
+    const response = await fetchWithAuth<SingleCategoryResponse>(
+      `${API_BASE_URL}/categories/${id}`,
+      { cache: "no-store" },
+      false
+    );
+    if (response.data) {
+      return {
+        id: response.data._id,
+        name: response.data.name,
+        description: response.data.description || "",
+        parentId: response.data.parentId || null,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching category by id:", error);
+    return null;
+  }
+}
+
+// Lấy tất cả danh mục phẳng (API mới)
+export async function fetchCategoriesFlat(): Promise<ICategory[]> {
+  try {
+    const response = await fetchWithAuth<{ status: string; data: any[] }>(
+      `${API_BASE_URL}/categories/all/flat`,
+      { cache: "no-store" },
+      false
+    );
+    return response.data.map((item) => ({
+      id: item._id,
+      name: item.name,
+      description: item.description || "",
+      parentId: item.parentId || null,
+    }));
+  } catch (error) {
+    console.error("Error fetching categories (flat):", error);
+    return [];
+  }
+}

@@ -2,6 +2,28 @@ import { Switch } from "@/components/ui/switch";
 import { Sale } from "@/types/sale";
 import Image from "next/image";
 
+function SimpleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      tabIndex={0}
+      className={`w-10 h-6 rounded-full transition relative focus:outline-none ${
+        checked ? "bg-[#2563EB]" : "bg-gray-300"
+      }`}
+      onClick={() => onChange(!checked)}
+    >
+      <span
+        className={`absolute left-0 top-0 transition-all duration-200 w-6 h-6 bg-white rounded-full shadow ${
+          checked ? "translate-x-4" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
+
+
 export default function SaleTableBody({
   sales,
   onToggleActive,
@@ -37,14 +59,11 @@ export default function SaleTableBody({
           </td>
 
           {/* Trạng thái Switch */}
-          <td className="px-4 h-[64px]">
-            <Switch
+          <td className="px-5 py-4">
+            <SimpleSwitch
               checked={sale.active}
-              onCheckedChange={(value) => onToggleActive(sale.id, value)}
-              className="relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors data-[state=checked]:bg-[#2563EB] bg-gray-300"
-            >
-              <span className="pointer-events-none absolute left-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 data-[state=checked]:translate-x-6" />
-            </Switch>
+              onChange={(value) => onToggleActive(sale.id, value)}
+            />
           </td>
 
           {/* Hành động (3 chấm) */}

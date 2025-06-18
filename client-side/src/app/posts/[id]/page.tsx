@@ -204,31 +204,6 @@ export default function ArticleDetailPage({ params }: { params: { id: string } }
           </div>
         </main>
       </div>
-      {/* Footer */}
-      <footer className="w-full border-t mt-10 py-6 text-sm bg-white">
-        <div className="max-w-[1320px] mx-auto flex flex-wrap gap-10 px-4 laptop:px-8">
-          <div className="flex-1 min-w-[200px]">
-            <div className="font-semibold mb-2">Chính sách & Quy định</div>
-            <div className="flex flex-col gap-1">
-              <a href="#" className="hover:underline">Điều khoản & Điều kiện</a>
-              <a href="#" className="hover:underline">Chính sách thanh toán</a>
-              <a href="#" className="hover:underline">Chính sách bảo mật</a>
-              <a href="#" className="hover:underline">Chính sách đổi trả</a>
-            </div>
-            <div className="text-xs text-gray-400 mt-3">© 2025 Style For You. All Rights Reserved.</div>
-          </div>
-          <div className="min-w-[210px]">
-            <div className="font-semibold mb-2">Liên hệ</div>
-            <div>Địa chỉ: Tp. Thủ Đức, Tp. HCM</div>
-            <div>Email: styleforyou@gmail.com</div>
-            <div>Điện thoại: 0707 654 453</div>
-          </div>
-          <div className="min-w-[210px]">
-            <div className="font-semibold mb-2">Về chúng tôi</div>
-            <div>Với S4You, bạn sẽ cảm nhận sự tinh tế trong từng đường nét thiết kế và chất liệu.</div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

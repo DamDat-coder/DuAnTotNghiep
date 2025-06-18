@@ -18,7 +18,7 @@ router.use((0, express_rate_limit_1.default)({
 router.get("/", productController_1.getAllProducts);
 router.get("/admin", productController_1.getAllProductsAdmin);
 router.get("/:id", productController_1.getProductById);
-router.get('/:slug', productController_1.getProductBySlug);
+router.get('/slug/:slug', productController_1.getProductBySlug);
 router.post("/", verifyToken_1.default, verifyAdmin_1.default, productController_1.createProduct);
 router.patch("/:id", verifyToken_1.default, verifyAdmin_1.default, productController_1.updateProduct);
 module.exports = router;

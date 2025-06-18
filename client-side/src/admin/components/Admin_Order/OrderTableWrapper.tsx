@@ -1,7 +1,7 @@
 // OrderTableWrapper.tsx
 import { useState, useMemo } from "react";
 import OrderControlBar from "./OrderControlBar";
-import { Pagination } from "@/admin/layouts/Panigation";
+import { Pagination } from "../ui/Panigation";
 import { Order } from "@/types/order";
 
 export default function OrderTableWrapper({

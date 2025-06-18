@@ -12,39 +12,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getCategoryById = exports.getAllCategories = void 0;
+exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getAllCategories = exports.getCategoryById = exports.getChildCategories = exports.getParentCategories = exports.getAllCategoriesFlat = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const categoryModel_1 = __importDefault(require("../models/categoryModel"));
 const newsModel_1 = __importDefault(require("../models/newsModel"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
-// Lấy danh sách tất cả danh mục (có thể lọc theo parentId)
-const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// 1. Lấy tất cả danh mục dạng phẳng (all, không phân cấp)
+const getAllCategoriesFlat = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const page = Math.max(parseInt(req.query.page) || 1, 1);
-        const parentId = req.query.parentId;
-        const query = parentId && mongoose_1.default.Types.ObjectId.isValid(parentId)
-            ? { parentId }
-            : { parentId: null };
-        const categories = yield categoryModel_1.default
-            .find(query)
-            .sort({ createdAt: -1 })
-            .populate("parentId", "name slug")
-            .lean();
-        const total = yield categoryModel_1.default.countDocuments(query);
+        const categories = yield categoryModel_1.default.find({}).sort({ createdAt: -1 }).lean();
         res.status(200).json({
             status: "success",
             data: categories,
-            total,
-            page,
         });
     }
     catch (error) {
         res.status(500).json({ status: "error", message: error.message });
     }
 });
-exports.getAllCategories = getAllCategories;
-// Lấy thông tin danh mục theo ID
+exports.getAllCategoriesFlat = getAllCategoriesFlat;
+// 2. Lấy tất cả danh mục cha (parentId = null)
+const getParentCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const parents = yield categoryModel_1.default.find({ parentId: null }).sort({ createdAt: -1 }).lean();
+        res.status(200).json({
+            status: "success",
+            data: parents,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ status: "error", message: error.message });
+    }
+});
+exports.getParentCategories = getParentCategories;
+// 3. Lấy tất cả danh mục con theo parentId (query params: /categories/children/:parentId)
+const getChildCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { parentId } = req.params;
+        if (!parentId || !mongoose_1.default.Types.ObjectId.isValid(parentId)) {
+            return res.status(400).json({ status: "error", message: "ID danh mục cha không hợp lệ" });
+        }
+        const childs = yield categoryModel_1.default.find({ parentId }).sort({ createdAt: -1 }).lean();
+        res.status(200).json({
+            status: "success",
+            data: childs,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ status: "error", message: error.message });
+    }
+});
+exports.getChildCategories = getChildCategories;
+// 4. Lấy danh mục theo ID
 const getCategoryById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
@@ -67,7 +87,31 @@ const getCategoryById = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.getCategoryById = getCategoryById;
-// Tạo danh mục mới
+// 5. Lấy tất cả danh mục cha HOẶC lấy con theo ?parentId=xxx (cũ, dùng cho hợp nhất 1 API)
+const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const parentId = req.query.parentId;
+        const query = parentId && mongoose_1.default.Types.ObjectId.isValid(parentId)
+            ? { parentId }
+            : { parentId: null };
+        const categories = yield categoryModel_1.default
+            .find(query)
+            .sort({ createdAt: -1 })
+            .populate("parentId", "name slug")
+            .lean();
+        const total = yield categoryModel_1.default.countDocuments(query);
+        res.status(200).json({
+            status: "success",
+            data: categories,
+            total,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ status: "error", message: error.message });
+    }
+});
+exports.getAllCategories = getAllCategories;
+// --- Giữ nguyên các API create, update, delete phía dưới ---
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, slug, parentId, image } = req.body;
@@ -86,7 +130,6 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 return;
             }
         }
-        // Kiểm tra image URL (nếu có)
         if (image && !isValidUrl(image)) {
             res.status(400).json({ status: "error", message: "URL hình ảnh không hợp lệ" });
             return;
@@ -114,7 +157,6 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.createCategory = createCategory;
-// Cập nhật danh mục
 const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = req.params.id;
@@ -150,13 +192,11 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             updateFields.slug = slug;
         if (parentId !== undefined)
             updateFields.parentId = parentId || null;
-        // Xử lý hình ảnh
         if (image !== undefined) {
             if (image && !isValidUrl(image)) {
                 res.status(400).json({ status: "error", message: "URL hình ảnh không hợp lệ" });
                 return;
             }
-            // Xóa hình ảnh cũ trên Cloudinary nếu có
             if (image) {
                 const currentCategory = yield categoryModel_1.default.findById(id).lean();
                 if (currentCategory === null || currentCategory === void 0 ? void 0 : currentCategory.image) {
@@ -187,7 +227,6 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.updateCategory = updateCategory;
-// Xóa danh mục
 const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const categoryId = req.params.id;
@@ -227,7 +266,7 @@ const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.deleteCategory = deleteCategory;
-// Hàm kiểm tra vòng lặp trong cây danh mục
+// --- Hàm phụ ---
 const checkCycle = (categoryId, parentId) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const visited = new Set();
@@ -242,7 +281,6 @@ const checkCycle = (categoryId, parentId) => __awaiter(void 0, void 0, void 0, f
     }
     return false;
 });
-// Hàm kiểm tra URL hợp lệ
 const isValidUrl = (url) => {
     try {
         new URL(url);
@@ -252,7 +290,6 @@ const isValidUrl = (url) => {
         return false;
     }
 };
-// Hàm trích xuất public_id từ URL Cloudinary
 const extractPublicId = (url) => {
     var _a;
     const parts = url.split("/");

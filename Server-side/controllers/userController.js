@@ -122,7 +122,6 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             token: refreshToken,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         });
-        console.log("Saved refresh token to DB:", refreshToken);
         // Thiết lập cookie
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
@@ -131,7 +130,6 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             path: "/",
             maxAge: 30 * 24 * 60 * 60 * 1000,
         });
-        console.log("Setting refreshToken cookie:", refreshToken);
         res.cookie("refreshToken", refreshToken, {
         /* options */
         });

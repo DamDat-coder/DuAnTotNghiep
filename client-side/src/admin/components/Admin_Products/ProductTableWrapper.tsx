@@ -86,12 +86,12 @@ export default function ProductTableWrapper({
         <table className="min-w-full text-sm text-left">
           <thead className="bg-[#F8FAFC] text-[#94A3B8]">
             <tr className="overflow-hidden">
-              <th className="w-[400px] px-4 py-0 rounded-tl-[12px] rounded-bl-[12px]">Tên sản phẩm</th>
-              <th className="w-[126px] px-4 py-0">Danh mục</th>
-              <th className="w-[126px] px-4 py-0">Tồn kho</th>
-              <th className="w-[126px] px-4 py-0">Lượt bán</th>
-              <th className="w-[140px] px-4 py-0">Giá</th>
-              <th className="w-[96px] px-4 py-0">Trạng thái</th>
+              <th className="w-[400px] px-4 py-0 rounded-tl-[12px] rounded-bl-[12px] align-middle">Tên sản phẩm</th>
+              <th className="w-[126px] px-4 py-0 align-middle">Danh mục</th>
+              <th className="w-[126px] px-4 py-0 align-middle">Tồn kho</th>
+              <th className="w-[126px] px-4 py-0 align-middle">Lượt bán</th>
+              <th className="w-[140px] px-4 py-0 align-middle">Giá</th>
+              <th className="w-[96px] px-4 py-0 align-middle">Trạng thái</th>
               <th className="w-[64px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px]">
                 <div className="flex items-center justify-end h-[64px]">
                   <Image

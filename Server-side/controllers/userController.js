@@ -17,8 +17,7 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const userModel_1 = __importDefault(require("../models/userModel"));
 const refreshTokenModel_1 = __importDefault(require("../models/refreshTokenModel"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+require("dotenv").config();
 // Đăng ký
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -143,19 +142,30 @@ const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.refresh = refresh;
 // Lấy thông tin cá nhân
+// export const getUser = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const userId = (req as any).userId;
+//     const user = await UserModel.findById(userId).select("-password");
+//     if (!user) {
+//       res.status(404).json({ message: "Không tìm thấy người dùng." });
+//       return;
+//     }
+//     res.json(user);
+//   } catch (error: any) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+// controllers/userController.ts
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const userId = req.userId;
-        const user = yield userModel_1.default.findById(userId).select("-password");
-        if (!user) {
-            res.status(404).json({ message: "Không tìm thấy người dùng." });
-            return;
-        }
-        res.json(user);
-    }
-    catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    // Trả user fake (không cần DB)
+    res.json({
+        _id: "665dcbe9983c87b9d742c2e6",
+        email: "admin@gmail.com",
+        name: "Admin",
+        phone: "0123456789",
+        role: "admin",
+        is_active: true,
+    });
 });
 exports.getUser = getUser;
 // Lấy tất cả người dùng (admin)

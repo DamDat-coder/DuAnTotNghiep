@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import AddAddressModal from "../AddAddressModal";
+import AddAddressModal from "../modals/AddAddressModal";
 
 export default function AddressTab() {
   const [showAddAddress, setShowAddAddress] = useState(false);

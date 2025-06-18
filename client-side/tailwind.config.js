@@ -1,8 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: ["class"],
-    content: ["./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: ["class"],
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
+
   	screens: {
   		mobile: {
   			max: '767px'
@@ -84,6 +85,7 @@ module.exports = {
   			}
   		}
   	}
+
   },
   plugins: [require("tailwindcss-animate")],
 };

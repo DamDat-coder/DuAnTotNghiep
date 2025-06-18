@@ -121,7 +121,7 @@ export default function ProductGrid({
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}
-            className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[18.3125rem] object-cover"
+            className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[24.0625rem] object-cover"
             draggable={false}
           />
           <div

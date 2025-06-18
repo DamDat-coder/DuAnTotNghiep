@@ -16,22 +16,32 @@ export async function login(
       body: JSON.stringify({ email, password }),
       credentials: "include",
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+    }
+
     const data = await res.json();
+    console.log("Login response:", data);
     const user: IUser = {
       id: data.user._id,
       email: data.user.email,
       name: data.user.name,
-      phone: data.user.phone,
+      phone: data.user.phone || null,
       role: data.user.role,
-      active: data.user.is_active, // sửa lại cho đồng nhất backend
+      active: data.user.is_active,
     };
-    // if (isBrowser()) {
-    //   localStorage.setItem("accessToken", data.token);
-    // }
-    return { user, accessToken: data.token };
-  } catch (error) {
-    console.error("Error logging in:", error);
+
+    if (isBrowser()) {
+      localStorage.setItem("accessToken", data.accessToken);
+      console.log("Stored accessToken:", data.accessToken);
+      console.log("Cookies after login:", document.cookie);
+    }
+
+    return { user, accessToken: data.accessToken };
+  } catch (error: any) {
+    console.error("Error logging in:", error.message);
     return null;
   }
 }
@@ -43,7 +53,6 @@ export async function register(
 ): Promise<{ user: IUser; accessToken: string } | null> {
   try {
     const url = `${API_BASE_URL}/users/register`;
-
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -73,21 +82,17 @@ export async function register(
       phone: data.user.phone || null,
       email: data.user.email || email,
       role: data.user.role || "user",
-      active: data.user.is_active, // sửa lại cho đồng nhất backend
+      active: data.user.is_active,
     };
 
-    // if (typeof window !== "undefined") {
-    //   localStorage.setItem("accessToken", data.token);
-    // }
-
-    return { user, accessToken: data.token };
+    return { user, accessToken: data.accessToken };
   } catch (error: any) {
     console.error("Error registering:", error);
     throw error;
   }
 }
 
-// Lấy thông tin user (SỬA endpoint về /users/me)
+// Lấy thông tin user (endpoint: /users/me)
 export async function fetchUser(): Promise<IUser | null> {
   try {
     const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/me`, {
@@ -103,10 +108,9 @@ export async function fetchUser(): Promise<IUser | null> {
       name: data.name,
       phone: data.phone || null,
       role: data.role,
-      active: data.is_active, // đúng tên từ backend
+      active: data.is_active,
     };
-  } catch (error) {
-    console.error("fetchUser - Error:", error);
+  } catch (error: any) {
     return null;
   }
 }
@@ -126,14 +130,18 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
       id: userData._id,
       email: userData.email,
       name: userData.name,
-      phone: userData.phone,
+      phone: userData.phone || null,
+      avatar: userData.avatar || null,
       role: userData.role,
-      active: userData.is_active, // đúng tên từ backend
+      active: userData.is_active,
     }));
 
     return users;
-  } catch (error) {
-    console.error("Error fetching all users:", error);
+  } catch (error: any) {
+    if (error.message.includes("403")) {
+      console.warn("User does not have admin privileges");
+      return null;
+    }
     return null;
   }
 }

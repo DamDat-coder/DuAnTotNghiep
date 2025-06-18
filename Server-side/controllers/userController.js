@@ -22,17 +22,14 @@ require("dotenv").config();
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password, name, addresses = [], phone } = req.body;
-        // Kiểm tra đầu vào
         if (!email || !password || !name) {
-            res.status(400).json({ message: "Email, mật khẩu và họ tên là bắt buộc." });
+            res
+                .status(400)
+                .json({ message: "Email, mật khẩu và họ tên là bắt buộc." });
             return;
         }
-        // Kiểm tra tồn tại email hoặc số điện thoại (chỉ nếu phone khác null)
         const existingUser = yield userModel_1.default.findOne({
-            $or: [
-                { email },
-                ...(phone ? [{ phone }] : [])
-            ]
+            $or: [{ email }, ...(phone ? [{ phone }] : [])],
         });
         if (existingUser) {
             res.status(409).json({ message: "Email hoặc số điện thoại đã tồn tại." });
@@ -44,10 +41,25 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             password: hashedPassword,
             name,
             addresses,
-            phone: phone || null, // Nếu không có thì để null rõ ràng
+            phone: phone || null,
+        });
+        const accessToken = jsonwebtoken_1.default.sign({ userId: newUser._id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const refreshToken = jsonwebtoken_1.default.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+        yield refreshTokenModel_1.default.create({
+            userId: newUser._id,
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production" ? true : false,
+            sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: "/", // Đảm bảo cookie áp dụng cho toàn bộ domain
         });
         res.status(201).json({
             message: "Đăng ký thành công.",
+            accessToken,
             user: {
                 _id: newUser._id,
                 email: newUser.email,
@@ -68,7 +80,9 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
-            res.status(400).json({ message: "Vui lòng nhập email hoặc số điện thoại và mật khẩu." });
+            res.status(400).json({
+                message: "Vui lòng nhập email hoặc số điện thoại và mật khẩu.",
+            });
             return;
         }
         let user;
@@ -84,6 +98,11 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             res.status(401).json({ message: "Tài khoản không tồn tại." });
             return;
         }
+        // Kiểm tra trạng thái tài khoản
+        if (!user.is_active) {
+            res.status(403).json({ message: "Tài khoản đã bị khóa." });
+            return;
+        }
         const isPasswordValid = yield bcryptjs_1.default.compare(password, user.password);
         if (!isPasswordValid) {
             res.status(401).json({ message: "Mật khẩu không đúng." });
@@ -92,17 +111,40 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!process.env.JWT_SECRET) {
             throw new Error("JWT_SECRET chưa được cấu hình.");
         }
-        const token = jsonwebtoken_1.default.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        // Tạo access token
+        const accessToken = jsonwebtoken_1.default.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const refreshToken = jsonwebtoken_1.default.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+        // Xóa refresh token cũ
+        yield refreshTokenModel_1.default.deleteMany({ userId: user._id });
+        // Lưu refresh token mới
+        yield refreshTokenModel_1.default.create({
+            userId: user._id,
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+        console.log("Saved refresh token to DB:", refreshToken);
+        // Thiết lập cookie
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production" ? true : false,
+            sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+            path: "/",
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        console.log("Setting refreshToken cookie:", refreshToken);
+        res.cookie("refreshToken", refreshToken, {
+        /* options */
+        });
         res.status(200).json({
             message: "Đăng nhập thành công.",
-            token,
+            accessToken, // Trả về access token
             user: {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                role: user.role
-            }
+                role: user.role,
+            },
         });
     }
     catch (error) {
@@ -113,12 +155,13 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.login = login;
 // Làm mới token
 const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const refreshToken = req.cookies.refreshToken;
+    console.log("Received refresh token:", refreshToken);
+    if (!refreshToken) {
+        res.status(400).json({ message: "Thiếu Refresh Token" });
+        return;
+    }
     try {
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) {
-            res.status(400).json({ message: "Thiếu refresh token." });
-            return;
-        }
         const jwtSecret = process.env.JWT_SECRET || "default_secret";
         const decoded = jsonwebtoken_1.default.verify(refreshToken, jwtSecret);
         const tokenDoc = yield refreshTokenModel_1.default.findOne({
@@ -126,17 +169,19 @@ const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             token: refreshToken,
         });
         if (!tokenDoc) {
-            res.status(401).json({ message: "Refresh token không hợp lệ." });
+            res.status(401).json({ message: "Refresh Token không hợp lệ" });
             return;
         }
-        const accessToken = jsonwebtoken_1.default.sign({ id: decoded.id }, jwtSecret, { expiresIn: "1h" });
-        res.json({ accessToken, message: "Làm mới token thành công." });
+        const accessToken = jsonwebtoken_1.default.sign({ id: decoded.id }, jwtSecret, {
+            expiresIn: "1h",
+        });
+        res.json({ accessToken, message: "Làm mới token thành công" });
     }
     catch (error) {
         res.status(401).json({
             message: error.name === "TokenExpiredError"
-                ? "Refresh token đã hết hạn."
-                : "Refresh token không hợp lệ.",
+                ? "Refresh Token đã hết hạn"
+                : "Refresh Token không hợp lệ",
         });
     }
 });
@@ -192,7 +237,10 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (addresses)
             updates.addresses = addresses;
         if (phone) {
-            const daTonTai = yield userModel_1.default.findOne({ phone, _id: { $ne: targetUserId } });
+            const daTonTai = yield userModel_1.default.findOne({
+                phone,
+                _id: { $ne: targetUserId },
+            });
             if (daTonTai) {
                 res.status(409).json({ message: "Số điện thoại đã được sử dụng." });
                 return;

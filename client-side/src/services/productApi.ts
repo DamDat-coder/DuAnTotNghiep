@@ -3,7 +3,7 @@ import { IProduct } from "../types/product";
 
 interface ProductResponse {
   products: IProduct[];
-  total: number; // Giữ lại total để biết số lượng sản phẩm
+  total: number;
 }
 
 const categoryMap: Record<string, string> = {
@@ -11,6 +11,33 @@ const categoryMap: Record<string, string> = {
   Nữ: "684d09d5543e02998d9df016",
   Unisex: "684d09e4543e02998d9df018",
 };
+
+// Tách hàm map dữ liệu
+function mapToIProduct(e: any): IProduct {
+  return {
+    id: e._id,
+    name: e.name,
+    slug: e.slug,
+    description: e.description || "",
+    category: {
+      _id: e.category?._id || null,
+      name: e.category?.name || "Không rõ",
+    },
+    categoryId: e.category?._id || null,
+    variants: (e.variants || []).map((v: any) => ({
+      price: v.price,
+      color: v.color,
+      size: v.size,
+      stock: v.stock,
+      discountPercent: v.discountPercent ?? 0,
+      discountedPrice: v.discountedPrice ?? 0,
+    })),
+    images: Array.isArray(e.image) ? e.image : (e.images || []),
+    stock: (e.variants || []).reduce((sum: number, v: any) => sum + (v.stock || 0), 0),
+    is_active: e.is_active ?? true,
+    salesCount: e.salesCount || 0,
+  };
+}
 
 export async function fetchProducts(
   query: {
@@ -25,16 +52,15 @@ export async function fetchProducts(
 ): Promise<ProductResponse> {
   try {
     const queryParams = new URLSearchParams();
-    if (query.category && categoryMap[query.category]) {
-      queryParams.append("id_cate", categoryMap[query.category]);
-    }
+    // Chỉ append id_cate 1 lần duy nhất
+    const idCate = query.id_cate || (query.category && categoryMap[query.category]);
+    if (idCate) queryParams.append("id_cate", idCate);
     if (query.name) queryParams.append("name", query.name);
-    if (query.id_cate) queryParams.append("id_cate", query.id_cate);
     if (query.sort) queryParams.append("sort", query.sort);
     if (query.color) queryParams.append("color", query.color);
     if (query.size) queryParams.append("size", query.size);
     if (query.priceRange) queryParams.append("priceRange", query.priceRange);
-    queryParams.append("is_active", "true"); // Giữ is_active
+    queryParams.append("is_active", "true");
 
     const url = `${API_BASE_URL}/products?${queryParams.toString()}`;
     const response = await fetchWithAuth<any>(
@@ -43,32 +69,8 @@ export async function fetchProducts(
       false
     );
 
-    const products: IProduct[] = response.data.map((e: any) => ({
-      id: e._id,
-      name: e.name,
-      slug: e.slug,
-      description: e.description || "",
-      category: {
-        _id: e.category?._id || null,
-        name: e.category?.name || "Không rõ",
-      },
-      categoryId: e.category?._id || null,
-      variants: (e.variants || []).map((v: any) => ({
-        price: v.price,
-        color: v.color,
-        size: v.size,
-        stock: v.stock,
-        discountPercent: v.discountPercent ?? 0,
-        discountedPrice: v.discountedPrice ?? 0,
-      })),
-      images: e.image || [],
-      stock: e.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) || 0,
-      is_active: e.is_active ?? true,
-      salesCount: e.salesCount || 0,
-    }));
-
     return {
-      products,
+      products: Array.isArray(response.data) ? response.data.map(mapToIProduct) : [],
       total: response.total || 0,
     };
   } catch (error) {
@@ -355,5 +357,18 @@ export async function fetchProductBySlug(
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm theo slug:", error);
     return null;
+  }
+}
+
+export async function lockProduct(id: string, is_active: boolean) {
+  try {
+    const res = await fetchWithAuth<any>(`${API_BASE_URL}/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active }),
+    });
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.message || "Lỗi cập nhật trạng thái!");
   }
 }

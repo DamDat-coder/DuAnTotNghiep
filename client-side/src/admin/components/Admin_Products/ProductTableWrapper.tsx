@@ -1,10 +1,10 @@
-// src/admin/components/Admin_Product/ProductTableWrapper.tsx
 "use client";
 import { useEffect, useState } from "react";
 import ProductControlBar from "./ProductControlBar";
 import ProductBody from "./ProductBody";
 import Image from "next/image";
 import { Pagination } from "../ui/Panigation";
+import { lockProduct, deleteProduct } from "@/services/productApi";
 
 export default function ProductTableWrapper({
   products,
@@ -12,11 +12,9 @@ export default function ProductTableWrapper({
   onEditProduct,
   onDeleteProduct,
 }) {
+  // Sử dụng đúng is_active, KHÔNG dùng active nữa!
   const [localProducts, setLocalProducts] = useState(
-    (Array.isArray(products) ? products : []).map((p) => ({
-      ...p,
-      active: typeof p.is_active === "boolean" ? p.is_active : true,
-    }))
+    Array.isArray(products) ? products : []
   );
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -25,12 +23,7 @@ export default function ProductTableWrapper({
   const pageSize = 10;
 
   useEffect(() => {
-    setLocalProducts(
-      (Array.isArray(products) ? products : []).map((p) => ({
-        ...p,
-        active: typeof p.is_active === "boolean" ? p.is_active : true,
-      }))
-    );
+    setLocalProducts(Array.isArray(products) ? products : []);
   }, [products]);
 
   // Filter + search
@@ -40,18 +33,45 @@ export default function ProductTableWrapper({
       filter === "all"
         ? true
         : filter === "active"
-        ? p.active
-        : !p.active;
+        ? p.is_active
+        : !p.is_active;
     return matchName && matchFilter;
   });
 
   const totalPage = Math.ceil(filtered.length / pageSize);
   const pageData = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleToggleStatus = (id: string) => {
-    setLocalProducts((prev) =>
-      prev.map((p) => (p._id === id ? { ...p, active: !p.active } : p))
-    );
+  // XỬ LÝ XOÁ SẢN PHẨM
+  const handleDeleteProduct = async (id) => {
+    try {
+      await deleteProduct(id);
+      setLocalProducts((prev) => prev.filter((p) => (p.id || p._id) !== id));
+      if (onDeleteProduct) onDeleteProduct(id);
+      // Có thể toast ở đây nếu muốn
+    } catch (error) {
+      // Có thể toast lỗi ở đây nếu muốn
+    }
+  };
+
+  // XỬ LÝ SỬA SẢN PHẨM
+  const handleEditProduct = (prod) => {
+    if (onEditProduct) onEditProduct(prod);
+    // Hoặc mở modal form edit tại đây nếu cần
+  };
+
+  // XỬ LÝ BẬT/TẮT TRẠNG THÁI
+  const handleToggleStatus = async (id, currentActive) => {
+    try {
+      await lockProduct(id, !currentActive);
+      setLocalProducts((prev) =>
+        prev.map((p) =>
+          (p.id || p._id) === id ? { ...p, is_active: !currentActive } : p
+        )
+      );
+      // Có thể toast ở đây nếu muốn
+    } catch (error) {
+      // Có thể toast lỗi ở đây nếu muốn
+    }
   };
 
   return (
@@ -73,22 +93,22 @@ export default function ProductTableWrapper({
               <th className="w-[140px] px-4 py-0">Giá</th>
               <th className="w-[96px] px-4 py-0">Trạng thái</th>
               <th className="w-[64px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px]">
-                  <div className="flex items-center justify-end h-[64px]">
+                <div className="flex items-center justify-end h-[64px]">
                   <Image
                     src="/admin_user/dots.svg"
                     width={24}
                     height={24}
                     alt="three_dot"
                   />
-                 </div>
+                </div>
               </th>
             </tr>
           </thead>
           <tbody>
             <ProductBody
               products={pageData}
-              onEdit={onEditProduct}
-              onDelete={onDeleteProduct}
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
               onToggleStatus={handleToggleStatus}
             />
           </tbody>

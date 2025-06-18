@@ -9,7 +9,7 @@ export default function useIsMobile() {
       setIsMobile(window.innerWidth <= 1280);
     };
 
-    handleResize(); 
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);

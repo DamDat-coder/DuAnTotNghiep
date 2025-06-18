@@ -1,4 +1,5 @@
-import OrderDetail from "@/components/Profile/Tabs/OrderDetail";
+import OrderDetail from "@/components/Profile/tabs/OrderDetail";
+
 
 
 export default function OrderDetailPage({

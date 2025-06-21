@@ -117,7 +117,7 @@ export default function Header({ title }: HeaderProps) {
       });
     }
   }, [isLookupOpen, searchTerm]);
-
+  
   const suggestions = products.map((product) => product.name).slice(0, 3);
   const handleSuggestionClick = (suggestion: string) => {
     setSearchTerm(suggestion);

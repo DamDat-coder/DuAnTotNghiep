@@ -37,7 +37,7 @@ export function useApiData() {
           fetchUser(),
         ]);
 
-        setProducts(productsData);
+        setProducts(productsData.products);
         setCategories(categoriesData);
         setMemberBenefits(benefitsData);
         setFeaturedSection(featuredData);

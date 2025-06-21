@@ -1,21 +1,19 @@
 "use client";
-import { IFeaturedProducts } from "@/types/product";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import FeaturedSwiper from "./FeaturedSwiper";
 import Image from "next/image";
-import { useState } from "react";
+import { IFeaturedProducts } from "@/types/product";
+import { fetchParentCategories } from "@/services/categoryApi";
+import FeaturedSwiper from "./FeaturedSwiper";
 import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
+import { ICategory } from "@/types/category";
+
 interface FeaturedSectionProps {
   featuredSection: IFeaturedProducts[];
   mobileSlidesPerView?: number;
   tabletSlidesPerView?: number;
 }
-
-const genderLinks = [
-  { href: "/products?gender=Nam", label: "Nam" },
-  { href: "/products?gender=Nữ", label: "Nữ" },
-  { href: "/products?gender=Unisex", label: "Unisex" },
-];
 
 export default function FeaturedSection({
   featuredSection,
@@ -23,13 +21,53 @@ export default function FeaturedSection({
   tabletSlidesPerView = 2.5,
 }: FeaturedSectionProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        setLoading(true);
+        const rootCategories = await fetchParentCategories();
+        console.log("Root categories:", rootCategories);
+        // Lọc bỏ danh mục "Bài viết"
+        const filteredCategories = rootCategories.filter(
+          (cat: ICategory) =>
+            cat.id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
+        );
+        console.log("Filtered categories:", filteredCategories);
+        setCategories(filteredCategories);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
+        console.error("Error loading categories:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center font-body">
+        <p>Đang tải danh mục...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500 font-body">
+        <p>Lỗi: {error}</p>
+      </div>
+    );
+  }
 
   if (!featuredSection || featuredSection.length === 0) {
     return (
-      <div>
-        <p className="text-center text-gray-500 font-body">
-          Không có sản phẩm nào để hiển thị.
-        </p>
+      <div className="text-center text-gray-500 font-body">
+        <p>Không có sản phẩm nào để hiển thị.</p>
       </div>
     );
   }
@@ -51,11 +89,22 @@ export default function FeaturedSection({
         </div>
 
         {/* Laptop/Desktop: Grid */}
-        <div className="hidden tablet:hidden desktop:grid-cols-3 gap-4 desktop:gap-8 laptop:grid laptop:grid-cols-3 laptop:gap-8">
+        <div className="hidden tablet:hidden desktop:grid laptop:grid desktop:grid-cols-3 laptop:grid-cols-3 gap-4 desktop:gap-8 laptop:gap-8">
           {featuredSection.map((product) => {
-            const genderLink = genderLinks.find(
-              (link) => link.label === product.gender
-            ) || { href: "/products", label: "Danh mục" };
+            // Kiểm tra product.gender trước khi tìm
+            const matchedCategory = product.gender
+              ? categories.find((cat) => cat.name === product.gender)
+              : null;
+            console.log(
+              `Product gender: ${product.gender}, Matched category:`,
+              matchedCategory
+            );
+            const genderLink = matchedCategory
+              ? {
+                  href: `/products?id_cate=${matchedCategory.id}`,
+                  label: product.gender,
+                }
+              : { href: "/products", label: "Danh mục" };
 
             return (
               <div
@@ -96,7 +145,7 @@ export default function FeaturedSection({
                           hoveredId === product.id ? "opacity-100" : "opacity-0"
                         }`}
                       >
-                        Shop {product.gender || "Danh mục"}
+                        Shop {genderLink.label}
                       </div>
                     </Link>
                   </div>

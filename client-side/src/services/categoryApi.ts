@@ -1,29 +1,31 @@
-import { ICategory } from "../types/category";
+import { CategoryInput, CategoryResponse, ICategory, SingleCategoryResponse } from "../types/category";
 import { API_BASE_URL, fetchWithAuth } from "./api";
-interface CategoryResponse {
-  status: string;
-  data: any[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Type cho phản hồi khi thêm/cập nhật danh mục
-interface SingleCategoryResponse {
-  status: string;
-  message: string;
-  data: any;
-}
-
-// Type cho dữ liệu gửi lên khi thêm/cập nhật danh mục
-interface CategoryInput {
-  name: string;
-  description?: string;
-  parentId?: string | null;
-}
 
 // Lấy danh mục
+export async function fetchParentCategories(): Promise<ICategory[]> {
+  try {
+    const response = await fetchWithAuth<CategoryResponse>(
+      `${API_BASE_URL}/categories`,
+      {
+        cache: "no-store",
+      },
+      false
+    );
+    const rootCategories = response.data.filter(
+      (cat: ICategory) => cat.parentid === null
+    );
+    return rootCategories.map((item) => ({
+      id: item._id,
+      name: item.name,
+      description: item.description || "",
+      parentid: item.parentid || null,
+    }));
+    
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+}
 export async function fetchCategories(): Promise<ICategory[]> {
   try {
     const response = await fetchWithAuth<CategoryResponse>(
@@ -37,7 +39,7 @@ export async function fetchCategories(): Promise<ICategory[]> {
       id: item._id,
       name: item.name,
       description: item.description || "",
-      parentId: item.parentId || null,
+      parentid: item.parentid || null,
     }));
     
   } catch (error) {
@@ -52,7 +54,7 @@ export async function addCategory(category: CategoryInput): Promise<ICategory> {
     const body = {
       name: category.name,
       description: category.description,
-      parentId: category.parentId || null,
+      parentid: category.parentid || null,
     };
 
     console.log('Sending category:', body);
@@ -70,7 +72,7 @@ export async function addCategory(category: CategoryInput): Promise<ICategory> {
       id: response.data._id,
       name: response.data.name,
       description: response.data.description || "",
-      parentId: response.data.parentId || null,
+      parentid: response.data.parentid || null,
     };
   } catch (error: any) {
     console.error("Error adding category:", error);
@@ -84,7 +86,7 @@ export async function updateCategory(id: string, category: CategoryInput): Promi
     const body: any = {};
     if (category.name) body.name = category.name;
     if (category.description) body.description = category.description;
-    if (category.parentId !== undefined) body.parentId = category.parentId || null;
+    if (category.parentid !== undefined) body.parentid = category.parentid || null;
 
     console.log('Sending category update:', body);
 
@@ -101,7 +103,7 @@ export async function updateCategory(id: string, category: CategoryInput): Promi
       id: response.data._id,
       name: response.data.name,
       description: response.data.description || "",
-      parentId: response.data.parentId || null,
+      parentid: response.data.parentid || null,
     };
   } catch (error: any) {
     console.error("Error updating category:", error);
@@ -128,7 +130,7 @@ export async function fetchCategoryById(id: string): Promise<ICategory | null> {
         id: response.data._id,
         name: response.data.name,
         description: response.data.description || "",
-        parentId: response.data.parentId || null,
+        parentid: response.data.parentid || null,
       };
     }
     return null;
@@ -150,7 +152,7 @@ export async function fetchCategoriesFlat(): Promise<ICategory[]> {
       id: item._id,
       name: item.name,
       description: item.description || "",
-      parentId: item.parentId || null,
+      parentid: item.parentid || null,
     }));
   } catch (error) {
     console.error("Error fetching categories (flat):", error);

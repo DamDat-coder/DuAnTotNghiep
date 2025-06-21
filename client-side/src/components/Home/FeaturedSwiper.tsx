@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import Image from "next/image";
-import { useState } from "react";
-
+import { useState,useEffect } from "react";
+import { ICategory } from "@/types/category";
+import { fetchParentCategories } from "@/services/categoryApi";
 interface FeaturedSwiperProps {
   featuredSection: IFeaturedProducts[];
   mobileSlidesPerView?: number;
@@ -25,7 +26,45 @@ export default function FeaturedSwiper({
   tabletSlidesPerView = 2.5,
 }: FeaturedSwiperProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+const [categories, setCategories] = useState<ICategory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        setLoading(true);
+        const rootCategories = await fetchParentCategories();
+        // Lọc bỏ danh mục "Bài viết"
+        const filteredCategories = rootCategories.filter(
+          (cat) =>
+            cat.id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
+        );
+        setCategories(filteredCategories);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center font-body">
+        <p>Đang tải danh mục...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500 font-body">
+        <p>Lỗi: {error}</p>
+      </div>
+    );
+  }
   return (
     <Swiper
       spaceBetween={10}

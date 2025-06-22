@@ -84,7 +84,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           animate={{ translateX: isOpen ? "0%" : "100%" }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex flex-col gap-6 min-h-screen">
+          <div className="flex flex-col gap-9 min-h-screen">
             <div className="flex items-center justify-end p-4 border-b-2 border-[#B0B0B0]">
               <button
                 type="button"
@@ -131,7 +131,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-6 px-4 mt-auto">
+            <div className="flex flex-col gap-6 px-4">
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -142,8 +142,9 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 loading="lazy"
               />
               <p className="text-base text-gray-700">
-                Trở thành thành viên <span className="font-bold">Style for you</span> để có được những sản phẩm và giá tốt
-                nhất.
+                Trở thành thành viên{" "}
+                <span className="font-bold">Style for you</span> để có được
+                những sản phẩm và giá tốt nhất.
               </p>
               <div className="flex justify-center items-center gap-2">
                 <button
@@ -252,39 +253,35 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
             </div>
           </div>
           <div className="flex flex-col gap-4">
-            <div className="flex gap-4 items-center">
-              <Link
-                href="/profile?tab=favorite"
-                className="text-gray-400"
-                aria-label="Danh sách yêu thích"
-              >
-                <Image
-                  src="/nav/nav_like_desktop.svg"
-                  alt="Yêu thích"
-                  width={24}
-                  height={24}
-                  className="h-[1.05rem] w-auto"
-                />
-              </Link>
+            <Link
+              href="/profile?tab=favorite"
+              className="flex gap-4 items-center w-[15%] justify-between"
+              onClick={() => setIsOpen(false)}
+            >
+              <Image
+                src="/nav/nav_like_desktop.svg"
+                alt="Yêu thích"
+                width={24}
+                height={24}
+                className="h-5 w-auto"
+              />
               <p className="text-2xl font-medium font-description">Yêu thích</p>
-            </div>
+            </Link>
 
-            <div className="flex gap-4 items-center">
-              <Link
-                href="/cart"
-                className="text-gray-400 hover:text-black"
-                aria-label="Giỏ hàng"
-              >
-                <Image
-                  src="/nav/nav_cart.svg"
-                  alt="Giỏ hàng"
-                  width={24}
-                  height={24}
-                  className="h-6 w-auto"
-                />
-              </Link>
+            <Link
+              href="/cart"
+              className="flex gap-4 items-center w-[15%] justify-between"
+              onClick={() => setIsOpen(false)}
+            >
+              <Image
+                src="/nav/nav_cart.svg"
+                alt="Giỏ hàng"
+                width={24}
+                height={24}
+                className="h-6 w-auto"
+              />
               <p className="text-2xl font-medium font-description">Giỏ hàng</p>
-            </div>
+            </Link>
           </div>
           <div className="flex flex-col gap-6 px-4 mt-auto">
             <button

@@ -13,7 +13,7 @@ import RegisterPopup from "../Popups/RegisterPopup";
 import SearchInput from "../Popups/LookupMenu/SearchInput";
 import SearchSuggestions from "../Popups/LookupMenu/SearchSuggestions";
 import SearchResults from "../Popups/LookupMenu/SearchResults";
-import { fetchProducts } from "@/services/productApi";
+import { fetchProductBySlug, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -32,62 +32,76 @@ export default function Header({ title }: HeaderProps) {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [products, setProducts] = useState<IProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [defaultSuggestions, setDefaultSuggestions] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const lookupButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Xác định client-side rendering
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Mở LoginPopup khi đăng ký thất bại
   useEffect(() => {
     if (openLoginWithData) {
       setIsLoginOpen(true);
-      setOpenLoginWithData(false); // Reset sau khi mở
+      setOpenLoginWithData(false);
     }
   }, [openLoginWithData, setOpenLoginWithData]);
 
-  // Lấy danh sách sản phẩm từ API
+  // Tải gợi ý mặc định khi mở kính lúp
   useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setIsLoading(true);
-        const data = await fetchProducts();
-        setProducts(data.products || []);
-      } catch (error) {
-        console.error("Lỗi khi tải sản phẩm:", error);
-        setProducts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadProducts();
-  }, []);
+    if (isLookupOpen && defaultSuggestions.length === 0) {
+      const loadDefaultSuggestions = async () => {
+        try {
+          // Lấy tất cả sản phẩm bán chạy và giới hạn top 5 trong frontend
+          const response = await fetchProducts({ sort: "best-seller" });
+          const suggestions = response.products
+            .map((product) => product.name) // Ánh xạ tên sản phẩm
+            .slice(0, 5); // Giới hạn 5 gợi ý
+          setDefaultSuggestions(suggestions);
+        } catch (error) {
+          console.error("Lỗi khi tải gợi ý mặc định:", error);
+        }
+      };
+      loadDefaultSuggestions();
+    }
+  }, [isLookupOpen]);
 
-  // Debounce tìm kiếm để cải thiện hiệu suất
-  const debouncedSearch = debounce((term: string) => {
+  const handleResultClick = () => {
+    setIsLookupOpen(false);
+    setSearchTerm("");
+    setFilteredProducts([]);
+  };
+
+  const debouncedSearch = debounce(async (term: string) => {
     if (term.trim() === "") {
       setFilteredProducts([]);
-    } else {
-      const filtered = products.filter((product) =>
-        product.name.toLowerCase().includes(term.toLowerCase())
-      );
-      setFilteredProducts(filtered);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await fetchProductBySlug(term, false);
+      if (Array.isArray(result)) {
+        setFilteredProducts(result);
+      } else {
+        setFilteredProducts(result ? [result] : []);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+      setFilteredProducts([]);
+    } finally {
+      setIsLoading(false);
     }
   }, 300);
 
-  // Lọc sản phẩm khi searchTerm thay đổi
   useEffect(() => {
     debouncedSearch(searchTerm);
     return () => debouncedSearch.cancel();
-  }, [searchTerm, products]);
+  }, [searchTerm]);
 
-  // Đóng menu tìm kiếm khi nhấn ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -107,18 +121,10 @@ export default function Header({ title }: HeaderProps) {
     };
   }, [isLookupOpen, setIsLookupOpen]);
 
-  // Debug trạng thái tìm kiếm
-  useEffect(() => {
-    if (isLookupOpen) {
-      console.log("Lookup is active", {
-        searchTerm,
-        inputRef: inputRef.current,
-        menuRef: menuRef.current,
-      });
-    }
-  }, [isLookupOpen, searchTerm]);
-  
-  const suggestions = products.map((product) => product.name).slice(0, 3);
+  const suggestions = filteredProducts.length > 0
+    ? filteredProducts.map((product) => product.name).slice(0, 3)
+    : defaultSuggestions;
+
   const handleSuggestionClick = (suggestion: string) => {
     setSearchTerm(suggestion);
     setIsLookupOpen(false);
@@ -126,10 +132,7 @@ export default function Header({ title }: HeaderProps) {
 
   return (
     <>
-      <nav
-        className="bg-white text-black relative"
-        aria-label="Main navigation"
-      >
+      <nav className="bg-white text-black relative" aria-label="Main navigation">
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center gap-[32%] relative">
             <Link href="/" className="flex items-center" aria-label="Trang chủ">
@@ -183,11 +186,7 @@ export default function Header({ title }: HeaderProps) {
                         >
                           <div className="flex-1 overflow-y-auto px-2 py-4">
                             {isLoading ? (
-                              <div
-                                className="sk-chase"
-                                role="status"
-                                aria-label="Đang tải"
-                              >
+                              <div className="sk-chase" role="status" aria-label="Đang tải">
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
@@ -195,8 +194,7 @@ export default function Header({ title }: HeaderProps) {
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                               </div>
-                            ) : filteredProducts.length === 0 &&
-                              searchTerm.trim() !== "" ? (
+                            ) : searchTerm.trim() !== "" && filteredProducts.length === 0 ? (
                               <p className="text-center text-gray-500">
                                 Không tìm thấy sản phẩm
                               </p>
@@ -205,9 +203,7 @@ export default function Header({ title }: HeaderProps) {
                                 {searchTerm.trim() === "" ? (
                                   <SearchSuggestions
                                     suggestions={suggestions}
-                                    handleSuggestionClick={
-                                      handleSuggestionClick
-                                    }
+                                    handleSuggestionClick={handleSuggestionClick}
                                     onClick={handleSuggestionClick}
                                   />
                                 ) : (
@@ -215,7 +211,8 @@ export default function Header({ title }: HeaderProps) {
                                     filteredProducts={filteredProducts}
                                     searchTerm={searchTerm}
                                     isMobile={false}
-                                    products={products}
+                                    products={filteredProducts}
+                                    onResultClick={handleResultClick}
                                   />
                                 )}
                               </div>
@@ -260,11 +257,7 @@ export default function Header({ title }: HeaderProps) {
 
                 <NotificationIcon />
 
-                <Link
-                  href="/cart"
-                  className="text-gray-400 hover:text-black"
-                  aria-label="Giỏ hàng"
-                >
+                <Link href="/cart" className="text-gray-400 hover:text-black" aria-label="Giỏ hàng">
                   <Image
                     src="/nav/nav_cart.svg"
                     alt="Giỏ hàng"

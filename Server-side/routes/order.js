@@ -30,4 +30,4 @@ router.get('/', verifyToken_1.default, verifyAdmin_1.default, orderController_2.
 router.get('/user/:userId', verifyToken_1.default, verifyAdmin_1.default, orderController_2.getOrdersByUserId);
 // ADMIN: Cập nhật trạng thái đơn hàng
 router.patch('/:id', verifyToken_1.default, verifyAdmin_1.default, orderController_2.updateOrderStatus);
-exports.default = router;
+module.exports = router;

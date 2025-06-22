@@ -11,7 +11,7 @@ const usersRouter = require("./routes/users");
 const categoriesRouter = require("./routes/categories");
 const productsRouter = require("./routes/products");
 const couponsRouter = require("./routes/coupons");
-const ordersRouter = require("./routes/order");
+const orderRouter = require('./routes/order');
 
 const app = express();
 
@@ -49,7 +49,7 @@ app.use("/users", usersRouter);
 app.use("/categories", categoriesRouter);
 app.use("/products", productsRouter);
 app.use("/coupons", couponsRouter);
-app.use("/order", ordersRouter);
+app.use('/api/orders', orderRouter);
 
 // Xử lý lỗi
 app.use((req, res, next) => {

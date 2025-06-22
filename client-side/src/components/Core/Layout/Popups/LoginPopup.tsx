@@ -30,7 +30,9 @@ export default function LoginPopup({
     password: "",
     keepLoggedIn: false,
   });
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
@@ -52,14 +54,14 @@ export default function LoginPopup({
     } else {
       document.body.classList.remove("overflow-hidden");
 
-      // Reset form when popup closes (if not using initialFormData)
+      // Reset form when popup closes
       if (!initialFormData) {
         setFormData({
           email: "",
           password: "",
           keepLoggedIn: false,
         });
-        setError(null);
+        setErrors({});
       }
     }
 
@@ -76,10 +78,45 @@ export default function LoginPopup({
     }));
   };
 
+  const validateField = (name: string, value: string) => {
+    const newErrors = { ...errors };
+
+    if (name === "email") {
+      if (!value.trim()) {
+        newErrors.email = "Email không được để trống.";
+      } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)) {
+        newErrors.email = "Email không đúng định dạng.";
+      } else {
+        delete newErrors.email;
+      }
+    }
+
+    if (name === "password") {
+      if (!value.trim()) {
+        newErrors.password = "Mật khẩu không được để trống.";
+      } else if (value.length < 6) {
+        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
+      } else {
+        newErrors.password = undefined;
+      }
+    }
+
+    setErrors(newErrors);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+
+    // Check for errors again before submit
+    validateField("email", formData.email);
+    validateField("password", formData.password);
+
+    if (errors.email || errors.password) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const success = await login(
         formData.email,
@@ -88,17 +125,18 @@ export default function LoginPopup({
       );
       if (success) {
         onClose();
-
-        // Reset form on success
         setFormData({
           email: "",
           password: "",
           keepLoggedIn: false,
         });
-        setError(null);
+        setErrors({});
       }
     } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra khi đăng nhập.");
+      setErrors((prev) => ({
+        ...prev,
+        password: err.message || "Có lỗi xảy ra khi đăng nhập.",
+      }));
     } finally {
       setLoading(false);
     }
@@ -117,7 +155,7 @@ export default function LoginPopup({
         onClick={onClose}
       />
       <motion.div
-        className="relative w-[636px] h-[90%] bg-white rounded-[8px]"
+        className="relative w-[636px] h-auto bg-white rounded-[8px] scroll-hidden"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -136,18 +174,18 @@ export default function LoginPopup({
           </svg>
         </button>
 
-        <div className="flex flex-col items-center mt-[60px] mb-[60px] gap-0 px-[7.5rem]">
+        <div className="flex flex-col items-center gap-10 py-[3.75rem] px-[7.5rem]">
           <Image
             src="/nav/logo.svg"
             alt="Logo"
             width={0}
             height={0}
-            className="h-8 w-auto mb-[40px]"
+            className="h-16 w-auto"
             draggable={false}
           />
 
-          <div className="text-center mb-[40px]">
-            <h2 className="text-[24px] font-bold mb-1">Đăng nhập</h2>
+          <div className="text-center">
+            <h2 className="text-[24px] font-bold">Đăng nhập</h2>
             <p className="text-base w-[396px] text-[#707070]">
               Trở thành thành viên để có được những sản phẩm và giá tốt nhất.
             </p>
@@ -155,98 +193,112 @@ export default function LoginPopup({
 
           <form
             onSubmit={handleSubmit}
-            className="w-full flex flex-col items-center"
+            className="w-full flex flex-col items-center gap-10"
           >
-            <div className="mb-[12px] w-[396px]">
-              <label className="block text-sm font-bold mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Nhập email"
-                required
-                className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
-
-            <div className="relative mb-[12px] w-[396px]">
-              <label className="block text-sm font-bold mb-1">
-                Nhập mật khẩu <span className="text-red-500">*</span>
-              </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Nhập mật khẩu"
-                required
-                autoComplete="new-password"
-                className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-[2.375rem] right-3 text-gray-400"
-              >
-                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-              </button>
-            </div>
-
-            <div className="flex justify-between items-center w-[396px] mb-[40px] text-sm">
-              <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <div className="flex flex-col gap-3">
+              <div className="w-[396px]">
+                <label className="block text-sm font-bold">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="radio"
-                  name="keepLoggedIn"
-                  checked={formData.keepLoggedIn}
-                  onChange={() => {}}
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      keepLoggedIn: !prev.keepLoggedIn,
-                    }))
-                  }
-                  className="w-4 h-4 rounded-full text-black border-gray-400 accent-black"
+                  type="text"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={(e) => validateField("email", e.target.value)}
+                  placeholder="Nhập email"
+                  className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
                 />
-                Duy trì đăng nhập
-              </label>
-              <a href="#" className="text-black hover:underline">
-                Quên mật khẩu?
-              </a>
+                {errors.email && (
+                  <span className="text-red-500 text-sm mt-1 block">
+                    {errors.email}
+                  </span>
+                )}
+              </div>
+
+              <div className="relative w-[396px]">
+                <label className="block text-sm font-bold">
+                  Nhập mật khẩu <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={(e) => validateField("password", e.target.value)}
+                  placeholder="Nhập mật khẩu"
+                  autoComplete="new-password"
+                  className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-[2.375rem] right-3 text-gray-400"
+                >
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
+                {errors.password && (
+                  <span className="text-red-500 text-sm mt-1 block">
+                    {errors.password}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex justify-between items-center w-[396px] text-sm">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="radio"
+                    name="keepLoggedIn"
+                    checked={formData.keepLoggedIn}
+                    onChange={() => {}}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        keepLoggedIn: !prev.keepLoggedIn,
+                      }))
+                    }
+                    className="w-4 h-4 rounded-full text-black border-gray-400 accent-black"
+                  />
+                  Duy trì đăng nhập
+                </label>
+                <a href="#" className="text-black hover:underline">
+                  Quên mật khẩu?
+                </a>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-[396px] h-[49px] bg-black text-white rounded text-base mb-[12px] hover:bg-gray-800"
-            >
-              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </button>
-
-            <p className="text-sm text-center mb-[12px]">
-              Chưa có tài khoản?{" "}
+            <div className="flex flex-col gap-3">
               <button
-                className="text-black font-bold hover:underline"
-                onClick={() => {
-                  onClose();
-                  onOpenRegister();
-                }}
+                type="submit"
+                disabled={loading}
+                className="w-[396px] h-[49px] bg-black text-white rounded text-base hover:bg-gray-800"
               >
-                Đăng ký
+                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
-            </p>
 
-            <button className="w-[396px] h-[49px] border border-[#000000] py-2 flex items-center justify-center gap-2 rounded text-sm hover:bg-gray-100">
-              <Image
-                src="/user/google.svg"
-                alt="Google"
-                width={20}
-                height={20}
-              />
-              <span className="font-medium">Sign in with Google</span>
-            </button>
+              <p className="text-sm text-center">
+                Chưa có tài khoản?{" "}
+                <button
+                  className="text-black font-bold hover:underline"
+                  onClick={() => {
+                    onClose();
+                    onOpenRegister();
+                  }}
+                >
+                  Đăng ký
+                </button>
+              </p>
+
+              <button className="w-[396px] h-[49px] border border-[#000000] py-2 flex items-center justify-center gap-2 rounded text-sm hover:bg-gray-100">
+                <Image
+                  src="/user/google.svg"
+                  alt="Google"
+                  width={20}
+                  height={20}
+                />
+                <span className="font-medium">Sign in with Google</span>
+              </button>
+            </div>
           </form>
         </div>
       </motion.div>

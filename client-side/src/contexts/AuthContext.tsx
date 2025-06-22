@@ -21,13 +21,7 @@ export const useAuth = (): AuthContextType => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : null;
-    }
-    return null;
-  });
+  const [user, setUser] = useState<IUser | null>(null);
   const [registerFormData, setRegisterFormData] = useState<{
     name: string;
     email: string;
@@ -43,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("Initializing auth check...");
         await checkAuth();
       } else {
-        console.log("No stored user or accessToken, skipping checkAuth");
+        console.log("No accessToken, skipping checkAuth");
       }
     };
     initializeAuth();
@@ -64,7 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(userData);
 
       if (keepLoggedIn) {
-        localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
       }
 
@@ -96,10 +89,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (keepLoggedIn) {
         setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", accessToken);
       } else {
-        // Mở LoginPopup với dữ liệu vừa đăng ký
         setRegisterFormData({ name, email, password, confirmPassword: password });
         setOpenLoginWithData(true);
       }
@@ -107,7 +98,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch (error) {
       console.error("Lỗi đăng ký:", error);
-      // Mở LoginPopup với dữ liệu form đã nhập
       setRegisterFormData({ name, email, password, confirmPassword: password });
       setOpenLoginWithData(true);
       throw new Error("Có lỗi xảy ra khi đăng ký.");
@@ -116,7 +106,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logoutHandler = () => {
     setUser(null);
-    localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
   };
@@ -127,7 +116,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await fetchUser();
       if (userData) {
         setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
       } else {
         console.warn("checkAuth - fetchUser returned null, logging out");
         logoutHandler();

@@ -1,40 +1,87 @@
-import { useState } from "react";
-import ChangePasswordModal from "../ChangePasswordModal";
+"use client";
+import { useEffect, useState } from "react";
+import ChangePasswordModal from "../modals/ChangePasswordModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAddressData } from "@/hooks/useAddressData";
+import PhoneVerifyModal from "../modals/PhoneVerifyModal";
 
 export default function ProfileTab() {
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phone, setPhone] = useState("");
+  const { user } = useAuth();
   const [showChangePassword, setShowChangePassword] = useState(false);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [street, setStreet] = useState("");
+  const [district, setDistrict] = useState("");
+  const [ward, setWard] = useState("");
+  const [province, setProvince] = useState("");
+
+  const {
+    provinces,
+    districts,
+    wards,
+    setProvinceCode,
+    setDistrictCode,
+    setWardCode,
+  } = useAddressData();
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setPhone(user.phone ?? "");
+      const defaultAddress = user.addresses?.find((a) => a.is_default);
+      if (defaultAddress) {
+        setStreet(defaultAddress.street || "");
+        setDistrict(defaultAddress.district || "");
+        setWard(defaultAddress.ward || "");
+        setProvince(defaultAddress.province || "");
+
+        const selectedProvince = provinces.find(
+          (p) => p.name === defaultAddress.province
+        );
+        const selectedDistrict = districts.find(
+          (d) => d.name === defaultAddress.district
+        );
+        const selectedWard = wards.find((w) => w.name === defaultAddress.ward);
+        setProvinceCode(selectedProvince?.code ?? null);
+        setDistrictCode(selectedDistrict?.code ?? null);
+        setWardCode(selectedWard?.code ?? null);
+      }
+    }
+  }, [
+    user,
+    provinces,
+    districts,
+    wards,
+    setProvinceCode,
+    setDistrictCode,
+    setWardCode,
+  ]);
 
   return (
     <div>
       <h1 className="text-xl font-semibold mb-4">HỒ SƠ CÁ NHÂN</h1>
-
       <div className="col-span-9 text-gray-500">
         <div className="space-y-6">
-          {/* Họ và tên */}
-          <div>
-            <label className="block font-medium mb-2">Họ và tên</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập họ tên"
-            />
-          </div>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Họ và tên"
+          />
 
-          {/* Email */}
-          <div>
-            <label className="block font-medium mb-2">Email</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded text-gray-300
-              focus:outline-none focus:ring-2 focus:ring-blue-500
-              disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500
-              placeholder:text-gray-400"
-              disabled
-              placeholder="910.hanhuttan.pch@gmail.com"
-            />
-          </div>
+          <input
+            type="text"
+            value={email}
+            disabled
+            className="w-full p-2 border rounded text-gray-500 bg-gray-100 cursor-not-allowed"
+            placeholder="Email"
+          />
 
-          {/* Password */}
           <div>
             <label className="block font-medium mb-2">Password</label>
             <div className="flex justify-between gap-2">
@@ -48,76 +95,122 @@ export default function ProfileTab() {
             </div>
           </div>
 
-          {/* Số điện thoại */}
           <div>
             <label className="block font-medium mb-2">Số điện thoại</label>
             <div className="flex justify-between gap-2">
-              <span className="text-gray-600"></span>
-              <button className="text-black underline hover:text-gray-700 text-sm">
-                Thêm
+              <span className="text-gray-600">{phone}</span>
+              <button
+                className="text-black underline hover:text-gray-700 text-sm"
+                onClick={() => setShowPhoneModal(true)}
+              >
+                {phone ? "Sửa" : "Thêm"}
               </button>
             </div>
           </div>
 
-          {/* Địa chỉ */}
+          {showPhoneModal && (
+            <PhoneVerifyModal
+              onClose={() => setShowPhoneModal(false)}
+              initialPhone={phone}
+              onVerified={(newPhone) => {
+                setPhone(newPhone);
+              }}
+            />
+          )}
+
           <div>
             <label className="block font-medium mb-4">Địa chỉ</label>
             <div className="space-y-4">
-              {/* Tỉnh / Thành */}
               <div className="space-y-1">
-                <div className="text-sm text-gray-300 font-medium">
+                <label className="text-sm text-gray-700 font-medium">
                   Tỉnh / Thành
-                </div>
+                </label>
                 <select
-                  defaultValue=""
-                  className="w-full p-2 border rounded text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   id="province"
+                  value={province}
+                  onChange={(e) => {
+                    const selected = provinces.find(
+                      (p) => p.name === e.target.value
+                    );
+                    setProvince(e.target.value);
+                    setProvinceCode(selected?.code ?? null);
+                    setDistrict("");
+                    setWard("");
+                  }}
+                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option disabled value="">
-                    Chọn tỉnh / thành
-                  </option>
+                  <option value="">Chọn tỉnh / thành</option>
+                  {provinces.map((p) => (
+                    <option key={p.code} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Quận / Huyện */}
               <div className="space-y-1">
-                <div className="text-sm text-gray-400 font-medium">
+                <label className="text-sm text-gray-700 font-medium">
                   Quận / Huyện
-                </div>
+                </label>
                 <select
-                  defaultValue=""
-                  className="w-full p-2 border rounded text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   id="district"
+                  value={district}
+                  onChange={(e) => {
+                    const selected = districts.find(
+                      (d) => d.name === e.target.value
+                    );
+                    setDistrict(e.target.value);
+                    setDistrictCode(selected?.code ?? null);
+                    setWard("");
+                  }}
+                  disabled={!province}
+                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option disabled value="">
-                    Chọn quận / huyện
-                  </option>
+                  <option value="">Chọn quận / huyện</option>
+                  {districts.map((d) => (
+                    <option key={d.code} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Phường / Xã */}
               <div className="space-y-1">
-                <div className="text-sm text-gray-400 font-medium">
+                <label className="text-sm text-gray-700 font-medium">
                   Phường / Xã
-                </div>
+                </label>
                 <select
-                  defaultValue=""
-                  className="w-full p-2 border rounded text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   id="ward"
+                  value={ward}
+                  onChange={(e) => {
+                    const selected = wards.find(
+                      (w) => w.name === e.target.value
+                    );
+                    setWard(e.target.value);
+                    setWardCode(selected?.code ?? null);
+                  }}
+                  disabled={!district}
+                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option disabled value="">
-                    Chọn phường / xã
-                  </option>
+                  <option value="">Chọn phường / xã</option>
+                  {wards.map((w) => (
+                    <option key={w.code} value={w.name}>
+                      {w.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Địa chỉ chi tiết */}
               <div className="space-y-1">
-                <div className="text-sm text-gray-400 font-medium">Địa chỉ</div>
+                <label className="text-sm text-gray-700 font-medium">
+                  Địa chỉ
+                </label>
                 <input
                   type="text"
-                  className="w-full p-2 border rounded text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập địa chỉ"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập địa chỉ (số nhà, tên đường...)"
                 />
               </div>
             </div>

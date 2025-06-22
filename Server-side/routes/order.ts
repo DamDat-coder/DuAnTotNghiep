@@ -38,4 +38,4 @@ router.get('/user/:userId', verifyToken, verifyAdmin, getOrdersByUserId);
 // ADMIN: Cập nhật trạng thái đơn hàng
 router.patch('/:id', verifyToken, verifyAdmin, updateOrderStatus);
 
-export default router;
+module.exports = router;

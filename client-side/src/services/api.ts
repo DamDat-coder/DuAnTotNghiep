@@ -1,5 +1,3 @@
-import { isBrowser } from "../utils";
-
 export const API_BASE_URL = "http://localhost:3000";
 
 export async function refreshToken(): Promise<boolean> {
@@ -10,13 +8,11 @@ export async function refreshToken(): Promise<boolean> {
     });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
     }
 
     const data = await res.json();
 
     if (!data.accessToken) {
-      throw new Error("No access token in refresh response");
     }
 
     return true;
@@ -42,7 +38,6 @@ export async function fetchWithAuth<T>(
       message: errorData.message || "No error message",
       url,
     });
-    throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
   }
   return res.json();
 }

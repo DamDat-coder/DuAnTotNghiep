@@ -142,80 +142,6 @@ const createZaloPayUrl = async (orderId: string, amount: number): Promise<string
   return response.data.order_url;
 };
 
-// Tạo đơn hàng
-export const createOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
-    const { products: orderProducts, shippingAddress, paymentMethod }: Partial<IOrder> = req.body;
-
-    // Kiểm tra dữ liệu đầu vào
-    const validationError = validateOrderInput(orderProducts, shippingAddress, paymentMethod);
-    if (validationError) {
-      res.status(400).json({ message: validationError });
-      return;
-    }
-
-    // Kiểm tra userId
-    if (!req.userId) {
-      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
-      return;
-    }
-
-    // Tính tổng giá và kiểm tra sản phẩm
-    let totalPrice = 0;
-    for (const item of orderProducts!) {
-      const product = await Product.findById(item.productId);
-      if (!product) {
-        res.status(404).json({ message: `Sản phẩm với ID ${item.productId} không tồn tại` });
-        return;
-      }
-      totalPrice += product.price * (1 - (product.discountPercent || 0) / 100) * item.quantity;
-    }
-
-    // Tạo đơn hàng mới
-    const newOrder = new Order({
-      userId: req.userId,
-      products: orderProducts,
-      totalPrice,
-      shippingAddress,
-      paymentMethod,
-      status: 'pending',
-      paymentStatus: 'pending',
-    });
-
-    // Lưu đơn hàng để đảm bảo _id được tạo
-    const savedOrder = await newOrder.save();
-
-    // Xử lý thanh toán
-    let paymentUrl: string | undefined;
-    if (paymentMethod === 'cod') {
-      savedOrder.paymentStatus = 'pending';
-    } else if (paymentMethod === 'vnpay') {
-      paymentUrl = createVNPayUrl((savedOrder._id as Types.ObjectId).toString(), totalPrice, req.ip || '0.0.0.0');
-      savedOrder.paymentDetails = { paymentUrl, timestamp: new Date() };
-    } else if (paymentMethod === 'momo') {
-      paymentUrl = await createMoMoUrl((savedOrder._id as Types.ObjectId).toString(), totalPrice);
-      savedOrder.paymentDetails = { paymentUrl, timestamp: new Date() };
-    } else if (paymentMethod === 'zalopay') {
-      paymentUrl = await createZaloPayUrl((savedOrder._id as Types.ObjectId).toString(), totalPrice);
-      savedOrder.paymentDetails = { paymentUrl, timestamp: new Date() };
-    }
-
-    // Cập nhật thông tin thanh toán nếu có
-    if (paymentUrl) {
-      await savedOrder.save();
-    }
-
-    res.status(201).json({
-      message: 'Tạo đơn hàng thành công',
-      data: savedOrder,
-      paymentUrl, // Trả về URL thanh toán nếu có
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: (error as Error).message });
-  }
-};
-
 // Callback từ VNPay
 export const vnpayReturn = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -392,6 +318,162 @@ export const getUserOrders = async (req: AuthenticatedRequest, res: Response): P
       total,
       page: parseInt(page as string),
       limit: parseInt(limit as string),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+
+// ------- VIẾT BỔ SUNG XỬ LÝ API --------
+export const getAllOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    // Chỉ cho phép admin
+    // Giả sử middleware đã set userId, và role sẽ được populate ở middleware hoặc ở đây:
+    // Hoặc bạn kiểm tra lại với userId => lấy role
+    // (Nếu đã dùng middleware verifyAdmin thì chỉ cần gọi hàm này)
+    const admin = await import('../models/userModel').then(m => m.default.findById(req.userId));
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ admin mới được phép xem tất cả đơn hàng' });
+    }
+    const orders = await Order.find()
+      .populate('userId', 'name email')
+      .populate('products.productId', 'name price image');
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+// viết bổ sung xử lý order: Lấy tất cả đơn theo userId bất kỳ (chỉ admin)
+export const getOrdersByUserId = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const admin = await import('../models/userModel').then(m => m.default.findById(req.userId));
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ admin mới được phép xem đơn hàng của người dùng bất kỳ' });
+    }
+    const { userId } = req.params;
+    const orders = await Order.find({ userId })
+      .populate('userId', 'name email')
+      .populate('products.productId', 'name price image');
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+// viết bổ sung xử lý order: Cập nhật trạng thái đơn hàng (chỉ admin)
+export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const admin = await import('../models/userModel').then(m => m.default.findById(req.userId));
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ admin mới được cập nhật trạng thái đơn hàng' });
+    }
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowedStatuses = ['pending', 'processing', 'delivering', 'success', 'cancelled'];
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Trạng thái đơn hàng không hợp lệ' });
+    }
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+    }
+    order.status = status;
+    await order.save();
+    res.json({ message: 'Cập nhật trạng thái đơn hàng thành công', data: order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+// Tạo đơn hàng
+export const createOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { products: orderProducts, shippingAddress, paymentMethod }: Partial<IOrder> = req.body;
+
+    // Kiểm tra dữ liệu đầu vào
+    const validationError = validateOrderInput(orderProducts, shippingAddress, paymentMethod);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return;
+    }
+
+    // Kiểm tra userId
+    if (!req.userId) {
+      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+      return;
+    }
+
+    // Tính tổng giá và kiểm tra sản phẩm
+    let totalPrice = 0;
+    // --- KIỂM TRA & TRỪ TỒN KHO ---
+    for (const item of orderProducts!) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        res.status(404).json({ message: `Sản phẩm với ID ${item.productId} không tồn tại` });
+        return;
+      }
+      // viết bổ sung xử lý order: kiểm tra tồn kho
+      if ((product.stock ?? product.quantity ?? 0) < item.quantity) {
+        res.status(400).json({ message: `Sản phẩm ${product.name} không đủ số lượng trong kho` });
+        return;
+      }
+      // tính tổng giá như cũ...
+      totalPrice += product.price * (1 - (product.discountPercent || 0) / 100) * item.quantity;
+    }
+    // --- Trừ tồn kho (sau khi lưu order thành công) ---
+    // Thêm đoạn này SAU khi await newOrder.save():
+    for (const item of orderProducts!) {
+      const product = await Product.findById(item.productId);
+      if (product.stock !== undefined) {
+        product.stock -= item.quantity;
+      } else if (product.quantity !== undefined) {
+        product.quantity -= item.quantity;
+      }
+      await product.save();
+    }
+
+
+    // Tạo đơn hàng mới
+    const newOrder = new Order({
+      userId: req.userId,
+      products: orderProducts,
+      totalPrice,
+      shippingAddress,
+      paymentMethod,
+      status: 'pending',
+      paymentStatus: 'pending',
+    });
+
+    // Lưu đơn hàng để đảm bảo _id được tạo
+    const savedOrder = await newOrder.save();
+
+    // Xử lý thanh toán
+    let paymentUrl: string | undefined;
+    if (paymentMethod === 'cod') {
+      savedOrder.paymentStatus = 'pending';
+    } else if (paymentMethod === 'vnpay') {
+      paymentUrl = createVNPayUrl((savedOrder._id as Types.ObjectId).toString(), totalPrice, req.ip || '0.0.0.0');
+      savedOrder.paymentDetails = { paymentUrl, timestamp: new Date() };
+    } else if (paymentMethod === 'momo') {
+      paymentUrl = await createMoMoUrl((savedOrder._id as Types.ObjectId).toString(), totalPrice);
+      savedOrder.paymentDetails = { paymentUrl, timestamp: new Date() };
+    } else if (paymentMethod === 'zalopay') {
+      paymentUrl = await createZaloPayUrl((savedOrder._id as Types.ObjectId).toString(), totalPrice);
+      savedOrder.paymentDetails = { paymentUrl, timestamp: new Date() };
+    }
+
+    // Cập nhật thông tin thanh toán nếu có
+    if (paymentUrl) {
+      await savedOrder.save();
+    }
+
+    res.status(201).json({
+      message: 'Tạo đơn hàng thành công',
+      data: savedOrder,
+      paymentUrl, // Trả về URL thanh toán nếu có
     });
   } catch (error) {
     console.error(error);

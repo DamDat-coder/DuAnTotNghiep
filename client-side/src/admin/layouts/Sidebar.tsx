@@ -76,7 +76,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="h-full w-[285px] bg-black text-white flex flex-col sticky top-0 rounded-r-3xl">
+    <div className="fixed top-0 left-0 h-screen w-[285px] bg-black text-white flex flex-col rounded-r-3xl z-50">
       <div className="p-4 flex flex-col gap-12 w-full h-auto">
         <Link href="/admin/dashboard">
           <Image

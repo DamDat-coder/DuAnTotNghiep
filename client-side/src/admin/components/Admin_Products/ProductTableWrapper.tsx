@@ -111,18 +111,29 @@ export default function ProductTableWrapper({
               onDelete={handleDeleteProduct}
               onToggleStatus={handleToggleStatus}
             />
+            {totalPage > 1 && (
+              <>
+                <tr>
+                  <td colSpan={7} className="py-2">
+                    <div className="w-full h-[1.5px] bg-gray-50 rounded"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={7} className="pt-4 pb-2">
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPage={totalPage}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
       </div>
-      {totalPage > 1 && (
-        <div className="flex justify-center mt-8">
-          <Pagination
-            currentPage={currentPage}
-            totalPage={totalPage}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
     </div>
   );
 }

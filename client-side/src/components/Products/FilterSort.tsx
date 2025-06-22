@@ -7,9 +7,9 @@ interface FilterSortProps {
 
 const sortOptions: SortOption[] = [
   { value: "best-seller", label: "Phổ biến nhất" },
+  { value: "newest", label: "Mới nhất" },
   { value: "price-asc", label: "Giá: Thấp đến cao" },
   { value: "price-desc", label: "Giá: Cao đến thấp" },
-  { value: "newest", label: "Mới nhất" },
 ];
 
 export default function FilterSort({ selectedSort, setSelectedSort }: FilterSortProps) {

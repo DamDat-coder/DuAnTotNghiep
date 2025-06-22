@@ -112,13 +112,8 @@ export default function Orders({
 
   if (isLoading) {
     return (
-      <div className="sk-chase">
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
+      <div className="text-center py-10 text-gray-500 font-medium">
+        Đang tải đơn hàng...
       </div>
     );
   }
@@ -130,24 +125,26 @@ export default function Orders({
   return (
     <div>
       <Toaster position="top-right" />
-      <h1 className="text-xl font-semibold mb-4">ĐƠN HÀNG</h1>
+      <h1 className="text-xl font-semibold mb-6">ĐƠN HÀNG</h1>
 
-      <div className="flex flex-wrap gap-4 mb-8">
+      {/* Tabs */}
+      <div className="flex gap-6 border-b border-[#E0E0E0]">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
-            className={`px-4 py-2 rounded-lg border ${
-              selectedStatus === tab.value
-                ? "bg-black text-white"
-                : "bg-white text-black"
-            }`}
+            className={`pb-3 text-[16px] text-black transition-all duration-200 relative
+    ${
+      selectedStatus === tab.value
+        ? " font-bold"
+        : " font-normal hover:text-black"
+    }`}
             onClick={() => setSelectedStatus(tab.value)}
           >
             {tab.label}
           </button>
         ))}
       </div>
-
+      <div className="h-[1px] w-full bg-[#D1D1D1] mb-6" />
       {filteredOrders.length === 0 ? (
         <p className="text-center text-gray-500">Bạn chưa có đơn hàng nào.</p>
       ) : (

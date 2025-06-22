@@ -73,7 +73,7 @@ export default function ProfilePage() {
     }
 
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 laptop:hidden desktop:hidden">
         <button
           onClick={() => setActiveTab("main")}
           className="text-sm text-gray-500 mb-4 flex items-center gap-2"
@@ -93,11 +93,11 @@ export default function ProfilePage() {
 
   // Desktop layout
   return (
-    <div className="flex min-h-screen px-0 laptop:px-[278px] laptop:pt-[80px]">
-      <div className="w-1/4 border-r">
+    <div className=" hidden laptop:flex desktop:flex min-h-screen px-0 desktop:px-[278px] laptop:px-[278px] ">
+      <div className="w-1/4 border-r laptop:gap-col-1">
         <SettingsContent activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
-      <div className="w-3/4 p-6">{renderTabContent()}</div>
+      <div className="w-3/4 p-6 laptop:gap-col-3">{renderTabContent()}</div>
     </div>
   );
 }

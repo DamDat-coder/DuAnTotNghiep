@@ -1,4 +1,3 @@
-// src/components/OrderSummary.tsx
 interface OrderSummaryProps {
     subtotal: number;
     discount: number;

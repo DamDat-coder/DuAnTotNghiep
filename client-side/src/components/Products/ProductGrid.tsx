@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import FilterPopup from "./FilterPopup";
 import { IProduct } from "@/types/product";
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
+import WishlistButton from "../Core/Layout/WishlistButton/WishlistButton";
 
 interface ProductGridProps {
   products: IProduct[];
@@ -51,11 +52,11 @@ export default function ProductGrid({
   };
   const observerRef = useRef<HTMLDivElement | null>(null);
 
-  const PRODUCTS_PER_PAGE = 10;
+  const PRODUCTS_PER_PAGE = 8;
 
   useEffect(() => {
-    setDisplayedProducts(products.slice(0, 10));
-    setHasMore(products.length > 10);
+    setDisplayedProducts(products.slice(0, 8));
+    setHasMore(products.length > 8);
   }, [products]);
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function ProductGrid({
           loadMoreProducts();
         }
       },
-      { rootMargin: "600px" }
+      { rootMargin: "100px" }
     );
 
     const currentRef = observerRef.current;
@@ -130,12 +131,11 @@ export default function ProductGrid({
           >
             -{discountPercent}%
           </div>
-          <div className="absolute top-[0.5rem] right-[0.5rem] w-8 h-8 rounded-full bg-[#D9D9D9] flex justify-center items-center">
-            <Image
-              src="/product/product_like.svg"
-              width={16}
-              height={16}
-              alt="option"
+          <div className="absolute top-[0.5rem] right-[0.5rem] w-8 h-8 rounded-full flex justify-center items-center cursor-pointer bg-[#D9D9D9]">
+            <WishlistButton
+              product={product}
+              variant="white"
+              borderColor="white"
             />
           </div>
           <div className="content flex flex-col py-4 gap-3">

@@ -1,23 +1,24 @@
-// OrderControlBar.tsx
 "use client";
 import { useState } from "react";
 import Image from "next/image";
 
-const statusOptions = [
-  { value: "all", label: "Tất cả" },
-  { value: "pending", label: "Chưa giải quyết" },
-  { value: "success", label: "Hoàn thành" },
-  { value: "cancelled", label: "Đã huỷ" },
-  // nếu có thêm các status khác thì thêm ở đây
-];
+interface StatusOption {
+  key: string;
+  label: string;
+}
 
 export default function OrderControlBar({
   onFilterChange,
   onSearchChange,
+  STATUS, // truyền từ ngoài vào (OrderTableWrapper)
 }: {
   onFilterChange: (val: string) => void;
   onSearchChange: (val: string) => void;
+  STATUS: StatusOption[];
 }) {
+  // Tạo options động từ STATUS prop
+  const statusOptions = [{ value: "all", label: "Tất cả" }, ...STATUS.map((s) => ({ value: s.key, label: s.label }))];
+
   const [selected, setSelected] = useState(statusOptions[0]);
   const [search, setSearch] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);

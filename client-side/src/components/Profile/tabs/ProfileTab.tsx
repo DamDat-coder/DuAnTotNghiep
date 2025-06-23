@@ -4,6 +4,7 @@ import ChangePasswordModal from "../modals/ChangePasswordModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAddressData } from "@/hooks/useAddressData";
 import PhoneVerifyModal from "../modals/PhoneVerifyModal";
+import { updateUser } from "@/services/userApi";
 
 export default function ProfileTab() {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -60,6 +61,29 @@ export default function ProfileTab() {
     setDistrictCode,
     setWardCode,
   ]);
+
+  const handleSave = async () => {
+    const updated = await updateUser({
+      name,
+      phone,
+      addresses: [
+        {
+          street,
+          ward,
+          district,
+          province,
+          is_default: true,
+        },
+      ],
+    });
+
+    if (updated) {
+      alert("Cập nhật thành công!");
+      // Có thể cập nhật lại context user tại đây nếu cần
+    } else {
+      alert("Có lỗi xảy ra khi cập nhật.");
+    }
+  };
 
   return (
     <div>
@@ -217,7 +241,10 @@ export default function ProfileTab() {
           </div>
 
           <div className="text-right">
-            <button className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors">
+            <button
+              className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
+              onClick={handleSave}
+            >
               Lưu thay đổi
             </button>
           </div>

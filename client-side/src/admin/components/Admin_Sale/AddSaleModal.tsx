@@ -1,14 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
+import { createCoupon } from "@/services/couponApi";
 
 interface AddSaleModalProps {
   onClose: () => void;
 }
 
 export default function AddSaleModal({ onClose }: AddSaleModalProps) {
-  const [form, setForm] = useState({
+  const startDateRef = useRef<HTMLInputElement | null>(null);
+  const endDateRef = useRef<HTMLInputElement | null>(null);
+
+  const [form, setForm] = useState<{
+    code: string;
+    category: string;
+    type: string;
+    value: string;
+    minOrder: string;
+    maxDiscount: string;
+    startDate: string;
+    endDate: string;
+    usage: string;
+    status: "active" | "inactive";
+    description: string;
+  }>({
     code: "",
     category: "",
     type: "%",
@@ -28,6 +44,18 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
     >
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createCoupon(form);
+      alert("Tạo mã giảm giá thành công!");
+      onClose(); // Đóng modal sau khi thêm thành công
+    } catch (err) {
+      alert("Đã xảy ra lỗi khi tạo mã giảm giá.");
+      console.error(err);
+    }
   };
 
   return (
@@ -53,7 +81,7 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
         <div className="w-full h-px bg-[#E7E7E7]" />
         {/* Form */}
         <div className="pl-6 pr-6">
-          <form className="text-sm">
+          <form className="text-sm" onSubmit={handleSubmit}>
             <div className="mt-3 mb-8">
               <label className="block font-bold mb-4">
                 Mã khuyến mãi<span className="text-red-500 ml-1">*</span>
@@ -158,19 +186,25 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   Ngày bắt đầu<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
+                  ref={startDateRef}
                   type="date"
                   name="startDate"
                   value={form.startDate}
                   onChange={handleChange}
-                  className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px] appearance-none"
+                  className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
                 />
-                <Image
-                  src="/admin_sale/date.svg"
-                  width={18}
-                  height={18}
-                  alt="calendar"
-                  className="absolute right-3 top-[calc(50%+18px)] transform -translate-y-1/2 pointer-events-none"
-                />
+                <button
+                  type="button"
+                  onClick={() => startDateRef.current?.showPicker?.()}
+                  className="absolute right-3 top-[calc(50%+18px)] transform -translate-y-1/2"
+                >
+                  <Image
+                    src="/admin_sale/date.svg"
+                    width={18}
+                    height={18}
+                    alt="calendar"
+                  />
+                </button>
               </div>
 
               {/* Ngày kết thúc */}
@@ -179,19 +213,25 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   Ngày kết thúc<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
+                  ref={endDateRef}
                   type="date"
                   name="endDate"
                   value={form.endDate}
                   onChange={handleChange}
-                  className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px] appearance-none"
+                  className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
                 />
-                <Image
-                  src="/admin_sale/date.svg"
-                  width={18}
-                  height={18}
-                  alt="calendar"
-                  className="absolute right-3 top-[calc(50%+18px)] transform -translate-y-1/2 pointer-events-none"
-                />
+                <button
+                  type="button"
+                  onClick={() => endDateRef.current?.showPicker?.()}
+                  className="absolute right-3 top-[calc(50%+18px)] transform -translate-y-1/2"
+                >
+                  <Image
+                    src="/admin_sale/date.svg"
+                    width={18}
+                    height={18}
+                    alt="calendar"
+                  />
+                </button>
               </div>
             </div>
 

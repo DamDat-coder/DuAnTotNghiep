@@ -21,7 +21,7 @@ export const dummyComments: Comment[] = [
     id: 2,
     author: "Trần Thị Hà",
     content:
-      "Quảng cáo rác, link vô nghĩa, mong admin xử lý nhanh nhé! http://spamlink",
+      "Quảng cáo rác, link vô nghĩa, mong admin xử lý nhanh nhé! http://spamlink/aaaaaaaaaaaaaaaaaaaaaaaaaaaaacascsacscasccascdacasd",
     product: "Túi xách nữ thời trang",
     time: "19:23 05-06-2025",
     status: "spam",

@@ -115,7 +115,7 @@ export default function ProductTableWrapper({
               <>
                 <tr>
                   <td colSpan={7} className="py-2">
-                    <div className="w-full h-[1.5px] bg-gray-50 rounded"></div>
+                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
                   </td>
                 </tr>
                 <tr>

@@ -4,7 +4,7 @@ import { HiOutlineDotsHorizontal } from "react-icons/hi";
 interface Category {
   id: string;
   name: string;
-  parentId?: string | null;
+  parentid?: string | null;
   description?: string;
 }
 
@@ -38,9 +38,9 @@ export default function CategoryBody({
           </td>
           {/* Danh mục cha */}
           <td className="h-[64px] align-middle px-4 py-0 min-w-[110px] text-gray-700">
-            {cat.parentId && idToNameMap[cat.parentId]
-              ? idToNameMap[cat.parentId]
-              : cat.parentId
+            {cat.parentid && idToNameMap[cat.parentid]
+              ? idToNameMap[cat.parentid]
+              : cat.parentid
               ? "Không xác định"
               : "--"}
           </td>

@@ -59,7 +59,7 @@ const filteredUsers = users.filter((user) => {
               </th>
             </tr>
           </thead>
-          <tbody className="font-semibold">{children(filteredUsers)}</tbody>
+          <tbody>{children(filteredUsers)}</tbody>
         </table>
       </div>
     </div>

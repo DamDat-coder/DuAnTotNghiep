@@ -2,6 +2,12 @@ import { IUser } from "../types/auth";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
 
+interface UpdateUserData {
+  name?: string;
+  phone?: string;
+  addresses?: IUser["addresses"];
+}
+
 // Hàm đăng nhập
 export async function login(
   email: string,
@@ -24,6 +30,7 @@ export async function login(
 
     const data = await res.json();
     console.log("Login response:", data);
+    console.log("Access Token:", data.accessToken);
     const user: IUser = {
       id: data.user._id,
       email: data.user.email,
@@ -142,6 +149,25 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
       console.warn("User does not have admin privileges");
       return null;
     }
+    return null;
+  }
+}
+
+export async function updateUser(data: UpdateUserData): Promise<IUser | null> {
+  try {
+    const res = await fetchWithAuth<{ user: IUser }>(
+      `${API_BASE_URL}/users/update`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.user;
+  } catch (error: any) {
+    console.error("Cập nhật user thất bại:", error.message);
     return null;
   }
 }

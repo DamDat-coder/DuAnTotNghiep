@@ -155,12 +155,14 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
 
 export async function updateUser(data: UpdateUserData): Promise<IUser | null> {
   try {
+    const token = localStorage.getItem("accessToken");
     const res = await fetchWithAuth<{ user: IUser }>(
       `${API_BASE_URL}/users/update`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       }

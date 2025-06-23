@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserOrders = exports.getOrderById = exports.zalopayCallback = exports.momoReturn = exports.vnpayReturn = exports.createOrder = exports.validateOrderInput = void 0;
+exports.updateOrderStatus = exports.getOrdersByUserId = exports.getAllOrders = exports.getOrderById = exports.getUserOrders = exports.zalopayCallback = exports.momoReturn = exports.vnpayReturn = exports.createOrder = exports.validateOrderInput = void 0;
 const orderModel_1 = __importDefault(require("../models/orderModel"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const axios_1 = __importDefault(require("axios"));
@@ -311,51 +311,19 @@ const zalopayCallback = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.zalopayCallback = zalopayCallback;
-// Lấy chi tiết đơn hàng theo ID
-const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        // Kiểm tra userId
-        if (!req.userId) {
-            res.status(401).json({ message: 'Người dùng chưa được xác thực' });
-            return;
-        }
-        const order = yield orderModel_1.default.findById(req.params.id)
-            .populate('userId', 'name email')
-            .populate('products.productId', 'name price image');
-        if (!order) {
-            res.status(404).json({ message: 'Đơn hàng không tồn tại' });
-            return;
-        }
-        // Kiểm tra quyền truy cập (chỉ người dùng sở hữu đơn hàng được xem)
-        if (order.userId.toString() !== req.userId) {
-            res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này' });
-            return;
-        }
-        res.json(order);
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
-    }
-});
-exports.getOrderById = getOrderById;
-// Lấy danh sách đơn hàng của người dùng
+// Lấy danh sách đơn hàng của user đang đăng nhập
 const getUserOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Kiểm tra userId
-        if (!req.userId) {
-            res.status(401).json({ message: 'Người dùng chưa được xác thực' });
-            return;
-        }
+        if (!req.userId)
+            return res.status(401).json({ message: 'Người dùng chưa được xác thực' });
         const { page = '1', limit = '10', paymentMethod } = req.query;
         const options = {
             limit: parseInt(limit),
             skip: (parseInt(page) - 1) * parseInt(limit),
         };
         const query = { userId: req.userId };
-        if (paymentMethod) {
+        if (paymentMethod)
             query.paymentMethod = paymentMethod;
-        }
         const total = yield orderModel_1.default.countDocuments(query);
         const userOrders = yield orderModel_1.default.find(query, null, options)
             .populate('products.productId', 'name price image');
@@ -372,3 +340,107 @@ const getUserOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.getUserOrders = getUserOrders;
+// Lấy chi tiết đơn hàng theo ID (user chỉ được xem đơn của mình)
+const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.userId)
+            return res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+        const order = yield orderModel_1.default.findById(req.params.id)
+            .populate('userId', 'name email')
+            .populate('products.productId', 'name price image');
+        if (!order)
+            return res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+        if (order.userId.toString() !== req.userId)
+            return res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này' });
+        res.json(order);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+});
+exports.getOrderById = getOrderById;
+// LẤY TẤT CẢ ĐƠN HÀNG (ADMIN)
+const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Phân quyền admin (bắt buộc nếu production)
+        // if (req.userRole !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được phép xem tất cả đơn hàng' });
+        const { page = '1', limit = '20', status } = req.query;
+        const options = {
+            limit: parseInt(limit),
+            skip: (parseInt(page) - 1) * parseInt(limit),
+        };
+        const query = {};
+        if (status)
+            query.status = status;
+        const total = yield orderModel_1.default.countDocuments(query);
+        const orders = yield orderModel_1.default.find(query, null, options)
+            .populate('userId', 'name email')
+            .populate('products.productId', 'name price image');
+        res.json({
+            data: orders,
+            total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+        });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+});
+exports.getAllOrders = getAllOrders;
+// Lấy tất cả đơn hàng theo userId bất kỳ (chỉ admin)
+const getOrdersByUserId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Phân quyền admin (bắt buộc nếu production)
+        // if (req.userRole !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được phép xem đơn hàng của người dùng bất kỳ' });
+        const { userId } = req.params;
+        const { page = '1', limit = '10', paymentMethod } = req.query;
+        const options = {
+            limit: parseInt(limit),
+            skip: (parseInt(page) - 1) * parseInt(limit),
+        };
+        const query = { userId };
+        if (paymentMethod)
+            query.paymentMethod = paymentMethod;
+        const total = yield orderModel_1.default.countDocuments(query);
+        const orders = yield orderModel_1.default.find(query, null, options)
+            .populate('userId', 'name email')
+            .populate('products.productId', 'name price image');
+        res.json({
+            data: orders,
+            total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+        });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+});
+exports.getOrdersByUserId = getOrdersByUserId;
+// Cập nhật trạng thái đơn hàng (chỉ admin)
+const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Phân quyền admin (bắt buộc nếu production)
+        // if (req.userRole !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được cập nhật trạng thái đơn hàng' });
+        const { id } = req.params;
+        const { status } = req.body;
+        const allowedStatuses = ['pending', 'processing', 'delivering', 'success', 'cancelled'];
+        if (!status || !allowedStatuses.includes(status))
+            return res.status(400).json({ message: 'Trạng thái đơn hàng không hợp lệ' });
+        const order = yield orderModel_1.default.findById(id);
+        if (!order)
+            return res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+        order.status = status;
+        yield order.save();
+        res.json({ message: 'Cập nhật trạng thái đơn hàng thành công', data: order });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+});
+exports.updateOrderStatus = updateOrderStatus;

@@ -1,6 +1,6 @@
 import { API_BASE_URL, fetchWithAuth } from "./api";
 
-// Tạo đơn hàng
+// 1. Tạo đơn hàng
 export async function createOrder(order: {
   products: { productId: string; quantity: number }[];
   shippingAddress: string;
@@ -18,7 +18,7 @@ export async function createOrder(order: {
   }
 }
 
-// Lấy tất cả đơn hàng (cho admin)
+// 2. Lấy tất cả đơn hàng (cho admin) với phân trang, lọc trạng thái
 export async function fetchAllOrders(
   query: {
     page?: number;
@@ -32,7 +32,11 @@ export async function fetchAllOrders(
     if (query.limit) queryParams.append("limit", query.limit.toString());
     if (query.status) queryParams.append("status", query.status);
 
-    const url = `${API_BASE_URL}/order`;
+    const url =
+      queryParams.toString().length > 0
+        ? `${API_BASE_URL}/order?${queryParams.toString()}`
+        : `${API_BASE_URL}/order`;
+
     const response = await fetchWithAuth<{
       data: any[];
       total: number;
@@ -48,9 +52,12 @@ export async function fetchAllOrders(
   }
 }
 
-// Lấy chi tiết đơn hàng theo ID
+// 3. Lấy chi tiết đơn hàng theo ID (cho cả user lẫn admin)
 export async function fetchOrderById(id: string): Promise<any> {
   try {
+    // Nếu chỉ admin mới được xem tất cả, đổi endpoint về `/order/:id`
+    // Nếu user thì `/order/user/orders/:id`
+    // Dưới đây là cho user, nếu cần tách admin thì viết thêm hàm nữa
     const response = await fetchWithAuth<any>(`${API_BASE_URL}/order/user/orders/${id}`, {
       cache: "no-store",
     });
@@ -61,13 +68,12 @@ export async function fetchOrderById(id: string): Promise<any> {
   }
 }
 
-// Cập nhật trạng thái đơn hàng
+// 4. Cập nhật trạng thái đơn hàng (admin)
 export async function updateOrderStatus(
   orderId: string,
   status: string
 ): Promise<void> {
   try {
-    console.log(`Updating order ${orderId} with status ${status}`);
     await fetchWithAuth(`${API_BASE_URL}/order/${orderId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -75,6 +81,20 @@ export async function updateOrderStatus(
     });
   } catch (error) {
     console.error("Error updating order status:", error);
+    throw error;
+  }
+}
+
+// 5. (Tùy chọn) Lấy danh sách đơn hàng của user đang đăng nhập
+export async function fetchMyOrders(): Promise<{ data: any[] }> {
+  try {
+    const response = await fetchWithAuth<{ data: any[] }>(
+      `${API_BASE_URL}/order/user/orders`,
+      { cache: "no-store" }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching my orders:", error);
     throw error;
   }
 }

@@ -4,8 +4,8 @@ import { HiOutlineDotsHorizontal } from "react-icons/hi";
 interface Category {
   id: string;
   name: string;
-  parentId?: string | null;
-  description?: string; // Bổ sung mô tả nếu muốn tương lai
+  parentid?: string | null;
+  description?: string;
 }
 
 interface CategoryBodyProps {
@@ -24,7 +24,7 @@ export default function CategoryBody({
       {categories.map((cat) => (
         <tr
           key={cat.id}
-          className="border-b hover:bg-[#F9FAFB] transition-colors duration-150 group h-[64px] align-middle"
+          className="group border-b hover:bg-[#F9FAFB] transition-colors duration-150 h-[64px] align-middle"
         >
           {/* Tên danh mục */}
           <td className="h-[64px] align-middle px-4 py-0 min-w-[180px] max-w-[320px]">
@@ -38,20 +38,21 @@ export default function CategoryBody({
           </td>
           {/* Danh mục cha */}
           <td className="h-[64px] align-middle px-4 py-0 min-w-[110px] text-gray-700">
-            {cat.parentId && idToNameMap[cat.parentId]
-              ? idToNameMap[cat.parentId]
-              : cat.parentId
+            {cat.parentid && idToNameMap[cat.parentid]
+              ? idToNameMap[cat.parentid]
+              : cat.parentid
               ? "Không xác định"
               : "--"}
           </td>
-          {/* Ba chấm (hiện nút sửa) */}
+          {/* Nút ba chấm (sửa) */}
           <td className="h-[64px] align-middle px-4 py-0 min-w-[50px] text-right">
             <button
               onClick={() => onEdit?.(cat)}
-              className="p-2 rounded-full hover:bg-gray-100"
+              className="p-2 rounded-full hover:bg-blue-100 transition"
               title="Sửa"
+              style={{ minWidth: 36, minHeight: 36 }}
             >
-              <HiOutlineDotsHorizontal size={20} />
+              <HiOutlineDotsHorizontal size={24} />
             </button>
           </td>
         </tr>

@@ -6,7 +6,7 @@ export interface Category {
   id: string;
   name: string;
   parentId?: string | null;
-  // description?: string; // Nếu cần hiển thị mô tả thì bổ sung
+  description?: string;
 }
 
 interface CategoryTableProps {

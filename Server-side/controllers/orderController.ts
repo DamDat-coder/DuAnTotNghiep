@@ -331,30 +331,42 @@ export const zalopayCallback = async (req: Request, res: Response): Promise<void
   }
 };
 
-// Lấy chi tiết đơn hàng theo ID
+// Lấy danh sách đơn hàng của user đang đăng nhập
+export const getUserOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.userId) return res.status(401).json({ message: 'Người dùng chưa được xác thực' });
+    const { page = '1', limit = '10', paymentMethod } = req.query;
+    const options = {
+      limit: parseInt(limit as string),
+      skip: (parseInt(page as string) - 1) * parseInt(limit as string),
+    };
+    const query: any = { userId: req.userId };
+    if (paymentMethod) query.paymentMethod = paymentMethod;
+    const total = await Order.countDocuments(query);
+    const userOrders = await Order.find(query, null, options)
+      .populate('products.productId', 'name price image');
+    res.json({
+      data: userOrders,
+      total,
+      page: parseInt(page as string),
+      limit: parseInt(limit as string),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// Lấy chi tiết đơn hàng theo ID (user chỉ được xem đơn của mình)
 export const getOrderById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    // Kiểm tra userId
-    if (!req.userId) {
-      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
-      return;
-    }
-
+    if (!req.userId) return res.status(401).json({ message: 'Người dùng chưa được xác thực' });
     const order = await Order.findById(req.params.id)
       .populate('userId', 'name email')
       .populate('products.productId', 'name price image');
-
-    if (!order) {
-      res.status(404).json({ message: 'Đơn hàng không tồn tại' });
-      return;
-    }
-
-    // Kiểm tra quyền truy cập (chỉ người dùng sở hữu đơn hàng được xem)
-    if (order.userId.toString() !== req.userId) {
-      res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này' });
-      return;
-    }
-
+    if (!order) return res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+    if (order.userId.toString() !== req.userId)
+      return res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này' });
     res.json(order);
   } catch (error) {
     console.error(error);
@@ -362,37 +374,78 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response): Pr
   }
 };
 
-// Lấy danh sách đơn hàng của người dùng
-export const getUserOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+// LẤY TẤT CẢ ĐƠN HÀNG (ADMIN)
+export const getAllOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    // Kiểm tra userId
-    if (!req.userId) {
-      res.status(401).json({ message: 'Người dùng chưa được xác thực' });
-      return;
-    }
+    // Phân quyền admin (bắt buộc nếu production)
+    // if (req.userRole !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được phép xem tất cả đơn hàng' });
+    const { page = '1', limit = '20', status } = req.query;
+    const options = {
+      limit: parseInt(limit as string),
+      skip: (parseInt(page as string) - 1) * parseInt(limit as string),
+    };
+    const query: any = {};
+    if (status) query.status = status;
+    const total = await Order.countDocuments(query);
+    const orders = await Order.find(query, null, options)
+      .populate('userId', 'name email')
+      .populate('products.productId', 'name price image');
+    res.json({
+      data: orders,
+      total,
+      page: parseInt(page as string),
+      limit: parseInt(limit as string),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
 
+// Lấy tất cả đơn hàng theo userId bất kỳ (chỉ admin)
+export const getOrdersByUserId = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    // Phân quyền admin (bắt buộc nếu production)
+    // if (req.userRole !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được phép xem đơn hàng của người dùng bất kỳ' });
+    const { userId } = req.params;
     const { page = '1', limit = '10', paymentMethod } = req.query;
     const options = {
       limit: parseInt(limit as string),
       skip: (parseInt(page as string) - 1) * parseInt(limit as string),
     };
-
-    const query: any = { userId: req.userId };
-    if (paymentMethod) {
-      query.paymentMethod = paymentMethod;
-    }
-
+    const query: any = { userId };
+    if (paymentMethod) query.paymentMethod = paymentMethod;
     const total = await Order.countDocuments(query);
-    const userOrders = await Order.find(query, null, options)
+    const orders = await Order.find(query, null, options)
+      .populate('userId', 'name email')
       .populate('products.productId', 'name price image');
-
-
     res.json({
-      data: userOrders,
+      data: orders,
       total,
       page: parseInt(page as string),
       limit: parseInt(limit as string),
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// Cập nhật trạng thái đơn hàng (chỉ admin)
+export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    // Phân quyền admin (bắt buộc nếu production)
+    // if (req.userRole !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được cập nhật trạng thái đơn hàng' });
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowedStatuses = ['pending', 'processing', 'delivering', 'success', 'cancelled'];
+    if (!status || !allowedStatuses.includes(status))
+      return res.status(400).json({ message: 'Trạng thái đơn hàng không hợp lệ' });
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ message: 'Đơn hàng không tồn tại' });
+    order.status = status;
+    await order.save();
+    res.json({ message: 'Cập nhật trạng thái đơn hàng thành công', data: order });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: (error as Error).message });

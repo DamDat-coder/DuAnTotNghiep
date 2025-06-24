@@ -198,7 +198,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     }
 
     const accessToken = jwt.sign({ id: decoded.id }, jwtSecret, {
-      expiresIn: "1h",
+      expiresIn: "24h",
     });
     res.json({ accessToken, message: "Làm mới token thành công" });
   } catch (error: any) {

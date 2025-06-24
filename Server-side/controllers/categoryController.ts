@@ -5,7 +5,6 @@ import newsModel from "../models/newsModel";
 import productModel from "../models/productModel";
 import cloudinary from "../config/cloudinary";
 
-// 1. Lấy tất cả danh mục dạng phẳng (all, không phân cấp)
 export const getAllCategoriesFlat = async (req: Request, res: Response) => {
   try {
     const categories = await categoryModel.find({}).sort({ createdAt: -1 }).lean();
@@ -18,7 +17,6 @@ export const getAllCategoriesFlat = async (req: Request, res: Response) => {
   }
 };
 
-// 2. Lấy tất cả danh mục cha (parentId = null)
 export const getParentCategories = async (req: Request, res: Response) => {
   try {
     const parents = await categoryModel.find({ parentId: null }).sort({ createdAt: -1 }).lean();
@@ -31,7 +29,6 @@ export const getParentCategories = async (req: Request, res: Response) => {
   }
 };
 
-// 3. Lấy tất cả danh mục con theo parentId (query params: /categories/children/:parentId)
 export const getChildCategories = async (req: Request, res: Response) => {
   try {
     const { parentId } = req.params;
@@ -48,7 +45,6 @@ export const getChildCategories = async (req: Request, res: Response) => {
   }
 };
 
-// 4. Lấy danh mục theo ID
 export const getCategoryById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -70,7 +66,6 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
   }
 };
 
-// 5. Lấy tất cả danh mục cha HOẶC lấy con theo ?parentId=xxx (cũ, dùng cho hợp nhất 1 API)
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
     const parentId = req.query.parentId as string | null;
@@ -96,7 +91,6 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// --- Giữ nguyên các API create, update, delete phía dưới ---
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, slug, parentId, image } = req.body;
@@ -249,7 +243,7 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// --- Hàm phụ ---
+
 const checkCycle = async (categoryId: string, parentId: string): Promise<boolean> => {
   const visited = new Set<string>();
   let currentId: string | undefined | null = parentId;

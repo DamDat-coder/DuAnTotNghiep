@@ -22,4 +22,3 @@ router.get('/:id', couponController_1.getCouponById);
 router.post('/', verifyToken_1.default, verifyAdmin_1.default, couponController_1.createCoupon);
 router.put('/:id', verifyToken_1.default, verifyAdmin_1.default, couponController_1.updateCoupon);
 router.delete('/:id', verifyToken_1.default, verifyAdmin_1.default, couponController_1.deleteCoupon);
-module.exports = router;

@@ -43,7 +43,7 @@ export default function TableSaleWrapper({
             </tr>
           </thead>
 
-          <tbody className="font-semibold">{children}</tbody>
+          <tbody>{children}</tbody>
         </table>
       </div>
     </div>

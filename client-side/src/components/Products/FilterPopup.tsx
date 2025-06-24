@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation"; // Thêm useSearchParams
 import FilterSort from "./FilterSort";
 import FilterCategory from "./FilterCategory";
 import FilterPrice from "./FilterPrice";
@@ -13,28 +14,46 @@ export default function FilterPopup({
   setIsOpen,
   onApplyFilters,
 }: FilterPopupProps) {
+  const searchParams = useSearchParams(); // Lấy query string
   const [selectedSort, setSelectedSort] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
+  // Khởi tạo state từ query string khi popup mở
   useEffect(() => {
     if (isOpen) {
+      // Đọc query string
+      const sort = searchParams.get("sort");
+      const id_cate = searchParams.get("id_cate");
+      const priceRange = searchParams.get("priceRange");
+      const color = searchParams.get("color");
+      const size = searchParams.get("size");
+
+      // Cập nhật state
+      setSelectedSort(sort || null);
+      setSelectedCategory(id_cate || null);
+      setSelectedPrice(priceRange || null);
+      setSelectedColor(color || null);
+      setSelectedSize(size || null);
+
+      // Ngăn scroll khi popup mở
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
     }
+
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isOpen]);
+  }, [isOpen, searchParams]); // Thêm searchParams vào dependency
 
   const handleApply = () => {
-    // Gửi tất cả bộ lọc, bao gồm id_cate hiện tại
+    // Gửi tất cả bộ lọc
     onApplyFilters({
       sort: selectedSort || undefined,
-      id_cate: selectedCategory || undefined, // Giữ id_cate hiện tại
+      id_cate: selectedCategory || undefined,
       priceRange: selectedPrice || undefined,
       color: selectedColor || undefined,
       size: selectedSize || undefined,
@@ -49,7 +68,7 @@ export default function FilterPopup({
     setSelectedColor(null);
     setSelectedSize(null);
     if (onApplyFilters) {
-      onApplyFilters({});
+      onApplyFilters({}); // Xóa tất cả bộ lọc
     }
   };
 
@@ -73,7 +92,7 @@ export default function FilterPopup({
             <h2 className="text-base">Lọc sản phẩm</h2>
             <button
               type="button"
-              className="text-black hover:text-gray-800 focus:ring-2 focus:ring-black focus:outline-none"
+              className="text-black hover:text-gray-800"
               onClick={() => setIsOpen(false)}
             >
               <svg
@@ -119,13 +138,13 @@ export default function FilterPopup({
               <div className="flex p-4 justify-center gap-5">
                 <button
                   onClick={clearFilters}
-                  className="mt-2.5 w-[40%] py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-black border-2"
+                  className="mt-2.5 w-[40%] py-2 text-sm font-medium text-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-black border"
                 >
                   Xóa
                 </button>
                 <button
                   onClick={handleApply}
-                  className="mt-2.5 w-[40%] py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black border-2 border-white"
+                  className="mt-2.5 w-[40%] py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-black border-2 border-white"
                 >
                   Lọc sản phẩm
                 </button>

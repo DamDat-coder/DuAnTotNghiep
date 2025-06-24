@@ -1,3 +1,11 @@
+export interface Address {
+  street: string;
+  ward: string;
+  district: string;
+  province: string;
+  is_default: boolean;
+}
+
 export interface IUser {
   id: string;
   email: string;
@@ -5,13 +13,7 @@ export interface IUser {
   phone: string | null;
   role: "user" | "admin";
   active: boolean;
-  addresses?: {
-    street: string;
-    ward: string;
-    district: string;
-    province: string;
-    is_default: boolean;
-  }[];
+  addresses?: Address[];
 }
 
 export interface AuthContextType {

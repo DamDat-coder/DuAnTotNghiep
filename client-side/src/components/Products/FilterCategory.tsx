@@ -1,18 +1,13 @@
-"use client";
+"use client"
 
 import { useEffect, useState } from "react";
 import { CategoryOption } from "@/types/filter";
-import { API_BASE_URL } from "@/services/api";
+import { fetchParentCategories } from "@/services/categoryApi";
+import { ICategory } from "@/types/category";
 
 interface FilterCategoryProps {
   selectedCategory: string | null;
   setSelectedCategory: (value: string | null) => void;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-  parentid: string | null;
 }
 
 export default function FilterCategory({
@@ -24,36 +19,33 @@ export default function FilterCategory({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCategories() {
+    async function loadCategories() {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/categories`, {
-          cache: "no-store",
-        });
-        if (!res.ok) {
-          throw new Error("Không thể lấy danh mục");
-        }
-        const data = await res.json();
-        // Lọc danh mục có parentid === null và ánh xạ thành CategoryOption
-        const rootCategories: CategoryOption[] = data.data
-          .filter((cat: Category) => cat.parentid === null)
-          .map((cat: Category) => ({
-            value: cat._id,
-            label: cat.name,
-          }));
-        // Sắp xếp theo tên (tùy chọn)
-        rootCategories.sort((a, b) => a.label.localeCompare(b.label));
-        setCategories(rootCategories);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Lỗi khi tải danh mục"
+        const rootCategories = await fetchParentCategories();
+        console.log("Root categories:", rootCategories);
+        // Lọc bỏ danh mục "Bài viết"
+        const filteredCategories = rootCategories.filter(
+          (cat: ICategory) =>
+            cat.id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
         );
+        // Map sang CategoryOption
+        const categoryOptions: CategoryOption[] = filteredCategories.map(
+          (cat: ICategory) => ({
+            value: cat.id,
+            label: cat.name,
+          })
+        );
+        console.log("Filtered category options:", categoryOptions);
+        setCategories(categoryOptions);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
+        console.error("Error loading categories:", err);
       } finally {
         setLoading(false);
       }
     }
-
-    fetchCategories();
+    loadCategories();
   }, []);
 
   if (loading) {
@@ -70,6 +62,15 @@ export default function FilterCategory({
       <div className="flex flex-col gap-4 border-b pb-4 mt-4">
         <h3 className="text-base font-bold">Danh mục</h3>
         <p className="text-sm text-red-500">Lỗi: {error}</p>
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div className="flex flex-col gap-4 border-b pb-4 mt-4">
+        <h3 className="text-base font-bold">Danh mục</h3>
+        <p className="text-sm text-gray-500">Không có danh mục nào.</p>
       </div>
     );
   }

@@ -10,12 +10,14 @@ interface SearchResultsProps {
   searchTerm: string;
   isMobile: boolean;
   products: IProduct[];
+  onResultClick?: () => void; // Thêm prop onResultClick
 }
 
 export default function SearchResults({
   filteredProducts,
   searchTerm,
   isMobile,
+  onResultClick,
 }: SearchResultsProps) {
   // Hiển thị cụm từ tìm kiếm phổ biến khi không có searchTerm
   if (!searchTerm) {
@@ -29,6 +31,7 @@ export default function SearchResults({
                 key={index}
                 className="flex justify-center items-center px-[0.78125rem] py-3 rounded-full text-base hover:bg-gray-100"
                 href={`/products?search=${encodeURIComponent(term)}`}
+                onClick={onResultClick} // Gọi onResultClick khi nhấp
                 aria-label={`Tìm kiếm ${term}`}
               >
                 {term}
@@ -71,8 +74,9 @@ export default function SearchResults({
         return (
           <Link
             key={product.id}
-            href={`/products/slug/${product.slug}`}
+            href={`/products/${product.id}`}
             className="block"
+            onClick={onResultClick} // Gọi onResultClick khi nhấp
             aria-label={`Xem chi tiết sản phẩm ${product.name}`}
           >
             <div className="flex gap-2">

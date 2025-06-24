@@ -18,7 +18,6 @@ const categoryModel_1 = __importDefault(require("../models/categoryModel"));
 const newsModel_1 = __importDefault(require("../models/newsModel"));
 const productModel_1 = __importDefault(require("../models/productModel"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
-// 1. Lấy tất cả danh mục dạng phẳng (all, không phân cấp)
 const getAllCategoriesFlat = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const categories = yield categoryModel_1.default.find({}).sort({ createdAt: -1 }).lean();
@@ -32,7 +31,6 @@ const getAllCategoriesFlat = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getAllCategoriesFlat = getAllCategoriesFlat;
-// 2. Lấy tất cả danh mục cha (parentId = null)
 const getParentCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const parents = yield categoryModel_1.default.find({ parentId: null }).sort({ createdAt: -1 }).lean();
@@ -46,7 +44,6 @@ const getParentCategories = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.getParentCategories = getParentCategories;
-// 3. Lấy tất cả danh mục con theo parentId (query params: /categories/children/:parentId)
 const getChildCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { parentId } = req.params;
@@ -64,7 +61,6 @@ const getChildCategories = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.getChildCategories = getChildCategories;
-// 4. Lấy danh mục theo ID
 const getCategoryById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
@@ -87,7 +83,6 @@ const getCategoryById = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.getCategoryById = getCategoryById;
-// 5. Lấy tất cả danh mục cha HOẶC lấy con theo ?parentId=xxx (cũ, dùng cho hợp nhất 1 API)
 const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const parentId = req.query.parentId;
@@ -111,7 +106,6 @@ const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.getAllCategories = getAllCategories;
-// --- Giữ nguyên các API create, update, delete phía dưới ---
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, slug, parentId, image } = req.body;
@@ -266,7 +260,6 @@ const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.deleteCategory = deleteCategory;
-// --- Hàm phụ ---
 const checkCycle = (categoryId, parentId) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const visited = new Set();

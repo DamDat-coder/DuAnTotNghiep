@@ -14,10 +14,10 @@ import verifyAdmin from "../middlewares/verifyAdmin";
 
 const router = Router();
 
-router.get("/all/flat", getAllCategoriesFlat);           // Tất cả (phẳng)
-router.get("/parents", getParentCategories);             // Danh mục cha
-router.get("/children/:parentId", getChildCategories);   // Danh mục con
-router.get("/", getAllCategories);                       // Cha hoặc con theo ?parentId=xxx
+router.get("/all/flat", getAllCategoriesFlat);
+router.get("/parents", getParentCategories);
+router.get("/children/:parentId", getChildCategories);
+router.get("/", getAllCategories);
 router.get("/:id", getCategoryById);
 router.post("/", verifyToken, verifyAdmin, createCategory);
 router.put("/:id", verifyToken, verifyAdmin, updateCategory);

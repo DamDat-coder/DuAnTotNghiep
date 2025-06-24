@@ -29,4 +29,3 @@ router.post('/', verifyToken, verifyAdmin, createCoupon);
 router.put('/:id', verifyToken, verifyAdmin, updateCoupon);
 router.delete('/:id', verifyToken, verifyAdmin, deleteCoupon);
 
-module.exports = router;

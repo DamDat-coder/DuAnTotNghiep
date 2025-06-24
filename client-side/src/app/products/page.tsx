@@ -105,14 +105,17 @@ export default function ProductsPage() {
     color?: string;
     size?: string;
   }) => {
-    const params = new URLSearchParams(searchParams.toString());
+    // Nếu filters rỗng, đẩy URL về /products
+    if (Object.keys(filters).length === 0) {
+      router.push("/products");
+      return;
+    }
+
+    // Xử lý filters có giá trị
+    const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (value) {
-          params.set(key, value);
-        } else {
-          params.delete(key);
-        }
+      if (value !== undefined && value) {
+        params.set(key, value);
       }
     });
 
@@ -154,7 +157,10 @@ export default function ProductsPage() {
         <div>
           <Breadcrumb />
           <CategorySwiper categories={categories} />
-          <ProductGrid products={products} onApplyFilters={handleApplyFilters} />
+          <ProductGrid
+            products={products}
+            onApplyFilters={handleApplyFilters}
+          />
         </div>
         <NewsSection newsItems={newsItems} />
       </Container>

@@ -19,7 +19,7 @@ interface DiscountCodeProps {
             value={discountCode}
             onChange={(e) => setDiscountCode(e.target.value)}
             placeholder="Nhập mã giảm giá"
-            className="w-full py-[0.875rem] pl-3 border border-gray-300 rounded-l-md focus:outline-none"
+            className="w-full py-[0.875rem] pl-3 border border-gray-300 rounded-l-md"
           />
           <button
             onClick={handleApplyDiscount}

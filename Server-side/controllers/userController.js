@@ -185,32 +185,33 @@ const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.refresh = refresh;
 // Lấy thông tin cá nhân
-// export const getUser = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const userId = (req as any).userId;
-//     const user = await UserModel.findById(userId).select("-password");
-//     if (!user) {
-//       res.status(404).json({ message: "Không tìm thấy người dùng." });
-//       return;
-//     }
-//     res.json(user);
-//   } catch (error: any) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-// controllers/userController.ts
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // Trả user fake (không cần DB)
-    res.json({
-        _id: "665dcbe9983c87b9d742c2e6",
-        email: "admin@gmail.com",
-        name: "Admin",
-        phone: "0123456789",
-        role: "admin",
-        is_active: true,
-    });
+    try {
+        const userId = req.userId;
+        const user = yield userModel_1.default.findById(userId).select("-password");
+        if (!user) {
+            res.status(404).json({ message: "Không tìm thấy người dùng." });
+            return;
+        }
+        res.json(user);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 exports.getUser = getUser;
+// controllers/userController.ts
+// export const getUser = async (req: Request, res: Response): Promise<void> => {
+//   // Trả user fake (không cần DB)
+//   res.json({
+//     _id: "665dcbe9983c87b9d742c2e6",
+//     email: "admin@gmail.com",
+//     name: "Admin",
+//     phone: "0123456789",
+//     role: "admin",
+//     is_active: true,
+//   });
+// };
 // Lấy tất cả người dùng (admin)
 const getAllUser = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -222,13 +223,19 @@ const getAllUser = (_req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getAllUser = getAllUser;
-// Cập nhật thông tin người dùng
 const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const requesterId = req.userId;
         const requesterRole = req.role;
         const { name, addresses, phone, password, is_active, userId } = req.body;
+        // 🐞 LOG TOÀN BỘ BODY
+        console.log("✅ Received body:", req.body);
+        // 🐞 LOG TỪ TOKEN
+        console.log("🧾 Requester ID:", requesterId);
+        console.log("🧾 Requester Role:", requesterRole);
+        // 🐞 LOG ID SẼ CẬP NHẬT
         const targetUserId = requesterRole === "admin" && userId ? userId : requesterId;
+        console.log("🎯 Target User ID:", targetUserId);
         const updates = {};
         if (name)
             updates.name = name;
@@ -240,6 +247,7 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 _id: { $ne: targetUserId },
             });
             if (daTonTai) {
+                console.log("⚠️ Số điện thoại đã tồn tại:", phone);
                 res.status(409).json({ message: "Số điện thoại đã được sử dụng." });
                 return;
             }
@@ -247,6 +255,7 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         if (password) {
             if (password.length < 6) {
+                console.log("⚠️ Mật khẩu quá ngắn:", password);
                 res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự." });
                 return;
             }
@@ -255,14 +264,18 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (requesterRole === "admin" && typeof is_active === "boolean") {
             updates.is_active = is_active;
         }
+        // 🐞 Log các trường sắp update
+        console.log("🛠 Updates to apply:", updates);
         const updatedUser = yield userModel_1.default.findByIdAndUpdate(targetUserId, { $set: updates }, { new: true, select: "-password" });
         if (!updatedUser) {
+            console.log("❌ Không tìm thấy người dùng với ID:", targetUserId);
             res.status(404).json({ message: "Không tìm thấy người dùng." });
             return;
         }
         res.json({ message: "Cập nhật thông tin thành công.", user: updatedUser });
     }
     catch (error) {
+        console.error("🔥 Lỗi updateUser:", error.message);
         res.status(400).json({ message: error.message });
     }
 });

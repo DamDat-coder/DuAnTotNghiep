@@ -6,7 +6,6 @@ import UserModel, { IUser } from "../models/userModel";
 import RefreshTokenModel from "../models/refreshTokenModel";
 require("dotenv").config();
 
-
 // Đăng ký
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -213,34 +212,33 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 };
 
 // Lấy thông tin cá nhân
-// export const getUser = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const userId = (req as any).userId;
-//     const user = await UserModel.findById(userId).select("-password");
-
-//     if (!user) {
-//       res.status(404).json({ message: "Không tìm thấy người dùng." });
-//       return;
-//     }
-
-//     res.json(user);
-//   } catch (error: any) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-// controllers/userController.ts
 export const getUser = async (req: Request, res: Response): Promise<void> => {
-  // Trả user fake (không cần DB)
-  res.json({
-    _id: "665dcbe9983c87b9d742c2e6",
-    email: "admin@gmail.com",
-    name: "Admin",
-    phone: "0123456789",
-    role: "admin",
-    is_active: true,
-  });
-};
+  try {
+    const userId = (req as any).userId;
+    const user = await UserModel.findById(userId).select("-password");
 
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng." });
+      return;
+    }
+
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+// controllers/userController.ts
+// export const getUser = async (req: Request, res: Response): Promise<void> => {
+//   // Trả user fake (không cần DB)
+//   res.json({
+//     _id: "665dcbe9983c87b9d742c2e6",
+//     email: "admin@gmail.com",
+//     name: "Admin",
+//     phone: "0123456789",
+//     role: "admin",
+//     is_active: true,
+//   });
+// };
 
 // Lấy tất cả người dùng (admin)
 export const getAllUser = async (
@@ -255,7 +253,6 @@ export const getAllUser = async (
   }
 };
 
-// Cập nhật thông tin người dùng
 export const updateUser = async (
   req: Request,
   res: Response
@@ -265,8 +262,18 @@ export const updateUser = async (
     const requesterRole = (req as any).role;
 
     const { name, addresses, phone, password, is_active, userId } = req.body;
+
+    // 🐞 LOG TOÀN BỘ BODY
+    console.log("✅ Received body:", req.body);
+
+    // 🐞 LOG TỪ TOKEN
+    console.log("🧾 Requester ID:", requesterId);
+    console.log("🧾 Requester Role:", requesterRole);
+
+    // 🐞 LOG ID SẼ CẬP NHẬT
     const targetUserId =
       requesterRole === "admin" && userId ? userId : requesterId;
+    console.log("🎯 Target User ID:", targetUserId);
 
     const updates: Partial<IUser> = {};
 
@@ -279,6 +286,7 @@ export const updateUser = async (
         _id: { $ne: targetUserId },
       });
       if (daTonTai) {
+        console.log("⚠️ Số điện thoại đã tồn tại:", phone);
         res.status(409).json({ message: "Số điện thoại đã được sử dụng." });
         return;
       }
@@ -287,6 +295,7 @@ export const updateUser = async (
 
     if (password) {
       if (password.length < 6) {
+        console.log("⚠️ Mật khẩu quá ngắn:", password);
         res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự." });
         return;
       }
@@ -297,6 +306,9 @@ export const updateUser = async (
       updates.is_active = is_active;
     }
 
+    // 🐞 Log các trường sắp update
+    console.log("🛠 Updates to apply:", updates);
+
     const updatedUser = await UserModel.findByIdAndUpdate(
       targetUserId,
       { $set: updates },
@@ -304,12 +316,14 @@ export const updateUser = async (
     );
 
     if (!updatedUser) {
+      console.log("❌ Không tìm thấy người dùng với ID:", targetUserId);
       res.status(404).json({ message: "Không tìm thấy người dùng." });
       return;
     }
 
     res.json({ message: "Cập nhật thông tin thành công.", user: updatedUser });
   } catch (error: any) {
+    console.error("🔥 Lỗi updateUser:", error.message);
     res.status(400).json({ message: error.message });
   }
 };

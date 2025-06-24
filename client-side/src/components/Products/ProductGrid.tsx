@@ -204,6 +204,13 @@ export default function ProductGrid({
           </div>
         ))}
       </div>
+
+      {products.length === 0 && (
+        <div className="col-span-full text-center text-gray-500 py-10 w-full">
+          Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
+        </div>
+      )}
+
       <div ref={observerRef} className={`h-10 ${!hasMore ? "hidden" : ""}`}>
         {loading && (
           <div className="sk-chase">

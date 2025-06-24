@@ -37,7 +37,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const orderSchema = new mongoose_1.Schema({
     userId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'users',
+        ref: 'User',
         required: true,
     },
     products: [

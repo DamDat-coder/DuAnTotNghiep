@@ -18,7 +18,10 @@ const app = express();
 // Cấu hình CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3300",
+origin: [
+      process.env.CLIENT_URL || "http://localhost:3000",
+      "http://localhost:5055",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],

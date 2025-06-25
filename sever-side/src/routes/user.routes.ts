@@ -11,7 +11,10 @@ import {
   getAllUsers,
   getUserById,
   toggleUserStatus,
-  updateUserInfo
+  updateUserInfo,
+  addToWishlist,
+  removeFromWishlist,
+  getWishlist
 } from "../controllers/user.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
@@ -35,4 +38,8 @@ router.get("/", verifyToken, verifyAdmin, getAllUsers);
 router.get("/:id", verifyToken, verifyAdmin, getUserById);
 router.put("/:id/status", verifyToken, verifyAdmin, toggleUserStatus);
 
+// Quản lý yêu thích
+router.post("/:id/wishlist", verifyToken, addToWishlist);
+router.delete("/:id/wishlist/:productId", verifyToken, removeFromWishlist);
+router.get("/:id/wishlist", verifyToken, getWishlist);
 export default router;

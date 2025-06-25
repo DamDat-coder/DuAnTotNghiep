@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = void 0;
+exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_model_1 = __importDefault(require("../models/user.model"));
@@ -304,3 +304,53 @@ const setDefaultAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, 
     }
 });
 exports.setDefaultAddress = setDefaultAddress;
+// Thêm sản phẩm vào danh sách yêu thích
+const addToWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield user_model_1.default.findById(req.params.id);
+        if (!user)
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+        const productId = req.body.productId;
+        if (!productId)
+            return res.status(400).json({ success: false, message: "Thiếu productId." });
+        if (user.wishlist.includes(productId)) {
+            return res.status(400).json({ success: false, message: "Sản phẩm đã tồn tại trong danh sách yêu thích." });
+        }
+        user.wishlist.push(productId);
+        yield user.save();
+        res.status(200).json({ success: true, message: "Đã thêm vào danh sách yêu thích.", data: user.wishlist });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+exports.addToWishlist = addToWishlist;
+// Xoá sản phẩm khỏi danh sách yêu thích
+const removeFromWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield user_model_1.default.findById(req.params.id);
+        if (!user)
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+        const productId = req.params.productId;
+        user.wishlist = user.wishlist.filter((id) => id.toString() !== productId);
+        yield user.save();
+        res.status(200).json({ success: true, message: "Đã xoá khỏi danh sách yêu thích.", data: user.wishlist });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+exports.removeFromWishlist = removeFromWishlist;
+// Lấy danh sách yêu thích của người dùng
+const getWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield user_model_1.default.findById(req.params.id).populate("wishlist");
+        if (!user)
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+        res.status(200).json({ success: true, data: user.wishlist });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+exports.getWishlist = getWishlist;

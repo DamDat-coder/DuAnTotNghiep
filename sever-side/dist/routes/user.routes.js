@@ -19,4 +19,8 @@ router.put("/:id", auth_middleware_1.verifyToken, user_controller_1.updateUserIn
 router.get("/", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, user_controller_1.getAllUsers);
 router.get("/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, user_controller_1.getUserById);
 router.put("/:id/status", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, user_controller_1.toggleUserStatus);
+// Quản lý yêu thích
+router.post("/:id/wishlist", auth_middleware_1.verifyToken, user_controller_1.addToWishlist);
+router.delete("/:id/wishlist/:productId", auth_middleware_1.verifyToken, user_controller_1.removeFromWishlist);
+router.get("/:id/wishlist", auth_middleware_1.verifyToken, user_controller_1.getWishlist);
 exports.default = router;

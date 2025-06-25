@@ -5,20 +5,15 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import Image from "next/image";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ICategory } from "@/types/category";
-import { fetchParentCategories } from "@/services/categoryApi";
+import { fetchCategoryTree } from "@/services/categoryApi";
+
 interface FeaturedSwiperProps {
   featuredSection: IFeaturedProducts[];
   mobileSlidesPerView?: number;
   tabletSlidesPerView?: number;
 }
-
-const genderLinks = [
-  { href: "/products?gender=Nam", label: "Nam" },
-  { href: "/products?gender=Nữ", label: "Nữ" },
-  { href: "/products?gender=Unisex", label: "Unisex" },
-];
 
 export default function FeaturedSwiper({
   featuredSection,
@@ -26,7 +21,7 @@ export default function FeaturedSwiper({
   tabletSlidesPerView = 2.5,
 }: FeaturedSwiperProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-const [categories, setCategories] = useState<ICategory[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,11 +29,12 @@ const [categories, setCategories] = useState<ICategory[]>([]);
     async function loadCategories() {
       try {
         setLoading(true);
-        const rootCategories = await fetchParentCategories();
-        // Lọc bỏ danh mục "Bài viết"
-        const filteredCategories = rootCategories.filter(
+        const categoryTree = await fetchCategoryTree();
+        const filteredCategories = categoryTree.filter(
           (cat) =>
-            cat.id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
+            cat.parentId === null &&
+            cat._id !== "684d0f12543e02998d9df097" &&
+            cat.name !== "Bài viết"
         );
         setCategories(filteredCategories);
       } catch (err) {
@@ -65,6 +61,7 @@ const [categories, setCategories] = useState<ICategory[]>([]);
       </div>
     );
   }
+
   return (
     <Swiper
       spaceBetween={10}
@@ -81,9 +78,12 @@ const [categories, setCategories] = useState<ICategory[]>([]);
       className="select-none"
     >
       {featuredSection.map((product) => {
-        const genderLink = genderLinks.find(
-          (link) => link.label === product.gender
-        ) || { href: "/products", label: "Danh mục" };
+        const matchedCategory = product.gender
+          ? categories.find((cat) => cat.name === product.gender)
+          : null;
+        const genderLink = matchedCategory
+          ? { href: `/products?id_cate=${matchedCategory._id}`, label: product.gender }
+          : { href: "/products", label: "Danh mục" };
 
         return (
           <SwiperSlide key={product.id}>
@@ -97,7 +97,7 @@ const [categories, setCategories] = useState<ICategory[]>([]);
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
                 width={120}
                 height={40}
-                className="w-full h-[auto object-cover rounded select-none"
+                className="w-full h-auto object-cover rounded select-none"
                 draggable="false"
               />
               <div
@@ -105,7 +105,6 @@ const [categories, setCategories] = useState<ICategory[]>([]);
                   hoveredId === product.id ? "opacity-80" : "opacity-0"
                 }`}
               ></div>
-
               <div className="absolute w-full px-20 inset-0 flex items-center justify-center transition-opacity duration-300">
                 <div className="w-full flex flex-col gap-6 items-start justify-center">
                   <div
@@ -124,7 +123,7 @@ const [categories, setCategories] = useState<ICategory[]>([]);
                         hoveredId === product.id ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      Shop {product.gender || "Danh mục"}
+                      Shop {genderLink.label}
                     </div>
                   </Link>
                 </div>

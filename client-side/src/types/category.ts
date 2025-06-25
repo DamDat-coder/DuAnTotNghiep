@@ -1,8 +1,12 @@
 export interface ICategory {
-  id: string;
+  _id: string;
   name: string;
-  description: string;
-  parentid: string | null;
+  slug: string;
+  parentId: string | null;
+  image: string | null;
+  created_at: string;
+  updated_at: string;
+  children: ICategory[];
 }
 export interface CategoryResponse {
   status: string;

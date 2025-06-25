@@ -72,7 +72,7 @@ export default function Checkout() {
                 />
                 <PaymentMethod
                   paymentMethod={paymentMethod}
-                  handlePaymentChange={handlePaymentChange}
+                  handlePaymentChange={(e) => handlePaymentChange(e.target.value)}
                 />
                 <button
                   type="submit"
@@ -111,7 +111,7 @@ export default function Checkout() {
                   />
                   <PaymentMethod
                     paymentMethod={paymentMethod}
-                    handlePaymentChange={handlePaymentChange}
+                    handlePaymentChange={(e) => handlePaymentChange(e.target.value)}
                   />
                 </form>
               </div>

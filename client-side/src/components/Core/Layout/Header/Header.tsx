@@ -55,11 +55,10 @@ export default function Header({ title }: HeaderProps) {
     if (isLookupOpen && defaultSuggestions.length === 0) {
       const loadDefaultSuggestions = async () => {
         try {
-          // Lấy tất cả sản phẩm bán chạy và giới hạn top 5 trong frontend
           const response = await fetchProducts({ sort: "best-seller" });
           const suggestions = response.products
-            .map((product) => product.name) // Ánh xạ tên sản phẩm
-            .slice(0, 5); // Giới hạn 5 gợi ý
+            .map((product) => product.name)
+            .slice(0, 5);
           setDefaultSuggestions(suggestions);
         } catch (error) {
           console.error("Lỗi khi tải gợi ý mặc định:", error);
@@ -121,9 +120,10 @@ export default function Header({ title }: HeaderProps) {
     };
   }, [isLookupOpen, setIsLookupOpen]);
 
-  const suggestions = filteredProducts.length > 0
-    ? filteredProducts.map((product) => product.name).slice(0, 3)
-    : defaultSuggestions;
+  const suggestions =
+    filteredProducts.length > 0
+      ? filteredProducts.map((product) => product.name).slice(0, 3)
+      : defaultSuggestions;
 
   const handleSuggestionClick = (suggestion: string) => {
     setSearchTerm(suggestion);
@@ -132,10 +132,13 @@ export default function Header({ title }: HeaderProps) {
 
   return (
     <>
-      <nav className="bg-white text-black relative" aria-label="Main navigation">
+      <nav
+        className="bg-white text-black relative"
+        aria-label="Main navigation"
+      >
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
-          <div className="flex h-16 items-center gap-[32%] relative">
-            <Link href="/" className="flex items-center" aria-label="Trang chủ">
+          <div className="flex h-16 items-center justify-between relative">
+            <Link href="/" className="flex items-center flex-shrink-0" aria-label="Trang chủ">
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -146,8 +149,9 @@ export default function Header({ title }: HeaderProps) {
                 loading="lazy"
               />
             </Link>
-
-            <DesktopNav />
+            <div className="flex-1 flex justify-center mr-[6.9375rem]">
+              <DesktopNav />
+            </div>
             <div className="flex items-center gap-3 w-[13.9375rem] justify-end absolute right-0">
               <div className="flex items-center gap-3 relative">
                 <div className="w-6 h-6 relative">
@@ -186,7 +190,11 @@ export default function Header({ title }: HeaderProps) {
                         >
                           <div className="flex-1 overflow-y-auto px-2 py-4">
                             {isLoading ? (
-                              <div className="sk-chase" role="status" aria-label="Đang tải">
+                              <div
+                                className="sk-chase"
+                                role="status"
+                                aria-label="Đang tải"
+                              >
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
@@ -194,7 +202,8 @@ export default function Header({ title }: HeaderProps) {
                                 <div className="sk-chase-dot"></div>
                                 <div className="sk-chase-dot"></div>
                               </div>
-                            ) : searchTerm.trim() !== "" && filteredProducts.length === 0 ? (
+                            ) : searchTerm.trim() !== "" &&
+                              filteredProducts.length === 0 ? (
                               <p className="text-center text-gray-500">
                                 Không tìm thấy sản phẩm
                               </p>
@@ -257,7 +266,11 @@ export default function Header({ title }: HeaderProps) {
 
                 <NotificationIcon />
 
-                <Link href="/cart" className="text-gray-400 hover:text-black" aria-label="Giỏ hàng">
+                <Link
+                  href="/cart"
+                  className="text-gray-400 hover:text-black"
+                  aria-label="Giỏ hàng"
+                >
                   <Image
                     src="/nav/nav_cart.svg"
                     alt="Giỏ hàng"

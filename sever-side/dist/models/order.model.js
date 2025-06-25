@@ -34,38 +34,32 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const addressSchema = new mongoose_1.Schema({
-    street: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
-    district: { type: String, required: true, trim: true },
-    province: { type: String, required: true, trim: true },
-    is_default: { type: Boolean, default: false },
-}, {
-    _id: true,
-});
-const userSchema = new mongoose_1.Schema({
-    email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true },
-    name: { type: String, required: true, trim: true },
-    addresses: [addressSchema],
-    phone: {
-        type: Number,
-        default: null,
-        unique: true,
-        sparse: true,
+const orderItemSchema = new mongoose_1.Schema({
+    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+    color: { type: String, required: true },
+    size: { type: String, required: true },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+}, { _id: false });
+const orderSchema = new mongoose_1.Schema({
+    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    couponId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Coupon', default: null },
+    address_id: { type: mongoose_1.Schema.Types.ObjectId, required: true },
+    shippingAddress: { type: String, required: true },
+    totalPrice: { type: Number, required: true },
+    status: {
+        type: String,
+        enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],
+        default: 'pending',
     },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    is_active: { type: Boolean, default: true },
-    refreshToken: { type: String, default: null },
-    wishlist: [
-        {
-            type: mongoose_1.Schema.Types.ObjectId,
-            ref: "Product",
-        },
-    ],
-}, {
-    timestamps: true,
-    versionKey: false,
-});
-const UserModel = mongoose_1.default.model("User", userSchema);
-exports.default = UserModel;
+    paymentId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Payment',
+        default: null,
+    },
+    items: [orderItemSchema],
+}, { timestamps: true });
+const OrderModel = mongoose_1.default.model('Order', orderSchema);
+exports.default = OrderModel;

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { fetchParentCategories } from "@/services/categoryApi";
+import { motion, AnimatePresence } from "framer-motion";
+import { fetchCategoryTree } from "@/services/categoryApi";
 import { ICategory } from "@/types/category";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginPopup from "../Popups/LoginPopup";
@@ -18,11 +18,13 @@ interface MobileMenuProps {
 interface NavItem {
   href: string;
   label: string;
+  children?: ICategory[];
 }
 
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const {
     user,
     openLoginWithData,
@@ -43,19 +45,19 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   // Lấy danh mục từ API
   useEffect(() => {
     async function loadCategories() {
       try {
-        const rootCategories = await fetchParentCategories();
-        console.log("Root categories:", rootCategories);
-        const filteredCategories = rootCategories.filter(
-          (cat: ICategory) =>
-            cat.id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
+        const categoryTree = await fetchCategoryTree();
+        const filteredCategories = categoryTree.filter(
+          (cat) =>
+            cat.parentId === null &&
+            cat._id !== "684d0f12543e02998d9df097" &&
+            cat.name !== "Bài viết"
         );
-        console.log("Filtered categories:", filteredCategories);
         setCategories(filteredCategories);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
@@ -69,11 +71,17 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const navItems: NavItem[] = [
     { href: "/about", label: "Về chúng tôi" },
     ...categories.map((cat) => ({
-      href: `/products?id_cate=${cat.id}`,
+      href: `/products?id_cate=${cat._id}`,
       label: cat.name,
+      children: cat.children,
     })),
     { href: "/contact", label: "Liên hệ" },
   ];
+
+  // Xử lý mở/đóng danh mục con
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategory((prev) => (prev === categoryId ? null : categoryId));
+  };
 
   if (!user || !user.name) {
     return (
@@ -102,31 +110,72 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
             </div>
             <div className="flex flex-col p-4">
               <div className="flex flex-col gap-4">
+                {error && (
+                  <p className="text-lg text-red-500">Lỗi: {error}</p>
+                )}
                 {navItems.length === 0 ? (
                   <p className="text-lg text-gray-500">
                     Không có mục nào để hiển thị.
                   </p>
                 ) : (
                   navItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="text-lg font-medium hover:underline"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <div className="flex justify-between items-center text-2xl">
-                        {item.label}
-                        <Image
-                          src="/nav/nav_angle_left.svg"
-                          alt="Arrow"
-                          width={120}
-                          height={40}
-                          className="h-auto w-auto tablet:w-2"
-                          draggable={false}
-                          loading="lazy"
-                        />
+                    <div key={item.href}>
+                      <div
+                        className="flex justify-between items-center text-2xl cursor-pointer"
+                        onClick={() =>
+                          item.children && item.children.length > 0
+                            ? toggleCategory(item.href)
+                            : setIsOpen(false)
+                        }
+                      >
+                        <Link
+                          href={item.href}
+                          className="text-lg font-medium hover:underline"
+                          onClick={(e) => {
+                            if (item.children && item.children.length > 0) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          {item.label}
+                        </Link>
+                        {item.children && item.children.length > 0 && (
+                          <Image
+                            src="/nav/nav_angle_left.svg"
+                            alt="Arrow"
+                            width={120}
+                            height={40}
+                            className={`h-auto w-auto tablet:w-2 transition-transform ${
+                              expandedCategory === item.href ? "rotate-90" : ""
+                            }`}
+                            draggable={false}
+                            loading="lazy"
+                          />
+                        )}
                       </div>
-                    </Link>
+                      <AnimatePresence>
+                        {item.children && item.children.length > 0 && expandedCategory === item.href && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="ml-4 mt-2 flex flex-col gap-2"
+                          >
+                            {item.children.map((child) => (
+                              <Link
+                                key={child._id}
+                                href={`/products?id_cate=${child._id}`}
+                                className="text-base font-medium text-gray-600 hover:underline"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                {child.name}
+                              </Link>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   ))
                 )}
               </div>
@@ -153,7 +202,6 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                 >
                   Đăng ký
                 </button>
-
                 <button
                   onClick={() => setIsLoginOpen(true)}
                   className="p-3 rounded-full font-bold text-base border border-solid border-[#0000005c]"
@@ -212,7 +260,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           <div className="flex gap-4 items-center">
             <Image
               src="/nav/nav_user.svg"
-              alt="Logo"
+              alt="User"
               width={120}
               height={40}
               className="h-6 w-6 rounded-full"
@@ -223,31 +271,72 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           </div>
           <div className="flex flex-col">
             <div className="flex flex-col gap-4">
+              {error && (
+                <p className="text-lg text-red-500">Lỗi: {error}</p>
+              )}
               {navItems.length === 0 ? (
                 <p className="text-lg text-gray-500">
                   Không có mục nào để hiển thị.
                 </p>
               ) : (
                 navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="text-lg font-medium hover:underline"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <div className="flex justify-between items-center text-2xl">
-                      {item.label}
-                      <Image
-                        src="/nav/nav_angle_left.svg"
-                        alt="Arrow"
-                        width={120}
-                        height={40}
-                        className="h-auto w-auto tablet:w-2"
-                        draggable={false}
-                        loading="lazy"
-                      />
+                  <div key={item.href}>
+                    <div
+                      className="flex justify-between items-center text-2xl cursor-pointer"
+                      onClick={() =>
+                        item.children && item.children.length > 0
+                          ? toggleCategory(item.href)
+                          : setIsOpen(false)
+                      }
+                    >
+                      <Link
+                        href={item.href}
+                        className="text-lg font-medium hover:underline"
+                        onClick={(e) => {
+                          if (item.children && item.children.length > 0) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                      {item.children && item.children.length > 0 && (
+                        <Image
+                          src="/nav/nav_angle_left.svg"
+                          alt="Arrow"
+                          width={120}
+                          height={40}
+                          className={`h-auto w-auto tablet:w-2 transition-transform ${
+                            expandedCategory === item.href ? "rotate-90" : ""
+                          }`}
+                          draggable={false}
+                          loading="lazy"
+                        />
+                      )}
                     </div>
-                  </Link>
+                    <AnimatePresence>
+                      {item.children && item.children.length > 0 && expandedCategory === item.href && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="ml-4 mt-2 flex flex-col gap-2"
+                        >
+                          {item.children.map((child) => (
+                            <Link
+                              key={child._id}
+                              href={`/products?id_cate=${child._id}`}
+                              className="text-base font-medium text-gray-600 hover:underline"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 ))
               )}
             </div>
@@ -267,7 +356,6 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
               />
               <p className="text-2xl font-medium font-description">Yêu thích</p>
             </Link>
-
             <Link
               href="/cart"
               className="flex gap-4 items-center w-[15%] justify-between"

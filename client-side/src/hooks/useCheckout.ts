@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, useCartDispatch } from "@/contexts/CartContext"; // Thêm useCartDispatch
+import { createOrder } from "@/services/orderApi";
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 
 export const useCheckout = () => {
   const { user } = useAuth();
-  const { items } = useCart();
+  const { items } = useCart(); // Xóa clearCart
+  const dispatch = useCartDispatch(); // Thêm dispatch
   const router = useRouter();
 
   // Lấy các sản phẩm được chọn từ giỏ hàng
@@ -114,7 +116,7 @@ export const useCheckout = () => {
   };
 
   // Xử lý submit form
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     // Kiểm tra đăng nhập
@@ -155,19 +157,32 @@ export const useCheckout = () => {
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      console.log("Submitting order:", {
-        orderItems,
-        formData,
-        discountCode,
-        discount,
-        shippingFee,
-        shippingMethod,
-        paymentMethod,
-        total,
-      });
+    if (Object.values(newErrors).some((error) => error)) {
+      return;
+    }
+
+    try {
+      // Chuẩn bị dữ liệu cho createOrder
+      const orderData = {
+        products: orderItems.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+        shippingAddress: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`,
+      };
+
+      // Gọi API createOrder
+      const response = await createOrder(orderData);
+
+      // Xóa giỏ hàng
+      dispatch({ type: "clear" });
+
+      console.log("Order created:", response);
       toast.success("Đơn hàng đã được xác nhận!");
-      router.push("/order-confirmation");
+      router.push("/profile?tab=orders"); // Chuyển hướng đến trang đơn hàng
+    } catch (error: any) {
+      console.error("Lỗi khi tạo đơn hàng:", error);
+      toast.error(error.message || "Không thể tạo đơn hàng!");
     }
   };
 

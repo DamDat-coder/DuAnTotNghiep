@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 import { useEffect, useState } from "react";
 import { CategoryOption } from "@/types/filter";
-import { fetchParentCategories } from "@/services/categoryApi";
+import { fetchCategoryTree, flattenCategories } from "@/services/categoryApi";
 import { ICategory } from "@/types/category";
 
 interface FilterCategoryProps {
@@ -22,25 +22,25 @@ export default function FilterCategory({
     async function loadCategories() {
       try {
         setLoading(true);
-        const rootCategories = await fetchParentCategories();
-        console.log("Root categories:", rootCategories);
-        // Lọc bỏ danh mục "Bài viết"
-        const filteredCategories = rootCategories.filter(
-          (cat: ICategory) =>
-            cat.id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
+        const categoryTree = await fetchCategoryTree();
+        // Lấy danh sách phẳng và loại trừ "Bài viết"
+        const flatCategories = flattenCategories(categoryTree).filter(
+          (cat) =>
+            cat._id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
         );
-        // Map sang CategoryOption
-        const categoryOptions: CategoryOption[] = filteredCategories.map(
-          (cat: ICategory) => ({
-            value: cat.id,
-            label: cat.name,
-          })
-        );
-        console.log("Filtered category options:", categoryOptions);
+        // Map sang CategoryOption, thêm tên danh mục cha nếu có
+        const categoryOptions: CategoryOption[] = flatCategories.map((cat) => {
+          const parent = categoryTree.find((parent) => parent._id === cat.parentId);
+          return {
+            value: cat._id,
+            label: parent ? `${cat.name} (${parent.name})` : cat.name,
+          };
+        });
+        // Sắp xếp theo label
+        categoryOptions.sort((a, b) => a.label.localeCompare(b.label));
         setCategories(categoryOptions);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
-        console.error("Error loading categories:", err);
       } finally {
         setLoading(false);
       }
@@ -79,6 +79,17 @@ export default function FilterCategory({
     <div className="flex flex-col gap-4 border-b pb-4 mt-4">
       <h3 className="text-base font-bold">Danh mục</h3>
       <div className="flex flex-col gap-2 mt-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="radio"
+            name="category"
+            value=""
+            checked={selectedCategory === null}
+            onChange={() => setSelectedCategory(null)}
+            className="h-4 w-4 accent-black focus:ring-black"
+          />
+          <span>Tất cả danh mục</span>
+        </label>
         {categories.map((option) => (
           <label
             key={option.value}

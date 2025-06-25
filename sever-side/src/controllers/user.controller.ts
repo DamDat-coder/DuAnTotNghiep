@@ -302,3 +302,53 @@ export const setDefaultAddress = async (req: Request, res: Response, next: NextF
     next(err);
   }
 };
+
+// Thêm sản phẩm vào danh sách yêu thích
+export const addToWishlist = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+
+    const productId = req.body.productId;
+    if (!productId) return res.status(400).json({ success: false, message: "Thiếu productId." });
+
+    if (user.wishlist.includes(productId)) {
+      return res.status(400).json({ success: false, message: "Sản phẩm đã tồn tại trong danh sách yêu thích." });
+    }
+
+    user.wishlist.push(productId);
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Đã thêm vào danh sách yêu thích.", data: user.wishlist });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Xoá sản phẩm khỏi danh sách yêu thích
+export const removeFromWishlist = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+
+    const productId = req.params.productId;
+    user.wishlist = user.wishlist.filter((id) => id.toString() !== productId);
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Đã xoá khỏi danh sách yêu thích.", data: user.wishlist });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Lấy danh sách yêu thích của người dùng
+export const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await UserModel.findById(req.params.id).populate("wishlist");
+    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+
+    res.status(200).json({ success: true, data: user.wishlist });
+  } catch (err) {
+    next(err);
+  }
+};

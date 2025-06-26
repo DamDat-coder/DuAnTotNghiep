@@ -35,21 +35,21 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const paymentSchema = new mongoose_1.Schema({
-    orderId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Order', required: true },
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
-    method: {
-        type: String,
-        enum: ['cash', 'credit_card', 'vnpay', 'momo'],
-        required: true,
-    },
     amount: { type: Number, required: true },
     status: {
         type: String,
         enum: ['pending', 'success', 'failed'],
         default: 'pending',
     },
-    transactionId: { type: String, default: null },
-    paidAt: { type: Date, default: null },
-}, { timestamps: true });
-const PaymentModel = mongoose_1.default.model('Payment', paymentSchema);
-exports.default = PaymentModel;
+    transaction_code: { type: String, required: true, unique: true },
+    transaction_data: { type: mongoose_1.Schema.Types.Mixed, default: null },
+    paid_at: { type: Date, default: null },
+    order_info: { type: mongoose_1.Schema.Types.Mixed, default: null },
+}, {
+    timestamps: {
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
+    },
+});
+exports.default = mongoose_1.default.model('Payment', paymentSchema);

@@ -43,11 +43,18 @@ const orderItemSchema = new mongoose_1.Schema({
     price: { type: Number, required: true },
     quantity: { type: Number, required: true },
 }, { _id: false });
+const shippingAddressSchema = new mongoose_1.Schema({
+    street: { type: String, required: true },
+    ward: { type: String, required: true },
+    district: { type: String, required: true },
+    province: { type: String, required: true },
+    is_default: { type: Boolean, default: false },
+}, { _id: false });
 const orderSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     couponId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Coupon', default: null },
     address_id: { type: mongoose_1.Schema.Types.ObjectId, required: true },
-    shippingAddress: { type: String, required: true },
+    shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
     status: {
         type: String,

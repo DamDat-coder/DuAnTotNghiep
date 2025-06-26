@@ -28,10 +28,10 @@ export interface IUser extends Document {
 
 const addressSchema = new Schema<IAddress>(
   {
-    street: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
-    district: { type: String, required: true, trim: true },
-    province: { type: String, required: true, trim: true },
+    street: { type: String, required: false, trim: true },
+    ward: { type: String, required: false, trim: true },
+    district: { type: String, required: false, trim: true },
+    province: { type: String, required: false, trim: true },
     is_default: { type: Boolean, default: false },
   },
   {

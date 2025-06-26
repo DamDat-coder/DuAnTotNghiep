@@ -10,11 +10,19 @@ export interface IOrderItem {
   quantity: number;
 }
 
+export interface IShippingAddress {
+  street: string;
+  ward: string;
+  district: string;
+  province: string;
+  is_default?: boolean;
+}
+
 export interface IOrder extends Document {
   userId: Types.ObjectId;
   couponId?: Types.ObjectId | null;
   address_id: Types.ObjectId;
-  shippingAddress: string;
+  shippingAddress: IShippingAddress;
   totalPrice: number;
   status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
   paymentId?: Types.ObjectId | null;
@@ -36,12 +44,23 @@ const orderItemSchema = new Schema<IOrderItem>(
   { _id: false }
 );
 
+const shippingAddressSchema = new Schema<IShippingAddress>(
+  {
+    street: { type: String, required: true },
+    ward: { type: String, required: true },
+    district: { type: String, required: true },
+    province: { type: String, required: true },
+    is_default: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const orderSchema = new Schema<IOrder>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     couponId: { type: Schema.Types.ObjectId, ref: 'Coupon', default: null },
     address_id: { type: Schema.Types.ObjectId, required: true },
-    shippingAddress: { type: String, required: true },
+    shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
     status: {
       type: String,

@@ -35,10 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const addressSchema = new mongoose_1.Schema({
-    street: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
-    district: { type: String, required: true, trim: true },
-    province: { type: String, required: true, trim: true },
+    street: { type: String, required: false, trim: true },
+    ward: { type: String, required: false, trim: true },
+    district: { type: String, required: false, trim: true },
+    province: { type: String, required: false, trim: true },
     is_default: { type: Boolean, default: false },
 }, {
     _id: true,

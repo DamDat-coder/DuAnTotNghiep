@@ -3,26 +3,42 @@ import OrderModel from "../models/order.model";
 import ProductModel from "../models/product.model";
 import UserModel from "../models/user.model";
 import CouponModel from "../models/coupon.model";
+import PaymentModel from "../models/payment.model";
 
-// Tạo đơn hàng
-export const createOrder = async (req: Request, res: Response, next: NextFunction) => {
+export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { userId, address_id, shippingAddress, couponId, items } = req.body;
+    const { paymentId } = req.body;
 
-    const user = await UserModel.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "Người dùng không tồn tại." });
+    const payment = await PaymentModel.findById(paymentId);
+    if (!payment || payment.status !== "success") {
+      return res.status(400).json({ success: false, message: "Thanh toán chưa hoàn tất hoặc không tồn tại." });
+    }
+
+    if (!payment.order_info || !payment.userId) {
+      return res.status(400).json({ success: false, message: "Thiếu thông tin để tạo đơn hàng." });
+    }
+
+    const existingOrder = await OrderModel.findOne({ paymentId });
+    if (existingOrder) {
+      return res.status(409).json({ success: false, message: "Đơn hàng đã được tạo từ giao dịch này." });
+    }
+
+    const { address_id, shippingAddress, couponId, items } = payment.order_info;
+    const userId = payment.userId;
 
     const orderItems = [];
     let totalPrice = 0;
 
     for (const item of items) {
       const product = await ProductModel.findById(item.productId);
-      if (!product) return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm." });
+      if (!product) {
+        return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm." });
+      }
 
-      const variant = product.variants.find(
-        (v) => v.color === item.color && v.size === item.size
-      );
-      if (!variant) return res.status(400).json({ success: false, message: "Biến thể không hợp lệ." });
+      const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
+      if (!variant) {
+        return res.status(400).json({ success: false, message: "Biến thể sản phẩm không hợp lệ." });
+      }
 
       if (variant.stock < item.quantity) {
         return res.status(400).json({ success: false, message: `Sản phẩm ${product.name} không đủ hàng.` });
@@ -47,30 +63,23 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       await product.save();
     }
 
-    // Xử lý mã giảm giá
     if (couponId) {
       const coupon = await CouponModel.findById(couponId);
       if (!coupon || !coupon.is_active) {
-        return res.status(400).json({ success: false, message: "Mã giảm giá không hợp lệ hoặc không hoạt động." });
+        return res.status(400).json({ success: false, message: "Mã giảm giá không hợp lệ." });
       }
 
       const now = new Date();
       if (now < coupon.startDate || now > coupon.endDate) {
-        return res.status(400).json({ success: false, message: "Mã giảm giá không còn hiệu lực." });
+        return res.status(400).json({ success: false, message: "Mã giảm giá hết hiệu lực." });
       }
 
-      const usedCount = coupon.usedCount ?? 0;
-      const usageLimit = coupon.usageLimit ?? null;
-
-      if (usageLimit !== null && usedCount >= usageLimit) {
-        return res.status(400).json({ success: false, message: "Mã giảm giá đã hết lượt sử dụng." });
+      if (coupon.usageLimit && (coupon.usedCount ?? 0) >= coupon.usageLimit) {
+        return res.status(400).json({ success: false, message: "Mã giảm giá đã hết lượt dùng." });
       }
 
       if (coupon.minOrderAmount && totalPrice < coupon.minOrderAmount) {
-        return res.status(400).json({
-          success: false,
-          message: `Đơn hàng cần đạt tối thiểu ${coupon.minOrderAmount}đ để áp dụng mã.`,
-        });
+        return res.status(400).json({ success: false, message: `Cần tối thiểu ${coupon.minOrderAmount}đ để áp dụng mã.` });
       }
 
       let discountAmount = 0;
@@ -85,7 +94,7 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       }
 
       totalPrice -= discountAmount;
-      coupon.usedCount = usedCount + 1;
+      coupon.usedCount = (coupon.usedCount ?? 0) + 1;
       await coupon.save();
     }
 
@@ -96,13 +105,16 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       couponId: couponId || null,
       totalPrice,
       items: orderItems,
+      paymentId: payment._id,
     });
-
-    res.status(201).json({ success: true, message: "Đặt hàng thành công.", data: order });
+    console.log("Order created with ID:", order._id);
+    return res.status(201).json({ success: true, message: "Tạo đơn hàng thành công.", data: order });
   } catch (err) {
-    next(err);
+    console.error("Tạo order sau thanh toán thất bại:", err);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
+
 
 // Lấy tất cả đơn hàng (Admin)
 export const getOrders = async (req: Request, res: Response) => {

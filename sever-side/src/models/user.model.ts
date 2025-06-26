@@ -1,7 +1,12 @@
-import mongoose, { Document, Schema, Model, Types } from "mongoose";
+import mongoose, {
+  Document,
+  Schema,
+  Model,
+  Types,
+} from "mongoose";
 
-export interface IAddress {
-  _id?: Types.ObjectId;
+export interface IAddress extends Types.Subdocument {
+  _id: Types.ObjectId;
   street: string;
   ward: string;
   district: string;
@@ -18,6 +23,7 @@ export interface IUser extends Document {
   role: "user" | "admin";
   is_active: boolean;
   refreshToken?: string | null;
+  wishlist: Types.ObjectId[];
 }
 
 const addressSchema = new Schema<IAddress>(
@@ -33,7 +39,7 @@ const addressSchema = new Schema<IAddress>(
   }
 );
 
-const userSchema: Schema<IUser> = new Schema(
+const userSchema = new Schema<IUser>(
   {
     email: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true },
@@ -48,6 +54,12 @@ const userSchema: Schema<IUser> = new Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     is_active: { type: Boolean, default: true },
     refreshToken: { type: String, default: null },
+    wishlist: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
   },
   {
     timestamps: true,

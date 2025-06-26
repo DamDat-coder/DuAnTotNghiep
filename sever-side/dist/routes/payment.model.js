@@ -34,38 +34,41 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const addressSchema = new mongoose_1.Schema({
-    street: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
-    district: { type: String, required: true, trim: true },
-    province: { type: String, required: true, trim: true },
-    is_default: { type: Boolean, default: false },
-}, {
-    _id: true,
-});
-const userSchema = new mongoose_1.Schema({
-    email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true },
-    name: { type: String, required: true, trim: true },
-    addresses: [addressSchema],
-    phone: {
-        type: Number,
-        default: null,
-        unique: true,
-        sparse: true,
+const paymentSchema = new mongoose_1.Schema({
+    name: {
+        type: String,
+        required: true,
+        enum: ["cod", "momo", "paypal", "vnpay"],
     },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    is_active: { type: Boolean, default: true },
-    refreshToken: { type: String, default: null },
-    wishlist: [
-        {
-            type: mongoose_1.Schema.Types.ObjectId,
-            ref: "Product",
-        },
-    ],
+    order_id: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "Order",
+        required: true,
+    },
+    amount: {
+        type: Number,
+        required: true,
+        min: 0,
+    },
+    status: {
+        type: String,
+        enum: ["pending", "success", "failed"],
+        default: "pending",
+    },
+    transaction_code: {
+        type: String,
+        default: null,
+    },
+    transaction_data: {
+        type: mongoose_1.Schema.Types.Mixed,
+        default: null,
+    },
+    paid_at: {
+        type: Date,
+        default: null,
+    },
 }, {
-    timestamps: true,
-    versionKey: false,
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
 });
-const UserModel = mongoose_1.default.model("User", userSchema);
-exports.default = UserModel;
+const PaymentModel = mongoose_1.default.model("Payment", paymentSchema);
+exports.default = PaymentModel;

@@ -34,38 +34,22 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const addressSchema = new mongoose_1.Schema({
-    street: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
-    district: { type: String, required: true, trim: true },
-    province: { type: String, required: true, trim: true },
-    is_default: { type: Boolean, default: false },
-}, {
-    _id: true,
-});
-const userSchema = new mongoose_1.Schema({
-    email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true },
-    name: { type: String, required: true, trim: true },
-    addresses: [addressSchema],
-    phone: {
-        type: Number,
-        default: null,
-        unique: true,
-        sparse: true,
+const paymentSchema = new mongoose_1.Schema({
+    orderId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Order', required: true },
+    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    method: {
+        type: String,
+        enum: ['cash', 'credit_card', 'vnpay', 'momo'],
+        required: true,
     },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    is_active: { type: Boolean, default: true },
-    refreshToken: { type: String, default: null },
-    wishlist: [
-        {
-            type: mongoose_1.Schema.Types.ObjectId,
-            ref: "Product",
-        },
-    ],
-}, {
-    timestamps: true,
-    versionKey: false,
-});
-const UserModel = mongoose_1.default.model("User", userSchema);
-exports.default = UserModel;
+    amount: { type: Number, required: true },
+    status: {
+        type: String,
+        enum: ['pending', 'success', 'failed'],
+        default: 'pending',
+    },
+    transactionId: { type: String, default: null },
+    paidAt: { type: Date, default: null },
+}, { timestamps: true });
+const PaymentModel = mongoose_1.default.model('Payment', paymentSchema);
+exports.default = PaymentModel;

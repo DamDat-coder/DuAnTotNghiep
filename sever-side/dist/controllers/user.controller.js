@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = void 0;
+exports.getCurrentUser = exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_model_1 = __importDefault(require("../models/user.model"));
@@ -354,3 +354,23 @@ const getWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getWishlist = getWishlist;
+const getCurrentUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+        if (!userId) {
+            return res.status(401).json({ message: "Không xác thực được người dùng" });
+        }
+        const currentUser = yield user_model_1.default.findById(userId)
+            .select("-password -refreshToken")
+            .populate("wishlist", "name slug image variants");
+        if (!currentUser) {
+            return res.status(404).json({ message: "Không tìm thấy người dùng" });
+        }
+        res.status(200).json({ user: currentUser });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Lỗi server", error });
+    }
+});
+exports.getCurrentUser = getCurrentUser;

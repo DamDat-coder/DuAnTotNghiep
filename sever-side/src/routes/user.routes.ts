@@ -14,7 +14,8 @@ import {
   updateUserInfo,
   addToWishlist,
   removeFromWishlist,
-  getWishlist
+  getWishlist,
+  getCurrentUser
 } from "../controllers/user.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
@@ -32,6 +33,7 @@ router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);
 router.put("/:id", verifyToken, updateUserInfo);
+router.get("/me", verifyToken, getCurrentUser);
 
 // Quản lý người dùng (Chỉ dành cho admin)
 router.get("/", verifyToken, verifyAdmin, getAllUsers);

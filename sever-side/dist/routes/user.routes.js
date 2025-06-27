@@ -17,6 +17,7 @@ router.post("/login", user_controller_1.loginUser);
 router.post("/logout", user_controller_1.logoutUser);
 router.post("/refresh-token", user_controller_1.refreshAccessToken);
 router.put("/:id", auth_middleware_1.verifyToken, user_controller_1.updateUserInfo);
+router.get("/me", auth_middleware_1.verifyToken, user_controller_1.getCurrentUser);
 // Quản lý người dùng (Chỉ dành cho admin)
 router.get("/", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, user_controller_1.getAllUsers);
 router.get("/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, user_controller_1.getUserById);

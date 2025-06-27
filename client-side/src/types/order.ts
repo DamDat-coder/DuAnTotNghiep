@@ -9,7 +9,7 @@ export interface OrderItem {
   quantity: number;
 }
 
-export interface Order {
+export interface IOrder {
   id: string;
   user: { name: string; email: string };
   total: number;

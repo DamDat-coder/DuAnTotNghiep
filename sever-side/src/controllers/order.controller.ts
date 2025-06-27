@@ -5,6 +5,7 @@ import UserModel from "../models/user.model";
 import CouponModel from "../models/coupon.model";
 import PaymentModel from "../models/payment.model";
 
+// Tạo đơn hàng sau khi thanh toán thành công
 export const createOrder = async (req: Request, res: Response) => {
   try {
     const { paymentId } = req.body;

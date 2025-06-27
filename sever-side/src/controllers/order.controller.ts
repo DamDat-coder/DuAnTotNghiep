@@ -5,7 +5,6 @@ import UserModel from "../models/user.model";
 import CouponModel from "../models/coupon.model";
 import PaymentModel from "../models/payment.model";
 
-// Tạo đơn hàng sau khi thanh toán thành công
 export const createOrder = async (req: Request, res: Response) => {
   try {
     const { paymentId } = req.body;
@@ -115,6 +114,7 @@ export const createOrder = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
+
 
 // Lấy tất cả đơn hàng (Admin)
 export const getOrders = async (req: Request, res: Response) => {

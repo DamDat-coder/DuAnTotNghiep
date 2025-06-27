@@ -63,6 +63,7 @@ const userSchema = new mongoose_1.Schema({
             ref: "Product",
         },
     ],
+    googleId: { type: String, default: null },
 }, {
     timestamps: true,
     versionKey: false,

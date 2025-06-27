@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
+// Lấy tất cả coupon
 const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const coupons = yield coupon_model_1.default.find()
@@ -23,7 +24,7 @@ const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(200).json(coupons);
     }
     catch (error) {
-        console.error("Lỗi khi lấy coupon:", error); // ← LOG lỗi tại đây
+        console.error("Lỗi khi lấy coupon:", error);
         res.status(500).json({
             message: "Lỗi server",
             error: error.message || error

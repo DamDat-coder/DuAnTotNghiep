@@ -14,7 +14,6 @@ const vnpay = new VNPay({
   loggerFn: () => { }
 });
 
-// Tạo URL thanh toán VNPay
 export const createVNPayPayment = async (req: Request, res: Response) => {
   try {
     const { orderId, totalPrice, userId, orderInfo } = req.body;
@@ -55,7 +54,6 @@ export const createVNPayPayment = async (req: Request, res: Response) => {
   }
 };
 
-// Xử lý callback từ VNPay sau khi thanh toán
 export const checkVNPayReturn = async (req: Request, res: Response) => {
   try {
     const queryParams = req.query as ReturnQueryFromVNPay;

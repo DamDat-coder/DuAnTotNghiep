@@ -24,6 +24,7 @@ export interface IUser extends Document {
   is_active: boolean;
   refreshToken?: string | null;
   wishlist: Types.ObjectId[];
+  googleId?: string;
 }
 
 const addressSchema = new Schema<IAddress>(
@@ -60,6 +61,7 @@ const userSchema = new Schema<IUser>(
         ref: "Product",
       },
     ],
+    googleId: { type: String, default: null }, 
   },
   {
     timestamps: true,

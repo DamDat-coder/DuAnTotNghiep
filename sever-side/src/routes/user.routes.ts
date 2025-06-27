@@ -1,9 +1,11 @@
 import { Router } from "express";
 import {
+  getCurrentUser,
   addAddress,
   updateAddress,
   deleteAddress,
   setDefaultAddress,
+  googleLogin,
   registerUser,
   loginUser,
   logoutUser,
@@ -27,6 +29,8 @@ router.delete("/:id/addresses/:addressId", deleteAddress);
 router.patch("/:id/addresses/:addressId/default", setDefaultAddress);
 
 // Quản lý người dùng
+router.get("/me", verifyToken, getCurrentUser);
+router.get("/google-login",  googleLogin); 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);

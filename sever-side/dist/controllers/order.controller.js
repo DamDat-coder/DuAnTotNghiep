@@ -17,6 +17,7 @@ const order_model_1 = __importDefault(require("../models/order.model"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
+// Tạo đơn hàng sau khi thanh toán thành công
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {

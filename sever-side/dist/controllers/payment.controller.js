@@ -62,6 +62,7 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.createVNPayPayment = createVNPayPayment;
+
 // Xử lý callback từ VNPay sau khi thanh toán
 const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

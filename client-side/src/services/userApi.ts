@@ -29,21 +29,17 @@ export async function login(
     }
 
     const data = await res.json();
-    console.log("Login response:", data);
-    console.log("Access Token:", data.accessToken);
     const user: IUser = {
-      id: data.user._id,
-      email: data.user.email,
-      name: data.user.name,
-      phone: data.user.phone || null,
-      role: data.user.role,
-      active: data.user.is_active,
+      id: data.data.user._id,
+      email: data.data.user.email,
+      name: data.data.user.name,
+      phone: data.data.user.phone || null,
+      role: data.data.user.role,
+      active: data.data.user.is_active,
     };
 
     if (isBrowser()) {
-      localStorage.setItem("accessToken", data.accessToken);
-      console.log("Stored accessToken:", data.accessToken);
-      console.log("Cookies after login:", document.cookie);
+      localStorage.setItem("accessToken", data.data.accessToken);
     }
 
     return { user, accessToken: data.accessToken };
@@ -84,40 +80,43 @@ export async function register(
 
     const data = await res.json();
     const user: IUser = {
-      id: data.user._id,
-      name: data.user.name || "",
-      phone: data.user.phone || null,
-      email: data.user.email || email,
-      role: data.user.role || "user",
-      active: data.user.is_active,
+      id: data.data.user.id,
+      name: data.data.user.name || "",
+      phone: data.data.user.phone || null,
+      email: data.data.user.email || email,
+      role: data.data.user.role || "user",
+      active: data.data.user.is_active,
     };
-
-    return { user, accessToken: data.accessToken };
+    console.log("User - Register"+user.id);
+    
+    console.log("AccessToken - Register"+data.data.accessToken);
+    return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
     console.error("Error registering:", error);
     throw error;
   }
 }
 
-// Lấy thông tin user (endpoint: /users/me)
 export async function fetchUser(): Promise<IUser | null> {
   try {
     const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/me`, {
       cache: "no-store",
     });
-    if (!data || !data._id) {
-      console.warn("fetchUser - Invalid user data, returning null");
+
+    if (!data || !data.user._id) {
+      console.warn("fetchUser - Invalid user data:", data);
       return null;
     }
     return {
-      id: data._id,
-      email: data.email,
-      name: data.name,
-      phone: data.phone || null,
-      role: data.role,
-      active: data.is_active,
+      id: data.user._id,
+      email: data.user.email,
+      name: data.user.name,
+      phone: data.user.phone || null,
+      role: data.user.role,
+      active: data.user.is_active,
     };
   } catch (error: any) {
+    console.error("fetchUser - Error:", error.message);
     return null;
   }
 }

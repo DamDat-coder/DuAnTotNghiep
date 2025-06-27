@@ -9,6 +9,7 @@ import {
 } from "react";
 import { AuthContextType, IUser } from "../types/auth";
 import { login, register, fetchUser } from "../services/userApi";
+import { refreshToken } from "@/services/api";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -91,7 +92,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
         localStorage.setItem("accessToken", accessToken);
       } else {
-        setRegisterFormData({ name, email, password, confirmPassword: password });
+        setRegisterFormData({
+          name,
+          email,
+          password,
+          confirmPassword: password,
+        });
         setOpenLoginWithData(true);
       }
 
@@ -117,13 +123,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (userData) {
         setUser(userData);
       } else {
-        console.warn("checkAuth - fetchUser returned null, logging out");
-        logoutHandler();
+        console.warn("checkAuth - fetchUser returned null");
+        setUser(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("checkAuth - Error:", error);
-      console.warn("checkAuth - Logging out due to error");
-      logoutHandler();
+      if (error.message.includes("401")) {
+        console.warn("checkAuth - Unauthorized, attempting to refresh token");
+        try {
+          const newToken = await refreshToken(); // Hàm làm mới token
+          localStorage.setItem("accessToken", String(newToken));
+          const userData = await fetchUser(); // Thử lại
+          setUser(userData || null);
+        } catch (refreshError) {
+          console.error("checkAuth - Refresh token failed:", refreshError);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     }
   };
 

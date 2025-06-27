@@ -80,15 +80,17 @@ export async function register(
 
     const data = await res.json();
     const user: IUser = {
-      id: data.data.user._id,
+      id: data.data.user.id,
       name: data.data.user.name || "",
       phone: data.data.user.phone || null,
       email: data.data.user.email || email,
       role: data.data.user.role || "user",
       active: data.data.user.is_active,
     };
-
-    return { user, accessToken: data.accessToken };
+    console.log("User - Register"+user.id);
+    
+    console.log("AccessToken - Register"+data.data.accessToken);
+    return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
     console.error("Error registering:", error);
     throw error;
@@ -100,18 +102,18 @@ export async function fetchUser(): Promise<IUser | null> {
     const data = await fetchWithAuth<any>(`${API_BASE_URL}/users/me`, {
       cache: "no-store",
     });
-    console.log("fetchUser - API response:", JSON.stringify(data, null, 2));
-    if (!data || !data._id) {
+
+    if (!data || !data.user._id) {
       console.warn("fetchUser - Invalid user data:", data);
       return null;
     }
     return {
-      id: data._id,
-      email: data.email,
-      name: data.name,
-      phone: data.phone || null,
-      role: data.role,
-      active: data.is_active,
+      id: data.user._id,
+      email: data.user.email,
+      name: data.user.name,
+      phone: data.user.phone || null,
+      role: data.user.role,
+      active: data.user.is_active,
     };
   } catch (error: any) {
     console.error("fetchUser - Error:", error.message);

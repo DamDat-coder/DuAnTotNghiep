@@ -446,25 +446,3 @@ export const getWishlist = async (req: Request, res: Response, next: NextFunctio
     next(err);
   }
 };
-
-export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Không xác thực được người dùng" });
-    }
-
-    const currentUser = await UserModel.findById(userId)
-      .select("-password -refreshToken")
-      .populate("wishlist", "name slug image variants");
-
-    if (!currentUser) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
-    }
-
-    res.status(200).json({ user: currentUser });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
-  }
-};

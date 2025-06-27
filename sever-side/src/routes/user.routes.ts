@@ -17,7 +17,6 @@ import {
   addToWishlist,
   removeFromWishlist,
   getWishlist,
-  getCurrentUser
 } from "../controllers/user.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 

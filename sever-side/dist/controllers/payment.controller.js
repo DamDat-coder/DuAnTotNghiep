@@ -25,6 +25,7 @@ const vnpay = new vnpay_1.VNPay({
     hashAlgorithm: vnpay_1.HashAlgorithm.SHA512,
     loggerFn: () => { }
 });
+// Tạo URL thanh toán VNPay
 const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { orderId, totalPrice, userId, orderInfo } = req.body;
@@ -61,6 +62,8 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.createVNPayPayment = createVNPayPayment;
+
+// Xử lý callback từ VNPay sau khi thanh toán
 const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const queryParams = req.query;

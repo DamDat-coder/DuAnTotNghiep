@@ -10,6 +10,8 @@ router.put("/:id/addresses/:addressId", user_controller_1.updateAddress);
 router.delete("/:id/addresses/:addressId", user_controller_1.deleteAddress);
 router.patch("/:id/addresses/:addressId/default", user_controller_1.setDefaultAddress);
 // Quản lý người dùng
+router.get("/me", auth_middleware_1.verifyToken, user_controller_1.getCurrentUser);
+router.get("/google-login", user_controller_1.googleLogin);
 router.post("/register", user_controller_1.registerUser);
 router.post("/login", user_controller_1.loginUser);
 router.post("/logout", user_controller_1.logoutUser);

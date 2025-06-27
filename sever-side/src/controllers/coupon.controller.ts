@@ -4,6 +4,7 @@ import Category from '../models/category.model';
 import Product from '../models/product.model';
 import mongoose from 'mongoose';
 
+// Lấy tất cả coupon
 export const getAllCoupons = async (req: Request, res: Response) => {
   try {
     const coupons = await Coupon.find()
@@ -12,14 +13,13 @@ export const getAllCoupons = async (req: Request, res: Response) => {
 
     res.status(200).json(coupons);
   } catch (error: any) {
-    console.error("Lỗi khi lấy coupon:", error); // ← LOG lỗi tại đây
+    console.error("Lỗi khi lấy coupon:", error);
     res.status(500).json({
       message: "Lỗi server",
       error: error.message || error
     });
   }
 };
-
 
 // Lấy coupon theo ID
 export const getCouponById = async (req: Request, res: Response) => {

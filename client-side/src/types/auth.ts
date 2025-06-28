@@ -13,7 +13,7 @@ export interface IUser {
   phone: string | null;
   role: "user" | "admin";
   active: boolean;
-  addresses?: Address[];
+  addresses: Address[];
   defaultAddress?: string;
 }
 

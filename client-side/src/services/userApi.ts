@@ -16,6 +16,11 @@ interface UpdateDefaultAddressResponse {
   message: string;
   data: Address;
 }
+// Interface cho response cập nhật địa chỉ mặc định
+interface UpdateDefaultAddressResponse {
+  message: string;
+  data: Address;
+}
 // Hàm đăng nhập
 export async function login(
   email: string,
@@ -44,6 +49,7 @@ export async function login(
       phone: data.data.user.phone || null,
       role: data.data.user.role,
       active: data.data.user.is_active,
+      addresses: [],
     };
 
     if (isBrowser()) {
@@ -95,10 +101,11 @@ export async function register(
       email: data.data.user.email || email,
       role: data.data.user.role || "user",
       active: data.data.user.is_active,
+      addresses: [],
     };
-    console.log("User - Register"+user.id);
-    
-    console.log("AccessToken - Register"+data.data.accessToken);
+    console.log("User - Register" + user.id);
+
+    console.log("AccessToken - Register" + data.data.accessToken);
     return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
     console.error("Error registering:", error);
@@ -116,6 +123,7 @@ export async function fetchUser(): Promise<IUser | null> {
       console.warn("fetchUser - Invalid user data:", data);
       return null;
     }
+    console.log("User - fetchUser",data.addresses);
     return {
       id: data.user._id,
       email: data.user.email,
@@ -123,6 +131,7 @@ export async function fetchUser(): Promise<IUser | null> {
       phone: data.user.phone || null,
       role: data.user.role,
       active: data.user.is_active,
+      addresses: data.user.addresses || [],
     };
   } catch (error: any) {
     console.error("fetchUser - Error:", error.message);
@@ -149,6 +158,7 @@ export async function fetchAllUsers(): Promise<IUser[] | null> {
       avatar: userData.avatar || null,
       role: userData.role,
       active: userData.is_active,
+      addresses: userData.is_addresses,
     }));
 
     return users;
@@ -183,22 +193,28 @@ export async function updateUser(data: UpdateUserData): Promise<IUser | null> {
 }
 
 // Thêm địa chỉ mới
-export async function addAddressWhenCheckout(userId: string, address: {
-  street: string;
-  ward: string;
-  district: string;
-  province: string;
-  is_default: boolean;
-}): Promise<Address> {
+export async function addAddressWhenCheckout(
+  userId: string,
+  address: {
+    street: string;
+    ward: string;
+    district: string;
+    province: string;
+    is_default: boolean;
+  }
+): Promise<Address> {
   if (!userId || userId === "undefined") {
     throw new Error("userId không hợp lệ");
   }
   try {
-    const response = await fetchWithAuth<AddAddressResponse>(`${API_BASE_URL}/users/${userId}/addresses`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(address),
-    });
+    const response = await fetchWithAuth<AddAddressResponse>(
+      `${API_BASE_URL}/users/${userId}/addresses`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(address),
+      }
+    );
     // Lấy địa chỉ mới nhất (phần tử cuối cùng của mảng data)
     const newAddress = response.data[response.data.length - 1];
     if (!newAddress || !newAddress._id) {
@@ -214,25 +230,11 @@ export async function addAddressWhenCheckout(userId: string, address: {
   }
 }
 
-// Lấy danh sách địa chỉ của người dùng
-export async function getUserAddresses(userId: string): Promise<Address[]> {
-  if (!userId || userId === "undefined") {
-    throw new Error("userId không hợp lệ");
-  }
-  try {
-    const response = await fetchWithAuth<AddAddressResponse>(`${API_BASE_URL}/users/${userId}/addresses`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error("Error fetching addresses:", error);
-    throw new Error(error.message || "Không thể lấy danh sách địa chỉ");
-  }
-}
-
 // Cập nhật địa chỉ mặc định
-export async function setDefaultAddress(userId: string, addressId: string): Promise<Address> {
+export async function setDefaultAddress(
+  userId: string,
+  addressId: string
+): Promise<Address> {
   if (!userId || !addressId) {
     throw new Error("userId hoặc addressId không hợp lệ");
   }

@@ -20,7 +20,7 @@ const google_auth_library_1 = require("google-auth-library");
 // Tạo token
 const generateAccessToken = (userId, role) => {
     return jsonwebtoken_1.default.sign({ userId, role }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
+        expiresIn: "24h",
     });
 };
 // Tạo refresh token
@@ -186,7 +186,7 @@ exports.loginUser = loginUser;
 // Làm mới accessToken
 const refreshAccessToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { refreshToken } = req.body;
+        const refreshToken = req.cookies.refreshToken;
         if (!refreshToken)
             return res.status(401).json({ success: false, message: "Thiếu refresh token." });
         const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);

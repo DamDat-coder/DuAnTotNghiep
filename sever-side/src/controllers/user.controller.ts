@@ -226,17 +226,44 @@ export const logoutUser = async (req: Request, res: Response, next: NextFunction
 };
 
 // Lấy tất cả người dùng
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (req: Request, res: Response): Promise<Response> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, role } = req.query;
-    const filter: any = {};
+    const { search, role, is_block } = req.query;
+    const filter: Record<string, any> = {};
 
-    if (search) filter.name = { $regex: search.toString(), $options: "i" };
-    if (role) filter.role = role;
+    if (role && typeof is_block !== "undefined") {
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ được lọc theo một trong hai: 'role' hoặc 'is_block'.",
+      });
+    }
+
+    if (search) {
+      const keyword = search.toString();
+      filter.$or = [
+        { name: { $regex: keyword, $options: "i" } },
+        { email: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    if (role) {
+      filter.role = role;
+    }
+
+    if (typeof is_block !== "undefined") {
+      if (is_block === "true") filter.is_block = true;
+      else if (is_block === "false") filter.is_block = false;
+      else {
+        return res.status(400).json({
+          success: false,
+          message: "Giá trị 'is_block' phải là 'true' hoặc 'false'.",
+        });
+      }
+    }
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
@@ -245,7 +272,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       total,
       currentPage: page,
@@ -253,7 +280,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
       data: users,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+    console.error("Lỗi khi lấy danh sách người dùng:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ.",
+    });
   }
 };
 
@@ -296,38 +327,72 @@ export const updateUserInfo = async (req: Request, res: Response, next: NextFunc
 export const toggleUserStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { is_active } = req.body;
-    if (typeof is_active !== "boolean")
+    if (typeof is_active !== "boolean") {
       return res.status(400).json({ success: false, message: "`is_active` phải là boolean." });
+    }
 
-    const user = await UserModel.findByIdAndUpdate(req.params.id, { is_active }, { new: true }).select("-password");
+    const user = await UserModel.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    }
 
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (user.role === "admin" && !is_active) {
+      return res.status(403).json({ success: false, message: "Không thể khoá tài khoản admin." });
+    }
+
+    user.is_active = is_active;
+    await user.save();
+
+    const { password, ...userData } = user.toObject();
 
     res.status(200).json({
       success: true,
       message: is_active ? "Đã mở khoá tài khoản." : "Đã khoá tài khoản.",
-      data: user,
+      data: userData,
     });
   } catch (err) {
     next(err);
   }
 };
 
+
+
 // Thêm địa chỉ
 export const addAddress = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { street, ward, district, province, is_default } = req.body;
+
     const user = await UserModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    }
+
+    const isDuplicate = user.addresses.some(addr =>
+      addr.street === street &&
+      addr.ward === ward &&
+      addr.district === district &&
+      addr.province === province
+    );
+
+    if (isDuplicate) {
+      return res.status(400).json({
+        success: false,
+        message: "Địa chỉ đã tồn tại.",
+      });
+    }
 
     if (is_default) {
-      user.addresses.forEach((addr) => (addr.is_default = false));
+      user.addresses.forEach(addr => (addr.is_default = false));
     }
 
     user.addresses.push({ street, ward, district, province, is_default: !!is_default });
     await user.save();
 
-    res.status(201).json({ success: true, message: "Thêm địa chỉ thành công.", data: user.addresses });
+    res.status(201).json({
+      success: true,
+      message: "Thêm địa chỉ thành công.",
+      data: user.addresses,
+    });
   } catch (err) {
     next(err);
   }

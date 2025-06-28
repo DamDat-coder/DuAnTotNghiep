@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import OrderModel from "../models/order.model";
 import ProductModel from "../models/product.model";
-import UserModel from "../models/user.model";
 import CouponModel from "../models/coupon.model";
 import PaymentModel from "../models/payment.model";
 
@@ -115,7 +114,6 @@ export const createOrder = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
-
 
 // Lấy tất cả đơn hàng (Admin)
 export const getOrders = async (req: Request, res: Response) => {

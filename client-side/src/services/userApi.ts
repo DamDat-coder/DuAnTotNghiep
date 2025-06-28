@@ -11,6 +11,11 @@ interface AddAddressResponse {
   message: string;
   data: Address[];
 }
+// Interface cho response cập nhật địa chỉ mặc định
+interface UpdateDefaultAddressResponse {
+  message: string;
+  data: Address;
+}
 // Hàm đăng nhập
 export async function login(
   email: string,
@@ -201,10 +206,47 @@ export async function addAddressWhenCheckout(userId: string, address: {
     }
     return {
       ...newAddress,
-      _id: newAddress._id, // Đảm bảo _id được trả về
+      _id: newAddress._id,
     };
   } catch (error: any) {
     console.error("Error adding address:", error);
     throw new Error(error.message || "Không thể thêm địa chỉ");
+  }
+}
+
+// Lấy danh sách địa chỉ của người dùng
+export async function getUserAddresses(userId: string): Promise<Address[]> {
+  if (!userId || userId === "undefined") {
+    throw new Error("userId không hợp lệ");
+  }
+  try {
+    const response = await fetchWithAuth<AddAddressResponse>(`${API_BASE_URL}/users/${userId}/addresses`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching addresses:", error);
+    throw new Error(error.message || "Không thể lấy danh sách địa chỉ");
+  }
+}
+
+// Cập nhật địa chỉ mặc định
+export async function setDefaultAddress(userId: string, addressId: string): Promise<Address> {
+  if (!userId || !addressId) {
+    throw new Error("userId hoặc addressId không hợp lệ");
+  }
+  try {
+    const response = await fetchWithAuth<UpdateDefaultAddressResponse>(
+      `${API_BASE_URL}/users/${userId}/addresses/${addressId}/default`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error setting default address:", error);
+    throw new Error(error.message || "Không thể cập nhật địa chỉ mặc định");
   }
 }

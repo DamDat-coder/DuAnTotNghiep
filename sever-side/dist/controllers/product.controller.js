@@ -20,14 +20,11 @@ const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 // Lấy tất cả sản phẩm cho admin
 const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, // dùng name nhưng tìm theo slug
-        is_active, limit, sort, page, } = req.query;
+        const { name, is_active, limit, sort, page, } = req.query;
         const query = {};
-        // 🔍 Tìm kiếm gần đúng theo slug
         if (name) {
             query.slug = new RegExp(name, "i");
         }
-        // 📦 Lọc theo trạng thái hoạt động
         if (typeof is_active !== "undefined") {
             if (is_active === "true")
                 query.is_active = true;
@@ -40,11 +37,9 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
                 });
             }
         }
-        // 📄 Phân trang
         const pageNum = Math.max(parseInt(page) || 1, 1);
         const limitNum = Math.max(parseInt(limit) || 10, 1);
         const skip = (pageNum - 1) * limitNum;
-        // 🧠 Sắp xếp
         const sortMap = {
             "newest": { _id: -1 },
             "best-seller": { salesCount: -1 },

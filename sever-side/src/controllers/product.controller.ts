@@ -6,13 +6,10 @@ import cloudinary from '../config/cloudinary';
 import { UploadApiResponse } from 'cloudinary';
 
 // Lấy tất cả sản phẩm cho admin
-export const getAllProductsAdmin = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const getAllProductsAdmin = async (req: Request, res: Response): Promise<Response> => {
   try {
     const {
-      name,          // dùng name nhưng tìm theo slug
+      name,        
       is_active,
       limit,
       sort,
@@ -21,12 +18,10 @@ export const getAllProductsAdmin = async (
 
     const query: Record<string, any> = {};
 
-    // 🔍 Tìm kiếm gần đúng theo slug
     if (name) {
       query.slug = new RegExp(name as string, "i");
     }
 
-    // 📦 Lọc theo trạng thái hoạt động
     if (typeof is_active !== "undefined") {
       if (is_active === "true") query.is_active = true;
       else if (is_active === "false") query.is_active = false;
@@ -38,12 +33,10 @@ export const getAllProductsAdmin = async (
       }
     }
 
-    // 📄 Phân trang
     const pageNum = Math.max(parseInt(page as string) || 1, 1);
     const limitNum = Math.max(parseInt(limit as string) || 10, 1);
     const skip = (pageNum - 1) * limitNum;
 
-    // 🧠 Sắp xếp
     const sortMap: Record<string, any> = {
       "newest": { _id: -1 },
       "best-seller": { salesCount: -1 },

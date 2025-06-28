@@ -30,7 +30,7 @@ router.patch("/:id/addresses/:addressId/default", setDefaultAddress);
 
 // Quản lý người dùng
 router.get("/me", verifyToken, getCurrentUser);
-router.get("/google-login",  googleLogin); 
+router.post("/google-login",  googleLogin); 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);

@@ -64,6 +64,40 @@ export async function login(
   }
 }
 
+export const googleLogin = async (id_token: string) => {
+  const res = await fetch(
+    `${API_BASE_URL}/users/google-login`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token }),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Google login failed: ${text}`);
+  }
+
+  const data = await res.json();
+  const user: IUser = {
+    id: data.data.user._id,
+    email: data.data.user.email,
+    name: data.data.user.name,
+    phone: data.data.user.phone || null,
+    role: data.data.user.role,
+    active: data.data.user.is_active,
+    addresses: [],
+  };
+
+  if (isBrowser()) {
+    localStorage.setItem("accessToken", data.data.accessToken);
+    document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=3600`;
+  }
+
+  return { user, accessToken: data.accessToken };
+};
+
 export async function register(
   name: string,
   email: string,
@@ -123,7 +157,7 @@ export async function fetchUser(): Promise<IUser | null> {
       console.warn("fetchUser - Invalid user data:", data);
       return null;
     }
-    console.log("User - fetchUser",data.addresses);
+    console.log("User - fetchUser", data.addresses);
     return {
       id: data.user._id,
       email: data.user.email,

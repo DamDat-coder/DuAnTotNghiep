@@ -43,7 +43,7 @@ const addressSchema = new Schema<IAddress>(
 const userSchema = new Schema<IUser>(
   {
     email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     name: { type: String, required: true, trim: true },
     addresses: [addressSchema],
     phone: {

@@ -17,10 +17,10 @@ export interface IUser {
   defaultAddress?: string;
 }
 
-export interface AuthContextType {
+export type AuthContextType = {
   user: IUser | null;
   login: (
-    email: string,
+    identifier: string,
     password: string,
     keepLoggedIn: boolean
   ) => Promise<boolean>;
@@ -31,12 +31,13 @@ export interface AuthContextType {
     keepLoggedIn: boolean
   ) => Promise<boolean>;
   logout: () => void;
+  loginWithGoogle: (id_token: string) => Promise<boolean>;
   openLoginWithData: boolean;
-  setOpenLoginWithData: (value: boolean) => void;
+  setOpenLoginWithData: React.Dispatch<React.SetStateAction<boolean>>;
   registerFormData: {
     name: string;
     email: string;
     password: string;
     confirmPassword: string;
   } | null;
-}
+};

@@ -7,9 +7,10 @@ import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 // Tạo token
 const generateAccessToken = (userId: string, role: string): string => {
   return jwt.sign({ userId, role }, process.env.JWT_SECRET as string, {
-    expiresIn: "1h",
+    expiresIn: "24h",
   });
 };
+
 // Tạo refresh token
 const generateRefreshToken = (userId: string): string => {
   return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET as string, {
@@ -188,11 +189,10 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-
 // Làm mới accessToken
 export const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) return res.status(401).json({ success: false, message: "Thiếu refresh token." });
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as JwtPayload;

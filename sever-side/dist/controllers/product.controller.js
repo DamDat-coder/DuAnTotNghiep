@@ -20,52 +20,73 @@ const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 // Lấy tất cả sản phẩm cho admin
 const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, limit, sort, page, } = req.query;
+        const { name, // dùng name nhưng tìm theo slug
+        is_active, limit, sort, page, } = req.query;
         const query = {};
+        // 🔍 Tìm kiếm gần đúng theo slug
         if (name) {
-            query.name = new RegExp(name, 'i');
+            query.slug = new RegExp(name, "i");
         }
-        const options = {};
-        const pageNum = Math.max(parseInt(page) || 1, 1);
-        const limitNum = Math.max(parseInt(limit) || 10, 10);
-        options.skip = (pageNum - 1) * limitNum;
-        options.limit = limitNum;
-        if (sort) {
-            const sortOptions = {
-                'newest': { _id: -1 },
-                'best-seller': { salesCount: -1 },
-                'name-asc': { name: 1 },
-                'name-desc': { name: -1 },
-            };
-            if (!sortOptions[sort]) {
-                res.status(400).json({ status: 'error', message: 'Tùy chọn sắp xếp không hợp lệ. Chỉ hỗ trợ: newest, best-seller, name-asc, name-desc' });
-                return;
+        // 📦 Lọc theo trạng thái hoạt động
+        if (typeof is_active !== "undefined") {
+            if (is_active === "true")
+                query.is_active = true;
+            else if (is_active === "false")
+                query.is_active = false;
+            else {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Giá trị 'is_active' phải là 'true' hoặc 'false'.",
+                });
             }
-            options.sort = sortOptions[sort];
         }
-        else {
-            options.sort = { _id: -1 };
+        // 📄 Phân trang
+        const pageNum = Math.max(parseInt(page) || 1, 1);
+        const limitNum = Math.max(parseInt(limit) || 10, 1);
+        const skip = (pageNum - 1) * limitNum;
+        // 🧠 Sắp xếp
+        const sortMap = {
+            "newest": { _id: -1 },
+            "best-seller": { salesCount: -1 },
+            "name-asc": { name: 1 },
+            "name-desc": { name: -1 },
+        };
+        let sortOption = sortMap["newest"];
+        if (sort) {
+            const sortKey = sort.toString();
+            if (!sortMap[sortKey]) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Tùy chọn sắp xếp không hợp lệ. Hỗ trợ: newest, best-seller, name-asc, name-desc.",
+                });
+            }
+            sortOption = sortMap[sortKey];
         }
         const [products, total] = yield Promise.all([
             product_model_1.default
                 .find(query)
-                .select('name slug category image variants salesCount')
-                .sort(options.sort)
-                .skip(options.skip)
-                .limit(options.limit)
+                .select("name slug category image variants salesCount is_active")
+                .populate("category", "name")
+                .sort(sortOption)
+                .skip(skip)
+                .limit(limitNum)
                 .lean(),
             product_model_1.default.countDocuments(query),
         ]);
         if (!products.length) {
-            res.status(404).json({ status: 'error', message: 'Không tìm thấy sản phẩm' });
-            return;
+            return res
+                .status(404)
+                .json({ status: "error", message: "Không tìm thấy sản phẩm nào" });
         }
-        const result = products.map((product) => (Object.assign(Object.assign({}, product), { category: {
-                _id: product.category._id,
-                name: product.category.name,
-            } })));
-        res.status(200).json({
-            status: 'success',
+        const result = products.map((product) => {
+            var _a, _b;
+            return (Object.assign(Object.assign({}, product), { category: {
+                    _id: ((_a = product.category) === null || _a === void 0 ? void 0 : _a._id) || null,
+                    name: ((_b = product.category) === null || _b === void 0 ? void 0 : _b.name) || "Không rõ",
+                } }));
+        });
+        return res.status(200).json({
+            status: "success",
             data: result,
             total,
             page: pageNum,
@@ -74,8 +95,11 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
         });
     }
     catch (error) {
-        console.error('Lỗi khi lấy tất cả sản phẩm:', error);
-        res.status(500).json({ status: 'error', message: error.message });
+        console.error("Lỗi khi lấy sản phẩm:", error);
+        return res.status(500).json({
+            status: "error",
+            message: error.message || "Lỗi server khi lấy danh sách sản phẩm",
+        });
     }
 });
 exports.getAllProductsAdmin = getAllProductsAdmin;
@@ -258,26 +282,32 @@ exports.getProductById = getProductById;
 const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { slug } = req.params;
-        if (!slug || typeof slug !== 'string') {
-            res.status(400).json({ status: 'error', message: 'Slug không hợp lệ' });
+        if (!slug || typeof slug !== "string") {
+            res.status(400).json({ status: "error", message: "Slug không hợp lệ" });
             return;
         }
-        const product = yield product_model_1.default
-            .findOne({ slug })
+        const products = yield product_model_1.default
+            .find({ slug: { $regex: slug, $options: "i" } })
+            .populate("category", "name")
             .lean();
-        if (!product) {
-            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+        if (!products || products.length === 0) {
+            res.status(404).json({ status: "error", message: "Không tìm thấy sản phẩm nào" });
             return;
         }
-        const result = Object.assign(Object.assign({}, product), { category: {
-                _id: product.category._id,
-                name: product.category.name,
-            } });
-        res.status(200).json({ status: 'success', data: result });
+        const result = products.map((product) => {
+            var _a, _b;
+            return (Object.assign(Object.assign({}, product), { category: {
+                    _id: ((_a = product.category) === null || _a === void 0 ? void 0 : _a._id) || null,
+                    name: ((_b = product.category) === null || _b === void 0 ? void 0 : _b.name) || "Không rõ",
+                } }));
+        });
+        res.status(200).json({ status: "success", data: result, total: result.length });
     }
     catch (error) {
-        console.error('Lỗi khi lấy sản phẩm theo slug:', error);
-        res.status(500).json({ status: 'error', message: error.message });
+        res.status(500).json({
+            status: "error",
+            message: error.message || "Lỗi server khi lấy sản phẩm theo slug",
+        });
     }
 });
 exports.getProductBySlug = getProductBySlug;

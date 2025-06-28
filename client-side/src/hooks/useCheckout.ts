@@ -9,7 +9,16 @@ import { addAddressWhenCheckout } from "@/services/userApi";
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
-import { v4 as uuidv4 } from "uuid";
+
+// Hàm sinh orderId 7 ký tự
+const generateOrderId = () => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 7; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
 
 export const useCheckout = () => {
   const { user } = useAuth() as { user: IUser | null };
@@ -145,7 +154,6 @@ export const useCheckout = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
       toast.error("Vui lòng đăng nhập trước khi thanh toán!");
-      router.push("/login");
       return;
     }
 
@@ -200,7 +208,7 @@ export const useCheckout = () => {
 
       // Chuẩn bị dữ liệu cho thanh toán
       const paymentInfo = {
-        orderId: uuidv4(), // Tạo orderId giả lập
+        orderId: generateOrderId(), // Tạo orderId 7 ký tự
         totalPrice: total,
         userId: user.id,
         orderInfo: {
@@ -225,8 +233,8 @@ export const useCheckout = () => {
 
       // Gọi API thanh toán
       const paymentResponse = await initiatePayment(paymentInfo);
-      console.log(paymentResponse);
-      
+      console.log("Payment response:", paymentResponse); // Debug
+
       if (paymentMethod === "cod") {
         // Tạo đơn hàng chính thức
         const orderResponse = await createOrder(paymentResponse.paymentId, user.id);

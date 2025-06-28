@@ -22,7 +22,7 @@ export async function initiatePayment(paymentInfo: PaymentInfo): Promise<{ payme
 // Tạo đơn hàng chính thức
 export async function createOrder(paymentId: string, userId: string): Promise<{ orderId: string }> {
   try {
-    const res = await fetchWithAuth<{ orderId: string }>(`${API_BASE_URL}/order`, {
+    const res = await fetchWithAuth<{ orderId: string }>(`${API_BASE_URL}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentId, userId }),

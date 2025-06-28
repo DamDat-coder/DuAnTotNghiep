@@ -47,7 +47,6 @@ export default function CartDesktop({
         : null;
     if (!accessToken) {
       alert("Bạn vui lòng đăng nhập trước khi thanh toán!");
-      router.push("/login");
       return;
     }
 

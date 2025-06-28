@@ -269,7 +269,6 @@ export const useCheckout = () => {
       // Chuẩn bị dữ liệu cho thanh toán
       const paymentInfo = {
         orderId: generateOrderId(), // Tạo orderId 7 ký tự
-        orderId: generateOrderId(), // Tạo orderId 7 ký tự
         totalPrice: total,
         userId: user.id,
         orderInfo: {

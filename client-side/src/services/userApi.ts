@@ -223,7 +223,6 @@ export async function addAddressWhenCheckout(
     return {
       ...newAddress,
       _id: newAddress._id,
-      _id: newAddress._id,
     };
   } catch (error: any) {
     console.error("Error adding address:", error);

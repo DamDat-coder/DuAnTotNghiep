@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../../contexts/AuthContext";
+import GoogleLoginButton from "@/components/Auth/GoogleLoginButton";
 
 interface LoginPopupProps {
   isOpen: boolean;
@@ -289,15 +290,7 @@ export default function LoginPopup({
                 </button>
               </p>
 
-              <button className="w-[396px] h-[49px] border border-[#000000] py-2 flex items-center justify-center gap-2 rounded text-sm hover:bg-gray-100">
-                <Image
-                  src="/user/google.svg"
-                  alt="Google"
-                  width={20}
-                  height={20}
-                />
-                <span className="font-medium">Sign in with Google</span>
-              </button>
+              <GoogleLoginButton onLoginSuccess={onClose} />
             </div>
           </form>
         </div>

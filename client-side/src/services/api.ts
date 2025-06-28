@@ -18,7 +18,7 @@ function getAuthHeaders(isFormData: boolean = false) {
 
 export async function refreshToken(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/users/refresh`, {
+    const res = await fetch(`${API_BASE_URL}/users/refresh-token`, {
       method: "POST",
       credentials: "include",
     });

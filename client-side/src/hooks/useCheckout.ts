@@ -2,15 +2,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart, useCartDispatch } from "@/contexts/CartContext"; // Thêm useCartDispatch
-import { createOrder } from "@/services/orderApi";
+import { useCart, useCartDispatch } from "@/contexts/CartContext";
+import { initiatePayment, createOrder } from "@/services/orderApi";
+import { validateCoupon } from "@/services/couponApi";
+import { addAddressWhenCheckout } from "@/services/userApi";
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
+import { Address, IUser } from "@/types/auth";
+import { v4 as uuidv4 } from "uuid";
 
 export const useCheckout = () => {
-  const { user } = useAuth();
-  const { items } = useCart(); // Xóa clearCart
-  const dispatch = useCartDispatch(); // Thêm dispatch
+  const { user } = useAuth() as { user: IUser | null };
+  const { items } = useCart();
+  const dispatch = useCartDispatch();
   const router = useRouter();
 
   // Lấy các sản phẩm được chọn từ giỏ hàng
@@ -104,15 +108,33 @@ export const useCheckout = () => {
   };
 
   // Xử lý áp dụng mã giảm giá
-  const handleApplyDiscount = () => {
-    if (discountCode === "SAVE10") {
-      setDiscount(subtotal * 0.1);
-      toast.success("Áp dụng mã giảm giá thành công!");
-    } else {
+  const handleApplyDiscount = async () => {
+    if (!discountCode) {
       setDiscount(0);
-      toast.error("Mã giảm giá không hợp lệ!");
+      return null; // Không có mã giảm giá
     }
-    console.log("Discount applied:", { discountCode, discount }); // Debug
+
+    try {
+      const response = await validateCoupon(discountCode, subtotal);
+      if (response.success && response.data) {
+        const { discountValue, discountType } = response.data;
+        const discountAmount =
+          discountType === "percent"
+            ? subtotal * (discountValue / 100)
+            : discountValue;
+        setDiscount(discountAmount);
+        toast.success("Áp dụng mã giảm giá thành công!");
+        return response.data.id; // Trả về couponId
+      } else {
+        setDiscount(0);
+        toast.error(response.message || "Mã giảm giá không hợp lệ!");
+        return null;
+      }
+    } catch (error: any) {
+      setDiscount(0);
+      toast.error(error.message || "Mã giảm giá không hợp lệ!");
+      return null;
+    }
   };
 
   // Xử lý submit form
@@ -121,8 +143,9 @@ export const useCheckout = () => {
 
     // Kiểm tra đăng nhập
     const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
+    if (!accessToken || !user || !user.id) {
       toast.error("Vui lòng đăng nhập trước khi thanh toán!");
+      router.push("/login");
       return;
     }
 
@@ -162,24 +185,66 @@ export const useCheckout = () => {
     }
 
     try {
-      // Chuẩn bị dữ liệu cho createOrder
-      const orderData = {
-        products: orderItems.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-        })),
-        shippingAddress: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`,
+      // Lưu địa chỉ từ formData và đặt làm mặc định
+      const newAddress = await addAddressWhenCheckout(user.id, {
+        street: formData.address,
+        ward: formData.ward,
+        district: formData.district,
+        province: formData.province,
+        is_default: true,
+      });
+      console.log("New address:", newAddress); // Debug
+
+      // Kiểm tra và lấy couponId (chỉ khi có discountCode)
+      const couponId = await handleApplyDiscount();
+
+      // Chuẩn bị dữ liệu cho thanh toán
+      const paymentInfo = {
+        orderId: uuidv4(), // Tạo orderId giả lập
+        totalPrice: total,
+        userId: user.id,
+        orderInfo: {
+          address_id: newAddress._id,
+          shippingAddress: {
+            street: formData.address,
+            ward: formData.ward,
+            district: formData.district,
+            province: formData.province,
+          },
+          couponId: couponId || undefined,
+          items: orderItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            color: item.color,
+            size: item.size,
+          })),
+          paymentMethod,
+        },
       };
+      console.log("Payment info:", paymentInfo); // Debug
 
-      // Gọi API createOrder
-      const response = await createOrder(orderData);
-
-      // Xóa giỏ hàng
-      dispatch({ type: "clear" });
-
-      console.log("Order created:", response);
-      toast.success("Đơn hàng đã được xác nhận!");
-      router.push("/profile?tab=orders"); // Chuyển hướng đến trang đơn hàng
+      // Gọi API thanh toán
+      const paymentResponse = await initiatePayment(paymentInfo);
+      console.log(paymentResponse);
+      
+      if (paymentMethod === "cod") {
+        // Tạo đơn hàng chính thức
+        const orderResponse = await createOrder(paymentResponse.paymentId, user.id);
+        // Xóa giỏ hàng
+        dispatch({ type: "clear" });
+        toast.success("Đơn hàng đã được xác nhận!");
+        router.push("/profile?tab=orders");
+      } else {
+        // VNPay: Lưu paymentId và userId vào localStorage
+        localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
+        localStorage.setItem("pendingUserId", user.id);
+        if (paymentResponse.paymentUrl) {
+          window.location.href = paymentResponse.paymentUrl; // Chuyển hướng đến VNPay
+          return; // Chờ callback
+        } else {
+          throw new Error("Không nhận được đường dẫn thanh toán từ VNPay.");
+        }
+      }
     } catch (error: any) {
       console.error("Lỗi khi tạo đơn hàng:", error);
       toast.error(error.message || "Không thể tạo đơn hàng!");

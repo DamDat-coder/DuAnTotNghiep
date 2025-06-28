@@ -93,9 +93,9 @@ export const checkVNPayReturn = async (req: Request, res: Response) => {
 
     // Redirect về frontend tuỳ theo kết quả thanh toán
     if (vnp_ResponseCode === '00') {
-      return res.redirect(`http://localhost:3000/thanh-toan/thanh-cong?orderId=${vnp_TxnRef}`);
+      return res.redirect(`http://localhost:3300/payment/success?orderId=${vnp_TxnRef}`);
     } else {
-      return res.redirect(`http://localhost:3000/thanh-toan/that-bai?orderId=${vnp_TxnRef}`);
+      return res.redirect(`http://localhost:3300/payment/fail?orderId=${vnp_TxnRef}`);
     }
 
   } catch (error) {

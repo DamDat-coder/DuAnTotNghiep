@@ -5,6 +5,94 @@ import categoryModel from '../models/category.model';
 import cloudinary from '../config/cloudinary';
 import { UploadApiResponse } from 'cloudinary';
 
+const getAllChildCategoryIds = async (parentId: string): Promise<string[]> => {
+  const children = await categoryModel.find({ parentId }).select("_id");
+  let ids = children.map((child: { _id: mongoose.Types.ObjectId }) =>
+    child._id.toString()
+  );
+
+  for (const child of children) {
+    const subIds = await getAllChildCategoryIds(child._id.toString());
+    ids = ids.concat(subIds);
+  }
+
+  return ids;
+};
+
+export const getAllProducts = async (req: Request, res: Response) => {
+  try {
+    const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by } = req.query;
+
+    const filter: Record<string, any> = {};
+
+    if (id_cate && typeof id_cate === "string") {
+      const allIds = [id_cate];
+      const childIds = await getAllChildCategoryIds(id_cate);
+      allIds.push(...childIds);
+
+      const validObjectIds = allIds
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id as string));
+
+      filter["category._id"] = { $in: validObjectIds };
+    }
+
+    if (color) filter["variants.color"] = color;
+    if (size) filter["variants.size"] = size;
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      const priceFilter: Record<string, number> = {};
+      if (minPrice !== undefined && !isNaN(Number(minPrice))) {
+        priceFilter.$gte = Number(minPrice);
+      }
+      if (maxPrice !== undefined && !isNaN(Number(maxPrice))) {
+        priceFilter.$lte = Number(maxPrice);
+      }
+      if (Object.keys(priceFilter).length > 0) {
+        filter["variants.price"] = priceFilter;
+      }
+    }
+
+    if (is_active !== undefined) {
+      filter.is_active = is_active === "true";
+    }
+
+    let sort: Record<string, any> = {};
+    switch (sort_by) {
+      case "newest":
+        sort = { createdAt: -1 };
+        break;
+      case "oldest":
+        sort = { createdAt: 1 };
+        break;
+      case "price_asc":
+        sort = { "variants.price": 1 };
+        break;
+      case "price_desc":
+        sort = { "variants.price": -1 };
+        break;
+      case "best_selling":
+        sort = { salesCount: -1 };
+        break;
+    }
+
+    const products = await productModel.find(filter).sort(sort);
+    const total = await productModel.countDocuments(filter);
+
+    res.json({
+      success: true,
+      total,
+      data: products,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách sản phẩm.",
+      error: err,
+    });
+  }
+};
+
 // Lấy tất cả sản phẩm cho admin
 export const getAllProductsAdmin = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -97,182 +185,6 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
       status: "error",
       message: error.message || "Lỗi server khi lấy danh sách sản phẩm",
     });
-  }
-};
-
-// Lấy tất cả sản phẩm 
-export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const {
-      name,
-      id_cate,
-      sort,
-      priceRange,
-      color,
-      size,
-      is_active,
-    } = req.query;
-
-    const query: any = {};
-
-    // is_active
-    if (is_active !== undefined) {
-      if (is_active !== 'true' && is_active !== 'false') {
-        res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
-        return;
-      }
-      query.is_active = is_active === 'true';
-    } else {
-      query.is_active = true;
-    }
-
-    // name
-    if (name) {
-      query.name = new RegExp(name as string, 'i');
-    }
-
-    // id_cate
-    if (id_cate) {
-      const categoryIdStr = String(id_cate);
-      if (!mongoose.Types.ObjectId.isValid(categoryIdStr)) {
-        res.status(400).json({ status: 'error', message: 'Invalid category ID' });
-        return;
-      }
-
-      const categoryIds = [categoryIdStr];
-      const findChildCategories = async (parentId: string) => {
-        const children = await categoryModel.find({ parentid: new mongoose.Types.ObjectId(parentId) }).select('_id').lean();
-        for (const child of children) {
-          const childId = child._id.toString();
-          categoryIds.push(childId);
-          await findChildCategories(childId);
-        }
-      };
-
-      await findChildCategories(categoryIdStr);
-      query['category._id'] = { $in: categoryIds.map(id => new mongoose.Types.ObjectId(id)) };
-    }
-
-    // color + size + priceRange cần gộp vào một filter của variant
-    const variantConditions: any[] = [];
-
-    // color
-    if (color) {
-      const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
-      if (!validColors.includes(color as string)) {
-        res.status(400).json({ status: 'error', message: 'Invalid color' });
-        return;
-      }
-      variantConditions.push({ 'variants.color': color });
-    }
-
-    // size
-    if (size) {
-      const validSizes = ['S', 'M', 'L', 'XL'];
-      if (!validSizes.includes(size as string)) {
-        res.status(400).json({ status: 'error', message: 'Invalid size' });
-        return;
-      }
-      variantConditions.push({ 'variants.size': size });
-    }
-
-    // priceRange
-    let priceMatch: any = null;
-    if (priceRange) {
-      const priceFilters: { [key: string]: any } = {
-        'under-500k': { $lt: 500000 },
-        '500k-1m': { $gte: 500000, $lte: 1000000 },
-        '1m-2m': { $gte: 1000000, $lte: 2000000 },
-        '2m-4m': { $gte: 2000000, $lte: 4000000 },
-        'over-4m': { $gt: 4000000 },
-      };
-      const filter = priceFilters[priceRange as string];
-      if (!filter) {
-        res.status(400).json({ status: 'error', message: `Invalid price range: ${priceRange}` });
-        return;
-      }
-      priceMatch = filter;
-    }
-
-    const pipeline: any[] = [
-      { $match: query },
-      { $unwind: '$variants' },
-      {
-        $addFields: {
-          'variants.discountedPrice': {
-            $multiply: [
-              '$variants.price',
-              { $subtract: [1, { $divide: ['$variants.discountPercent', 100] }] }
-            ]
-          }
-        }
-      },
-    ];
-
-    // $match theo variant cùng lúc
-    const variantMatch: any = {};
-    for (const condition of variantConditions) {
-      Object.assign(variantMatch, condition);
-    }
-    if (priceMatch) {
-      variantMatch['variants.discountedPrice'] = priceMatch;
-    }
-    if (Object.keys(variantMatch).length > 0) {
-      pipeline.push({ $match: variantMatch });
-    }
-
-    // group lại thành sản phẩm
-    pipeline.push({
-      $group: {
-        _id: '$_id',
-        name: { $first: '$name' },
-        slug: { $first: '$slug' },
-        category: { $first: '$category' },
-        image: { $first: '$image' },
-        variants: { $push: '$variants' },
-        is_active: { $first: '$is_active' },
-        salesCount: { $first: '$salesCount' },
-        minDiscountedPrice: { $min: '$variants.discountedPrice' },
-      }
-    });
-
-    // sort
-    if (sort === 'price-asc' || sort === 'price-desc') {
-      pipeline.push({ $sort: { minDiscountedPrice: sort === 'price-asc' ? 1 : -1 } });
-    } else {
-      const sortOptions: { [key: string]: any } = {
-        newest: { _id: -1 },
-        'best-seller': { salesCount: -1 }
-      };
-      if (sort && sortOptions[sort as string]) {
-        pipeline.push({ $sort: sortOptions[sort as string] });
-      }
-    }
-
-    const products = await productModel.aggregate(pipeline);
-
-    if (!products.length) {
-      res.status(404).json({ status: 'error', message: 'No products found' });
-      return;
-    }
-
-    const result = products.map(product => ({
-      ...product,
-      category: {
-        _id: product.category._id,
-        name: product.category.name,
-      },
-      image: product.image || [],
-    }));
-
-    res.status(200).json({
-      status: 'success',
-      data: result,
-      total: result.length,
-    });
-  } catch (error: any) {
-    console.error('Error fetching all products:', error);
-    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 

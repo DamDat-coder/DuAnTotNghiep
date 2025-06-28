@@ -200,7 +200,6 @@ export const useCheckout = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
       toast.error("Vui lòng đăng nhập trước khi thanh toán!");
-      router.push("/login");
       return;
     }
 
@@ -270,6 +269,7 @@ export const useCheckout = () => {
       // Chuẩn bị dữ liệu cho thanh toán
       const paymentInfo = {
         orderId: generateOrderId(), // Tạo orderId 7 ký tự
+        orderId: generateOrderId(), // Tạo orderId 7 ký tự
         totalPrice: total,
         userId: user.id,
         orderInfo: {
@@ -294,6 +294,8 @@ export const useCheckout = () => {
 
       // Gọi API thanh toán
       const paymentResponse = await initiatePayment(paymentInfo);
+      console.log("Payment response:", paymentResponse); // Debug
+
       console.log("Payment response:", paymentResponse); // Debug
 
       if (paymentMethod === "cod") {

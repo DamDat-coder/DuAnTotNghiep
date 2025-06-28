@@ -16,6 +16,11 @@ interface UpdateDefaultAddressResponse {
   message: string;
   data: Address;
 }
+// Interface cho response cập nhật địa chỉ mặc định
+interface UpdateDefaultAddressResponse {
+  message: string;
+  data: Address;
+}
 // Hàm đăng nhập
 export async function login(
   email: string,
@@ -217,6 +222,7 @@ export async function addAddressWhenCheckout(
     }
     return {
       ...newAddress,
+      _id: newAddress._id,
       _id: newAddress._id,
     };
   } catch (error: any) {

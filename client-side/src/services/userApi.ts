@@ -1,4 +1,4 @@
-import { IUser } from "../types/auth";
+import { Address, IUser } from "../types/auth";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
 
@@ -7,7 +7,10 @@ interface UpdateUserData {
   phone?: string;
   addresses?: IUser["addresses"];
 }
-
+interface AddAddressResponse {
+  message: string;
+  data: Address[];
+}
 // Hàm đăng nhập
 export async function login(
   email: string,
@@ -40,6 +43,7 @@ export async function login(
 
     if (isBrowser()) {
       localStorage.setItem("accessToken", data.data.accessToken);
+      document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=3600`;
     }
 
     return { user, accessToken: data.accessToken };
@@ -170,5 +174,37 @@ export async function updateUser(data: UpdateUserData): Promise<IUser | null> {
   } catch (error: any) {
     console.error("Cập nhật user thất bại:", error.message);
     return null;
+  }
+}
+
+// Thêm địa chỉ mới
+export async function addAddressWhenCheckout(userId: string, address: {
+  street: string;
+  ward: string;
+  district: string;
+  province: string;
+  is_default: boolean;
+}): Promise<Address> {
+  if (!userId || userId === "undefined") {
+    throw new Error("userId không hợp lệ");
+  }
+  try {
+    const response = await fetchWithAuth<AddAddressResponse>(`${API_BASE_URL}/users/${userId}/addresses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(address),
+    });
+    // Lấy địa chỉ mới nhất (phần tử cuối cùng của mảng data)
+    const newAddress = response.data[response.data.length - 1];
+    if (!newAddress || !newAddress._id) {
+      throw new Error("Response không chứa address_id");
+    }
+    return {
+      ...newAddress,
+      _id: newAddress._id, // Đảm bảo _id được trả về
+    };
+  } catch (error: any) {
+    console.error("Error adding address:", error);
+    throw new Error(error.message || "Không thể thêm địa chỉ");
   }
 }

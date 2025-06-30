@@ -66,14 +66,14 @@ export const useCheckout = () => {
     address: "",
   });
 
-  // State cho danh sách địa chỉ và địa chỉ mặc định
+  // State cho danh sách địa chỉ, địa chỉ mặc định, và địa chỉ đang chọn
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isAddressPopupOpen, setIsAddressPopupOpen] = useState(false);
 
-  // Đồng bộ formData với user và lấy danh sách địa chỉ
+  // Đồng bộ formData với user và chọn địa chỉ hiển thị
   useEffect(() => {
-    console.log("User in useCheckout:", user); // Debug
     if (user) {
       setFormData((prev) => ({
         ...prev,
@@ -85,27 +85,39 @@ export const useCheckout = () => {
       // Lấy danh sách địa chỉ từ user.addresses
       if (user.addresses) {
         setAddresses(user.addresses);
-        const defaultAddr =
-          user.addresses.find((addr) => addr.is_default) || null;
+        const defaultAddr = user.addresses.find((addr) => addr.is_default) || null;
         setDefaultAddress(defaultAddr);
-        if (defaultAddr) {
+
+        // Logic chọn địa chỉ hiển thị
+        let addressToSelect: Address | null = null;
+        if (user.addresses.length === 1) {
+          // Nếu chỉ có 1 địa chỉ, chọn địa chỉ đó
+          addressToSelect = user.addresses[0];
+        } else if (defaultAddr) {
+          // Nếu có địa chỉ mặc định, chọn địa chỉ mặc định
+          addressToSelect = defaultAddr;
+        } else if (user.addresses.length > 1) {
+          // Nếu không có địa chỉ mặc định nhưng có nhiều địa chỉ, chọn địa chỉ đầu tiên
+          addressToSelect = user.addresses[0];
+        }
+
+        setSelectedAddress(addressToSelect);
+        if (addressToSelect) {
           setFormData((prev) => ({
             ...prev,
-            province: defaultAddr.province,
-            district: defaultAddr.district,
-            ward: defaultAddr.ward,
-            address: defaultAddr.street,
+            province: addressToSelect.province,
+            district: addressToSelect.district,
+            ward: addressToSelect.ward,
+            address: addressToSelect.street,
           }));
         }
       }
     }
-    console.log("FormData after sync:", formData); // Debug
   }, [user]);
 
   // Cập nhật total khi subtotal, discount, hoặc shippingFee thay đổi
   useEffect(() => {
     setTotal(subtotal - discount + shippingFee);
-    console.log("Updated total:", { subtotal, discount, shippingFee, total }); // Debug
   }, [subtotal, discount, shippingFee]);
 
   // Xử lý thay đổi input
@@ -124,7 +136,8 @@ export const useCheckout = () => {
     } else if (name === "district") {
       setFormData((prev) => ({ ...prev, ward: "" }));
     }
-    console.log("Select changed:", { name, value: option ? option.value : "" }); // Debug
+    // Reset selectedAddress khi người dùng thay đổi form thủ công
+    setSelectedAddress(null);
   };
 
   // Xử lý thay đổi phương thức vận chuyển
@@ -132,13 +145,11 @@ export const useCheckout = () => {
     setShippingMethod(method);
     const newFee = method === "standard" ? 25000 : 35000;
     setShippingFee(newFee);
-    console.log("Shipping changed:", { method, shippingFee: newFee }); // Debug
   };
 
   // Xử lý thay đổi phương thức thanh toán
   const handlePaymentChange = (method: string) => {
     setPaymentMethod(method);
-    console.log("Payment method changed:", method); // Debug
   };
 
   // Xử lý áp dụng mã giảm giá
@@ -173,23 +184,16 @@ export const useCheckout = () => {
 
   // Xử lý chọn địa chỉ từ popup
   const handleSelectAddress = async (address: Address) => {
-    try {
-      // Cập nhật địa chỉ mặc định trên BE
-      await setDefaultAddressApi(user!.id, address._id);
-      setDefaultAddress(address);
-      setFormData((prev) => ({
-        ...prev,
-        province: address.province,
-        district: address.district,
-        ward: address.ward,
-        address: address.street,
-      }));
-      setIsAddressPopupOpen(false);
-      toast.success("Đã cập nhật địa chỉ mặc định!");
-    } catch (error: any) {
-      console.error("Error selecting address:", error);
-      toast.error("Không thể cập nhật địa chỉ mặc định");
-    }
+    setSelectedAddress(address);
+    setFormData((prev) => ({
+      ...prev,
+      province: address.province,
+      district: address.district,
+      ward: address.ward,
+      address: address.street,
+    }));
+    setIsAddressPopupOpen(false);
+    toast.success("Đã chọn địa chỉ giao hàng!");
   };
 
   // Xử lý submit form
@@ -200,6 +204,7 @@ export const useCheckout = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
       toast.error("Vui lòng đăng nhập trước khi thanh toán!");
+      router.push("/login");
       return;
     }
 
@@ -235,40 +240,40 @@ export const useCheckout = () => {
     setErrors(newErrors);
 
     if (Object.values(newErrors).some((error) => error)) {
+      toast.error("Vui lòng điền đầy đủ thông tin giao hàng!");
       return;
     }
 
     try {
-      // Lưu địa chỉ từ formData và đặt làm mặc định (nếu không dùng địa chỉ mặc định)
-      let addressId = defaultAddress?._id;
+      // Đảm bảo có addressId
+      let addressId: string;
       if (
-        !defaultAddress ||
-        formData.address !== defaultAddress.street ||
-        formData.ward !== defaultAddress.ward ||
-        formData.district !== defaultAddress.district ||
-        formData.province !== defaultAddress.province
+        selectedAddress &&
+        formData.address === selectedAddress.street &&
+        formData.ward === selectedAddress.ward &&
+        formData.district === selectedAddress.district &&
+        formData.province === selectedAddress.province
       ) {
+        addressId = selectedAddress._id;
+      } else {
+        // Tạo địa chỉ mới nếu formData khác selectedAddress
         const newAddress = await addAddressWhenCheckout(user.id, {
           street: formData.address,
           ward: formData.ward,
           district: formData.district,
           province: formData.province,
-          is_default: true,
+          is_default: false, // Không đặt là mặc định
         });
         addressId = newAddress._id;
-        setDefaultAddress(newAddress);
-        setAddresses((prev) => [
-          ...prev.filter((addr) => !addr.is_default),
-          newAddress,
-        ]);
+        setAddresses((prev) => [...prev, newAddress]);
       }
 
-      // Kiểm tra và lấy couponId (chỉ khi có discountCode)
+      // Kiểm tra và lấy couponId
       const couponId = await handleApplyDiscount();
 
       // Chuẩn bị dữ liệu cho thanh toán
       const paymentInfo = {
-        orderId: generateOrderId(), // Tạo orderId 7 ký tự
+        orderId: generateOrderId(),
         totalPrice: total,
         userId: user.id,
         orderInfo: {
@@ -289,20 +294,13 @@ export const useCheckout = () => {
           paymentMethod,
         },
       };
-      console.log("Payment info:", paymentInfo); // Debug
 
       // Gọi API thanh toán
       const paymentResponse = await initiatePayment(paymentInfo);
-      console.log("Payment response:", paymentResponse); // Debug
-
-      console.log("Payment response:", paymentResponse); // Debug
 
       if (paymentMethod === "cod") {
         // Tạo đơn hàng chính thức
-        const orderResponse = await createOrder(
-          paymentResponse.paymentId,
-          user.id
-        );
+        const orderResponse = await createOrder(paymentResponse.paymentId, user.id);
         // Xóa giỏ hàng
         dispatch({ type: "clear" });
         toast.success("Đơn hàng đã được xác nhận!");
@@ -344,6 +342,7 @@ export const useCheckout = () => {
     handleApplyDiscount,
     addresses,
     defaultAddress,
+    selectedAddress,
     isAddressPopupOpen,
     setIsAddressPopupOpen,
     handleSelectAddress,

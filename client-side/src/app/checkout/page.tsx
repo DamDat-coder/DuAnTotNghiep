@@ -32,6 +32,7 @@ export default function Checkout() {
     handleApplyDiscount,
     addresses,
     defaultAddress,
+    selectedAddress,
     isAddressPopupOpen,
     setIsAddressPopupOpen,
     handleSelectAddress,
@@ -70,7 +71,7 @@ export default function Checkout() {
                   errors={errors}
                   handleInputChange={handleInputChange}
                   handleSelectChange={handleSelectChange}
-                  defaultAddress={defaultAddress}
+                  selectedAddress={selectedAddress}
                   setIsAddressPopupOpen={setIsAddressPopupOpen}
                   addresses={addresses}
                 />
@@ -114,7 +115,7 @@ export default function Checkout() {
                     errors={errors}
                     handleInputChange={handleInputChange}
                     handleSelectChange={handleSelectChange}
-                    defaultAddress={defaultAddress}
+                    selectedAddress={selectedAddress}
                     setIsAddressPopupOpen={setIsAddressPopupOpen}
                     addresses={addresses}
                   />
@@ -165,7 +166,7 @@ export default function Checkout() {
           {isAddressPopupOpen && (
             <AddressPopup
               addresses={addresses}
-              selectedAddress={defaultAddress}
+              selectedAddress={selectedAddress}
               onSelect={handleSelectAddress}
               onClose={() => setIsAddressPopupOpen(false)}
             />

@@ -14,9 +14,9 @@ interface ShippingFormProps {
   errors: CheckoutErrors;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectChange: (name: string, option: any) => void;
-  defaultAddress: Address | null; // Thêm prop
-  setIsAddressPopupOpen: (isOpen: boolean) => void; // Thêm prop
-  addresses: Address[]; // Thêm prop
+  selectedAddress: Address | null; // Sửa từ defaultAddress thành selectedAddress
+  setIsAddressPopupOpen: (isOpen: boolean) => void;
+  addresses: Address[];
 }
 
 export default function ShippingForm({
@@ -24,7 +24,7 @@ export default function ShippingForm({
   errors,
   handleInputChange,
   handleSelectChange,
-  defaultAddress,
+  selectedAddress,
   setIsAddressPopupOpen,
   addresses,
 }: ShippingFormProps) {
@@ -45,7 +45,6 @@ export default function ShippingForm({
   useEffect(() => {
     setIsLoading(true);
     if (provinces.length > 0) {
-      // Tìm provinceCode từ formData.province
       const selectedProvince = provinces.find(
         (p) => p.name === formData.province
       );
@@ -58,7 +57,6 @@ export default function ShippingForm({
 
   useEffect(() => {
     if (districts.length > 0) {
-      // Tìm districtCode từ formData.district
       const selectedDistrict = districts.find(
         (d) => d.name === formData.district
       );
@@ -68,7 +66,6 @@ export default function ShippingForm({
     }
   }, [districts, formData.district, districtCode, setDistrictCode]);
 
-  // Cập nhật handleSelectChange để set code
   const customHandleSelectChange = (name: string, option: any) => {
     handleSelectChange(name, option);
     if (name === "province") {
@@ -101,18 +98,22 @@ export default function ShippingForm({
       <h2 className="text-[18px] font-medium mb-4 desktop:text-[2rem] desktop:font-bold laptop:text-[2rem] laptop:font-bold">
         THÔNG TIN GIAO HÀNG
       </h2>
-      <div className="mb-4 bg-gray-100">
+      <div className="mb-4 bg-gray-100 hover:bg-gray-200">
         <div
           onClick={() => setIsAddressPopupOpen(true)}
-          className="flex items-center py-[0.875rem] px-3 gap-2 cursor-pointer"
+          className="flex flex-col items-start py-[0.875rem] pl-3 pr-8 gap-2 cursor-pointer"
         >
-          {defaultAddress ? (
-            <span>
-              {defaultAddress.street}, {defaultAddress.ward},{" "}
-              {defaultAddress.district}, {defaultAddress.province}, Việt Nam
+          <p className="font-bold">Địa chỉ giao hàng</p>
+          {selectedAddress ? (
+            <span className="text-slate-500">
+              {selectedAddress.street}, {selectedAddress.ward},{" "}
+              {selectedAddress.district}, {selectedAddress.province}, Việt Nam
+              {selectedAddress.is_default && (
+                <span className="ml-2 text-green-600">(Mặc định)</span>
+              )}
             </span>
           ) : (
-            <span className="text-gray-500">Chưa có địa chỉ mặc định</span>
+            <span className="text-gray-500">Chưa chọn địa chỉ</span>
           )}
         </div>
       </div>

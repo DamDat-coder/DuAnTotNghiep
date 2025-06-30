@@ -289,7 +289,12 @@ export default function LoginPopup({
                   Đăng ký
                 </button>
               </p>
+              <div className="w-full flex justify-center items-center gap-2">
+                <hr className="flex-1 border-solid border border-gray-300" />
+                <p className="text-gray-500">Hoặc</p>
 
+                <hr className="flex-1 border-solid border border-gray-300" />
+              </div>
               <GoogleLoginButton onLoginSuccess={onClose} />
             </div>
           </form>

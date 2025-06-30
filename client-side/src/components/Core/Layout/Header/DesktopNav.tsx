@@ -115,7 +115,7 @@ export default function DesktopNav() {
               <Link
                 href={href}
                 className={`px-5 py-5 text-lg ${
-                  isActive ? "font-bold text-blue-600" : "font-medium text-gray-800"
+                  isActive ? "font-bold" : "font-medium text-gray-800"
                 } rounded transition-colors`}
                 aria-expanded={hoveredCategory === cat._id}
                 aria-haspopup="true"

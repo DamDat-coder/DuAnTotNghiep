@@ -24,20 +24,18 @@ export default function FilterCategory({
         setLoading(true);
         const categoryTree = await fetchCategoryTree();
         // Lấy danh sách phẳng và loại trừ "Bài viết"
-        const flatCategories = flattenCategories(categoryTree).filter(
-          (cat) =>
-            cat._id !== "684d0f12543e02998d9df097" && cat.name !== "Bài viết"
+        const flatCategories = categoryTree.filter(
+          (cat) => cat._id !== "684d0f12543e02998d9df097"
         );
         // Map sang CategoryOption, thêm tên danh mục cha nếu có
         const categoryOptions: CategoryOption[] = flatCategories.map((cat) => {
-          const parent = categoryTree.find((parent) => parent._id === cat.parentId);
           return {
             value: cat._id,
-            label: parent ? `${cat.name} (${parent.name})` : cat.name,
+            label: cat.name,
           };
         });
         // Sắp xếp theo label
-        categoryOptions.sort((a, b) => a.label.localeCompare(b.label));
+        categoryOptions.sort((a, b) => b.label.localeCompare(a.label));
         setCategories(categoryOptions);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");

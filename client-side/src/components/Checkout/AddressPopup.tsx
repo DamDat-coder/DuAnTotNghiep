@@ -41,14 +41,13 @@ export default function AddressPopup({
               addresses.map((address) => (
                 <label
                   key={address._id}
-                  className="flex items-center p-2 border-b border-gray-200 cursor-pointer"
+                  className="flex items-center p-2 border-b border-gray-200 cursor-pointer hover:bg-gray-100"
                 >
                   <input
                     type="radio"
-                    name="address"
                     checked={selectedAddress?._id === address._id}
                     onChange={() => onSelect(address)}
-                    className="mr-2"
+                    className="flex items-baseline justify-center w-9 h-full accent-black"
                   />
                   <span>
                     {address.street}, {address.ward}, {address.district},{" "}

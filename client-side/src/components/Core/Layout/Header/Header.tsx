@@ -152,7 +152,7 @@ export default function Header({ title }: HeaderProps) {
             <div className="flex-1 flex justify-center mr-[6.9375rem]">
               <DesktopNav />
             </div>
-            <div className="flex items-center gap-3 w-[13.9375rem] justify-end absolute right-0">
+            <div className="flex items-center gap-3 w-[14.5rem] justify-end absolute right-0">
               <div className="flex items-center gap-3 relative">
                 <div className="w-6 h-6 relative">
                   {isLookupOpen ? (

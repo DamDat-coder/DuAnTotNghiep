@@ -157,7 +157,6 @@ export async function fetchUser(): Promise<IUser | null> {
       console.warn("fetchUser - Invalid user data:", data);
       return null;
     }
-    console.log("User - fetchUser", data.addresses);
     return {
       id: data.user._id,
       email: data.user.email,

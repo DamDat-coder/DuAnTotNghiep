@@ -21,7 +21,6 @@ export default function ShippingMethod({
               value="standard"
               checked={shippingMethod === "standard"}
               onChange={(e) => {
-                console.log("Selected shipping method:", e.target.value); // Debug
                 handleShippingChange(e.target.value);
               }}
               className="h-5 w-5 accent-black focus:ring-black"
@@ -38,7 +37,6 @@ export default function ShippingMethod({
               value="express"
               checked={shippingMethod === "express"}
               onChange={(e) => {
-                console.log("Selected shipping method:", e.target.value); // Debug
                 handleShippingChange(e.target.value);
               }}
               className="h-5 w-5 accent-black focus:ring-black"

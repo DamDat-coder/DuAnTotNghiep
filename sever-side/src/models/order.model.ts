@@ -24,9 +24,12 @@ export interface IOrder extends Document {
   address_id: Types.ObjectId;
   shippingAddress: IShippingAddress;
   totalPrice: number;
+  shipping: number;
   status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
+  paymentMethod: 'cod' | 'vnpay' | 'momo';
   paymentId?: Types.ObjectId | null;
   items: IOrderItem[];
+  note?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -62,6 +65,13 @@ const orderSchema = new Schema<IOrder>(
     address_id: { type: Schema.Types.ObjectId, required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
+    shipping: { type: Number, default: 0 }, 
+    paymentMethod: {
+      type: String,
+      enum: ['cod', 'vnpay', 'momo', 'zalopay'], 
+      required: true,
+    },
+    note: { type: String, default: '' }, 
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],
@@ -76,6 +86,7 @@ const orderSchema = new Schema<IOrder>(
   },
   { timestamps: true }
 );
+
 
 const OrderModel = mongoose.model<IOrder>('Order', orderSchema);
 export default OrderModel;

@@ -19,6 +19,7 @@ const getAllChildCategoryIds = async (parentId: string): Promise<string[]> => {
   return ids;
 };
 
+// Lấy tất cả sản phẩm cho người dùng
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by } = req.query;

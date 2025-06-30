@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = void 0;
+exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const category_model_1 = __importDefault(require("../models/category.model"));
@@ -26,6 +27,7 @@ const getAllChildCategoryIds = (parentId) => __awaiter(void 0, void 0, void 0, f
     }
     return ids;
 });
+// Lấy tất cả sản phẩm cho người dùng
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by } = req.query;

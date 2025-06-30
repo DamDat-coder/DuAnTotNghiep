@@ -18,6 +18,8 @@ import {
   removeFromWishlist,
   getWishlist,
 } from "../controllers/user.controller";
+import {
+  sendSmsOTP,verifySmsOTP } from "../controllers/user.phone.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
 const router = Router();
@@ -30,7 +32,9 @@ router.patch("/:id/addresses/:addressId/default", setDefaultAddress);
 
 // Quản lý người dùng
 router.get("/me", verifyToken, getCurrentUser);
-router.post("/google-login",  googleLogin); 
+router.get("/google-login",  googleLogin); 
+router.post("/send-otp", sendSmsOTP);
+router.post("/verify-otp", verifySmsOTP);
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);

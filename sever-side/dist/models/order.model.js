@@ -56,6 +56,13 @@ const orderSchema = new mongoose_1.Schema({
     address_id: { type: mongoose_1.Schema.Types.ObjectId, required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
+    shipping: { type: Number, default: 0 },
+    paymentMethod: {
+        type: String,
+        enum: ['cod', 'vnpay', 'momo', 'zalopay'],
+        required: true,
+    },
+    note: { type: String, default: '' },
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],

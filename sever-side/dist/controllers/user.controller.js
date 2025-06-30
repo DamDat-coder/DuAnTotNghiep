@@ -100,12 +100,12 @@ const getCurrentUser = (req, res) => __awaiter(void 0, void 0, void 0, function*
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
-        if (!userId) {
+        if (!userId)
             return res.status(401).json({ message: "Không xác thực được người dùng" });
-        }
         const currentUser = yield user_model_1.default.findById(userId)
-            .select("-password -refreshToken")
-            .populate("wishlist", "name slug image variants");
+            .select("name email role wishlist addresses phone is_active")
+            .populate("wishlist", "name slug image variants.price")
+            .lean();
         if (!currentUser) {
             return res.status(404).json({ message: "Không tìm thấy người dùng" });
         }
@@ -249,27 +249,24 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 { email: { $regex: keyword, $options: "i" } },
             ];
         }
-        if (role) {
+        if (role)
             filter.role = role;
-        }
         if (typeof is_block !== "undefined") {
             if (is_block === "true")
                 filter.is_block = true;
             else if (is_block === "false")
                 filter.is_block = false;
             else {
-                return res.status(400).json({
-                    success: false,
-                    message: "Giá trị 'is_block' phải là 'true' hoặc 'false'.",
-                });
+                return res.status(400).json({ success: false, message: "Giá trị 'is_block' phải là 'true' hoặc 'false'." });
             }
         }
         const total = yield user_model_1.default.countDocuments(filter);
         const users = yield user_model_1.default.find(filter)
-            .select("-password -refreshToken")
+            .select("name email role is_active createdAt")
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         return res.status(200).json({
             success: true,
             total,
@@ -290,7 +287,10 @@ exports.getAllUsers = getAllUsers;
 // Lấy người dùng theo ID
 const getUserById = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield user_model_1.default.findById(req.params.id).select("-password");
+        const user = yield user_model_1.default.findById(req.params.id)
+            .select("name email role phone is_active addresses wishlist")
+            .populate("wishlist", "name slug image variants.price")
+            .lean();
         if (!user)
             return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
         res.status(200).json({ success: true, data: user });
@@ -489,7 +489,10 @@ exports.removeFromWishlist = removeFromWishlist;
 // Lấy danh sách yêu thích của người dùng
 const getWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield user_model_1.default.findById(req.params.id).populate("wishlist");
+        const user = yield user_model_1.default.findById(req.params.id)
+            .select("wishlist")
+            .populate("wishlist", "name slug image variants.price")
+            .lean();
         if (!user)
             return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
         res.status(200).json({ success: true, data: user.wishlist });

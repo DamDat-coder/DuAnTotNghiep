@@ -175,7 +175,7 @@ export default function LoginPopup({
           </svg>
         </button>
 
-        <div className="flex flex-col items-center gap-10 py-[3rem] px-[7.5rem]">
+        <div className="flex flex-col items-center gap-10 py-[3.75rem] px-[7.5rem]">
           <Image
             src="/nav/logo.svg"
             alt="Logo"

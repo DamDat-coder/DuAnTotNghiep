@@ -12,6 +12,7 @@ import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -34,20 +35,24 @@ export default function RootLayout({
       <body
         className={`${lora.variable} font-body antialiased flex flex-col min-h-screen`}
       >
-        <AuthProvider>
-          <MenuProvider>
-            <LookupProvider>
-              {!isAdminRoute && <Header title="My App" />}
-              <CartProvider>
-                <WishlistProvider>
-                  <main className={mainClassName}>{children}</main>
-                </WishlistProvider>
-              </CartProvider>
-              {!isAdminRoute}
-              {!isAdminRoute && <Footer />}
-            </LookupProvider>
-          </MenuProvider>
-        </AuthProvider>
+        <GoogleOAuthProvider
+          clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}
+        >
+          <AuthProvider>
+            <MenuProvider>
+              <LookupProvider>
+                {!isAdminRoute && <Header title="My App" />}
+                <CartProvider>
+                  <WishlistProvider>
+                    <main className={mainClassName}>{children}</main>
+                  </WishlistProvider>
+                </CartProvider>
+                {!isAdminRoute}
+                {!isAdminRoute && <Footer />}
+              </LookupProvider>
+            </MenuProvider>
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

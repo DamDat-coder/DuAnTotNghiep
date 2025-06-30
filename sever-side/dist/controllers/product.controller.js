@@ -26,6 +26,7 @@ const getAllChildCategoryIds = (parentId) => __awaiter(void 0, void 0, void 0, f
     }
     return ids;
 });
+// Lấy tất cả sản phẩm cho người dùng
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by } = req.query;

@@ -61,13 +61,18 @@ const userSchema = new Schema<IUser>(
         ref: "Product",
       },
     ],
-    googleId: { type: String, default: null }, 
+    googleId: { type: String, default: null },
   },
   {
     timestamps: true,
     versionKey: false,
   }
 );
-
+userSchema.index({ email: 1 });
+userSchema.index({ name: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ is_active: 1 });
+userSchema.index({ phone: 1 }, { unique: true, sparse: true });
+userSchema.index({ googleId: 1 }, { sparse: true });
 const UserModel: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 export default UserModel;

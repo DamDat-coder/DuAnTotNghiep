@@ -175,7 +175,7 @@ export default function LoginPopup({
           </svg>
         </button>
 
-        <div className="flex flex-col items-center gap-10 py-[3.75rem] px-[7.5rem]">
+        <div className="flex flex-col items-center gap-10 py-[3rem] px-[7.5rem]">
           <Image
             src="/nav/logo.svg"
             alt="Logo"
@@ -289,7 +289,12 @@ export default function LoginPopup({
                   Đăng ký
                 </button>
               </p>
+              <div className="w-full flex justify-center items-center gap-2">
+                <hr className="flex-1 border-solid border border-gray-300" />
+                <p className="text-gray-500">Hoặc</p>
 
+                <hr className="flex-1 border-solid border border-gray-300" />
+              </div>
               <GoogleLoginButton onLoginSuccess={onClose} />
             </div>
           </form>

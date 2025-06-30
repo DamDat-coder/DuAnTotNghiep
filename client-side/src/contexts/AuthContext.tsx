@@ -36,7 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = async () => {
       const accessToken = localStorage.getItem("accessToken");
       if (accessToken) {
-        console.log("Initializing auth check...");
         await checkAuth();
       } else {
         console.log("No accessToken, skipping checkAuth");
@@ -132,7 +131,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkAuth = async () => {
-    console.log("Running checkAuth...");
     try {
       const userData = await fetchUser();
       if (userData) {

@@ -16,14 +16,11 @@ interface ProductGridProps {
 
 const getLowestPriceVariant = (product: IProduct) => {
   if (!product.variants || product.variants.length === 0) {
-    return { price: 0, discountPercent: 0, discountedPrice: 0 };
+    return { price: 0, discountPercent: 0 };
   }
-  console.log(product.variants[0]);
   return product.variants.reduce(
     (min, variant) =>
-      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
-        ? variant
-        : min,
+      variant.price && variant.price < min.price ? variant : min,
     product.variants[0]
   );
 };
@@ -106,9 +103,8 @@ export default function ProductGrid({
   };
 
   const renderProductCard = (product: IProduct) => {
-    const { price, discountPercent, discountedPrice } =
-      getLowestPriceVariant(product);
-
+    const { price, discountPercent } = getLowestPriceVariant(product);
+    const discountedPrice = Math.round(price * (1 - discountPercent / 100));
     return (
       <div className="w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">

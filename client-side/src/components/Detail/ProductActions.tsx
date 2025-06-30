@@ -215,7 +215,7 @@ export default function ProductActions({
                 <div
                   key={color.name}
                   onClick={() => handleColorChange(color.name)}
-                  className={`w-8 h-8 rounded-full cursor-pointer border-2 relative `}
+                  className={`w-8 h-8 rounded-full cursor-pointer border-2 relative border-solid border-[#B0B0B0]`}
                   style={{ backgroundColor: color.hex }}
                   aria-label={`Chọn màu ${color.name}`}
                   role="button"

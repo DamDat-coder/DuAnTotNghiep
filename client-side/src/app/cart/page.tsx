@@ -59,7 +59,6 @@ export default function Cart() {
     async function getSuggestedProducts() {
       try {
         const response = await fetchProducts();
-        console.log("Fetched suggested products:", response);
         setSuggestedProducts(response?.products || []);
       } catch (error) {
         console.error("Failed to fetch suggested products:", error);

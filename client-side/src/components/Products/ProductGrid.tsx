@@ -5,14 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import FilterPopup from "./FilterPopup";
-import { IProduct } from "@/types/product";
+import { IProduct, ProductGridProps } from "@/types/product";
+import { SortOption } from "@/types/filter";
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
 import WishlistButton from "../Core/Layout/WishlistButton/WishlistButton";
-
-interface ProductGridProps {
-  products: IProduct[];
-  onApplyFilters?: (filters: any) => void;
-}
 
 const getLowestPriceVariant = (product: IProduct) => {
   if (!product.variants || product.variants.length === 0) {
@@ -30,20 +26,30 @@ export default function ProductGrid({
   onApplyFilters,
 }: ProductGridProps) {
   const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
-    products.slice(0, 10)
+    products.slice(0, 8)
   );
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(products.length > 10);
+  const [hasMore, setHasMore] = useState(products.length > 8);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const searchParams = useSearchParams();
 
-  // Truyền id_cate hiện tại cho FilterPopup
+  // Truyền currentFilters khớp với types/filter.ts
+  const validSortOptions: SortOption[] = [
+    "newest",
+    "oldest",
+    "price_asc",
+    "price_desc",
+    "best_selling",
+  ];
   const currentFilters = {
     id_cate: searchParams.get("id_cate") || undefined,
-    sort: searchParams.get("sort") || undefined,
-    priceRange: searchParams.get("priceRange") || undefined,
+    sort_by: searchParams.get("sort_by") && validSortOptions.includes(searchParams.get("sort_by") as SortOption)
+      ? (searchParams.get("sort_by") as SortOption)
+      : undefined,
+    minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
+    maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
     color: searchParams.get("color") || undefined,
     size: searchParams.get("size") || undefined,
   };

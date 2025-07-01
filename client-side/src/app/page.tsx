@@ -11,12 +11,12 @@ import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
 async function getHomeData() {
   try {
     const [productsData, featuredSection, benefits] = await Promise.all([
-      fetchProducts({ sort: "newest" }),
+      fetchProducts({ sort_by: "newest" }),
       fetchFeaturedSection(),
       fetchMemberBenefits(),
     ]);
     return {
-      products: productsData.products || [],
+      products: productsData.data || [],
       featuredSection: featuredSection || [],
       benefits: benefits || [],
       error: null,

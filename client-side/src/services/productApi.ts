@@ -42,7 +42,7 @@ function mapToIProduct(e: any): IProduct {
 }
 
 export async function fetchProducts(
-  query: ProductQuery
+  query: ProductQuery = { is_active: true }
 ): Promise<ProductResponse> {
   try {
     const params = new URLSearchParams();
@@ -57,11 +57,15 @@ export async function fetchProducts(
       total: number;
       data: any[];
     }>(`${API_BASE_URL}/products?${params.toString()}`, { cache: "no-store" });
+    // Loại bỏ sản phẩm trùng lặp dựa trên _id
+    const uniqueProducts = Array.from(
+      new Map(response.data.map((product) => [product._id, product])).values()
+    );
 
     return {
       success: response.success,
-      total: response.total,
-      data: response.data.map((product) => ({
+      total: uniqueProducts.length,
+      data: uniqueProducts.map((product) => ({
         id: product._id,
         name: product.name,
         slug: product.slug,

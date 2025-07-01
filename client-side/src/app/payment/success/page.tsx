@@ -6,6 +6,7 @@ import { createOrder } from "@/services/orderApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartDispatch } from "@/contexts/CartContext";
 import { useRouter } from "next/navigation";
+import Container from "@/components/Core/Container";
 
 export default function PaymentSuccess() {
   const router = useRouter();
@@ -53,9 +54,13 @@ export default function PaymentSuccess() {
   }, [user, router, dispatch]); // Thêm dispatch vào dependency array
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold">Đang xử lý thanh toán...</h1>
-      <p>Vui lòng chờ trong giây lát.</p>
-    </div>
+    <Container>
+      <div className="flex flex-col justify-center items-center text-center">
+        <h1 className="text-2xl font-bold text-green-600">
+          Thanh toán thành công
+        </h1>
+        <p>Bạn sẽ được trong giây lát...</p>
+      </div>
+    </Container>
   );
 }

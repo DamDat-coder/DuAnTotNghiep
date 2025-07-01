@@ -1,11 +1,20 @@
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { IProduct } from "../types/product";
-
-interface ProductResponse {
-  products: IProduct[];
-  total: number;
+interface ProductQuery {
+  id_cate?: string;
+  color?: string;
+  size?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort_by?: "newest" | "oldest" | "price_asc" | "price_desc" | "best_selling";
+  is_active?: boolean;
 }
 
+interface ProductResponse {
+  success: boolean;
+  total: number;
+  data: IProduct[];
+}
 // Tách hàm map dữ liệu
 function mapToIProduct(e: any): IProduct {
   return {
@@ -27,62 +36,65 @@ function mapToIProduct(e: any): IProduct {
       discountedPrice: v.discountedPrice ?? 0,
     })),
     images: Array.isArray(e.image) ? e.image : e.images || [],
-    stock: (e.variants || []).reduce(
-      (sum: number, v: any) => sum + (v.stock || 0),
-      0
-    ),
     is_active: e.is_active ?? true,
     salesCount: e.salesCount || 0,
   };
 }
 
 export async function fetchProducts(
-  query: {
-    category?: string;
-    name?: string;
-    id_cate?: string;
-    slug?: string;
-    sort?: "price-asc" | "price-desc" | "newest" | "best-seller";
-    color?: string;
-    size?: string;
-    priceRange?: string;
-  } = {}
+  query: ProductQuery = { is_active: true }
 ): Promise<ProductResponse> {
   try {
-    const queryParams = new URLSearchParams();
-    // Chỉ append id_cate 1 lần duy nhất
-    const idCate = query.id_cate;
-    if (idCate) queryParams.append("id_cate", idCate);
-    if (query.name) queryParams.append("name", query.name);
-    if (query.sort) queryParams.append("sort", query.sort);
-    if (query.color) queryParams.append("color", query.color);
-    if (query.size) queryParams.append("size", query.size);
-    if (query.slug) queryParams.append("slug", query.slug);
-    if (query.priceRange) queryParams.append("priceRange", query.priceRange);
-    queryParams.append("is_active", "true");
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.set(key, encodeURIComponent(value.toString()));
+      }
+    });
 
-    const url = `${API_BASE_URL}/products?${queryParams.toString()}`;
-    const response = await fetchWithAuth<any>(
-      url,
-      { cache: "no-store" },
-      false
+    const response = await fetchWithAuth<{
+      success: boolean;
+      total: number;
+      data: any[];
+    }>(`${API_BASE_URL}/products?${params.toString()}`, { cache: "no-store" });
+    // Loại bỏ sản phẩm trùng lặp dựa trên _id
+    const uniqueProducts = Array.from(
+      new Map(response.data.map((product) => [product._id, product])).values()
     );
 
     return {
-      products: Array.isArray(response.data)
-        ? response.data.map(mapToIProduct)
-        : [],
-      total: response.total || 0,
+      success: response.success,
+      total: uniqueProducts.length,
+      data: uniqueProducts.map((product) => ({
+        id: product._id,
+        name: product.name,
+        slug: product.slug,
+        description: product.description || "",
+        categoryId: product.category?._id || null,
+        category: {
+          _id: product.category?._id || null,
+          name: product.category?.name || "",
+        },
+        variants: product.variants.map((variant: any) => ({
+          price: variant.price,
+          color: variant.color,
+          size: variant.size,
+          stock: variant.stock,
+          discountPercent: variant.discountPercent || 0,
+          discountedPrice: Math.round(
+            variant.price * (1 - (variant.discountPercent || 0) / 100)
+          ),
+        })),
+        images: product.image || [],
+        salesCount: product.salesCount || 0,
+        is_active: product.is_active,
+      })),
     };
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-    return {
-      products: [],
-      total: 0,
-    };
+  } catch (error: any) {
+    console.error("Error fetching products:", error);
+    throw new Error(error.message || "Không thể tải sản phẩm");
   }
 }
-
 // Các hàm khác (addProduct, fetchProductById, editProduct, deleteProduct, fetchProductBySlug) giữ nguyên
 export async function addProduct(product: {
   name: string;
@@ -155,9 +167,6 @@ export async function addProduct(product: {
         discountPercent: v.discountPercent ?? 0,
       })),
       images: res.data.image || [],
-      stock:
-        res.data.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) ||
-        0,
       is_active: res.data.is_active ?? true,
       salesCount: res.data.salesCount || 0,
     };
@@ -200,11 +209,6 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
         discountPercent: v.discountPercent ?? 0,
       })),
       images: response.data.image || [],
-      stock:
-        response.data.variants?.reduce(
-          (sum: number, v: any) => sum + v.stock,
-          0
-        ) || 0,
       is_active: response.data.is_active ?? true,
       salesCount: response.data.salesCount || 0,
     };
@@ -285,9 +289,6 @@ export async function editProduct(
         discountPercent: v.discountPercent ?? 0,
       })),
       images: res.data.image || [],
-      stock:
-        res.data.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) ||
-        0,
       is_active: res.data.is_active ?? true,
       salesCount: res.data.salesCount || 0,
     };
@@ -352,11 +353,6 @@ export async function fetchProductBySlug(
           discountedPrice: v.discountedPrice ?? 0,
         })),
         images: product.image || [],
-        stock:
-          (product.variants || []).reduce(
-            (sum: number, v: any) => sum + v.stock,
-            0
-          ) || 0,
         is_active: product.is_active ?? true,
         salesCount: product.salesCount || 0,
       };

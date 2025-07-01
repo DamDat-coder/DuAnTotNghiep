@@ -24,7 +24,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
     product = await fetchProductById(id);
     if (!product) throw new Error("Không tìm thấy sản phẩm.");
     suggestedProducts = await fetchProducts().then((res) =>
-      res.products.filter((p) => p.id !== id)
+      res.data.filter((p) => p.id !== id)
     );
   } catch (err) {
     error = "Có lỗi xảy ra khi tải dữ liệu.";

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import Container from "@/components/Core/Container";
 
 export default function PaymentFail() {
   const router = useRouter();
@@ -10,7 +11,9 @@ export default function PaymentFail() {
   useEffect(() => {
     const paymentId = localStorage.getItem("pendingPaymentId"); // Lấy paymentId từ localStorage
 
-    toast.error(`Thanh toán thất bại cho giao dịch ${paymentId || "không xác định"}.`);
+    toast.error(
+      `Thanh toán thất bại cho giao dịch ${paymentId || "không xác định"}.`
+    );
     // Xóa thông tin pending từ localStorage
     localStorage.removeItem("pendingPaymentId");
     localStorage.removeItem("pendingUserId");
@@ -24,9 +27,12 @@ export default function PaymentFail() {
   }, [router]);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold text-red-600">Thanh toán thất bại</h1>
-      <p>Bạn sẽ được chuyển hướng về giỏ hàng trong giây lát...</p>
-    </div>
+    <Container>
+      <div className="flex flex-col justify-center items-center text-center"></div>
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold text-red-600">Thanh toán thất bại</h1>
+        <p>Bạn sẽ được chuyển hướng về giỏ hàng trong giây lát...</p>
+      </div>
+    </Container>
   );
 }

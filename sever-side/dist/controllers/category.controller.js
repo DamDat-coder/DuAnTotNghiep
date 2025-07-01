@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.updateCategory = exports.getCategoryTree = exports.createCategory = void 0;
+exports.deleteCategory = exports.updateCategory = exports.getCategoryById = exports.getCategoryTree = exports.createCategory = void 0;
 const category_model_1 = __importDefault(require("../models/category.model"));
 const slugify_1 = __importDefault(require("slugify"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
@@ -74,6 +74,21 @@ const getCategoryTree = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.getCategoryTree = getCategoryTree;
+// Lấy danh mục theo ID
+const getCategoryById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const category = yield category_model_1.default.findById(id);
+        if (!category)
+            return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
+        res.status(200).json({ success: true, data: category });
+    }
+    catch (error) {
+        console.error("Lỗi khi lấy danh mục theo ID:", error);
+        res.status(500).json({ success: false, message: "Lỗi khi lấy danh mục." });
+    }
+});
+exports.getCategoryById = getCategoryById;
 // Cập nhật danh mục
 const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

@@ -1,44 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation"; // Thêm useSearchParams
+import { useSearchParams } from "next/navigation";
 import FilterSort from "./FilterSort";
 import FilterCategory from "./FilterCategory";
 import FilterPrice from "./FilterPrice";
 import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
-import { FilterPopupProps } from "@/types/filter";
+import { FilterPopupProps, SortOption } from "@/types/filter";
 
 export default function FilterPopup({
   isOpen,
   setIsOpen,
   onApplyFilters,
 }: FilterPopupProps) {
-  const searchParams = useSearchParams(); // Lấy query string
-  const [selectedSort, setSelectedSort] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [selectedSort, setSelectedSort] = useState<SortOption | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
+  const [minPrice, setMinPrice] = useState<number | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   // Khởi tạo state từ query string khi popup mở
   useEffect(() => {
     if (isOpen) {
-      // Đọc query string
-      const sort = searchParams.get("sort");
+      const sort_by = searchParams.get("sort_by");
       const id_cate = searchParams.get("id_cate");
-      const priceRange = searchParams.get("priceRange");
+      const minPrice = searchParams.get("minPrice");
+      const maxPrice = searchParams.get("maxPrice");
       const color = searchParams.get("color");
       const size = searchParams.get("size");
 
-      // Cập nhật state
-      setSelectedSort(sort || null);
+      // Kiểm tra giá trị sort_by hợp lệ
+      const validSortOptions: SortOption[] = [
+        "newest",
+        "oldest",
+        "price_asc",
+        "price_desc",
+        "best_selling",
+      ];
+      setSelectedSort(
+        sort_by && validSortOptions.includes(sort_by as SortOption)
+          ? (sort_by as SortOption)
+          : null
+      );
       setSelectedCategory(id_cate || null);
-      setSelectedPrice(priceRange || null);
+      setMinPrice(minPrice ? Number(minPrice) : null);
+      setMaxPrice(maxPrice ? Number(maxPrice) : null);
       setSelectedColor(color || null);
       setSelectedSize(size || null);
 
-      // Ngăn scroll khi popup mở
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
@@ -47,14 +59,14 @@ export default function FilterPopup({
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isOpen, searchParams]); // Thêm searchParams vào dependency
+  }, [isOpen, searchParams]);
 
   const handleApply = () => {
-    // Gửi tất cả bộ lọc
     onApplyFilters({
-      sort: selectedSort || undefined,
+      sort_by: selectedSort || undefined,
       id_cate: selectedCategory || undefined,
-      priceRange: selectedPrice || undefined,
+      minPrice: minPrice !== null ? minPrice : undefined,
+      maxPrice: maxPrice !== null ? maxPrice : undefined,
       color: selectedColor || undefined,
       size: selectedSize || undefined,
     });
@@ -64,11 +76,12 @@ export default function FilterPopup({
   const clearFilters = () => {
     setSelectedSort(null);
     setSelectedCategory(null);
-    setSelectedPrice(null);
+    setMinPrice(null);
+    setMaxPrice(null);
     setSelectedColor(null);
     setSelectedSize(null);
     if (onApplyFilters) {
-      onApplyFilters({}); // Xóa tất cả bộ lọc
+      onApplyFilters({});
     }
   };
 
@@ -112,7 +125,7 @@ export default function FilterPopup({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <FilterSort
               selectedSort={selectedSort}
               setSelectedSort={setSelectedSort}
@@ -122,8 +135,10 @@ export default function FilterPopup({
               setSelectedCategory={setSelectedCategory}
             />
             <FilterPrice
-              selectedPrice={selectedPrice}
-              setSelectedPrice={setSelectedPrice}
+              minPrice={minPrice}
+              setMinPrice={setMinPrice}
+              maxPrice={maxPrice}
+              setMaxPrice={setMaxPrice}
             />
             <FilterColor
               selectedColor={selectedColor}

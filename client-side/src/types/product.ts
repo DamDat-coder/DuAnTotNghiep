@@ -1,9 +1,11 @@
+import { SortOption } from "./filter";
+
 // types/product.ts
 export interface IProduct {
   id: string;
   name: string;
   slug: string;
-  description: string; // Thêm trường mô tả
+  description: string;
   category: {
     _id: string | null;
     name: string;
@@ -18,9 +20,36 @@ export interface IProduct {
     discountedPrice: number;
   }[];
   images: string[];
-  stock: number;
-  is_active: boolean; // Thêm trường trạng thái
-  salesCount: number; // Thêm trường số lượng bán
+  is_active: boolean;
+  salesCount: number;
+}
+
+export interface ProductGridProps {
+  products: IProduct[];
+  totalProducts: number;
+  onApplyFilters: (filters: {
+    sort_by?: "newest" | "oldest" | "price_asc" | "price_desc" | "best_selling";
+    id_cate?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    color?: string;
+    size?: string;
+  }) => void;
+  currentFilters: {
+    id_cate?: string;
+    sort_by?: SortOption;
+    minPrice?: number;
+    maxPrice?: number;
+    color?: string;
+    size?: string;
+  };
+}
+
+export interface IFeaturedProducts {
+  id: string;
+  banner: string;
+  gender: string;
+  description: string;
 }
 export interface IFeaturedProducts {
   id: string;

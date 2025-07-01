@@ -10,6 +10,7 @@ import CategorySwiper from "@/components/Products/CategorySwiper";
 import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
 import { IProduct } from "@/types/product";
+import { SortOption } from "@/types/filter";
 
 interface News {
   id: string;
@@ -28,6 +29,7 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [newsItems, setNewsItems] = useState<News[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,17 +39,29 @@ export default function ProductsPage() {
     async function loadData() {
       try {
         setLoading(true);
+        const validSortOptions: SortOption[] = [
+          "newest",
+          "oldest",
+          "price_asc",
+          "price_desc",
+          "best_selling",
+        ];
+        const sort_by = searchParams.get("sort_by");
         const query = {
           id_cate: searchParams.get("id_cate") || undefined,
           color: searchParams.get("color") || undefined,
           size: searchParams.get("size") || undefined,
-          priceRange: searchParams.get("priceRange") || undefined,
-          sort:
-            (searchParams.get("sort") as
-              | "price-asc"
-              | "price-desc"
-              | "newest"
-              | "best-seller") || undefined,
+          minPrice: searchParams.get("minPrice")
+            ? Number(searchParams.get("minPrice"))
+            : undefined,
+          maxPrice: searchParams.get("maxPrice")
+            ? Number(searchParams.get("maxPrice"))
+            : undefined,
+          sort_by:
+            sort_by && validSortOptions.includes(sort_by as SortOption)
+              ? (sort_by as SortOption)
+              : undefined,
+          is_active: true,
         };
 
         const [productsData, memberBenefits] = await Promise.all([
@@ -57,11 +71,13 @@ export default function ProductsPage() {
 
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        setProducts(productsData.products);
+        setProducts(productsData.data);
+        setTotalProducts(productsData.total);
+
         const uniqueCategories = Array.from(
           new Set(
-            productsData.products
-              .filter((product) => product.category._id)
+            productsData.data
+              .filter((product) => product.category?._id)
               .map((product) => ({
                 _id: product.category._id as string,
                 name: product.category.name,
@@ -94,28 +110,27 @@ export default function ProductsPage() {
       }
     }
 
-    setProducts([]); // Reset products khi searchParams thay đổi
+    setProducts([]);
     loadData();
   }, [searchParams]);
 
   const handleApplyFilters = (filters: {
-    sort?: string;
+    sort_by?: SortOption;
     id_cate?: string;
-    priceRange?: string;
+    minPrice?: number;
+    maxPrice?: number;
     color?: string;
     size?: string;
   }) => {
-    // Nếu filters rỗng, đẩy URL về /products
     if (Object.keys(filters).length === 0) {
       router.push("/products");
       return;
     }
 
-    // Xử lý filters có giá trị
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value) {
-        params.set(key, value);
+      if (value !== undefined && value !== null) {
+        params.set(key, encodeURIComponent(value.toString()));
       }
     });
 
@@ -151,6 +166,30 @@ export default function ProductsPage() {
     );
   }
 
+  const validSortOptions: SortOption[] = [
+    "newest",
+    "oldest",
+    "price_asc",
+    "price_desc",
+    "best_selling",
+  ];
+  const currentFilters = {
+    id_cate: searchParams.get("id_cate") || undefined,
+    sort_by:
+      searchParams.get("sort_by") &&
+      validSortOptions.includes(searchParams.get("sort_by") as SortOption)
+        ? (searchParams.get("sort_by") as SortOption)
+        : undefined,
+    minPrice: searchParams.get("minPrice")
+      ? Number(searchParams.get("minPrice"))
+      : undefined,
+    maxPrice: searchParams.get("maxPrice")
+      ? Number(searchParams.get("maxPrice"))
+      : undefined,
+    color: searchParams.get("color") || undefined,
+    size: searchParams.get("size") || undefined,
+  };
+
   return (
     <div className="gap-14 pb-14 overflow-x-hidden flex flex-col">
       <Container className="flex flex-col gap-[3.375rem] w-full">
@@ -159,7 +198,9 @@ export default function ProductsPage() {
           <CategorySwiper categories={categories} />
           <ProductGrid
             products={products}
+            totalProducts={totalProducts}
             onApplyFilters={handleApplyFilters}
+            currentFilters={currentFilters}
           />
         </div>
         <NewsSection newsItems={newsItems} />

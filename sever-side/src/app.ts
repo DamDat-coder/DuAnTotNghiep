@@ -10,6 +10,7 @@ import newsRoutes from "./routes/news.routes";
 import couponRouters from "./routes/coupon.routes";
 import orderRoutes from "./routes/order.routes";
 import paymentRoutes from "./routes/payment.routers";
+import reviewRoutes from './routes/review.routes';
 import { errorHandler } from "./middlewares/error.middleware";
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use("/api/coupons", couponRouters);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use(errorHandler);
 
 export default app;

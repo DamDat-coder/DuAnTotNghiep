@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import { Toaster } from "react-hot-toast";
 
 export default function AdminRootLayout({
   children,
@@ -18,8 +19,8 @@ export default function AdminRootLayout({
 
   return (
     <div>
+      <Toaster />
       {children}
     </div>
   );
-
 }

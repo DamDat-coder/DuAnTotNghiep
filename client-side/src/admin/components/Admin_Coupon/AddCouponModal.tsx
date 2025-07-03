@@ -1,30 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createCoupon } from "@/services/couponApi";
+import { Coupon } from "@/types/coupon";
+import { ICategoryNews } from "@/types/category";
+import { fetchCategoryTree } from "@/services/categoryApi";
 
-interface AddSaleModalProps {
+interface AddCouponModalProps {
   onClose: () => void;
 }
 
-export default function AddSaleModal({ onClose }: AddSaleModalProps) {
+export default function AddCouponModal({ onClose }: AddCouponModalProps) {
   const startDateRef = useRef<HTMLInputElement | null>(null);
   const endDateRef = useRef<HTMLInputElement | null>(null);
+  const [categories, setCategories] = useState<ICategoryNews[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const [form, setForm] = useState<{
-    code: string;
-    category: string;
-    type: string;
-    value: string;
-    minOrder: string;
-    maxDiscount: string;
-    startDate: string;
-    endDate: string;
-    usage: string;
-    status: "active" | "inactive";
-    description: string;
-  }>({
+  const [form, setForm] = useState({
     code: "",
     category: "",
     type: "%",
@@ -34,8 +27,8 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
     startDate: "",
     endDate: "",
     usage: "",
-    status: "active",
     description: "",
+    is_active: true, // Default to true (active)
   });
 
   const handleChange = (
@@ -43,20 +36,75 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "is_active") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value === "true", // Convert string to boolean
+      }));
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Kiểm tra nếu category có giá trị và tìm kiếm danh mục
+    const selectedCategory = categories.find(
+      (cat) => cat._id === form.category
+    );
+
+    if (form.category && !selectedCategory) {
+      setError("Danh mục không hợp lệ.");
+      return;
+    }
+
+    const payload: Partial<Coupon> = {
+      code: form.code,
+      description: form.description,
+      discountType: form.type === "%" ? "percentage" : "fixed",
+      discountValue: Number(form.value),
+      minOrderAmount: form.minOrder ? Number(form.minOrder) : null,
+      maxDiscountAmount: form.maxDiscount ? Number(form.maxDiscount) : null,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      usageLimit: form.usage ? Number(form.usage) : null,
+      is_active: form.is_active, // Use is_active directly
+      usedCount: 0,
+      applicableCategories: selectedCategory ? [selectedCategory] : [],
+      applicableProducts: [],
+    };
+
     try {
-      await createCoupon(form);
+      const result = await createCoupon(payload);
+      console.log("Kết quả tạo mã giảm giá:", result);
       alert("Tạo mã giảm giá thành công!");
-      onClose(); // Đóng modal sau khi thêm thành công
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err) {
+      console.error("Lỗi khi tạo mã giảm giá:", err);
       alert("Đã xảy ra lỗi khi tạo mã giảm giá.");
-      console.error(err);
     }
   };
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategoryTree();
+        setCategories(data);
+      } catch (err) {
+        setError("Lỗi khi tải danh mục.");
+        console.error("Error loading categories:", err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Điều kiện để bật nút submit (nếu tất cả các trường cần thiết có giá trị)
+  const isFormValid =
+    form.code && form.value && form.startDate && form.endDate && form.usage;
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -95,19 +143,27 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
               />
             </div>
 
+            {/* Danh mục không bắt buộc */}
             <div className="mb-8 relative">
-              <label className="block font-bold mb-4">
-                Danh mục áp dụng<span className="text-red-500 ml-1">*</span>
-              </label>
+              <label className="block font-bold mb-4">Danh mục áp dụng</label>
               <select
                 name="category"
                 value={form.category}
-                onChange={handleChange}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] appearance-none"
               >
-                <option value="">Chọn danh mục</option>
-                <option value="men">Nam</option>
-                <option value="women">Nữ</option>
+                <option value="">Chọn danh mục (Nếu có)</option>
+                {categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>
+                    Không có danh mục
+                  </option>
+                )}
               </select>
               <Image
                 src="/admin_user/chevron-down.svg"
@@ -156,7 +212,6 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div>
                 <label className="block font-bold mb-4">
-                  {" "}
                   Đơn tối thiểu (đ)
                 </label>
                 <input
@@ -180,7 +235,6 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {/* Ngày bắt đầu */}
               <div className="relative">
                 <label className="block font-bold mb-4">
                   Ngày bắt đầu<span className="text-red-500 ml-1">*</span>
@@ -207,7 +261,6 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                 </button>
               </div>
 
-              {/* Ngày kết thúc */}
               <div className="relative">
                 <label className="block font-bold mb-4">
                   Ngày kết thúc<span className="text-red-500 ml-1">*</span>
@@ -253,13 +306,13 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   Trạng thái<span className="text-red-500 ml-1">*</span>
                 </label>
                 <select
-                  name="status"
-                  value={form.status}
+                  name="is_active"
+                  value={form.is_active.toString()} // Convert boolean to string for select
                   onChange={handleChange}
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] appearance-none"
                 >
-                  <option value="active">Kích hoạt</option>
-                  <option value="inactive">Tạm ngừng</option>
+                  <option value="true">Kích hoạt</option>
+                  <option value="false">Tạm ngừng</option>
                 </select>
                 <Image
                   src="/admin_user/Vector.svg"
@@ -286,8 +339,14 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
 
             {/* Submit */}
             <button
-              type="submit"
-              className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-4"
+              type="button"
+              onClick={handleSubmit}
+              disabled={!isFormValid}
+              className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold mt-4 ${
+                !isFormValid
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:opacity-90"
+              }`}
             >
               Thêm mã giảm giá
             </button>

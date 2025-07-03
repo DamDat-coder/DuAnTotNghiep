@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import AddSaleModal from "./AddSaleModal";
+import AddCouponModal from "./AddCouponModal";
 
 const options = [
   { value: "all", label: "Tất cả" },
@@ -10,7 +10,7 @@ const options = [
   { value: "expired", label: "Hết hạn" },
 ];
 
-export default function SaleControlBar() {
+export default function CouponControlBar() {
   const [selected, setSelected] = useState(options[0]);
   const [search, setSearch] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -84,7 +84,7 @@ export default function SaleControlBar() {
           </div>
         </div>
 
-        {/* Right: Add Sale Button */}
+        {/* Right: Add Coupon Button */}
         <div className="pr-6">
           <button
             onClick={() => setShowModal(true)}
@@ -102,7 +102,7 @@ export default function SaleControlBar() {
       </div>
 
       {/* Modal */}
-      {showModal && <AddSaleModal onClose={() => setShowModal(false)} />}
+      {showModal && <AddCouponModal onClose={() => setShowModal(false)} />}
     </>
   );
 }

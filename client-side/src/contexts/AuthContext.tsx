@@ -1,5 +1,3 @@
-"use client";
-
 import {
   createContext,
   useContext,
@@ -10,6 +8,13 @@ import {
 import { AuthContextType, IUser } from "../types/auth";
 import { login, register, fetchUser } from "../services/userApi";
 import { refreshToken } from "@/services/api";
+import toast from "react-hot-toast";
+import {
+  addProductToWishlistApi,
+  removeFromWishlistApi,
+  getWishlistFromApi,
+} from "@/services/userApi";
+import { IProduct } from "@/types/product";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -30,6 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     confirmPassword: string;
   } | null>(null);
   const [openLoginWithData, setOpenLoginWithData] = useState(false);
+  const [wishlist, setWishlist] = useState<IProduct[]>([]); 
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -80,7 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      console.log(name, email, password);
       const result = await register(name, email, password);
       if (!result) {
         throw new Error("Không thể đăng ký tài khoản.");
@@ -112,28 +117,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logoutHandler = () => {
     setUser(null);
+    setWishlist([]); // Reset wishlist khi logout
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
   };
 
   const checkAuth = async () => {
-    console.log("Running checkAuth...");
     try {
       const userData = await fetchUser();
       if (userData) {
         setUser(userData);
+        await fetchWishlist(userData.id); // Lấy wishlist khi có user data
       } else {
-        console.warn("checkAuth - fetchUser returned null");
         setUser(null);
       }
     } catch (error: any) {
       console.error("checkAuth - Error:", error);
       if (error.message.includes("401")) {
-        console.warn("checkAuth - Unauthorized, attempting to refresh token");
         try {
-          const newToken = await refreshToken(); // Hàm làm mới token
+          const newToken = await refreshToken();
           localStorage.setItem("accessToken", String(newToken));
-          const userData = await fetchUser(); // Thử lại
+          const userData = await fetchUser();
           setUser(userData || null);
         } catch (refreshError) {
           console.error("checkAuth - Refresh token failed:", refreshError);
@@ -145,16 +149,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Hàm lấy wishlist
+  const fetchWishlist = async (userId: string) => {
+    try {
+      const products = await getWishlistFromApi(userId);
+      setWishlist(products);
+    } catch (error) {
+      console.error("Lỗi khi lấy wishlist:", error);
+    }
+  };
+
+  // Thêm sản phẩm vào wishlist
+  const addWishlist = async (productId: string) => {
+    if (!user) return;
+    try {
+      await addProductToWishlistApi(user.id, productId); // Gọi API thêm sản phẩm vào wishlist
+      const updatedWishlist = [...wishlist, { id: productId }] as IProduct[]; // Cập nhật wishlist
+      setWishlist(updatedWishlist);
+      toast.success("Sản phẩm đã được thêm vào danh sách yêu thích.");
+    } catch (error) {
+      toast.error("Không thể thêm sản phẩm vào danh sách yêu thích.");
+    }
+  };
+
+  // Xoá sản phẩm khỏi wishlist
+  const removeWishlist = async (productId: string) => {
+    if (!user) return;
+    try {
+      await removeFromWishlistApi(user.id, productId); // Gọi API xoá sản phẩm khỏi wishlist
+      const updatedWishlist = wishlist.filter((item) => item.id !== productId); // Cập nhật wishlist
+      setWishlist(updatedWishlist);
+      toast.success("Sản phẩm đã được xoá khỏi danh sách yêu thích.");
+    } catch (error) {
+      toast.error("Không thể xoá sản phẩm khỏi danh sách yêu thích.");
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         login: loginHandler,
         register: registerHandler,
         logout: logoutHandler,
         openLoginWithData,
         setOpenLoginWithData,
         registerFormData,
+        addWishlist,
+        removeWishlist,
+        wishlist,
       }}
     >
       {children}

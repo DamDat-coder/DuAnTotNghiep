@@ -1,47 +1,104 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
-import dynamic from "next/dynamic";
-import { ICategory } from "@/types/category";
+import { toast } from "react-hot-toast";
 import { News } from "@/types/new";
-import { IUser } from "@/types/auth";
-import { createNews } from "@/services/newApi";
+import { updateNews } from "@/services/newApi";
+import { Editor } from "@tinymce/tinymce-react"; // Thêm import Editor nếu đang sử dụng TinyMCE
+import Image from "next/image";
+import { ICategory } from "@/types/category";
 import { fetchCategoryTree } from "@/services/categoryApi";
-import { toast } from "react-hot-toast"; // Import react-hot-toast
+import { IUser } from "@/types/auth";
 
-const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
-
-const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } = process.env;
-
-export default function AddNewModal({ onClose }: { onClose: () => void }) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [date, setDate] = useState("");
-  const [image, setImage] = useState<string | null>(null);
-  const [category, setCategory] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+const EditNewsModal = ({
+  newsData,
+  onClose,
+}: {
+  newsData: News;
+  onClose: () => void;
+}) => {
+  const [title, setTitle] = useState(newsData.title);
+  const [content, setContent] = useState(newsData.content);
+  const [tags, setTags] = useState(newsData.tags || []);
+  const [category, setCategory] = useState(newsData.category_id._id);
   const [error, setError] = useState<string | null>(null);
+  const [image, setImage] = useState(newsData.thumbnail);
   const [categories, setCategories] = useState<ICategory[]>([]);
 
-  const [action, setAction] = useState<"draft" | "preview" | "publish">(
-    "draft"
-  );
+  useEffect(() => {
+    setTitle(newsData.title);
+    setContent(newsData.content);
+    setTags(newsData.tags || []);
+    setCategory(newsData.category_id._id);
+    setImage(newsData.thumbnail || null);
+  }, [newsData]); // Đảm bảo khi data thay đổi sẽ update lại các state
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      setError("Thiếu thông tin Cloudinary hoặc tệp hình ảnh.");
+  const handleSave = async () => {
+    // Check if required fields are filled
+    if (!title || !content || !category) {
+      setError("Vui lòng điền đầy đủ thông tin.");
       return;
     }
 
+    // Find the selected category from the categories list
+    const selectedCategory = categories.find((cat) => cat._id === category);
+
+    // Ensure category exists before proceeding
+    if (!selectedCategory) {
+      setError("Danh mục không hợp lệ.");
+      return;
+    }
+
+    // Prepare the updated data for the news article
+    const updatedNewsData: News = {
+      title,
+      content,
+      tags,
+      category_id: selectedCategory || { _id: category, name: "" },
+      thumbnail: image || null,
+      _id: null,
+      id: "",
+      user_id: {} as IUser,
+      slug: "",
+      date: "",
+      status: "draft",
+    };
+
+    try {
+      // Call the updateNews API function to send the request to the backend
+      const response = await updateNews(
+        newsData._id as string,
+        updatedNewsData
+      );
+
+      // If the API call is successful, show success toast and close the modal
+      toast.success("Cập nhật tin tức thành công!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err) {
+      // Handle error and show error message
+      setError("Lỗi khi cập nhật tin tức.");
+      toast.error("Cập nhật thất bại!");
+      console.error("Update failed:", err);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Thực hiện upload lên Cloudinary (nếu có)
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append(
+      "upload_preset",
+      process.env.CLOUDINARY_UPLOAD_PRESET || ""
+    );
 
     try {
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
         {
           method: "POST",
           body: formData,
@@ -51,77 +108,20 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       if (!response.ok) throw new Error("Upload failed");
 
       const data = await response.json();
-      setImage(data.secure_url);
+      setImage(data.secure_url); // Lưu lại URL hình ảnh
     } catch (err) {
       console.error("Error uploading to Cloudinary:", err);
       setError("Lỗi khi tải hình ảnh lên Cloudinary.");
     }
   };
-
   const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputTags = e.target.value.split(/[, ]+/).filter((tag) => tag.trim());
     setTags(inputTags);
   };
-
-  const handleSubmit = async () => {
-    if (action === "publish" && !date) {
-      setError("Vui lòng chọn ngày đăng khi xuất bản!");
-      return;
-    }
-
-    setError(null);
-
-    const selectedCategory = categories.find((cat) => cat._id === category);
-    if (!selectedCategory && category) {
-      setError("Danh mục không hợp lệ.");
-      return;
-    }
-
-    const payload: News = {
-      _id: null,
-      id: "",
-      user_id: {} as IUser,
-      title,
-      content,
-      slug: title.toLowerCase().replace(/\s+/g, "-"),
-      category_id: selectedCategory || { _id: category, name: "" },
-      date: action === "publish" ? date : "",
-      status:
-        action === "publish"
-          ? "published"
-          : action === "draft"
-          ? "draft"
-          : "upcoming",
-      thumbnail: image || null,
-      tags,
-      news_image: image ? [image] : [],
-      createdAt: undefined,
-      updatedAt: undefined,
-      is_published: action === "publish",
-      published_at: action === "publish" ? new Date(date) : undefined,
-    };
-
-    console.log("Payload to send:", payload);
-
-    try {
-      await createNews(payload);
-      toast.success("Tạo tin tức thành công!");
-
-      setTimeout(() => {
-        window.location.reload(); 
-      }, 1000);
-    } catch (err: any) {
-      console.error("Lỗi khi tạo tin tức:", err);
-      setError(err.message);
-      toast.error("Đã xảy ra lỗi khi tạo tin tức.");
-    }
-  };
-
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategoryTree();
-        console.log("Loaded categories:", data);
         setCategories(data);
       } catch (err) {
         setError("Lỗi khi tải danh mục.");
@@ -137,7 +137,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
-            <h2 className="text-lg font-bold">Thêm Tin Tức Mới</h2>
+            <h2 className="text-lg font-bold">Sửa Tin Tức</h2>
             <button
               onClick={onClose}
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
@@ -171,7 +171,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <Editor
                   value={content}
-                  onChange={(newContent) => setContent(newContent)}
+                  onChange={(newContent: string) => setContent(newContent)}
                 />
               </div>
             </div>
@@ -183,15 +183,13 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
                       Ngày đăng
-                      {action === "publish" && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
+                      {false && <span className="text-red-500 ml-1">*</span>}
                     </label>
                     <input
                       type="datetime-local"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      disabled={action !== "publish"}
+                      value={new Date().toISOString().slice(0, 16)}
+                      onChange={(e) => {}}
+                      disabled={true}
                       className="w-full h-[46px] border border-[#D1D1D1] rounded-[12px] appearance-none"
                     />
                     <Image
@@ -206,12 +204,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       {/* Button: Lưu bản nháp */}
                       <button
                         type="button"
-                        onClick={() => setAction("draft")}
-                        className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
-                          action === "draft"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
+                        onClick={() => {}}
+                        className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm`}
                       >
                         Lưu bản nháp
                       </button>
@@ -219,12 +213,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       {/* Button: Xem trước */}
                       <button
                         type="button"
-                        onClick={() => setAction("preview")}
-                        className={`flex-1 w-[94px] h-10 rounded-[4px] text-sm ${
-                          action === "preview"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
+                        onClick={() => {}}
+                        className={`flex-1 w-[94px] h-10 rounded-[4px] text-sm`}
                       >
                         Xem trước
                       </button>
@@ -232,12 +222,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       {/* Button: Xuất bản */}
                       <button
                         type="button"
-                        onClick={() => setAction("publish")}
-                        className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm ${
-                          action === "publish"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
+                        onClick={() => {}}
+                        className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm`}
                       >
                         Xuất bản
                       </button>
@@ -322,10 +308,10 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   </div>
                   <button
                     type="button"
-                    onClick={handleSubmit}
+                    onClick={handleSave}
                     className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
                   >
-                    Tạo tin tức
+                    Lưu tin tức
                   </button>
                   {error && <p className="text-red-500 mt-2">{error}</p>}
                 </div>
@@ -336,4 +322,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-}
+};
+
+export default EditNewsModal;

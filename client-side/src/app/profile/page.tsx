@@ -1,18 +1,16 @@
 "use client";
-
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+
 import useIsMobile from "@/hooks/useIsMobile";
 import Image from "next/image";
-
 import SettingsContent from "@/components/Profile/SettingContent";
 import { OrderDetail as OrderDetailType } from "@/types/order";
-
 import ProfileTab from "@/components/Profile/tabs/ProfileTab";
 import AddressTab from "@/components/Profile/tabs/AddressTab";
 import FavoriteTab from "@/components/Profile/tabs/FavoriteTab";
 import OrderTab from "@/components/Profile/tabs/OrderTab";
 import OrderDetail from "@/components/Profile/tabs/OrderDetail";
+import { useEffect, useState } from "react";
 
 const tabMap: Record<string, string> = {
   profile: "Hồ sơ",
@@ -45,6 +43,12 @@ export default function ProfilePage() {
       setActiveTab("Hồ sơ");
     }
   }, [isMobile, activeTab]);
+
+  // Cập nhật activeTab và URL khi nhấp vào icon yêu thích
+  const handleFavoriteClick = () => {
+    setActiveTab("Yêu thích");
+    window.history.pushState({}, "", "/profile?tab=favorite"); // Cập nhật URL
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {

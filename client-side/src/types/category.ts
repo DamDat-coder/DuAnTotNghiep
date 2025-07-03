@@ -30,3 +30,9 @@ export interface CategoryInput {
   description?: string;
   parentid?: string | null;
 }
+
+//News
+export interface ICategoryNews {
+  _id: string;
+  name: string;
+}

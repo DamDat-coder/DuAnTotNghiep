@@ -6,6 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 import { IProduct } from "@/types/product";
 import LikeIcon from "./LikeIcon";
+import {
+  addProductToWishlistApi,
+  removeFromWishlistApi,
+} from "@/services/userApi"; // Import các API gọi
 
 interface WishlistButtonProps {
   product: IProduct;
@@ -23,20 +27,40 @@ export default function WishlistButton({
   const router = useRouter();
   const isLiked = isInWishlist(product.id);
 
-  const handleWishlistToggle = () => {
+  const handleWishlistToggle = async () => {
     if (!user) {
       toast.error("Vui lòng đăng nhập để thêm vào wishlist!");
       return;
     }
 
-    if (isLiked) {
-      removeFromWishlist(product.id);
-      toast.success("Đã xóa khỏi wishlist!");
+    // Nếu sản phẩm chưa có trong wishlist
+    if (!isLiked) {
+      try {
+        // Thêm sản phẩm vào wishlist của DB qua API
+        await addProductToWishlistApi(user.id, product.id);
+        addToWishlist(product); // Cập nhật vào state wishlist
+        toast.success("Đã thêm vào wishlist!");
+      } catch (error) {
+        console.error("Lỗi khi thêm sản phẩm vào wishlist:", error);
+        toast.error("Không thể thêm sản phẩm vào wishlist.");
+      }
     } else {
-      addToWishlist(product);
-      toast.success("Đã thêm vào wishlist!");
+      try {
+        // Xoá sản phẩm khỏi wishlist của DB qua API
+        await removeFromWishlistApi(user.id, product.id);
+        removeFromWishlist(product.id); // Cập nhật vào state wishlist
+        toast.success("Đã xóa khỏi wishlist!");
+      } catch (error) {
+        console.error("Lỗi khi xóa sản phẩm khỏi wishlist:", error);
+        toast.error("Không thể xóa sản phẩm khỏi wishlist.");
+      }
     }
-    console.log("Wishlist toggled for product:", product.id, "isLiked:", !isLiked); // Debug
+    console.log(
+      "Wishlist toggled for product:",
+      product.id,
+      "isLiked:",
+      !isLiked
+    );
   };
 
   return (
@@ -46,10 +70,7 @@ export default function WishlistButton({
       role="button"
       aria-label={isLiked ? "Xóa khỏi wishlist" : "Thêm vào wishlist"}
     >
-      <LikeIcon
-        variant={variant}
-        isActive={isLiked}
-      />
+      <LikeIcon variant={variant} isActive={isLiked} />
     </button>
   );
 }

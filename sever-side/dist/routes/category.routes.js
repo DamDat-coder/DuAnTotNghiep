@@ -6,6 +6,7 @@ const upload_middleware_1 = require("../middlewares/upload.middleware");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 router.get("/tree", category_controller_1.getCategoryTree);
+router.get("/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, category_controller_1.getCategoryById);
 router.post("/", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, upload_middleware_1.upload.single("image"), category_controller_1.createCategory);
 router.put("/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, upload_middleware_1.upload.single("image"), category_controller_1.updateCategory);
 router.delete("/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, category_controller_1.deleteCategory);

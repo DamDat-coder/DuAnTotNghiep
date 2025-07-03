@@ -1,4 +1,3 @@
-// src/app/checkout/page.tsx
 "use client";
 
 import { useCheckout } from "@/hooks/useCheckout";
@@ -9,6 +8,7 @@ import OrderSummary from "@/components/Checkout/OrderSummary";
 import ShippingForm from "@/components/Checkout/ShippingForm";
 import ShippingMethod from "@/components/Checkout/ShippingMethod";
 import PaymentMethod from "@/components/Checkout/PaymentMethod";
+import AddressPopup from "@/components/Checkout/AddressPopup";
 import { Toaster } from "react-hot-toast";
 
 export default function Checkout() {
@@ -30,6 +30,12 @@ export default function Checkout() {
     handlePaymentChange,
     handleSubmit,
     handleApplyDiscount,
+    addresses,
+    defaultAddress,
+    selectedAddress,
+    isAddressPopupOpen,
+    setIsAddressPopupOpen,
+    handleSelectAddress,
   } = useCheckout();
 
   return (
@@ -65,6 +71,9 @@ export default function Checkout() {
                   errors={errors}
                   handleInputChange={handleInputChange}
                   handleSelectChange={handleSelectChange}
+                  selectedAddress={selectedAddress}
+                  setIsAddressPopupOpen={setIsAddressPopupOpen}
+                  addresses={addresses}
                 />
                 <ShippingMethod
                   shippingMethod={shippingMethod}
@@ -72,7 +81,9 @@ export default function Checkout() {
                 />
                 <PaymentMethod
                   paymentMethod={paymentMethod}
-                  handlePaymentChange={(e) => handlePaymentChange(e.target.value)}
+                  handlePaymentChange={(e) =>
+                    handlePaymentChange(e.target.value)
+                  }
                 />
                 <button
                   type="submit"
@@ -104,6 +115,9 @@ export default function Checkout() {
                     errors={errors}
                     handleInputChange={handleInputChange}
                     handleSelectChange={handleSelectChange}
+                    selectedAddress={selectedAddress}
+                    setIsAddressPopupOpen={setIsAddressPopupOpen}
+                    addresses={addresses}
                   />
                   <ShippingMethod
                     shippingMethod={shippingMethod}
@@ -111,7 +125,9 @@ export default function Checkout() {
                   />
                   <PaymentMethod
                     paymentMethod={paymentMethod}
-                    handlePaymentChange={(e) => handlePaymentChange(e.target.value)}
+                    handlePaymentChange={(e) =>
+                      handlePaymentChange(e.target.value)
+                    }
                   />
                 </form>
               </div>
@@ -146,6 +162,14 @@ export default function Checkout() {
                 </button>
               </div>
             </>
+          )}
+          {isAddressPopupOpen && (
+            <AddressPopup
+              addresses={addresses}
+              selectedAddress={selectedAddress}
+              onSelect={handleSelectAddress}
+              onClose={() => setIsAddressPopupOpen(false)}
+            />
           )}
         </div>
       </Container>

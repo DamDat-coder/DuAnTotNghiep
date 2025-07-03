@@ -12,60 +12,153 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProducts = exports.getAllProductsAdmin = void 0;
+exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const category_model_1 = __importDefault(require("../models/category.model"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const getAllChildCategoryIds = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
+    const children = yield category_model_1.default.find({ parentId }).select("_id");
+    let ids = children.map((child) => child._id.toString());
+    for (const child of children) {
+        const subIds = yield getAllChildCategoryIds(child._id.toString());
+        ids = ids.concat(subIds);
+    }
+    return ids;
+});
+// Lấy tất cả sản phẩm cho người dùng
+const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by } = req.query;
+        const filter = {};
+        if (id_cate && typeof id_cate === "string") {
+            const allIds = [id_cate];
+            const childIds = yield getAllChildCategoryIds(id_cate);
+            allIds.push(...childIds);
+            const validObjectIds = allIds
+                .filter((id) => mongoose_1.default.Types.ObjectId.isValid(id))
+                .map((id) => new mongoose_1.default.Types.ObjectId(id));
+            filter["category._id"] = { $in: validObjectIds };
+        }
+        if (color)
+            filter["variants.color"] = color;
+        if (size)
+            filter["variants.size"] = size;
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            const priceFilter = {};
+            if (minPrice !== undefined && !isNaN(Number(minPrice))) {
+                priceFilter.$gte = Number(minPrice);
+            }
+            if (maxPrice !== undefined && !isNaN(Number(maxPrice))) {
+                priceFilter.$lte = Number(maxPrice);
+            }
+            if (Object.keys(priceFilter).length > 0) {
+                filter["variants.price"] = priceFilter;
+            }
+        }
+        if (is_active !== undefined) {
+            filter.is_active = is_active === "true";
+        }
+        let sort = {};
+        switch (sort_by) {
+            case "newest":
+                sort = { createdAt: -1 };
+                break;
+            case "oldest":
+                sort = { createdAt: 1 };
+                break;
+            case "price_asc":
+                sort = { "variants.price": 1 };
+                break;
+            case "price_desc":
+                sort = { "variants.price": -1 };
+                break;
+            case "best_selling":
+                sort = { salesCount: -1 };
+                break;
+        }
+        const products = yield product_model_1.default.find(filter).sort(sort);
+        const total = yield product_model_1.default.countDocuments(filter);
+        res.json({
+            success: true,
+            total,
+            data: products,
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Lỗi server khi lấy danh sách sản phẩm.",
+            error: err,
+        });
+    }
+});
+exports.getAllProducts = getAllProducts;
 // Lấy tất cả sản phẩm cho admin
 const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, limit, sort, page, } = req.query;
+        const { name, is_active, limit, sort, page, } = req.query;
         const query = {};
         if (name) {
-            query.name = new RegExp(name, 'i');
+            query.slug = new RegExp(name, "i");
         }
-        const options = {};
-        const pageNum = Math.max(parseInt(page) || 1, 1);
-        const limitNum = Math.max(parseInt(limit) || 10, 10);
-        options.skip = (pageNum - 1) * limitNum;
-        options.limit = limitNum;
-        if (sort) {
-            const sortOptions = {
-                'newest': { _id: -1 },
-                'best-seller': { salesCount: -1 },
-                'name-asc': { name: 1 },
-                'name-desc': { name: -1 },
-            };
-            if (!sortOptions[sort]) {
-                res.status(400).json({ status: 'error', message: 'Tùy chọn sắp xếp không hợp lệ. Chỉ hỗ trợ: newest, best-seller, name-asc, name-desc' });
-                return;
+        if (typeof is_active !== "undefined") {
+            if (is_active === "true")
+                query.is_active = true;
+            else if (is_active === "false")
+                query.is_active = false;
+            else {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Giá trị 'is_active' phải là 'true' hoặc 'false'.",
+                });
             }
-            options.sort = sortOptions[sort];
         }
-        else {
-            options.sort = { _id: -1 };
+        const pageNum = Math.max(parseInt(page) || 1, 1);
+        const limitNum = Math.max(parseInt(limit) || 10, 1);
+        const skip = (pageNum - 1) * limitNum;
+        const sortMap = {
+            "newest": { _id: -1 },
+            "best-seller": { salesCount: -1 },
+            "name-asc": { name: 1 },
+            "name-desc": { name: -1 },
+        };
+        let sortOption = sortMap["newest"];
+        if (sort) {
+            const sortKey = sort.toString();
+            if (!sortMap[sortKey]) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Tùy chọn sắp xếp không hợp lệ. Hỗ trợ: newest, best-seller, name-asc, name-desc.",
+                });
+            }
+            sortOption = sortMap[sortKey];
         }
         const [products, total] = yield Promise.all([
             product_model_1.default
                 .find(query)
-                .select('name slug category image variants salesCount')
-                .sort(options.sort)
-                .skip(options.skip)
-                .limit(options.limit)
+                .select("name slug category image variants salesCount is_active")
+                .populate("category", "name")
+                .sort(sortOption)
+                .skip(skip)
+                .limit(limitNum)
                 .lean(),
             product_model_1.default.countDocuments(query),
         ]);
         if (!products.length) {
-            res.status(404).json({ status: 'error', message: 'Không tìm thấy sản phẩm' });
-            return;
+            return res
+                .status(404)
+                .json({ status: "error", message: "Không tìm thấy sản phẩm nào" });
         }
-        const result = products.map((product) => (Object.assign(Object.assign({}, product), { category: {
-                _id: product.category._id,
-                name: product.category.name,
-            } })));
-        res.status(200).json({
-            status: 'success',
+        const result = products.map((product) => {
+            var _a, _b;
+            return (Object.assign(Object.assign({}, product), { category: {
+                    _id: ((_a = product.category) === null || _a === void 0 ? void 0 : _a._id) || null,
+                    name: ((_b = product.category) === null || _b === void 0 ? void 0 : _b.name) || "Không rõ",
+                } }));
+        });
+        return res.status(200).json({
+            status: "success",
             data: result,
             total,
             page: pageNum,
@@ -74,160 +167,14 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
         });
     }
     catch (error) {
-        console.error('Lỗi khi lấy tất cả sản phẩm:', error);
-        res.status(500).json({ status: 'error', message: error.message });
+        console.error("Lỗi khi lấy sản phẩm:", error);
+        return res.status(500).json({
+            status: "error",
+            message: error.message || "Lỗi server khi lấy danh sách sản phẩm",
+        });
     }
 });
 exports.getAllProductsAdmin = getAllProductsAdmin;
-// Lấy tất cả sản phẩm 
-const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { name, id_cate, sort, priceRange, color, size, is_active, } = req.query;
-        const query = {};
-        // is_active
-        if (is_active !== undefined) {
-            if (is_active !== 'true' && is_active !== 'false') {
-                res.status(400).json({ status: 'error', message: 'Invalid is_active value, must be true or false' });
-                return;
-            }
-            query.is_active = is_active === 'true';
-        }
-        else {
-            query.is_active = true;
-        }
-        // name
-        if (name) {
-            query.name = new RegExp(name, 'i');
-        }
-        // id_cate
-        if (id_cate) {
-            const categoryIdStr = String(id_cate);
-            if (!mongoose_1.default.Types.ObjectId.isValid(categoryIdStr)) {
-                res.status(400).json({ status: 'error', message: 'Invalid category ID' });
-                return;
-            }
-            const categoryIds = [categoryIdStr];
-            const findChildCategories = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
-                const children = yield category_model_1.default.find({ parentid: new mongoose_1.default.Types.ObjectId(parentId) }).select('_id').lean();
-                for (const child of children) {
-                    const childId = child._id.toString();
-                    categoryIds.push(childId);
-                    yield findChildCategories(childId);
-                }
-            });
-            yield findChildCategories(categoryIdStr);
-            query['category._id'] = { $in: categoryIds.map(id => new mongoose_1.default.Types.ObjectId(id)) };
-        }
-        // color + size + priceRange cần gộp vào một filter của variant
-        const variantConditions = [];
-        // color
-        if (color) {
-            const validColors = ['Đen', 'Trắng', 'Xám', 'Đỏ'];
-            if (!validColors.includes(color)) {
-                res.status(400).json({ status: 'error', message: 'Invalid color' });
-                return;
-            }
-            variantConditions.push({ 'variants.color': color });
-        }
-        // size
-        if (size) {
-            const validSizes = ['S', 'M', 'L', 'XL'];
-            if (!validSizes.includes(size)) {
-                res.status(400).json({ status: 'error', message: 'Invalid size' });
-                return;
-            }
-            variantConditions.push({ 'variants.size': size });
-        }
-        // priceRange
-        let priceMatch = null;
-        if (priceRange) {
-            const priceFilters = {
-                'under-500k': { $lt: 500000 },
-                '500k-1m': { $gte: 500000, $lte: 1000000 },
-                '1m-2m': { $gte: 1000000, $lte: 2000000 },
-                '2m-4m': { $gte: 2000000, $lte: 4000000 },
-                'over-4m': { $gt: 4000000 },
-            };
-            const filter = priceFilters[priceRange];
-            if (!filter) {
-                res.status(400).json({ status: 'error', message: `Invalid price range: ${priceRange}` });
-                return;
-            }
-            priceMatch = filter;
-        }
-        const pipeline = [
-            { $match: query },
-            { $unwind: '$variants' },
-            {
-                $addFields: {
-                    'variants.discountedPrice': {
-                        $multiply: [
-                            '$variants.price',
-                            { $subtract: [1, { $divide: ['$variants.discountPercent', 100] }] }
-                        ]
-                    }
-                }
-            },
-        ];
-        // $match theo variant cùng lúc
-        const variantMatch = {};
-        for (const condition of variantConditions) {
-            Object.assign(variantMatch, condition);
-        }
-        if (priceMatch) {
-            variantMatch['variants.discountedPrice'] = priceMatch;
-        }
-        if (Object.keys(variantMatch).length > 0) {
-            pipeline.push({ $match: variantMatch });
-        }
-        // group lại thành sản phẩm
-        pipeline.push({
-            $group: {
-                _id: '$_id',
-                name: { $first: '$name' },
-                slug: { $first: '$slug' },
-                category: { $first: '$category' },
-                image: { $first: '$image' },
-                variants: { $push: '$variants' },
-                is_active: { $first: '$is_active' },
-                salesCount: { $first: '$salesCount' },
-                minDiscountedPrice: { $min: '$variants.discountedPrice' },
-            }
-        });
-        // sort
-        if (sort === 'price-asc' || sort === 'price-desc') {
-            pipeline.push({ $sort: { minDiscountedPrice: sort === 'price-asc' ? 1 : -1 } });
-        }
-        else {
-            const sortOptions = {
-                newest: { _id: -1 },
-                'best-seller': { salesCount: -1 }
-            };
-            if (sort && sortOptions[sort]) {
-                pipeline.push({ $sort: sortOptions[sort] });
-            }
-        }
-        const products = yield product_model_1.default.aggregate(pipeline);
-        if (!products.length) {
-            res.status(404).json({ status: 'error', message: 'No products found' });
-            return;
-        }
-        const result = products.map(product => (Object.assign(Object.assign({}, product), { category: {
-                _id: product.category._id,
-                name: product.category.name,
-            }, image: product.image || [] })));
-        res.status(200).json({
-            status: 'success',
-            data: result,
-            total: result.length,
-        });
-    }
-    catch (error) {
-        console.error('Error fetching all products:', error);
-        res.status(500).json({ status: 'error', message: error.message });
-    }
-});
-exports.getAllProducts = getAllProducts;
 // Lấy sản phẩm theo ID
 const getProductById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -258,26 +205,32 @@ exports.getProductById = getProductById;
 const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { slug } = req.params;
-        if (!slug || typeof slug !== 'string') {
-            res.status(400).json({ status: 'error', message: 'Slug không hợp lệ' });
+        if (!slug || typeof slug !== "string") {
+            res.status(400).json({ status: "error", message: "Slug không hợp lệ" });
             return;
         }
-        const product = yield product_model_1.default
-            .findOne({ slug })
+        const products = yield product_model_1.default
+            .find({ slug: { $regex: slug, $options: "i" } })
+            .populate("category", "name")
             .lean();
-        if (!product) {
-            res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+        if (!products || products.length === 0) {
+            res.status(404).json({ status: "error", message: "Không tìm thấy sản phẩm nào" });
             return;
         }
-        const result = Object.assign(Object.assign({}, product), { category: {
-                _id: product.category._id,
-                name: product.category.name,
-            } });
-        res.status(200).json({ status: 'success', data: result });
+        const result = products.map((product) => {
+            var _a, _b;
+            return (Object.assign(Object.assign({}, product), { category: {
+                    _id: ((_a = product.category) === null || _a === void 0 ? void 0 : _a._id) || null,
+                    name: ((_b = product.category) === null || _b === void 0 ? void 0 : _b.name) || "Không rõ",
+                } }));
+        });
+        res.status(200).json({ status: "success", data: result, total: result.length });
     }
     catch (error) {
-        console.error('Lỗi khi lấy sản phẩm theo slug:', error);
-        res.status(500).json({ status: 'error', message: error.message });
+        res.status(500).json({
+            status: "error",
+            message: error.message || "Lỗi server khi lấy sản phẩm theo slug",
+        });
     }
 });
 exports.getProductBySlug = getProductBySlug;

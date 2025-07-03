@@ -1,4 +1,3 @@
-// src/app/cart/page.tsx
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -31,7 +30,9 @@ export default function Cart() {
 
   // Đồng bộ selectAll với trạng thái các mục
   useEffect(() => {
-    setSelectAll(cart.items.length > 0 && cart.items.every((item) => item.selected));
+    setSelectAll(
+      cart.items.length > 0 && cart.items.every((item) => item.selected)
+    );
   }, [cart.items]);
 
   // Tính tổng tiền chỉ cho các mục được chọn
@@ -39,7 +40,11 @@ export default function Cart() {
     () =>
       cart.items
         .filter((item) => item.selected)
-        .reduce((sum, item) => sum + item.price * (1 - item.discountPercent / 100) * item.quantity, 0),
+        .reduce(
+          (sum, item) =>
+            sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+          0
+        ),
     [cart.items]
   );
 
@@ -58,9 +63,8 @@ export default function Cart() {
   useEffect(() => {
     async function getSuggestedProducts() {
       try {
-        const response = await fetchProducts();
-        console.log("Fetched suggested products:", response);
-        setSuggestedProducts(response?.products || []);
+        const response = await fetchProducts({ is_active: true });
+        setSuggestedProducts(response.data || []);
       } catch (error) {
         console.error("Failed to fetch suggested products:", error);
         setSuggestedProducts([]);
@@ -99,7 +103,7 @@ export default function Cart() {
       <Container>
         <h1 className="text-[2rem] font-bold text-left">Giỏ hàng của bạn</h1>
         <div className="flex flex-col gap-4 pt-6 relative">
-          <div className="flex items-center gap-2 ">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={selectAll}
@@ -133,7 +137,6 @@ export default function Cart() {
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
               />
-              
               <div className="mb-4 mt-9">
                 {suggestedProducts.length > 0 ? (
                   <ProductSection

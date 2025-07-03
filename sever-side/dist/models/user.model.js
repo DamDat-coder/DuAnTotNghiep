@@ -45,7 +45,7 @@ const addressSchema = new mongoose_1.Schema({
 });
 const userSchema = new mongoose_1.Schema({
     email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     name: { type: String, required: true, trim: true },
     addresses: [addressSchema],
     phone: {
@@ -68,5 +68,11 @@ const userSchema = new mongoose_1.Schema({
     timestamps: true,
     versionKey: false,
 });
+userSchema.index({ email: 1 });
+userSchema.index({ name: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ is_active: 1 });
+userSchema.index({ phone: 1 }, { unique: true, sparse: true });
+userSchema.index({ googleId: 1 }, { sparse: true });
 const UserModel = mongoose_1.default.model("User", userSchema);
 exports.default = UserModel;

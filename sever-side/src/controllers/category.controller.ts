@@ -70,6 +70,22 @@ export const getCategoryTree = async (req: Request, res: Response) => {
   }
 };
 
+// Lấy danh mục theo ID
+export const getCategoryById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const category = await Category.findById(id);
+    if (!category)
+      return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
+
+    res.status(200).json({ success: true, data: category });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh mục theo ID:", error);
+    res.status(500).json({ success: false, message: "Lỗi khi lấy danh mục." });
+  }
+};
+
 // Cập nhật danh mục
 export const updateCategory = async (req: Request, res: Response) => {
   try {

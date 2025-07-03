@@ -1,38 +1,32 @@
+export interface CategoryOption {
+  value: string;
+  label: string;
+}
+
 export interface ColorOption {
   value: string;
   label: string;
   color: string;
 }
 
-export interface CategoryOption {
-  value: string;
-  label: string;
-}
-
-export interface PriceOption {
-  value: string;
-  label: string;
-}
-
-export interface SortOption {
-  value: string;
-  label: string;
-}
+export type SortOption = "newest" | "oldest" | "price_asc" | "price_desc" | "best_selling";
 
 export interface FilterPopupProps {
   isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
+  setIsOpen: (isOpen: boolean) => void;
   onApplyFilters: (filters: {
-    sort?: string;
+    sort_by?: SortOption;
     id_cate?: string;
-    priceRange?: string;
+    minPrice?: number;
+    maxPrice?: number;
     color?: string;
     size?: string;
   }) => void;
-  currentFilters: {
-    sort?: string;
+  currentFilters?: {
+    sort_by?: SortOption;
     id_cate?: string;
-    priceRange?: string;
+    minPrice?: number;
+    maxPrice?: number;
     color?: string;
     size?: string;
   };

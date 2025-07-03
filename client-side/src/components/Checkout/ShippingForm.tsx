@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
+import { Address } from "@/types/auth";
 import { useAddressData } from "@/hooks/useAddressData";
 
 // Tắt SSR cho react-select
@@ -13,6 +14,9 @@ interface ShippingFormProps {
   errors: CheckoutErrors;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectChange: (name: string, option: any) => void;
+  selectedAddress: Address | null; // Sửa từ defaultAddress thành selectedAddress
+  setIsAddressPopupOpen: (isOpen: boolean) => void;
+  addresses: Address[];
 }
 
 export default function ShippingForm({
@@ -20,6 +24,9 @@ export default function ShippingForm({
   errors,
   handleInputChange,
   handleSelectChange,
+  selectedAddress,
+  setIsAddressPopupOpen,
+  addresses,
 }: ShippingFormProps) {
   const {
     provinces,
@@ -38,7 +45,6 @@ export default function ShippingForm({
   useEffect(() => {
     setIsLoading(true);
     if (provinces.length > 0) {
-      // Tìm provinceCode từ formData.province
       const selectedProvince = provinces.find(
         (p) => p.name === formData.province
       );
@@ -51,7 +57,6 @@ export default function ShippingForm({
 
   useEffect(() => {
     if (districts.length > 0) {
-      // Tìm districtCode từ formData.district
       const selectedDistrict = districts.find(
         (d) => d.name === formData.district
       );
@@ -61,21 +66,30 @@ export default function ShippingForm({
     }
   }, [districts, formData.district, districtCode, setDistrictCode]);
 
-  // Cập nhật handleSelectChange để set code
   const customHandleSelectChange = (name: string, option: any) => {
     handleSelectChange(name, option);
     if (name === "province") {
-      setProvinceCode(option ? provinces.find((p) => p.name === option.value)?.code || null : null);
+      setProvinceCode(
+        option
+          ? provinces.find((p) => p.name === option.value)?.code || null
+          : null
+      );
       setDistrictCode(null);
       setWardCode(null);
       handleSelectChange("district", null);
       handleSelectChange("ward", null);
     } else if (name === "district") {
-      setDistrictCode(option ? districts.find((d) => d.name === option.value)?.code || null : null);
+      setDistrictCode(
+        option
+          ? districts.find((d) => d.name === option.value)?.code || null
+          : null
+      );
       setWardCode(null);
       handleSelectChange("ward", null);
     } else if (name === "ward") {
-      setWardCode(option ? wards.find((w) => w.name === option.value)?.code || null : null);
+      setWardCode(
+        option ? wards.find((w) => w.name === option.value)?.code || null : null
+      );
     }
   };
 
@@ -84,6 +98,25 @@ export default function ShippingForm({
       <h2 className="text-[18px] font-medium mb-4 desktop:text-[2rem] desktop:font-bold laptop:text-[2rem] laptop:font-bold">
         THÔNG TIN GIAO HÀNG
       </h2>
+      <div className="mb-4 bg-gray-100 hover:bg-gray-200">
+        <div
+          onClick={() => setIsAddressPopupOpen(true)}
+          className="flex flex-col items-start py-[0.875rem] pl-3 pr-8 gap-2 cursor-pointer"
+        >
+          <p className="font-bold">Địa chỉ giao hàng</p>
+          {selectedAddress ? (
+            <span className="text-slate-500">
+              {selectedAddress.street}, {selectedAddress.ward},{" "}
+              {selectedAddress.district}, {selectedAddress.province}, Việt Nam
+              {selectedAddress.is_default && (
+                <span className="ml-2 text-green-600">(Mặc định)</span>
+              )}
+            </span>
+          ) : (
+            <span className="text-gray-500">Chưa chọn địa chỉ</span>
+          )}
+        </div>
+      </div>
       <div className="grid grid-cols-1 desktop:grid-cols-2 laptop:grid-cols-2 gap-4">
         <div className="desktop:col-span-2 laptop:col-span-2">
           <label className="text-[1rem] font-medium">
@@ -197,7 +230,9 @@ export default function ShippingForm({
           <Select
             name="ward"
             value={
-              formData.ward ? { value: formData.ward, label: formData.ward } : null
+              formData.ward
+                ? { value: formData.ward, label: formData.ward }
+                : null
             }
             onChange={(option) => customHandleSelectChange("ward", option)}
             options={wards.map((ward) => ({

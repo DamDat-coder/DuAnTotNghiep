@@ -8,6 +8,7 @@ import {
 import { AuthContextType, IUser } from "../types/auth";
 import { login, register, fetchUser } from "../services/userApi";
 import { refreshToken } from "@/services/api";
+
 import toast from "react-hot-toast";
 import {
   addProductToWishlistApi,
@@ -15,6 +16,8 @@ import {
   getWishlistFromApi,
 } from "@/services/userApi";
 import { IProduct } from "@/types/product";
+
+import { googleLogin } from "@/services/userApi";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,13 +38,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     confirmPassword: string;
   } | null>(null);
   const [openLoginWithData, setOpenLoginWithData] = useState(false);
-  const [wishlist, setWishlist] = useState<IProduct[]>([]); 
+  const [wishlist, setWishlist] = useState<IProduct[]>([]);
 
   useEffect(() => {
     const initializeAuth = async () => {
       const accessToken = localStorage.getItem("accessToken");
       if (accessToken) {
-        console.log("Initializing auth check...");
         await checkAuth();
       } else {
         console.log("No accessToken, skipping checkAuth");
@@ -121,6 +123,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
   };
+  const loginWithGoogle = async (id_token: string) => {
+    try {
+      const data = await googleLogin(id_token);
+
+      const { user: userData, accessToken } = data;
+      setUser(userData);
+      localStorage.setItem("accessToken", accessToken);
+
+      return true;
+    } catch (err) {
+      console.error("Google login error", err);
+      throw err;
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -193,6 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login: loginHandler,
         register: registerHandler,
         logout: logoutHandler,
+        loginWithGoogle: loginWithGoogle,
         openLoginWithData,
         setOpenLoginWithData,
         registerFormData,

@@ -3,6 +3,7 @@ import Category from "../models/category.model";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary";
 import { UploadApiResponse } from "cloudinary";
+import { Types } from "mongoose";
 
 interface MulterRequest extends Request {
   file: Express.Multer.File;
@@ -98,25 +99,49 @@ export const updateCategory = async (req: Request, res: Response) => {
       updateData.slug = slugify(name, { lower: true });
     }
 
-    if (parentId !== undefined) updateData.parentId = parentId || null;
+    // ✅ Ép kiểu parentId từ string -> ObjectId hoặc null
+    if (typeof parentId !== "undefined") {
+      updateData.parentId =
+        parentId === "" || parentId === null ? null : new Types.ObjectId(parentId);
+    }
 
+    // ✅ Xử lý ảnh nếu có
     if ((req as MulterRequest).file) {
       const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream({ folder: "categories" }, (err, result) => {
-          if (err || !result) reject(err);
-          else resolve(result);
-        });
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "categories" },
+          (err, result) => {
+            if (err || !result) reject(err);
+            else resolve(result);
+          }
+        );
         uploadStream.end((req as MulterRequest).file.buffer);
       });
+
       updateData.image = result.secure_url;
     }
 
+    // ✅ Cập nhật danh mục
     const updated = await Category.findByIdAndUpdate(id, updateData, { new: true });
-    if (!updated) return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
 
-    res.status(200).json({ success: true, message: "Cập nhật danh mục thành công.", data: updated });
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy danh mục.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật danh mục thành công.",
+      data: updated,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Lỗi khi cập nhật danh mục." });
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật danh mục.",
+      error,
+    });
   }
 };
 

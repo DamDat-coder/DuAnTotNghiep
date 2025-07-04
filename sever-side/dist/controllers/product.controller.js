@@ -17,6 +17,9 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const category_model_1 = __importDefault(require("../models/category.model"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const user_model_1 = __importDefault(require("../models/user.model"));
+const notification_model_1 = __importDefault(require("../models/notification.model"));
+const slugify_1 = __importDefault(require("slugify"));
 const getAllChildCategoryIds = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
     const children = yield category_model_1.default.find({ parentId }).select("_id");
     let ids = children.map((child) => child._id.toString());
@@ -202,6 +205,13 @@ const getProductById = (req, res) => __awaiter(void 0, void 0, void 0, function*
 });
 exports.getProductById = getProductById;
 // Lấy sản phẩm theo slug
+function removeVietnameseTones(str) {
+    return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D");
+}
 const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { slug } = req.params;
@@ -209,8 +219,9 @@ const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, functio
             res.status(400).json({ status: "error", message: "Slug không hợp lệ" });
             return;
         }
+        const normalizedSlug = (0, slugify_1.default)(removeVietnameseTones(slug), { lower: true });
         const products = yield product_model_1.default
-            .find({ slug: { $regex: slug, $options: "i" } })
+            .find({ slug: { $regex: normalizedSlug, $options: "i" } })
             .populate("category", "name")
             .lean();
         if (!products || products.length === 0) {
@@ -243,10 +254,11 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             variantsParsed = JSON.parse(body.variants);
         }
         catch (_a) {
-            return res.status(400).json({
+            res.status(400).json({
                 status: 'error',
                 message: 'Trường variants phải là chuỗi JSON hợp lệ',
             });
+            return;
         }
         const categoryId = body['category._id'] || body.category_id;
         if (!body.name ||
@@ -255,30 +267,29 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             !variantsParsed ||
             !Array.isArray(variantsParsed) ||
             variantsParsed.length === 0) {
-            return res.status(400).json({
+            res.status(400).json({
                 status: 'error',
                 message: 'Thiếu thông tin bắt buộc: name, slug, category._id, hoặc variants',
             });
+            return;
         }
         if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-            return res.status(400).json({ status: 'error', message: 'Vui lòng upload ít nhất một ảnh' });
+            res.status(400).json({ status: 'error', message: 'Vui lòng upload ít nhất một ảnh' });
+            return;
         }
         const category = yield category_model_1.default.findById(categoryId).lean();
         if (!category) {
-            return res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+            res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+            return;
         }
-        const imageUrls = [];
-        for (const file of req.files) {
-            const result = yield new Promise((resolve, reject) => {
-                const stream = cloudinary_1.default.uploader.upload_stream({ resource_type: 'image', folder: 'products' }, (error, result) => {
-                    if (error || !result)
-                        return reject(error);
-                    resolve(result);
-                });
-                stream.end(file.buffer);
+        const imageUrls = yield Promise.all(req.files.map((file) => new Promise((resolve, reject) => {
+            const stream = cloudinary_1.default.uploader.upload_stream({ resource_type: 'image', folder: 'products' }, (error, result) => {
+                if (error || !result)
+                    return reject(error);
+                resolve(result.secure_url);
             });
-            imageUrls.push(result.secure_url);
-        }
+            stream.end(file.buffer);
+        })));
         const product = {
             name: body.name,
             slug: body.slug,
@@ -294,18 +305,37 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         };
         const newProduct = new product_model_1.default(product);
         const savedProduct = yield newProduct.save();
-        return res.status(201).json({
+        res.status(201).json({
             status: 'success',
             message: 'Tạo sản phẩm thành công',
             data: savedProduct,
         });
+        setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const users = yield user_model_1.default.find({}).select("_id").lean();
+                const notifications = users.map((user) => ({
+                    userId: user._id,
+                    title: "Sản phẩm mới vừa ra mắt!",
+                    message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop4Real, khám phá ngay!`,
+                    type: "product",
+                    isRead: false,
+                }));
+                yield notification_model_1.default.insertMany(notifications);
+                console.log("Thông báo đã gửi đến người dùng.");
+            }
+            catch (notiError) {
+                console.error("❌ Gửi thông báo thất bại:", notiError);
+            }
+        }));
     }
     catch (error) {
-        console.error('Lỗi khi tạo sản phẩm:', error);
+        console.error("Lỗi khi tạo sản phẩm:", error);
         if (error.code === 11000) {
-            return res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
+            res.status(409).json({ status: "error", message: "Tên hoặc slug sản phẩm đã tồn tại" });
         }
-        return res.status(500).json({ status: 'error', message: error.message });
+        else {
+            res.status(500).json({ status: "error", message: error.message });
+        }
     }
 });
 exports.createProduct = createProduct;

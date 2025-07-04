@@ -14,20 +14,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
+const notification_model_1 = __importDefault(require("../models/notification.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 // Lấy tất cả coupon
 const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const coupons = yield coupon_model_1.default.find()
-            .populate('applicableCategories', 'name')
-            .populate('applicableProducts', 'name');
-        res.status(200).json(coupons);
+        const { isActive, search, page = "1", limit = "10" } = req.query;
+        const filter = {};
+        if (isActive !== undefined) {
+            filter.is_active = isActive === "true";
+        }
+        if (search) {
+            filter.code = { $regex: search, $options: "i" };
+        }
+        const pageNumber = parseInt(page) || 1;
+        const limitNumber = parseInt(limit) || 10;
+        const skip = (pageNumber - 1) * limitNumber;
+        const total = yield coupon_model_1.default.countDocuments(filter);
+        const coupons = yield coupon_model_1.default.find(filter)
+            .populate("applicableCategories", "name")
+            .populate("applicableProducts", "name")
+            .skip(skip)
+            .limit(limitNumber)
+            .sort({ createdAt: -1 });
+        res.status(200).json({
+            data: coupons,
+            pagination: {
+                total,
+                page: pageNumber,
+                limit: limitNumber,
+                totalPages: Math.ceil(total / limitNumber),
+            },
+        });
     }
     catch (error) {
-        console.error("Lỗi khi lấy coupon:", error);
+        console.error("Lỗi khi lấy danh sách coupon:", error);
         res.status(500).json({
             message: "Lỗi server",
-            error: error.message || error
+            error: error.message || error,
         });
     }
 });
@@ -53,7 +77,6 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     var _a, _b;
     try {
         const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
-        // Kiểm tra trùng mã
         const existing = yield coupon_model_1.default.findOne({ code });
         if (existing) {
             return res.status(400).json({ message: 'Mã giảm giá đã tồn tại' });
@@ -74,10 +97,18 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             applicableProducts: (_b = applicableProducts === null || applicableProducts === void 0 ? void 0 : applicableProducts.map((id) => new mongoose_1.default.Types.ObjectId(id))) !== null && _b !== void 0 ? _b : [],
         });
         yield newCoupon.save();
-        res.status(201).json({ message: 'Tạo mã giảm giá thành công', data: newCoupon });
+        yield notification_model_1.default.create({
+            userId: null,
+            title: "Mã giảm giá mới vừa được xuất bản!",
+            message: `Mã "${code}" hiện đã có hiệu lực từ ngày ${new Date(startDate).toLocaleDateString("vi-VN")}.`,
+            type: "coupon",
+            isRead: false,
+        });
+        res.status(201).json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
     }
     catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        console.error("Error creating coupon:", error);
+        res.status(500).json({ message: "Lỗi server", error });
     }
 });
 exports.createCoupon = createCoupon;

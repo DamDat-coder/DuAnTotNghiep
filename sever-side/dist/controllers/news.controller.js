@@ -15,7 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getNewsDetail = exports.getNewsList = exports.deleteNews = exports.updateNews = exports.createNews = exports.upload = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const news_model_1 = __importDefault(require("../models/news.model"));
-const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const user_model_1 = __importDefault(require("../models/user.model"));
+const notification_model_1 = __importDefault(require("../models/notification.model"));
+const cloudinary_1 = require("cloudinary");
 const multer_1 = __importDefault(require("multer"));
 // Thiết lập multer với memoryStorage
 const storage = multer_1.default.memoryStorage();
@@ -50,13 +52,15 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const imageUrls = [];
         const files = normalizeFiles(req.files);
         if (files.length > 0) {
-            for (const file of files) {
-                const result = yield cloudinary_1.default.uploader.upload_stream({ folder: "news" }, (error, result) => __awaiter(void 0, void 0, void 0, function* () {
-                    if (result === null || result === void 0 ? void 0 : result.secure_url) {
-                        imageUrls.push(result.secure_url);
-                    }
-                })).end(file.buffer);
-            }
+            const uploads = yield Promise.all(files.map((file) => new Promise((resolve, reject) => {
+                const stream = cloudinary_1.v2.uploader.upload_stream({ folder: "news" }, (error, result) => {
+                    if (error || !result)
+                        return reject(error);
+                    resolve(result.secure_url);
+                });
+                stream.end(file.buffer);
+            })));
+            imageUrls.push(...uploads);
         }
         const newsData = {
             title,
@@ -75,6 +79,23 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             .findById(savedNews._id)
             .populate("user_id", "name email")
             .populate("category_id", "name");
+        setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const users = yield user_model_1.default.find({}).select("_id").lean();
+                const notifications = users.map((user) => ({
+                    userId: user._id,
+                    title: "Tin tức mới từ Shop4Real!",
+                    message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
+                    type: "news",
+                    isRead: false,
+                }));
+                yield notification_model_1.default.insertMany(notifications);
+                console.log("Đã gửi thông báo tin tức mới cho người dùng.");
+            }
+            catch (notifyErr) {
+                console.error("Gửi thông báo thất bại:", notifyErr);
+            }
+        }));
         res.status(201).json({
             status: "success",
             message: "Tạo tin tức thành công",
@@ -126,7 +147,7 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (files.length > 0) {
             const imageUrls = [];
             for (const file of files) {
-                const result = yield cloudinary_1.default.uploader.upload_stream({ folder: "news" }, (error, result) => __awaiter(void 0, void 0, void 0, function* () {
+                const result = yield cloudinary_1.v2.uploader.upload_stream({ folder: "news" }, (error, result) => __awaiter(void 0, void 0, void 0, function* () {
                     if (result === null || result === void 0 ? void 0 : result.secure_url) {
                         imageUrls.push(result.secure_url);
                     }
@@ -170,13 +191,19 @@ exports.deleteNews = deleteNews;
 // Lấy danh sách tin tức
 const getNewsList = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { page = "1", limit = "10", category_id } = req.query;
+        const { page = "1", limit = "10", category_id, isPublished, search, } = req.query;
         const pageNum = Math.max(parseInt(page), 1);
         const limitNum = Math.max(parseInt(limit), 1);
         const skip = (pageNum - 1) * limitNum;
         const query = {};
         if (category_id && mongoose_1.default.Types.ObjectId.isValid(category_id)) {
             query.category_id = category_id;
+        }
+        if (isPublished !== undefined) {
+            query.is_published = isPublished === "true";
+        }
+        if (search) {
+            query.title = { $regex: search, $options: "i" };
         }
         const [news, total] = yield Promise.all([
             news_model_1.default.find(query)
@@ -190,14 +217,19 @@ const getNewsList = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.status(200).json({
             status: "success",
             data: news,
-            total,
-            page: pageNum,
-            limit: limitNum,
-            totalPages: Math.ceil(total / limitNum),
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum),
+            },
         });
     }
     catch (error) {
-        res.status(500).json({ status: "error", message: error.message });
+        res.status(500).json({
+            status: "error",
+            message: error.message || "Lỗi server",
+        });
     }
 });
 exports.getNewsList = getNewsList;

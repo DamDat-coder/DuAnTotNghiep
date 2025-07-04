@@ -4,6 +4,9 @@ import productModel, { IProduct } from '../models/product.model';
 import categoryModel from '../models/category.model';
 import cloudinary from '../config/cloudinary';
 import { UploadApiResponse } from 'cloudinary';
+import UserModel from "../models/user.model";
+import NotificationModel from "../models/notification.model";
+import slugify from "slugify";
 
 const getAllChildCategoryIds = async (parentId: string): Promise<string[]> => {
   const children = await categoryModel.find({ parentId }).select("_id");
@@ -222,6 +225,15 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 };
 
 // Lấy sản phẩm theo slug
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+
 export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
   try {
     const { slug } = req.params;
@@ -231,8 +243,10 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    const normalizedSlug = slugify(removeVietnameseTones(slug), { lower: true });
+
     const products = await productModel
-      .find({ slug: { $regex: slug, $options: "i" } })
+      .find({ slug: { $regex: normalizedSlug, $options: "i" } })
       .populate("category", "name")
       .lean();
 
@@ -259,7 +273,7 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
 };
 
 // Thêm sản phẩm mới
-export const createProduct = async (req: Request, res: Response): Promise<Response> => {
+export const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const body = req.body;
 
@@ -267,10 +281,11 @@ export const createProduct = async (req: Request, res: Response): Promise<Respon
     try {
       variantsParsed = JSON.parse(body.variants);
     } catch {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         message: 'Trường variants phải là chuỗi JSON hợp lệ',
       });
+      return;
     }
 
     const categoryId = body['category._id'] || body.category_id;
@@ -283,35 +298,39 @@ export const createProduct = async (req: Request, res: Response): Promise<Respon
       !Array.isArray(variantsParsed) ||
       variantsParsed.length === 0
     ) {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         message: 'Thiếu thông tin bắt buộc: name, slug, category._id, hoặc variants',
       });
+      return;
     }
 
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      return res.status(400).json({ status: 'error', message: 'Vui lòng upload ít nhất một ảnh' });
+      res.status(400).json({ status: 'error', message: 'Vui lòng upload ít nhất một ảnh' });
+      return;
     }
 
     const category = await categoryModel.findById(categoryId).lean();
     if (!category) {
-      return res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+      res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+      return;
     }
 
-    const imageUrls: string[] = [];
-    for (const file of req.files as Express.Multer.File[]) {
-      const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { resource_type: 'image', folder: 'products' },
-          (error, result) => {
-            if (error || !result) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(file.buffer);
-      });
-      imageUrls.push(result.secure_url);
-    }
+    const imageUrls: string[] = await Promise.all(
+      (req.files as Express.Multer.File[]).map(
+        (file) =>
+          new Promise<string>((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              { resource_type: 'image', folder: 'products' },
+              (error, result) => {
+                if (error || !result) return reject(error);
+                resolve(result.secure_url);
+              }
+            );
+            stream.end(file.buffer);
+          })
+      )
+    );
 
     const product: Partial<IProduct> = {
       name: body.name,
@@ -330,17 +349,36 @@ export const createProduct = async (req: Request, res: Response): Promise<Respon
     const newProduct = new productModel(product);
     const savedProduct = await newProduct.save();
 
-    return res.status(201).json({
+    res.status(201).json({
       status: 'success',
       message: 'Tạo sản phẩm thành công',
       data: savedProduct,
     });
+
+    setImmediate(async () => {
+      try {
+        const users = await UserModel.find({}).select("_id").lean();
+        const notifications = users.map((user) => ({
+          userId: user._id,
+          title: "Sản phẩm mới vừa ra mắt!",
+          message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop4Real, khám phá ngay!`,
+          type: "product",
+          isRead: false,
+        }));
+        await NotificationModel.insertMany(notifications);
+        console.log("Thông báo đã gửi đến người dùng.");
+      } catch (notiError) {
+        console.error("❌ Gửi thông báo thất bại:", notiError);
+      }
+    });
+
   } catch (error: any) {
-    console.error('Lỗi khi tạo sản phẩm:', error);
+    console.error("Lỗi khi tạo sản phẩm:", error);
     if (error.code === 11000) {
-      return res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
+      res.status(409).json({ status: "error", message: "Tên hoặc slug sản phẩm đã tồn tại" });
+    } else {
+      res.status(500).json({ status: "error", message: error.message });
     }
-    return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 

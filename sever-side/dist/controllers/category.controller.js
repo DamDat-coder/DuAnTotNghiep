@@ -16,6 +16,7 @@ exports.deleteCategory = exports.updateCategory = exports.getCategoryById = expo
 const category_model_1 = __importDefault(require("../models/category.model"));
 const slugify_1 = __importDefault(require("slugify"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const mongoose_1 = require("mongoose");
 // Tạo danh mục mới
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -99,8 +100,12 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             updateData.name = name;
             updateData.slug = (0, slugify_1.default)(name, { lower: true });
         }
-        if (parentId !== undefined)
-            updateData.parentId = parentId || null;
+        // ✅ Ép kiểu parentId từ string -> ObjectId hoặc null
+        if (typeof parentId !== "undefined") {
+            updateData.parentId =
+                parentId === "" || parentId === null ? null : new mongoose_1.Types.ObjectId(parentId);
+        }
+        // ✅ Xử lý ảnh nếu có
         if (req.file) {
             const result = yield new Promise((resolve, reject) => {
                 const uploadStream = cloudinary_1.default.uploader.upload_stream({ folder: "categories" }, (err, result) => {
@@ -113,13 +118,26 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             });
             updateData.image = result.secure_url;
         }
+        // ✅ Cập nhật danh mục
         const updated = yield category_model_1.default.findByIdAndUpdate(id, updateData, { new: true });
-        if (!updated)
-            return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
-        res.status(200).json({ success: true, message: "Cập nhật danh mục thành công.", data: updated });
+        if (!updated) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy danh mục.",
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: "Cập nhật danh mục thành công.",
+            data: updated,
+        });
     }
     catch (error) {
-        res.status(500).json({ success: false, message: "Lỗi khi cập nhật danh mục." });
+        res.status(500).json({
+            success: false,
+            message: "Lỗi khi cập nhật danh mục.",
+            error,
+        });
     }
 });
 exports.updateCategory = updateCategory;

@@ -1,17 +1,39 @@
 import { PaymentInfo } from "@/types/payment";
 import { API_BASE_URL, fetchWithAuth } from "./api";
-import { v4 as uuidv4 } from "uuid";
 // Initiate payment
 // Khởi tạo thanh toán
-export async function initiatePayment(paymentInfo: PaymentInfo): Promise<{ paymentId: string; paymentUrl?: string }> {
+export async function initiatePayment(
+  paymentInfo: PaymentInfo
+): Promise<{ paymentId: string; paymentUrl?: string }> {
   try {
-    const endpoint = paymentInfo.orderInfo.paymentMethod === "cod" ? "/payment/cod" : "/payment/create-vnpay-payment";
+    // Chọn endpoint tương ứng theo payment method
+    let endpoint = "";
+
+    switch (paymentInfo.orderInfo.paymentMethod) {
+      case "cod":
+        endpoint = "/payment/cod";
+        break;
+      case "vnpay":
+        endpoint = "/payment/create-vnpay-payment";
+        break;
+      case "momo":
+        endpoint = "/payment/create-momo-payment";
+        break;
+      case "zalopay":
+        endpoint = "/payment/create-payment-zalopay";
+        break;
+      default:
+        throw new Error("Phương thức thanh toán không hợp lệ");
+    }
+
     console.log("Payment info sent to BE:", paymentInfo);
+
     const res = await fetchWithAuth<any>(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(paymentInfo),
     });
+
     return res;
   } catch (error: any) {
     console.error("Error initiating payment:", error);
@@ -20,13 +42,19 @@ export async function initiatePayment(paymentInfo: PaymentInfo): Promise<{ payme
 }
 
 // Tạo đơn hàng chính thức
-export async function createOrder(paymentId: string, userId: string): Promise<{ orderId: string }> {
+export async function createOrder(
+  paymentId: string,
+  userId: string
+): Promise<{ orderId: string }> {
   try {
-    const res = await fetchWithAuth<{ orderId: string }>(`${API_BASE_URL}/orders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentId, userId }),
-    });
+    const res = await fetchWithAuth<{ orderId: string }>(
+      `${API_BASE_URL}/orders`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId, userId }),
+      }
+    );
     return res;
   } catch (error: any) {
     console.error("Error creating order:", error);

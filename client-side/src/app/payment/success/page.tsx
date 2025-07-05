@@ -30,10 +30,6 @@ export default function PaymentSuccess() {
       }
 
       try {
-        // Gọi API createOrder với paymentId (7 ký tự) và userId
-        const orderResponse = await createOrder(paymentId, user.id);
-        console.log("Order created:", orderResponse); // Debug
-
         // Xóa thông tin pending từ localStorage
         localStorage.removeItem("pendingPaymentId");
         localStorage.removeItem("pendingUserId");
@@ -42,7 +38,10 @@ export default function PaymentSuccess() {
         dispatch({ type: "clear" });
 
         toast.success("Đơn hàng đã được xác nhận!");
-        router.push("/profile?tab=orders");
+        const timer = setTimeout(() => {
+          router.push("/profile?tab=orders");
+        }, 3000);
+        return () => clearTimeout(timer);
       } catch (error: any) {
         console.error("Lỗi khi tạo đơn hàng:", error);
         toast.error(error.message || "Không thể tạo đơn hàng!");

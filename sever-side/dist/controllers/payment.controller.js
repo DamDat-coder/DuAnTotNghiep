@@ -35,7 +35,7 @@ const vnpay = new vnpay_1.VNPay({
     vnpayHost: "https://sandbox.vnpayment.vn",
     testMode: true,
     hashAlgorithm: vnpay_1.HashAlgorithm.SHA512,
-    loggerFn: () => { }
+    loggerFn: () => { },
 });
 const MOMO = {
     partnerCode: process.env.MOMO_PARTNER_CODE,
@@ -50,12 +50,14 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
     try {
         const { orderId, totalPrice, userId, orderInfo } = req.body;
         if (!orderId || !totalPrice || !userId || !orderInfo) {
-            return res.status(400).json({ message: 'Thiếu orderId, totalPrice, userId hoặc orderInfo!' });
+            return res
+                .status(400)
+                .json({ message: "Thiếu orderId, totalPrice, userId hoặc orderInfo!" });
         }
         const paymentData = {
             userId: new mongoose_1.Types.ObjectId(userId),
             amount: totalPrice,
-            status: 'pending',
+            status: "pending",
             transaction_code: orderId,
             transaction_data: {},
             paid_at: undefined,
@@ -64,20 +66,22 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // Lưu bản ghi thanh toán ban đầu (trạng thái pending)
         const payment = yield payment_model_1.default.create(paymentData);
         const paymentUrl = yield vnpay.buildPaymentUrl({
-            vnp_Amount: totalPrice * 100,
-            vnp_IpAddr: req.ip || '127.0.0.1',
+            vnp_Amount: totalPrice,
+            vnp_IpAddr: req.ip || "127.0.0.1",
             vnp_TxnRef: orderId,
             vnp_OrderInfo: `Thanh toán đơn hàng ${orderId}|userId:${userId}`,
             vnp_OrderType: vnpay_1.ProductCode.Other,
             vnp_ReturnUrl: `http://localhost:3000/api/payment/check-payment-vnpay`,
             vnp_Locale: vnpay_1.VnpLocale.VN,
-            vnp_CreateDate: Number((0, moment_1.default)().format('YYYYMMDDHHmmss')),
-            vnp_ExpireDate: Number((0, moment_1.default)().add(30, 'minutes').format('YYYYMMDDHHmmss')),
+            vnp_CreateDate: Number((0, moment_1.default)().format("YYYYMMDDHHmmss")),
+            vnp_ExpireDate: Number((0, moment_1.default)().add(30, "minutes").format("YYYYMMDDHHmmss")),
         });
         return res.status(200).json({ paymentUrl, paymentId: payment._id });
     }
     catch (error) {
-        return res.status(500).json({ message: 'Không tạo được URL thanh toán', error });
+        return res
+            .status(500)
+            .json({ message: "Không tạo được URL thanh toán", error });
     }
 });
 exports.createVNPayPayment = createVNPayPayment;
@@ -87,23 +91,27 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         const queryParams = req.query;
         const isValid = vnpay.verifyReturnUrl(queryParams);
         if (!isValid) {
-            return res.status(400).json({ message: 'Chữ ký không hợp lệ!' });
+            return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
         }
-        const { vnp_TxnRef, vnp_ResponseCode, vnp_Amount, vnp_TransactionNo, vnp_BankCode, vnp_PayDate, vnp_OrderInfo } = queryParams;
+        const { vnp_TxnRef, vnp_ResponseCode, vnp_Amount, vnp_TransactionNo, vnp_BankCode, vnp_PayDate, vnp_OrderInfo, } = queryParams;
         // Lấy lại bản ghi payment đã tạo từ createVNPayPayment
-        const existingPayment = yield payment_model_1.default.findOne({ transaction_code: vnp_TxnRef });
+        const existingPayment = yield payment_model_1.default.findOne({
+            transaction_code: vnp_TxnRef,
+        });
         if (!existingPayment) {
-            return res.status(404).json({ message: 'Không tìm thấy giao dịch để cập nhật!' });
+            return res
+                .status(404)
+                .json({ message: "Không tìm thấy giao dịch để cập nhật!" });
         }
         // Cập nhật trạng thái giao dịch
-        existingPayment.status = vnp_ResponseCode === '00' ? 'success' : 'failed';
+        existingPayment.status = vnp_ResponseCode === "00" ? "success" : "failed";
         existingPayment.transaction_data = queryParams;
         existingPayment.paid_at = vnp_PayDate
-            ? (0, moment_1.default)(vnp_PayDate, 'YYYYMMDDHHmmss').toDate()
+            ? (0, moment_1.default)(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
             : new Date();
         yield existingPayment.save();
         // Redirect về frontend tuỳ theo kết quả thanh toán
-        if (vnp_ResponseCode === '00') {
+        if (vnp_ResponseCode === "00") {
             return res.redirect(`http://localhost:3300/payment/success?orderId=${vnp_TxnRef}`);
         }
         else {
@@ -111,11 +119,11 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
     }
     catch (error) {
-        return res.status(500).json({ message: 'Xử lý callback thất bại!', error });
+        return res.status(500).json({ message: "Xử lý callback thất bại!", error });
     }
 });
 exports.checkVNPayReturn = checkVNPayReturn;
-// Tạo URL thanh toán VNPay
+// Tạo URL thanh toán ZaloPay
 const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { totalPrice, userId, orderInfo } = req.body;
@@ -132,7 +140,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             order_info: orderInfo,
         });
         const embed_data = {
-            redirecturl: ZALO_PAY.returnUrl,
+            redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
         };
         const order = {
             app_id: ZALO_PAY.app_id,
@@ -155,7 +163,10 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             order.embed_data,
             order.item,
         ].join("|");
-        order.mac = crypto_1.default.createHmac("sha256", ZALO_PAY.key1).update(dataString).digest("hex");
+        order.mac = crypto_1.default
+            .createHmac("sha256", ZALO_PAY.key1)
+            .update(dataString)
+            .digest("hex");
         const params = new URLSearchParams();
         Object.entries(order).forEach(([key, value]) => {
             params.append(key, value);
@@ -164,12 +175,21 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
         });
         if (zaloRes.data.return_code !== 1) {
-            return res.status(400).json({ message: "Tạo đơn ZaloPay thất bại!", zaloRes: zaloRes.data });
+            return res.status(400).json({
+                message: "Tạo đơn ZaloPay thất bại!",
+                zaloRes: zaloRes.data,
+            });
         }
-        return res.status(200).json({ paymentUrl: zaloRes.data.order_url, paymentId: payment._id });
+        return res.status(200).json({
+            paymentUrl: zaloRes.data.order_url,
+            paymentId: payment._id,
+        });
     }
     catch (error) {
-        return res.status(500).json({ message: "Không tạo được đơn ZaloPay", error });
+        return res.status(500).json({
+            message: "Không tạo được đơn ZaloPay",
+            error: error instanceof Error ? error.message : error,
+        });
     }
 });
 exports.createZaloPayPayment = createZaloPayPayment;
@@ -178,17 +198,31 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
     try {
         const { app_id, app_trans_id, app_time, app_user, amount, embed_data, item, description, status, message, trans_id, mac, } = req.body;
         const dataString = [
-            app_id, app_trans_id, app_user, amount,
-            app_time, embed_data, item, status,
-            message, trans_id,
+            app_id,
+            app_trans_id,
+            app_user,
+            amount,
+            app_time,
+            embed_data,
+            item,
+            status,
+            message,
+            trans_id,
         ].join("|");
-        const expectedMac = crypto_1.default.createHmac("sha256", ZALO_PAY.key1).update(dataString).digest("hex");
+        const expectedMac = crypto_1.default
+            .createHmac("sha256", ZALO_PAY.key1)
+            .update(dataString)
+            .digest("hex");
         if (mac !== expectedMac) {
-            return res.status(400).json({ return_code: -1, return_message: "mac not valid" });
+            return res
+                .status(400)
+                .json({ return_code: -1, return_message: "mac not valid" });
         }
         const payment = yield payment_model_1.default.findOne({ transaction_code: app_trans_id });
         if (!payment) {
-            return res.status(404).json({ return_code: -1, return_message: "payment not found" });
+            return res
+                .status(404)
+                .json({ return_code: -1, return_message: "payment not found" });
         }
         const isSuccess = status === 1;
         payment.status = isSuccess ? "success" : "failed";
@@ -228,14 +262,17 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         // 👉 Redirect về frontend theo kết quả thanh toán
-        const frontendRedirectBase = "https://sandbox.shop4real.vn/payment";
+        const frontendRedirectBase = "http://localhost:3300/payment";
         const redirectUrl = isSuccess
             ? `${frontendRedirectBase}/success?orderId=${app_trans_id}`
             : `${frontendRedirectBase}/fail?orderId=${app_trans_id}`;
-        return res.redirect(302, redirectUrl);
+        // 👉 redirect luôn thay vì chỉ trả JSON
+        return res.redirect(redirectUrl);
     }
     catch (error) {
-        return res.status(500).json({ return_code: -1, return_message: "internal error" });
+        return res
+            .status(500)
+            .json({ return_code: -1, return_message: "internal error" });
     }
 });
 exports.checkZaloPayReturn = checkZaloPayReturn;
@@ -281,9 +318,16 @@ const createMomoPayment = (req, res) => __awaiter(void 0, void 0, void 0, functi
             headers: { "Content-Type": "application/json" },
         });
         if ((_a = momoRes.data) === null || _a === void 0 ? void 0 : _a.payUrl) {
-            return res.status(200).json({ paymentUrl: momoRes.data.payUrl, paymentId: payment._id });
+            return res.status(200).json({
+                paymentUrl: momoRes.data.payUrl,
+                paymentId: payment._id,
+                orderId,
+            });
         }
-        return res.status(400).json({ message: "Tạo đơn MoMo thất bại!", momoRes: momoRes.data });
+        console.error("❌ MoMo Response Error:", momoRes.data);
+        return res
+            .status(400)
+            .json({ message: "Tạo đơn MoMo thất bại!", momoRes: momoRes.data });
     }
     catch (error) {
         return res.status(500).json({ message: "Không tạo được đơn MoMo", error });
@@ -296,7 +340,9 @@ const checkMomoReturn = (req, res) => __awaiter(void 0, void 0, void 0, function
         const { orderId, resultCode } = req.query;
         const payment = yield payment_model_1.default.findOne({ transaction_code: orderId });
         if (!payment) {
-            return res.status(404).json({ return_code: -1, return_message: "payment not found" });
+            return res
+                .status(404)
+                .json({ return_code: -1, return_message: "payment not found" });
         }
         const isSuccess = resultCode === "0";
         payment.status = isSuccess ? "success" : "failed";
@@ -334,14 +380,16 @@ const checkMomoReturn = (req, res) => __awaiter(void 0, void 0, void 0, function
                 })),
             });
         }
-        const frontendRedirectBase = "https://sandbox.shop4real.vn/payment";
+        const frontendRedirectBase = "http://localhost:3300/payment";
         const redirectUrl = isSuccess
             ? `${frontendRedirectBase}/success?orderId=${orderId}`
             : `${frontendRedirectBase}/fail?orderId=${orderId}`;
-        return res.redirect(302, redirectUrl);
+        return res.redirect(redirectUrl);
     }
     catch (error) {
-        return res.status(500).json({ return_code: -1, return_message: "internal error" });
+        return res
+            .status(500)
+            .json({ return_code: -1, return_message: "internal error" });
     }
 });
 exports.checkMomoReturn = checkMomoReturn;

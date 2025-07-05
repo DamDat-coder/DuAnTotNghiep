@@ -70,8 +70,8 @@ const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
                 email,
                 name,
                 googleId,
-                password: "", // vì không có mật khẩu
-                refreshToken: "", // sẽ gán bên dưới
+                password: "",
+                refreshToken: "",
             });
         }
         if (!user.is_active) {
@@ -172,16 +172,12 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
         const { email, password } = req.body;
         const user = yield user_model_1.default.findOne({ email });
         if (!user)
-            return res
-                .status(400)
-                .json({ success: false, message: "Email không tồn tại." });
+            return res.status(400).json({ success: false, message: "Email không tồn tại." });
         const isMatch = yield bcryptjs_1.default.compare(password, user.password);
         if (!isMatch)
             return res.status(401).json({ success: false, message: "Mật khẩu sai." });
         if (!user.is_active)
-            return res
-                .status(403)
-                .json({ success: false, message: "Tài khoản đã bị khóa." });
+            return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
         const accessToken = generateAccessToken(user._id.toString(), user.role);
         const refreshToken = generateRefreshToken(user._id.toString());
         yield user_model_1.default.updateOne({ _id: user._id }, { refreshToken });

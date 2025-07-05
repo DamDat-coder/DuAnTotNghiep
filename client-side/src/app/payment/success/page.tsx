@@ -30,10 +30,6 @@ export default function PaymentSuccess() {
       }
 
       try {
-        // Gọi API createOrder với paymentId (7 ký tự) và userId
-        const orderResponse = await createOrder(paymentId, user.id);
-        console.log("Order created:", orderResponse); // Debug
-
         // Xóa thông tin pending từ localStorage
         localStorage.removeItem("pendingPaymentId");
         localStorage.removeItem("pendingUserId");

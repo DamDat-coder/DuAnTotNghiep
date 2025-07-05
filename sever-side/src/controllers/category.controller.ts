@@ -4,10 +4,7 @@ import slugify from "slugify";
 import cloudinary from "../config/cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import { Types } from "mongoose";
-
-interface MulterRequest extends Request {
-  file: Express.Multer.File;
-}
+import { MulterRequest } from "../middlewares/upload.middleware"; 
 
 // Tạo danh mục mới
 export const createCategory = async (req: Request, res: Response) => {
@@ -20,13 +17,15 @@ export const createCategory = async (req: Request, res: Response) => {
     if (exists) return res.status(409).json({ success: false, message: "Slug đã tồn tại." });
 
     let imageUrl: string | null = null;
-    if ((req as MulterRequest).file) {
+    const file = (req as MulterRequest).file;
+
+    if (file) {
       const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream({ folder: "categories" }, (err, result) => {
+        const stream = cloudinary.uploader.upload_stream({ folder: "categories" }, (err, result) => {
           if (err || !result) reject(err);
           else resolve(result);
         });
-        uploadStream.end((req as MulterRequest).file.buffer);
+        stream.end(file.buffer);
       });
       imageUrl = result.secure_url;
     }
@@ -99,29 +98,27 @@ export const updateCategory = async (req: Request, res: Response) => {
       updateData.slug = slugify(name, { lower: true });
     }
 
-    // ✅ Ép kiểu parentId từ string -> ObjectId hoặc null
     if (typeof parentId !== "undefined") {
       updateData.parentId =
         parentId === "" || parentId === null ? null : new Types.ObjectId(parentId);
     }
 
-    // ✅ Xử lý ảnh nếu có
-    if ((req as MulterRequest).file) {
+    const file = (req as MulterRequest).file;
+    if (file) {
       const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
+        const stream = cloudinary.uploader.upload_stream(
           { folder: "categories" },
           (err, result) => {
             if (err || !result) reject(err);
             else resolve(result);
           }
         );
-        uploadStream.end((req as MulterRequest).file.buffer);
+        stream.end(file.buffer);
       });
 
       updateData.image = result.secure_url;
     }
 
-    // ✅ Cập nhật danh mục
     const updated = await Category.findByIdAndUpdate(id, updateData, { new: true });
 
     if (!updated) {

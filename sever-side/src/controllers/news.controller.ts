@@ -3,26 +3,8 @@ import mongoose from "mongoose";
 import newsModel, { INews } from "../models/news.model";
 import UserModel from "../models/user.model";
 import NotificationModel from "../models/notification.model";
-import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
-import multer from "multer";
-
-interface MulterRequest extends Request {
-  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
-  user?: {
-    userId: string;
-    role: string;
-  };
-}
-
-// Thiết lập multer với memoryStorage
-const storage = multer.memoryStorage();
-export const upload = multer({ storage });
-
-function normalizeFiles(files: MulterRequest["files"]): Express.Multer.File[] {
-  if (!files) return [];
-  if (Array.isArray(files)) return files;
-  return Object.values(files).flat();
-}
+import { v2 as cloudinary } from "cloudinary";
+import { MulterRequest, normalizeFiles } from "../middlewares/upload.middleware";
 
 // Thêm tin tức
 export const createNews = async (req: MulterRequest, res: Response): Promise<void> => {
@@ -38,7 +20,10 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       return;
     }
 
-    if (!mongoose.Types.ObjectId.isValid(user_id) || !mongoose.Types.ObjectId.isValid(category_id)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(user_id) ||
+      !mongoose.Types.ObjectId.isValid(category_id)
+    ) {
       res.status(400).json({
         status: "error",
         message: "user_id hoặc category_id không hợp lệ",
@@ -46,18 +31,21 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       return;
     }
 
-    const imageUrls: string[] = [];
     const files = normalizeFiles(req.files);
+    const imageUrls: string[] = [];
 
     if (files.length > 0) {
       const uploads = await Promise.all(
         files.map(
           (file) =>
             new Promise<string>((resolve, reject) => {
-              const stream = cloudinary.uploader.upload_stream({ folder: "news" }, (error, result) => {
-                if (error || !result) return reject(error);
-                resolve(result.secure_url);
-              });
+              const stream = cloudinary.uploader.upload_stream(
+                { folder: "news" },
+                (error, result) => {
+                  if (error || !result) return reject(error);
+                  resolve(result.secure_url);
+                }
+              );
               stream.end(file.buffer);
             })
         )
@@ -85,6 +73,7 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       .populate("user_id", "name email")
       .populate("category_id", "name");
 
+    // Gửi thông báo cho tất cả user
     setImmediate(async () => {
       try {
         const users = await UserModel.find({}).select("_id").lean();
@@ -138,7 +127,12 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
     if (content) updates.content = content;
     if (slug) updates.slug = slug;
     if (tags) updates.tags = tags.split(",");
-    if (typeof is_published === "boolean" || is_published === "true" || is_published === "false") {
+
+    if (
+      typeof is_published === "boolean" ||
+      is_published === "true" ||
+      is_published === "false"
+    ) {
       const publishStatus = is_published === true || is_published === "true";
       updates.is_published = publishStatus;
       updates.published_at = publishStatus ? new Date() : null;
@@ -152,12 +146,19 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
     if (files.length > 0) {
       const imageUrls: string[] = [];
       for (const file of files) {
-        const result = await cloudinary.uploader.upload_stream({ folder: "news" }, async (error, result) => {
-          if (result?.secure_url) {
-            imageUrls.push(result.secure_url);
-          }
-        }).end(file.buffer);
+        const result = await new Promise<string | null>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "news" },
+            (error, result) => {
+              if (error || !result) return reject(error);
+              resolve(result.secure_url);
+            }
+          );
+          stream.end(file.buffer);
+        });
+        if (result) imageUrls.push(result);
       }
+
       updates.thumbnail = imageUrls[0] || null;
       updates.news_image = imageUrls.slice(1);
     }
@@ -167,7 +168,11 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
       .populate("user_id", "name email")
       .populate("category_id", "name");
 
-    res.status(200).json({ status: "success", message: "Cập nhật thành công", data: updatedNews });
+    res.status(200).json({
+      status: "success",
+      message: "Cập nhật thành công",
+      data: updatedNews,
+    });
   } catch (error: any) {
     if (error.code === 11000) {
       res.status(409).json({ status: "error", message: "Slug đã tồn tại" });

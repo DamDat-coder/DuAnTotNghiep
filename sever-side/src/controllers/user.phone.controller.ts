@@ -1,15 +1,5 @@
 import { Request, Response } from "express";
-import dotenv from "dotenv";
-dotenv.config();
-import { Vonage } from "@vonage/server-sdk";
-import { Auth } from "@vonage/auth";
-
-const credentials = new Auth({
-  apiKey: process.env.VONAGE_API_KEY!,
-  apiSecret: process.env.VONAGE_API_SECRET!,
-});
-const vonage = new Vonage(credentials);
-const otpMap = new Map<string, string>();
+import { vonage, otpMap } from "../config/vonage";
 
 // Gửi OTP
 export const sendSmsOTP = async (req: Request, res: Response) => {

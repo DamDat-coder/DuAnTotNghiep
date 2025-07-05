@@ -8,6 +8,9 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const xss_clean_1 = __importDefault(require("xss-clean"));
+const hpp_1 = __importDefault(require("hpp"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const product_routes_1 = __importDefault(require("./routes/product.routes"));
 const category_routes_1 = __importDefault(require("./routes/category.routes"));
@@ -20,6 +23,14 @@ const notification_routes_1 = __importDefault(require("./routes/notification.rou
 const error_middleware_1 = require("./middlewares/error.middleware");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+const limiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
+});
+app.use(limiter);
+app.use((0, xss_clean_1.default)());
+app.use((0, hpp_1.default)());
 app.use((0, cors_1.default)({
     origin: "http://localhost:3300",
     credentials: true,
@@ -36,7 +47,7 @@ app.use("/api/coupons", coupon_routes_1.default);
 app.use("/api/categories", category_routes_1.default);
 app.use("/api/orders", order_routes_1.default);
 app.use("/api/payment", payment_routers_1.default);
-app.use('/api/reviews', review_routes_1.default);
+app.use("/api/reviews", review_routes_1.default);
 app.use("/api/notifications", notification_routes_1.default);
 app.use(error_middleware_1.errorHandler);
 exports.default = app;

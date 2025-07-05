@@ -7,20 +7,8 @@ import { UploadApiResponse } from 'cloudinary';
 import UserModel from "../models/user.model";
 import NotificationModel from "../models/notification.model";
 import slugify from "slugify";
-
-const getAllChildCategoryIds = async (parentId: string): Promise<string[]> => {
-  const children = await categoryModel.find({ parentId }).select("_id");
-  let ids = children.map((child: { _id: mongoose.Types.ObjectId }) =>
-    child._id.toString()
-  );
-
-  for (const child of children) {
-    const subIds = await getAllChildCategoryIds(child._id.toString());
-    ids = ids.concat(subIds);
-  }
-
-  return ids;
-};
+import { getAllChildCategoryIds } from "../utils/category.util";
+import { removeVietnameseTones } from "../utils/string.util";
 
 // Lấy tất cả sản phẩm cho người dùng
 export const getAllProducts = async (req: Request, res: Response) => {
@@ -224,16 +212,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// Lấy sản phẩm theo slug
-function removeVietnameseTones(str: string): string {
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D");
-}
-
-
+// Lấy sản phẩm theo slug 
 export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
   try {
     const { slug } = req.params;

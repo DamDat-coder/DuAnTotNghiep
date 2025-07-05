@@ -42,7 +42,10 @@ export default function PaymentSuccess() {
         dispatch({ type: "clear" });
 
         toast.success("Đơn hàng đã được xác nhận!");
-        router.push("/profile?tab=orders");
+        const timer = setTimeout(() => {
+          router.push("/profile?tab=orders");
+        }, 3000);
+        return () => clearTimeout(timer);
       } catch (error: any) {
         console.error("Lỗi khi tạo đơn hàng:", error);
         toast.error(error.message || "Không thể tạo đơn hàng!");

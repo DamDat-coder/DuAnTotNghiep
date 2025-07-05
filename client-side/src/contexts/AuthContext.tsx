@@ -131,30 +131,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkAuth = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+
     try {
-      const userData = await fetchUser();
-      if (userData) {
-        setUser(userData);
-      } else {
-        console.warn("checkAuth - fetchUser returned null");
-        setUser(null);
+      // Nếu có token, thử fetch user
+      if (accessToken) {
+        const userData = await fetchUser();
+        if (userData) {
+          setUser(userData);
+          return;
+        }
       }
-    } catch (error: any) {
-      console.error("checkAuth - Error:", error);
-      if (error.message.includes("401")) {
-        console.warn("checkAuth - Unauthorized, attempting to refresh token");
-        try {
-          const newToken = await refreshToken(); // Hàm làm mới token
-          localStorage.setItem("accessToken", String(newToken));
-          const userData = await fetchUser(); // Thử lại
-          setUser(userData || null);
-        } catch (refreshError) {
-          console.error("checkAuth - Refresh token failed:", refreshError);
+
+      // Không có token hoặc fetch thất bại => thử refresh token
+      console.warn("checkAuth - Access token không hợp lệ, đang làm mới...");
+      const newToken = await refreshToken();
+      console.log(newToken);
+      
+      if (newToken) {
+        localStorage.setItem("accessToken", newToken);
+
+        const retriedUser = await fetchUser();
+        if (retriedUser) {
+          setUser(retriedUser);
+        } else {
+          console.warn("checkAuth - fetchUser sau khi refresh vẫn fail");
           setUser(null);
+          localStorage.removeItem("accessToken");
         }
       } else {
+        // Refresh thất bại
+        console.warn("checkAuth - Làm mới token thất bại");
         setUser(null);
+        localStorage.removeItem("accessToken");
       }
+    } catch (error: any) {
+      console.error("checkAuth - Lỗi bất ngờ:", error.message);
+      setUser(null);
+      localStorage.removeItem("accessToken");
     }
   };
 

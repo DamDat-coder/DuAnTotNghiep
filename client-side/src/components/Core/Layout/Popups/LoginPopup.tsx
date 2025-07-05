@@ -175,7 +175,7 @@ export default function LoginPopup({
           </svg>
         </button>
 
-        <div className="flex flex-col items-center gap-10 py-[3.75rem] px-[7.5rem]">
+        <div className="flex flex-col items-center gap-10 py-[3rem] px-[7.5rem]">
           <Image
             src="/nav/logo.svg"
             alt="Logo"
@@ -234,7 +234,7 @@ export default function LoginPopup({
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-[2.375rem] right-3 text-gray-400"
+                  className="absolute top-[50%] right-3 text-gray-400"
                 >
                   {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>

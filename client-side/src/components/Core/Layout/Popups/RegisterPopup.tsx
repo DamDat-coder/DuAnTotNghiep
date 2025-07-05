@@ -246,7 +246,7 @@ export default function RegisterPopup({
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-[36px] right-3 text-gray-400"
+                  className="absolute top-[50%] right-3 text-gray-400"
                 >
                   {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
@@ -277,7 +277,7 @@ export default function RegisterPopup({
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute top-[36px] right-3 text-gray-400"
+                  className="absolute top-[50%] right-3 text-gray-400"
                 >
                   {showConfirmPassword ? (
                     <Eye size={18} />

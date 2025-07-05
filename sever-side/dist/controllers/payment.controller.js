@@ -27,12 +27,14 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
     try {
         const { orderId, totalPrice, userId, orderInfo } = req.body;
         if (!orderId || !totalPrice || !userId || !orderInfo) {
-            return res.status(400).json({ message: 'Thiếu orderId, totalPrice, userId hoặc orderInfo!' });
+            return res
+                .status(400)
+                .json({ message: "Thiếu orderId, totalPrice, userId hoặc orderInfo!" });
         }
         const paymentData = {
             userId: new mongoose_1.Types.ObjectId(userId),
             amount: totalPrice,
-            status: 'pending',
+            status: "pending",
             transaction_code: orderId,
             transaction_data: {},
             paid_at: undefined,
@@ -48,13 +50,15 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
             vnp_OrderType: vnpay_1.ProductCode.Other,
             vnp_ReturnUrl: `http://localhost:3000/api/payment/check-payment-vnpay`,
             vnp_Locale: vnpay_1.VnpLocale.VN,
-            vnp_CreateDate: Number((0, moment_1.default)().format('YYYYMMDDHHmmss')),
-            vnp_ExpireDate: Number((0, moment_1.default)().add(30, 'minutes').format('YYYYMMDDHHmmss')),
+            vnp_CreateDate: Number((0, moment_1.default)().format("YYYYMMDDHHmmss")),
+            vnp_ExpireDate: Number((0, moment_1.default)().add(30, "minutes").format("YYYYMMDDHHmmss")),
         });
         return res.status(200).json({ paymentUrl, paymentId: payment._id });
     }
     catch (error) {
-        return res.status(500).json({ message: 'Không tạo được URL thanh toán', error });
+        return res
+            .status(500)
+            .json({ message: "Không tạo được URL thanh toán", error });
     }
 });
 exports.createVNPayPayment = createVNPayPayment;
@@ -64,23 +68,27 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         const queryParams = req.query;
         const isValid = payment_config_1.vnpay.verifyReturnUrl(queryParams);
         if (!isValid) {
-            return res.status(400).json({ message: 'Chữ ký không hợp lệ!' });
+            return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
         }
-        const { vnp_TxnRef, vnp_ResponseCode, vnp_Amount, vnp_TransactionNo, vnp_BankCode, vnp_PayDate, vnp_OrderInfo } = queryParams;
+        const { vnp_TxnRef, vnp_ResponseCode, vnp_Amount, vnp_TransactionNo, vnp_BankCode, vnp_PayDate, vnp_OrderInfo, } = queryParams;
         // Lấy lại bản ghi payment đã tạo từ createVNPayPayment
-        const existingPayment = yield payment_model_1.default.findOne({ transaction_code: vnp_TxnRef });
+        const existingPayment = yield payment_model_1.default.findOne({
+            transaction_code: vnp_TxnRef,
+        });
         if (!existingPayment) {
-            return res.status(404).json({ message: 'Không tìm thấy giao dịch để cập nhật!' });
+            return res
+                .status(404)
+                .json({ message: "Không tìm thấy giao dịch để cập nhật!" });
         }
         // Cập nhật trạng thái giao dịch
-        existingPayment.status = vnp_ResponseCode === '00' ? 'success' : 'failed';
+        existingPayment.status = vnp_ResponseCode === "00" ? "success" : "failed";
         existingPayment.transaction_data = queryParams;
         existingPayment.paid_at = vnp_PayDate
-            ? (0, moment_1.default)(vnp_PayDate, 'YYYYMMDDHHmmss').toDate()
+            ? (0, moment_1.default)(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
             : new Date();
         yield existingPayment.save();
         // Redirect về frontend tuỳ theo kết quả thanh toán
-        if (vnp_ResponseCode === '00') {
+        if (vnp_ResponseCode === "00") {
             return res.redirect(`http://localhost:3300/payment/success?orderId=${vnp_TxnRef}`);
         }
         else {
@@ -88,10 +96,11 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
     }
     catch (error) {
-        return res.status(500).json({ message: 'Xử lý callback thất bại!', error });
+        return res.status(500).json({ message: "Xử lý callback thất bại!", error });
     }
 });
 exports.checkVNPayReturn = checkVNPayReturn;
+// Tạo URL thanh toán ZaloPay
 // Tạo URL thanh toán ZaloPay
 const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -109,6 +118,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             order_info: orderInfo,
         });
         const embed_data = {
+            redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
             redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
         };
         const order = {
@@ -148,13 +158,25 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
                 message: "Tạo đơn ZaloPay thất bại!",
                 zaloRes: zaloRes.data,
             });
+            return res.status(400).json({
+                message: "Tạo đơn ZaloPay thất bại!",
+                zaloRes: zaloRes.data,
+            });
         }
+        return res.status(200).json({
+            paymentUrl: zaloRes.data.order_url,
+            paymentId: payment._id,
+        });
         return res.status(200).json({
             paymentUrl: zaloRes.data.order_url,
             paymentId: payment._id,
         });
     }
     catch (error) {
+        return res.status(500).json({
+            message: "Không tạo được đơn ZaloPay",
+            error: error instanceof Error ? error.message : error,
+        });
         return res.status(500).json({
             message: "Không tạo được đơn ZaloPay",
             error: error instanceof Error ? error.message : error,
@@ -177,6 +199,16 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
             status,
             message,
             trans_id,
+            app_id,
+            app_trans_id,
+            app_user,
+            amount,
+            app_time,
+            embed_data,
+            item,
+            status,
+            message,
+            trans_id,
         ].join("|");
         const expectedMac = crypto_1.default
             .createHmac("sha256", payment_config_1.ZALO_PAY.key1)
@@ -186,9 +218,15 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
             return res
                 .status(400)
                 .json({ return_code: -1, return_message: "mac not valid" });
+            return res
+                .status(400)
+                .json({ return_code: -1, return_message: "mac not valid" });
         }
         const payment = yield payment_model_1.default.findOne({ transaction_code: app_trans_id });
         if (!payment) {
+            return res
+                .status(404)
+                .json({ return_code: -1, return_message: "payment not found" });
             return res
                 .status(404)
                 .json({ return_code: -1, return_message: "payment not found" });
@@ -240,6 +278,9 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
         return res.redirect(redirectUrl);
     }
     catch (error) {
+        return res
+            .status(500)
+            .json({ return_code: -1, return_message: "internal error" });
         return res
             .status(500)
             .json({ return_code: -1, return_message: "internal error" });

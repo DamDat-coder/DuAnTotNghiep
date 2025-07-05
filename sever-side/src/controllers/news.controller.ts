@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import newsModel, { INews } from "../models/news.model";
-import cloudinary from "../config/cloudinary";
+import UserModel from "../models/user.model";
+import NotificationModel from "../models/notification.model";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import multer from "multer";
 
 interface MulterRequest extends Request {
@@ -48,13 +50,19 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
     const files = normalizeFiles(req.files);
 
     if (files.length > 0) {
-      for (const file of files) {
-        const result = await cloudinary.uploader.upload_stream({ folder: "news" }, async (error, result) => {
-          if (result?.secure_url) {
-            imageUrls.push(result.secure_url);
-          }
-        }).end(file.buffer);
-      }
+      const uploads = await Promise.all(
+        files.map(
+          (file) =>
+            new Promise<string>((resolve, reject) => {
+              const stream = cloudinary.uploader.upload_stream({ folder: "news" }, (error, result) => {
+                if (error || !result) return reject(error);
+                resolve(result.secure_url);
+              });
+              stream.end(file.buffer);
+            })
+        )
+      );
+      imageUrls.push(...uploads);
     }
 
     const newsData: Partial<INews> = {
@@ -76,6 +84,23 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       .findById(savedNews._id)
       .populate("user_id", "name email")
       .populate("category_id", "name");
+
+    setImmediate(async () => {
+      try {
+        const users = await UserModel.find({}).select("_id").lean();
+        const notifications = users.map((user: { _id: string }) => ({
+          userId: user._id,
+          title: "Tin tức mới từ Shop4Real!",
+          message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
+          type: "news",
+          isRead: false,
+        }));
+        await NotificationModel.insertMany(notifications);
+        console.log("Đã gửi thông báo tin tức mới cho người dùng.");
+      } catch (notifyErr) {
+        console.error("Gửi thông báo thất bại:", notifyErr);
+      }
+    });
 
     res.status(201).json({
       status: "success",
@@ -171,15 +196,30 @@ export const deleteNews = async (req: Request, res: Response): Promise<void> => 
 // Lấy danh sách tin tức
 export const getNewsList = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { page = "1", limit = "10", category_id } = req.query;
+    const {
+      page = "1",
+      limit = "10",
+      category_id,
+      isPublished,
+      search,
+    } = req.query;
 
     const pageNum = Math.max(parseInt(page as string), 1);
     const limitNum = Math.max(parseInt(limit as string), 1);
     const skip = (pageNum - 1) * limitNum;
-
     const query: any = {};
+
     if (category_id && mongoose.Types.ObjectId.isValid(category_id as string)) {
       query.category_id = category_id;
+    }
+
+  
+    if (isPublished !== undefined) {
+      query.is_published = isPublished === "true";
+    }
+
+    if (search) {
+      query.title = { $regex: search as string, $options: "i" };
     }
 
     const [news, total] = await Promise.all([
@@ -195,13 +235,18 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
     res.status(200).json({
       status: "success",
       data: news,
-      total,
-      page: pageNum,
-      limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error: any) {
-    res.status(500).json({ status: "error", message: error.message });
+    res.status(500).json({
+      status: "error",
+      message: error.message || "Lỗi server",
+    });
   }
 };
 

@@ -392,4 +392,3 @@ export const checkMomoReturn = async (req: Request, res: Response) => {
     return res.status(500).json({ return_code: -1, return_message: "internal error" });
   }
 };
-

@@ -171,13 +171,11 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
         console.time("LOGIN");
         const { email, password } = req.body;
         const user = yield user_model_1.default.findOne({ email });
-        console.timeLog("LOGIN", "Fetched user");
         if (!user)
             return res
                 .status(400)
                 .json({ success: false, message: "Email không tồn tại." });
         const isMatch = yield bcryptjs_1.default.compare(password, user.password);
-        console.timeLog("LOGIN", "Compared password");
         if (!isMatch)
             return res.status(401).json({ success: false, message: "Mật khẩu sai." });
         if (!user.is_active)
@@ -186,9 +184,7 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
                 .json({ success: false, message: "Tài khoản đã bị khóa." });
         const accessToken = generateAccessToken(user._id.toString(), user.role);
         const refreshToken = generateRefreshToken(user._id.toString());
-        console.timeLog("LOGIN", "Generated tokens");
         yield user_model_1.default.updateOne({ _id: user._id }, { refreshToken });
-        console.timeLog("LOGIN", "Updated refreshToken");
         res.status(200).json({
             success: true,
             message: "Đăng nhập thành công.",
@@ -203,7 +199,6 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
                 },
             },
         });
-        console.timeEnd("LOGIN");
     }
     catch (err) {
         next(err);
@@ -256,12 +251,6 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const skip = (page - 1) * limit;
         const { search, role, is_block } = req.query;
         const filter = {};
-        if (role && typeof is_block !== "undefined") {
-            return res.status(400).json({
-                success: false,
-                message: "Chỉ được lọc theo một trong hai: 'role' hoặc 'is_block'.",
-            });
-        }
         if (search) {
             const keyword = search.toString();
             filter.$or = [
@@ -269,17 +258,16 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 { email: { $regex: keyword, $options: "i" } },
             ];
         }
-        if (role)
+        if (role) {
             filter.role = role;
+        }
         if (typeof is_block !== "undefined") {
             if (is_block === "true")
                 filter.is_block = true;
             else if (is_block === "false")
                 filter.is_block = false;
             else {
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
                     success: false,
                     message: "Giá trị 'is_block' phải là 'true' hoặc 'false'.",
                 });
@@ -287,7 +275,7 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
         const total = yield user_model_1.default.countDocuments(filter);
         const users = yield user_model_1.default.find(filter)
-            .select("name email role is_active createdAt")
+            .select("name email role is_block createdAt")
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })

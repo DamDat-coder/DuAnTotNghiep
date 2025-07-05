@@ -59,8 +59,8 @@ export const googleLogin = async (
         email,
         name,
         googleId,
-        password: "", // vì không có mật khẩu
-        refreshToken: "", // sẽ gán bên dưới
+        password: "", 
+        refreshToken: "", 
       });
     }
 
@@ -183,30 +183,14 @@ export const loginUser = async (
 
     const { email, password } = req.body;
     const user = await UserModel.findOne({ email });
-    console.timeLog("LOGIN", "Fetched user");
-
-    if (!user)
-      return res
-        .status(400)
-        .json({ success: false, message: "Email không tồn tại." });
-
+    if (!user) return res.status(400).json({ success: false, message: "Email không tồn tại." });
     const isMatch = await bcrypt.compare(password, user.password);
-    console.timeLog("LOGIN", "Compared password");
-
-    if (!isMatch)
-      return res.status(401).json({ success: false, message: "Mật khẩu sai." });
-
-    if (!user.is_active)
-      return res
-        .status(403)
-        .json({ success: false, message: "Tài khoản đã bị khóa." });
-
+    if (!isMatch) return res.status(401).json({ success: false, message: "Mật khẩu sai." });
+    if (!user.is_active) return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
     const accessToken = generateAccessToken(user._id.toString(), user.role);
     const refreshToken = generateRefreshToken(user._id.toString());
-    console.timeLog("LOGIN", "Generated tokens");
 
     await UserModel.updateOne({ _id: user._id }, { refreshToken });
-    console.timeLog("LOGIN", "Updated refreshToken");
 
     res.status(200).json({
       success: true,
@@ -223,7 +207,6 @@ export const loginUser = async (
       },
     });
 
-    console.timeEnd("LOGIN");
   } catch (err) {
     next(err);
   }
@@ -290,16 +273,8 @@ export const getAllUsers = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
-
     const { search, role, is_block } = req.query;
     const filter: Record<string, any> = {};
-
-    if (role && typeof is_block !== "undefined") {
-      return res.status(400).json({
-        success: false,
-        message: "Chỉ được lọc theo một trong hai: 'role' hoặc 'is_block'.",
-      });
-    }
 
     if (search) {
       const keyword = search.toString();
@@ -309,23 +284,24 @@ export const getAllUsers = async (
       ];
     }
 
-    if (role) filter.role = role;
+    if (role) {
+      filter.role = role;
+    }
+
     if (typeof is_block !== "undefined") {
       if (is_block === "true") filter.is_block = true;
       else if (is_block === "false") filter.is_block = false;
       else {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Giá trị 'is_block' phải là 'true' hoặc 'false'.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Giá trị 'is_block' phải là 'true' hoặc 'false'.",
+        });
       }
     }
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
-      .select("name email role is_active createdAt")
+      .select("name email role is_block createdAt")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })

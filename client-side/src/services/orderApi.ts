@@ -77,8 +77,8 @@ export async function fetchAllOrders(
 
     const url =
       queryParams.toString().length > 0
-        ? `${API_BASE_URL}/order?${queryParams.toString()}`
-        : `${API_BASE_URL}/order`;
+        ? `${API_BASE_URL}/orders?${queryParams.toString()}`
+        : `${API_BASE_URL}/orders`;
 
     const response = await fetchWithAuth<{
       data: any[];
@@ -98,7 +98,7 @@ export async function fetchAllOrders(
 // 4. Lấy chi tiết đơn hàng theo ID (cho cả user lẫn admin)
 export async function fetchOrderById(id: string): Promise<any> {
   try {
-    const response = await fetchWithAuth<any>(`${API_BASE_URL}/order/${id}`, {
+    const response = await fetchWithAuth<any>(`${API_BASE_URL}/orders/${id}`, {
       cache: "no-store",
     });
     return response;
@@ -114,7 +114,7 @@ export async function updateOrderStatus(
   status: string
 ): Promise<void> {
   try {
-    await fetchWithAuth(`${API_BASE_URL}/order/${orderId}/status`, {
+    await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),

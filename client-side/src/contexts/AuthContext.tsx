@@ -122,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setWishlist([]); // Reset wishlist khi logout
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
+    window.location.href = "/";
   };
   const loginWithGoogle = async (id_token: string) => {
     try {

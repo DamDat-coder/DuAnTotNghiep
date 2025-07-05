@@ -146,7 +146,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Không có token hoặc fetch thất bại => thử refresh token
       console.warn("checkAuth - Access token không hợp lệ, đang làm mới...");
       const newToken = await refreshToken();
-
+      console.log(newToken);
+      
       if (newToken) {
         localStorage.setItem("accessToken", newToken);
 

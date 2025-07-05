@@ -1,26 +1,10 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import newsModel, { INews } from "../models/news.model";
-import cloudinary from "../config/cloudinary";
-import multer from "multer";
-
-interface MulterRequest extends Request {
-  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
-  user?: {
-    userId: string;
-    role: string;
-  };
-}
-
-// Thiết lập multer với memoryStorage
-const storage = multer.memoryStorage();
-export const upload = multer({ storage });
-
-function normalizeFiles(files: MulterRequest["files"]): Express.Multer.File[] {
-  if (!files) return [];
-  if (Array.isArray(files)) return files;
-  return Object.values(files).flat();
-}
+import UserModel from "../models/user.model";
+import NotificationModel from "../models/notification.model";
+import { v2 as cloudinary } from "cloudinary";
+import { MulterRequest, normalizeFiles } from "../middlewares/upload.middleware";
 
 // Thêm tin tức
 export const createNews = async (req: MulterRequest, res: Response): Promise<void> => {
@@ -36,7 +20,10 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       return;
     }
 
-    if (!mongoose.Types.ObjectId.isValid(user_id) || !mongoose.Types.ObjectId.isValid(category_id)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(user_id) ||
+      !mongoose.Types.ObjectId.isValid(category_id)
+    ) {
       res.status(400).json({
         status: "error",
         message: "user_id hoặc category_id không hợp lệ",
@@ -44,17 +31,26 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       return;
     }
 
-    const imageUrls: string[] = [];
     const files = normalizeFiles(req.files);
+    const imageUrls: string[] = [];
 
     if (files.length > 0) {
-      for (const file of files) {
-        const result = await cloudinary.uploader.upload_stream({ folder: "news" }, async (error, result) => {
-          if (result?.secure_url) {
-            imageUrls.push(result.secure_url);
-          }
-        }).end(file.buffer);
-      }
+      const uploads = await Promise.all(
+        files.map(
+          (file) =>
+            new Promise<string>((resolve, reject) => {
+              const stream = cloudinary.uploader.upload_stream(
+                { folder: "news" },
+                (error, result) => {
+                  if (error || !result) return reject(error);
+                  resolve(result.secure_url);
+                }
+              );
+              stream.end(file.buffer);
+            })
+        )
+      );
+      imageUrls.push(...uploads);
     }
 
     const newsData: Partial<INews> = {
@@ -76,6 +72,24 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       .findById(savedNews._id)
       .populate("user_id", "name email")
       .populate("category_id", "name");
+
+    // Gửi thông báo cho tất cả user
+    setImmediate(async () => {
+      try {
+        const users = await UserModel.find({}).select("_id").lean();
+        const notifications = users.map((user: { _id: string }) => ({
+          userId: user._id,
+          title: "Tin tức mới từ Shop4Real!",
+          message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
+          type: "news",
+          isRead: false,
+        }));
+        await NotificationModel.insertMany(notifications);
+        console.log("Đã gửi thông báo tin tức mới cho người dùng.");
+      } catch (notifyErr) {
+        console.error("Gửi thông báo thất bại:", notifyErr);
+      }
+    });
 
     res.status(201).json({
       status: "success",
@@ -113,7 +127,12 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
     if (content) updates.content = content;
     if (slug) updates.slug = slug;
     if (tags) updates.tags = tags.split(",");
-    if (typeof is_published === "boolean" || is_published === "true" || is_published === "false") {
+
+    if (
+      typeof is_published === "boolean" ||
+      is_published === "true" ||
+      is_published === "false"
+    ) {
       const publishStatus = is_published === true || is_published === "true";
       updates.is_published = publishStatus;
       updates.published_at = publishStatus ? new Date() : null;
@@ -127,12 +146,19 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
     if (files.length > 0) {
       const imageUrls: string[] = [];
       for (const file of files) {
-        const result = await cloudinary.uploader.upload_stream({ folder: "news" }, async (error, result) => {
-          if (result?.secure_url) {
-            imageUrls.push(result.secure_url);
-          }
-        }).end(file.buffer);
+        const result = await new Promise<string | null>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "news" },
+            (error, result) => {
+              if (error || !result) return reject(error);
+              resolve(result.secure_url);
+            }
+          );
+          stream.end(file.buffer);
+        });
+        if (result) imageUrls.push(result);
       }
+
       updates.thumbnail = imageUrls[0] || null;
       updates.news_image = imageUrls.slice(1);
     }
@@ -142,7 +168,11 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
       .populate("user_id", "name email")
       .populate("category_id", "name");
 
-    res.status(200).json({ status: "success", message: "Cập nhật thành công", data: updatedNews });
+    res.status(200).json({
+      status: "success",
+      message: "Cập nhật thành công",
+      data: updatedNews,
+    });
   } catch (error: any) {
     if (error.code === 11000) {
       res.status(409).json({ status: "error", message: "Slug đã tồn tại" });
@@ -171,15 +201,30 @@ export const deleteNews = async (req: Request, res: Response): Promise<void> => 
 // Lấy danh sách tin tức
 export const getNewsList = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { page = "1", limit = "10", category_id } = req.query;
+    const {
+      page = "1",
+      limit = "10",
+      category_id,
+      isPublished,
+      search,
+    } = req.query;
 
     const pageNum = Math.max(parseInt(page as string), 1);
     const limitNum = Math.max(parseInt(limit as string), 1);
     const skip = (pageNum - 1) * limitNum;
-
     const query: any = {};
+
     if (category_id && mongoose.Types.ObjectId.isValid(category_id as string)) {
       query.category_id = category_id;
+    }
+
+  
+    if (isPublished !== undefined) {
+      query.is_published = isPublished === "true";
+    }
+
+    if (search) {
+      query.title = { $regex: search as string, $options: "i" };
     }
 
     const [news, total] = await Promise.all([
@@ -195,13 +240,18 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
     res.status(200).json({
       status: "success",
       data: news,
-      total,
-      page: pageNum,
-      limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error: any) {
-    res.status(500).json({ status: "error", message: error.message });
+    res.status(500).json({
+      status: "error",
+      message: error.message || "Lỗi server",
+    });
   }
 };
 

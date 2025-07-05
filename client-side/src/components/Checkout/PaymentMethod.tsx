@@ -36,7 +36,7 @@ export default function PaymentMethod({
             <span className="text-[1rem]">Thanh toán qua cổng VNPay</span>
           </div>
         </label>
-        <label className="flex items-center gap-3 cursor-pointer">
+        {/* <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="radio"
             name="paymentMethod"
@@ -55,7 +55,7 @@ export default function PaymentMethod({
             />
             <span className="text-[1rem]">Thanh toán qua ví MoMo</span>
           </div>
-        </label>
+        </label> */}
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="radio"

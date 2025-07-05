@@ -140,6 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkAuth = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+
     try {
       const userData = await fetchUser();
       if (userData) {
@@ -158,11 +160,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(userData || null);
         } catch (refreshError) {
           console.error("checkAuth - Refresh token failed:", refreshError);
+      // Nếu có token, thử fetch user
+      if (accessToken) {
+        const userData = await fetchUser();
+        if (userData) {
+          setUser(userData);
+          return;
+        }
+      }
+
+      // Không có token hoặc fetch thất bại => thử refresh token
+      console.warn("checkAuth - Access token không hợp lệ, đang làm mới...");
+      const newToken = await refreshToken();
+      console.log(newToken);
+      
+      if (newToken) {
+        localStorage.setItem("accessToken", newToken);
+
+        const retriedUser = await fetchUser();
+        if (retriedUser) {
+          setUser(retriedUser);
+        } else {
+          console.warn("checkAuth - fetchUser sau khi refresh vẫn fail");
           setUser(null);
+          localStorage.removeItem("accessToken");
         }
       } else {
+        // Refresh thất bại
+        console.warn("checkAuth - Làm mới token thất bại");
         setUser(null);
+        localStorage.removeItem("accessToken");
       }
+    } catch (error: any) {
+      console.error("checkAuth - Lỗi bất ngờ:", error.message);
+      setUser(null);
+      localStorage.removeItem("accessToken");
     }
   };
 

@@ -85,7 +85,8 @@ export const useCheckout = () => {
       // Lấy danh sách địa chỉ từ user.addresses
       if (user.addresses) {
         setAddresses(user.addresses);
-        const defaultAddr = user.addresses.find((addr) => addr.is_default) || null;
+        const defaultAddr =
+          user.addresses.find((addr) => addr.is_default) || null;
         setDefaultAddress(defaultAddr);
 
         // Logic chọn địa chỉ hiển thị
@@ -256,13 +257,12 @@ export const useCheckout = () => {
       ) {
         addressId = selectedAddress._id;
       } else {
-        // Tạo địa chỉ mới nếu formData khác selectedAddress
         const newAddress = await addAddressWhenCheckout(user.id, {
           street: formData.address,
           ward: formData.ward,
           district: formData.district,
           province: formData.province,
-          is_default: false, // Không đặt là mặc định
+          is_default: false,
         });
         addressId = newAddress._id;
         setAddresses((prev) => [...prev, newAddress]);
@@ -271,13 +271,13 @@ export const useCheckout = () => {
       // Kiểm tra và lấy couponId
       const couponId = await handleApplyDiscount();
 
-      // Chuẩn bị dữ liệu cho thanh toán
+      // Chuẩn bị dữ liệu thanh toán
       const paymentInfo = {
         orderId: generateOrderId(),
         totalPrice: total,
         userId: user.id,
         orderInfo: {
-          address_id: addressId!,
+          address_id: addressId,
           shippingAddress: {
             street: formData.address,
             ward: formData.ward,
@@ -298,23 +298,20 @@ export const useCheckout = () => {
       // Gọi API thanh toán
       const paymentResponse = await initiatePayment(paymentInfo);
 
-      if (paymentMethod === "cod") {
-        // Tạo đơn hàng chính thức
-        const orderResponse = await createOrder(paymentResponse.paymentId, user.id);
-        // Xóa giỏ hàng
+      if (!paymentResponse.paymentUrl) {
+        // Với COD (hoặc bất kỳ phương thức nào không cần redirect)
+        const orderResponse = await createOrder(
+          paymentResponse.paymentId,
+          user.id
+        );
         dispatch({ type: "clear" });
         toast.success("Đơn hàng đã được xác nhận!");
         router.push("/profile?tab=orders");
       } else {
-        // VNPay: Lưu paymentId và userId vào localStorage
+        // Với các cổng thanh toán online (vnpay, momo, zalopay)
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
-        if (paymentResponse.paymentUrl) {
-          window.location.href = paymentResponse.paymentUrl; // Chuyển hướng đến VNPay
-          return; // Chờ callback
-        } else {
-          throw new Error("Không nhận được đường dẫn thanh toán từ VNPay.");
-        }
+        window.location.href = paymentResponse.paymentUrl;
       }
     } catch (error: any) {
       console.error("Lỗi khi tạo đơn hàng:", error);

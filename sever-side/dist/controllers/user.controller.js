@@ -27,52 +27,47 @@ exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = expor
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_model_1 = __importDefault(require("../models/user.model"));
-const google_auth_library_1 = require("google-auth-library");
-// Tạo token
-const generateAccessToken = (userId, role) => {
-    return jsonwebtoken_1.default.sign({ userId, role }, process.env.JWT_SECRET, {
-        expiresIn: "24h",
-    });
-};
-// Tạo refresh token
-const generateRefreshToken = (userId) => {
-    return jsonwebtoken_1.default.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
-        expiresIn: "30d",
-    });
-};
-// Xác thực Google
-const googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const jwt_1 = require("../config/jwt");
+const google_1 = require("../config/google");
 // Đăng nhập bằng Google
 const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id_token } = req.body;
         if (!id_token)
             return res.status(400).json({ success: false, message: "Thiếu id_token" });
-        const ticket = yield googleClient.verifyIdToken({
+        const ticket = yield google_1.googleClient.verifyIdToken({
             idToken: id_token,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         const payload = ticket.getPayload();
         if (!payload)
-            return res.status(401).json({ success: false, message: "Xác thực Google thất bại" });
+            return res
+                .status(401)
+                .json({ success: false, message: "Xác thực Google thất bại" });
         const { email, name, sub: googleId } = payload;
         if (!email)
-            return res.status(400).json({ success: false, message: "Không lấy được email từ Google" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Không lấy được email từ Google" });
         let user = yield user_model_1.default.findOne({ email });
         if (!user) {
             user = yield user_model_1.default.create({
                 email,
                 name,
                 googleId,
-                password: "", // vì không có mật khẩu
-                refreshToken: "", // sẽ gán bên dưới
+                password: "",
+                refreshToken: "",
+                password: "",
+                refreshToken: "",
             });
         }
         if (!user.is_active) {
-            return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
+            return res
+                .status(403)
+                .json({ success: false, message: "Tài khoản đã bị khóa." });
         }
-        const accessToken = generateAccessToken(user._id.toString(), user.role);
-        const refreshToken = generateRefreshToken(user._id.toString());
+        const accessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(user._id.toString());
         user.refreshToken = refreshToken;
         yield user.save();
         res.status(200).json({
@@ -101,7 +96,9 @@ const getCurrentUser = (req, res) => __awaiter(void 0, void 0, void 0, function*
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
         if (!userId)
-            return res.status(401).json({ message: "Không xác thực được người dùng" });
+            return res
+                .status(401)
+                .json({ message: "Không xác thực được người dùng" });
         const currentUser = yield user_model_1.default.findById(userId)
             .select("name email role wishlist addresses phone is_active")
             .populate("wishlist", "name slug image variants.price")
@@ -122,9 +119,11 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         const { email, password, name, phone } = req.body;
         const existingUser = yield user_model_1.default.findOne({ email });
         if (existingUser)
-            return res.status(400).json({ success: false, message: "Email đã tồn tại." });
+            return res
+                .status(400)
+                .json({ success: false, message: "Email đã tồn tại." });
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
-        const refreshToken = generateRefreshToken(email);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(email);
         const newUser = yield user_model_1.default.create({
             email,
             password: hashedPassword,
@@ -132,7 +131,7 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
             phone,
             refreshToken,
         });
-        const accessToken = generateAccessToken(newUser._id.toString(), newUser.role);
+        const accessToken = (0, jwt_1.generateAccessToken)(newUser._id.toString(), newUser.role);
         res.status(201).json({
             success: true,
             message: "Đăng ký thành công.",
@@ -159,20 +158,16 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
         console.time("LOGIN");
         const { email, password } = req.body;
         const user = yield user_model_1.default.findOne({ email });
-        console.timeLog("LOGIN", "Fetched user");
         if (!user)
             return res.status(400).json({ success: false, message: "Email không tồn tại." });
         const isMatch = yield bcryptjs_1.default.compare(password, user.password);
-        console.timeLog("LOGIN", "Compared password");
         if (!isMatch)
             return res.status(401).json({ success: false, message: "Mật khẩu sai." });
         if (!user.is_active)
             return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
-        const accessToken = generateAccessToken(user._id.toString(), user.role);
-        const refreshToken = generateRefreshToken(user._id.toString());
-        console.timeLog("LOGIN", "Generated tokens");
+        const accessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(user._id.toString());
         yield user_model_1.default.updateOne({ _id: user._id }, { refreshToken });
-        console.timeLog("LOGIN", "Updated refreshToken");
         res.status(200).json({
             success: true,
             message: "Đăng nhập thành công.",
@@ -187,7 +182,6 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
                 },
             },
         });
-        console.timeEnd("LOGIN");
     }
     catch (err) {
         next(err);
@@ -199,12 +193,14 @@ const refreshAccessToken = (req, res, next) => __awaiter(void 0, void 0, void 0,
     try {
         const refreshToken = req.cookies.refreshToken;
         if (!refreshToken)
-            return res.status(401).json({ success: false, message: "Thiếu refresh token." });
+            return res
+                .status(401)
+                .json({ success: false, message: "Thiếu refresh token." });
         const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
         const user = yield user_model_1.default.findById(decoded.userId);
         if (!user || user.refreshToken !== refreshToken)
             return res.status(403).json({ success: false, message: "Refresh token không hợp lệ." });
-        const newAccessToken = generateAccessToken(user._id.toString(), user.role);
+        const newAccessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
         res.status(200).json({ success: true, accessToken: newAccessToken });
     }
     catch (err) {
@@ -236,12 +232,6 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const skip = (page - 1) * limit;
         const { search, role, is_block } = req.query;
         const filter = {};
-        if (role && typeof is_block !== "undefined") {
-            return res.status(400).json({
-                success: false,
-                message: "Chỉ được lọc theo một trong hai: 'role' hoặc 'is_block'.",
-            });
-        }
         if (search) {
             const keyword = search.toString();
             filter.$or = [
@@ -249,20 +239,24 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 { email: { $regex: keyword, $options: "i" } },
             ];
         }
-        if (role)
+        if (role) {
             filter.role = role;
+        }
         if (typeof is_block !== "undefined") {
             if (is_block === "true")
                 filter.is_block = true;
             else if (is_block === "false")
                 filter.is_block = false;
             else {
-                return res.status(400).json({ success: false, message: "Giá trị 'is_block' phải là 'true' hoặc 'false'." });
+                return res.status(400).json({
+                    success: false,
+                    message: "Giá trị 'is_block' phải là 'true' hoặc 'false'.",
+                });
             }
         }
         const total = yield user_model_1.default.countDocuments(filter);
         const users = yield user_model_1.default.find(filter)
-            .select("name email role is_active createdAt")
+            .select("name email role is_block createdAt")
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })
@@ -292,7 +286,9 @@ const getUserById = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
             .populate("wishlist", "name slug image variants.price")
             .lean();
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         res.status(200).json({ success: true, data: user });
     }
     catch (err) {
@@ -316,8 +312,12 @@ const updateUserInfo = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
             runValidators: true,
         }).select("-password");
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
-        res.status(200).json({ success: true, message: "Cập nhật thành công.", data: user });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
+        res
+            .status(200)
+            .json({ success: true, message: "Cập nhật thành công.", data: user });
     }
     catch (err) {
         next(err);
@@ -329,14 +329,20 @@ const toggleUserStatus = (req, res, next) => __awaiter(void 0, void 0, void 0, f
     try {
         const { is_active } = req.body;
         if (typeof is_active !== "boolean") {
-            return res.status(400).json({ success: false, message: "`is_active` phải là boolean." });
+            return res
+                .status(400)
+                .json({ success: false, message: "`is_active` phải là boolean." });
         }
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         }
         if (user.role === "admin" && !is_active) {
-            return res.status(403).json({ success: false, message: "Không thể khoá tài khoản admin." });
+            return res
+                .status(403)
+                .json({ success: false, message: "Không thể khoá tài khoản admin." });
         }
         user.is_active = is_active;
         yield user.save();
@@ -358,9 +364,11 @@ const addAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         const { street, ward, district, province, is_default } = req.body;
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         }
-        const isDuplicate = user.addresses.some(addr => addr.street === street &&
+        const isDuplicate = user.addresses.some((addr) => addr.street === street &&
             addr.ward === ward &&
             addr.district === district &&
             addr.province === province);
@@ -371,9 +379,15 @@ const addAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
             });
         }
         if (is_default) {
-            user.addresses.forEach(addr => (addr.is_default = false));
+            user.addresses.forEach((addr) => (addr.is_default = false));
         }
-        user.addresses.push({ street, ward, district, province, is_default: !!is_default });
+        user.addresses.push({
+            street,
+            ward,
+            district,
+            province,
+            is_default: !!is_default,
+        });
         yield user.save();
         res.status(201).json({
             success: true,
@@ -392,10 +406,14 @@ const updateAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         const { street, ward, district, province, is_default } = req.body;
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         const address = user.addresses.id(req.params.addressId);
         if (!address)
-            return res.status(404).json({ success: false, message: "Không tìm thấy địa chỉ." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy địa chỉ." });
         if (is_default) {
             user.addresses.forEach((addr) => (addr.is_default = false));
         }
@@ -405,7 +423,13 @@ const updateAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         address.province = province !== null && province !== void 0 ? province : address.province;
         address.is_default = is_default !== null && is_default !== void 0 ? is_default : address.is_default;
         yield user.save();
-        res.status(200).json({ success: true, message: "Cập nhật địa chỉ thành công.", data: user.addresses });
+        res
+            .status(200)
+            .json({
+            success: true,
+            message: "Cập nhật địa chỉ thành công.",
+            data: user.addresses,
+        });
     }
     catch (err) {
         next(err);
@@ -417,13 +441,23 @@ const deleteAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     try {
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         const address = user.addresses.id(req.params.addressId);
         if (!address)
-            return res.status(404).json({ success: false, message: "Không tìm thấy địa chỉ." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy địa chỉ." });
         address.deleteOne();
         yield user.save();
-        res.status(200).json({ success: true, message: "Xoá địa chỉ thành công.", data: user.addresses });
+        res
+            .status(200)
+            .json({
+            success: true,
+            message: "Xoá địa chỉ thành công.",
+            data: user.addresses,
+        });
     }
     catch (err) {
         next(err);
@@ -435,14 +469,24 @@ const setDefaultAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, 
     try {
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         const address = user.addresses.id(req.params.addressId);
         if (!address)
-            return res.status(404).json({ success: false, message: "Không tìm thấy địa chỉ." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy địa chỉ." });
         user.addresses.forEach((addr) => (addr.is_default = false));
         address.is_default = true;
         yield user.save();
-        res.status(200).json({ success: true, message: "Cập nhật mặc định thành công.", data: user.addresses });
+        res
+            .status(200)
+            .json({
+            success: true,
+            message: "Cập nhật mặc định thành công.",
+            data: user.addresses,
+        });
     }
     catch (err) {
         next(err);
@@ -454,16 +498,31 @@ const addToWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     try {
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         const productId = req.body.productId;
         if (!productId)
-            return res.status(400).json({ success: false, message: "Thiếu productId." });
+            return res
+                .status(400)
+                .json({ success: false, message: "Thiếu productId." });
         if (user.wishlist.includes(productId)) {
-            return res.status(400).json({ success: false, message: "Sản phẩm đã tồn tại trong danh sách yêu thích." });
+            return res
+                .status(400)
+                .json({
+                success: false,
+                message: "Sản phẩm đã tồn tại trong danh sách yêu thích.",
+            });
         }
         user.wishlist.push(productId);
         yield user.save();
-        res.status(200).json({ success: true, message: "Đã thêm vào danh sách yêu thích.", data: user.wishlist });
+        res
+            .status(200)
+            .json({
+            success: true,
+            message: "Đã thêm vào danh sách yêu thích.",
+            data: user.wishlist,
+        });
     }
     catch (err) {
         next(err);
@@ -475,11 +534,19 @@ const removeFromWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0,
     try {
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         const productId = req.params.productId;
         user.wishlist = user.wishlist.filter((id) => id.toString() !== productId);
         yield user.save();
-        res.status(200).json({ success: true, message: "Đã xoá khỏi danh sách yêu thích.", data: user.wishlist });
+        res
+            .status(200)
+            .json({
+            success: true,
+            message: "Đã xoá khỏi danh sách yêu thích.",
+            data: user.wishlist,
+        });
     }
     catch (err) {
         next(err);
@@ -494,7 +561,9 @@ const getWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
             .populate("wishlist", "name slug image variants.price")
             .lean();
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         res.status(200).json({ success: true, data: user.wishlist });
     }
     catch (err) {

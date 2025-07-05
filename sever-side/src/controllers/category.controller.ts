@@ -3,10 +3,8 @@ import Category from "../models/category.model";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary";
 import { UploadApiResponse } from "cloudinary";
-
-interface MulterRequest extends Request {
-  file: Express.Multer.File;
-}
+import { Types } from "mongoose";
+import { MulterRequest } from "../middlewares/upload.middleware"; 
 
 // Tạo danh mục mới
 export const createCategory = async (req: Request, res: Response) => {
@@ -19,13 +17,15 @@ export const createCategory = async (req: Request, res: Response) => {
     if (exists) return res.status(409).json({ success: false, message: "Slug đã tồn tại." });
 
     let imageUrl: string | null = null;
-    if ((req as MulterRequest).file) {
+    const file = (req as MulterRequest).file;
+
+    if (file) {
       const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream({ folder: "categories" }, (err, result) => {
+        const stream = cloudinary.uploader.upload_stream({ folder: "categories" }, (err, result) => {
           if (err || !result) reject(err);
           else resolve(result);
         });
-        uploadStream.end((req as MulterRequest).file.buffer);
+        stream.end(file.buffer);
       });
       imageUrl = result.secure_url;
     }
@@ -98,25 +98,47 @@ export const updateCategory = async (req: Request, res: Response) => {
       updateData.slug = slugify(name, { lower: true });
     }
 
-    if (parentId !== undefined) updateData.parentId = parentId || null;
+    if (typeof parentId !== "undefined") {
+      updateData.parentId =
+        parentId === "" || parentId === null ? null : new Types.ObjectId(parentId);
+    }
 
-    if ((req as MulterRequest).file) {
+    const file = (req as MulterRequest).file;
+    if (file) {
       const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream({ folder: "categories" }, (err, result) => {
-          if (err || !result) reject(err);
-          else resolve(result);
-        });
-        uploadStream.end((req as MulterRequest).file.buffer);
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "categories" },
+          (err, result) => {
+            if (err || !result) reject(err);
+            else resolve(result);
+          }
+        );
+        stream.end(file.buffer);
       });
+
       updateData.image = result.secure_url;
     }
 
     const updated = await Category.findByIdAndUpdate(id, updateData, { new: true });
-    if (!updated) return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
 
-    res.status(200).json({ success: true, message: "Cập nhật danh mục thành công.", data: updated });
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy danh mục.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật danh mục thành công.",
+      data: updated,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Lỗi khi cập nhật danh mục." });
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật danh mục.",
+      error,
+    });
   }
 };
 

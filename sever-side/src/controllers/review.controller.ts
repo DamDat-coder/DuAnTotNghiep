@@ -4,8 +4,10 @@ import OrderModel from "../models/order.model";
 import UserModel from "../models/user.model";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import mongoose from "mongoose";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import { SPAM_KEYWORDS } from "../config/spam-keywords";
 
-const SPAM_KEYWORDS = ["xxx", "lừa đảo", "quảng cáo", "viagra", "hack", "free tiền"];
+// Tạo đánh giá sản phẩm
 export const createReview = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -16,7 +18,7 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
     }
 
     const order = await OrderModel.findOne({
-      userId: userId,
+      userId,
       status: "delivered",
       "items.productId": new mongoose.Types.ObjectId(productId),
     });
@@ -36,6 +38,23 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
       });
     }
 
+    const images: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      for (const file of req.files as Express.Multer.File[]) {
+        const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { resource_type: "image", folder: "reviews" },
+            (error, result) => {
+              if (error || !result) return reject(error);
+              resolve(result);
+            }
+          );
+          stream.end(file.buffer);
+        });
+        images.push(result.secure_url);
+      }
+    }
+
     let isSpam = false;
     for (const keyword of SPAM_KEYWORDS) {
       if (content.toLowerCase().includes(keyword.toLowerCase())) {
@@ -49,20 +68,14 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
 
     if (isSpam) {
       status = "spam";
-
-      // Đếm số review đã bị spam trước đó
-      const spamCount = await ReviewModel.countDocuments({
-        userId,
-        status: "spam",
-      });
-
-      const totalSpam = spamCount + 1; // tính cả review hiện tại
+      const spamCount = await ReviewModel.countDocuments({ userId, status: "spam" });
+      const totalSpam = spamCount + 1;
 
       if (totalSpam === 2) {
-        warning = "⚠️ Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
+        warning = "Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
       } else if (totalSpam >= 3) {
         await UserModel.findByIdAndUpdate(userId, { is_active: false });
-        warning = "🚫 Tài khoản đã bị khóa vì spam quá nhiều.";
+        warning = "Tài khoản đã bị khóa vì spam quá nhiều.";
       }
     }
 
@@ -72,6 +85,7 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
       content,
       rating,
       status,
+      images,
     });
 
     return res.status(201).json({
@@ -85,6 +99,8 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
     return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
+
+// Lấy đánh giá của sản phẩm
 export const getProductReviews = async (req: Request, res: Response) => {
   try {
     const productId = req.params.productId;
@@ -102,19 +118,55 @@ export const getProductReviews = async (req: Request, res: Response) => {
   }
 };
 
+// Lấy tất cả đánh giá
 export const getAllReviews = async (req: Request, res: Response) => {
   try {
-    const reviews = await ReviewModel.find()
-      .populate("userId", "name email")
-      .populate("productId", "name");
+    const { page = "1", limit = "10", search, status } = req.query;
 
-    res.status(200).json({ success: true, data: reviews });
+    const pageNum = Math.max(parseInt(page as string), 1);
+    const limitNum = Math.max(parseInt(limit as string), 1);
+    const skip = (pageNum - 1) * limitNum;
+
+    const query: any = {};
+
+    if (status && (status === "approved" || status === "spam")) {
+      query.status = status;
+    }
+    if (search) {
+      query.content = { $regex: search as string, $options: "i" };
+    }
+
+    const [reviews, total] = await Promise.all([
+      ReviewModel.find(query)
+        .populate("userId", "name email")
+        .populate("productId", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      ReviewModel.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: reviews,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     console.error("Lỗi khi lấy tất cả đánh giá:", error);
-    res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+    res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ.",
+      error: (error as Error).message,
+    });
   }
 };
 
+// Cập nhật trạng thái đánh giá
 export const updateReviewStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

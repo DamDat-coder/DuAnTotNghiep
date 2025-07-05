@@ -89,7 +89,7 @@ export default function ProductTableWrapper({
               <th className="w-[400px] px-4 py-0 rounded-tl-[12px] rounded-bl-[12px] align-middle">Tên sản phẩm</th>
               <th className="w-[126px] px-4 py-0 align-middle">Danh mục</th>
               <th className="w-[126px] px-4 py-0 align-middle">Tồn kho</th>
-              <th className="w-[126px] px-4 py-0 align-middle">Lượt bán</th>
+              <th className="w-[126px] px-4 py-0 align-middle">Số lượng bán</th>
               <th className="w-[140px] px-4 py-0 align-middle">Giá</th>
               <th className="w-[96px] px-4 py-0 align-middle">Trạng thái</th>
               <th className="w-[64px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px]">

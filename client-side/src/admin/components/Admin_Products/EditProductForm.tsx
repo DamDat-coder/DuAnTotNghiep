@@ -5,7 +5,7 @@ import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { ICategory } from "@/types/category";
 import { editProduct } from "@/services/productApi";
-import { fetchCategories } from "@/services/categoryApi";
+import { fetchCategoryTree } from "@/services/categoryApi";
 
 interface EditProductFormProps {
   product: IProduct;
@@ -54,7 +54,7 @@ export default function EditProductForm({
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const result = await fetchCategories();
+        const result = await fetchCategoryTree();
         setCategories(result);
       } catch (err) {
         setCategories([]);
@@ -367,74 +367,99 @@ export default function EditProductForm({
           </div>
           {/* Biến thể sản phẩm */}
           <div>
-            <label className="block font-semibold mb-2">Biến thể</label>
-            {/* Danh sách biến thể cũ */}
-            <div className="flex flex-col gap-2 max-w-[564px] w-full">
-              {formData.variants.map((variant: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex flex-row flex-wrap gap-2 items-center rounded-lg border border-gray-100 bg-[#FAFAFB] px-2 py-2"
-                  style={{ width: "100%", maxWidth: 564 }}
-                >
-                  <select
-                    className="border rounded-lg p-2 w-[85px] text-sm"
-                    value={variant.size}
-                    onChange={e => handleVariantChange(idx, "size", e.target.value)}
-                  >
-                    <option value="">Size</option>
-                    {sizeOptions.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  <select
-                    className="border rounded-lg p-2 w-[100px] text-sm"
-                    value={variant.color}
-                    onChange={e => handleVariantChange(idx, "color", e.target.value)}
-                  >
-                    <option value="">Màu sắc</option>
-                    {colorOptions.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-[90px] text-sm"
-                    value={variant.price}
-                    onChange={e => handleVariantChange(idx, "price", e.target.value)}
-                    placeholder="Giá"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-[65px] text-sm"
-                    value={variant.discountPercent || ""}
-                    onChange={e => handleVariantChange(idx, "discountPercent", e.target.value)}
-                    placeholder="Giảm"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-[90px] text-sm"
-                    value={variant.stock}
-                    onChange={e => handleVariantChange(idx, "stock", e.target.value)}
-                    placeholder="Kho"
-                  />
-                  <button
-                    type="button"
-                    className="text-red-500 font-semibold hover:underline ml-1"
-                    onClick={() => handleRemoveVariant(idx)}
-                    disabled={formData.variants.length <= 1}
-                    title="Xóa biến thể"
-                    style={{ fontSize: 13 }}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              ))}
+            <label className="block font-semibold mb-2 text-lg">Biến thể</label>
+            <div className="overflow-x-auto mt-2">
+              <table className="min-w-full border text-sm bg-white">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="p-2 border text-center min-w-[90px]">Size</th>
+                    <th className="p-2 border text-center min-w-[90px]">Màu sắc</th>
+                    <th className="p-2 border text-center min-w-[100px]">Giá</th>
+                    <th className="p-2 border text-center min-w-[65px] w-[80px]">Giảm giá (%)</th>
+                    <th className="p-2 border text-center min-w-[65px] w-[80px]">Tồn kho</th>
+                    <th className="p-2 border text-center min-w-[60px]">Xóa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.variants.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center text-gray-400 py-2">
+                        Chưa có biến thể nào
+                      </td>
+                    </tr>
+                  ) : (
+                    formData.variants.map((variant: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="p-2 border">
+                          <select
+                            className="border rounded-lg p-2 w-full text-sm"
+                            value={variant.size}
+                            onChange={e => handleVariantChange(idx, "size", e.target.value)}
+                          >
+                            {sizeOptions.map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-2 border">
+                          <select
+                            className="border rounded-lg p-2 w-full text-sm"
+                            value={variant.color}
+                            onChange={e => handleVariantChange(idx, "color", e.target.value)}
+                          >
+                            {colorOptions.map(c => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            min={0}
+                            className="border rounded-lg p-2 w-full text-sm"
+                            value={variant.price}
+                            onChange={e => handleVariantChange(idx, "price", e.target.value)}
+                            placeholder="Giá"
+                          />
+                        </td>
+                        <td className="p-2 border w-[80px]">
+                          <input
+                            type="number"
+                            min={0}
+                            className="border rounded-lg p-2 w-full text-sm"
+                            value={variant.discountPercent || ""}
+                            onChange={e => handleVariantChange(idx, "discountPercent", e.target.value)}
+                            placeholder="Giảm"
+                          />
+                        </td>
+                        <td className="p-2 border w-[80px]">
+                          <input
+                            type="number"
+                            min={0}
+                            className="border rounded-lg p-2 w-full text-sm"
+                            value={variant.stock}
+                            onChange={e => handleVariantChange(idx, "stock", e.target.value)}
+                            placeholder="Kho"
+                          />
+                        </td>
+                        <td className="p-2 border text-center">
+                          <button
+                            type="button"
+                            className="text-red-500 hover:underline"
+                            onClick={() => handleRemoveVariant(idx)}
+                            title="Xóa biến thể"
+                          >
+                            Xóa
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-            {/* Biến thể mới */}
-            <div className="rounded-lg border border-gray-200 p-4 bg-white w-full max-w-[564px] mt-2">
+            {/* Thêm mới biến thể */}
+            <div className="rounded-lg border border-gray-200 p-4 bg-white w-full max-w-[564px] mt-2 mx-auto">
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div>
                   <label className="font-semibold block mb-1 text-sm">Sizes</label>
@@ -503,15 +528,15 @@ export default function EditProductForm({
                   />
                 </div>
               </div>
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 font-semibold text-base text-black mt-3 mx-auto hover:opacity-70"
+                onClick={handleAddVariant}
+              >
+                <span className="text-2xl font-bold">+</span>
+                Thêm biến thể
+              </button>
             </div>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-2 font-semibold text-base text-black mt-3 mx-auto hover:opacity-70"
-              onClick={handleAddVariant}
-            >
-              <span className="text-2xl font-bold">+</span>
-              Thêm biến thể
-            </button>
           </div>
         {/* Thông báo lỗi */}
         {error && <div className="text-red-500 text-center">{error}</div>}

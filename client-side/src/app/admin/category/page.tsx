@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import CategoryTable from "@/admin/components/Admin_Category/CategoryTable";
-import { fetchCategoriesFlat } from "@/services/categoryApi";
+import { fetchCategoryTree } from "@/services/categoryApi";
 
 interface Category {
   id: string;
@@ -20,7 +20,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await fetchCategoriesFlat();
+        const data = await fetchCategoryTree();
         setCategories(data);
       } catch (error) {
         console.error("Lỗi khi fetch danh mục:", error);

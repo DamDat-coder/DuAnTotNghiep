@@ -32,114 +32,65 @@ export function flattenCategories(categories: ICategory[]): ICategory[] {
   return flat;
 }
 
-// // Thêm danh mục
-// export async function addCategory(category: CategoryInput): Promise<ICategory> {
-//   try {
-//     const body = {
-//       name: category.name,
-//       description: category.description,
-//       parentid: category.parentid || null,
-//     };
+// Thêm danh mục
+export async function addCategory(input: CategoryInput): Promise<ICategory> {
+  try {
+    // Chuẩn hóa parentId nếu FE truyền ""
+    const body: any = {
+      name: input.name,
+      description: input.description,
+      parentId: input.parentId === "" ? null : input.parentId ?? null,
+    };
 
-//     console.log('Sending category:', body);
+    const response = await fetchWithAuth<SingleCategoryResponse>(
+      `${API_BASE_URL}/categories`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+      true
+    );
 
-//     const response = await fetchWithAuth<SingleCategoryResponse>(
-//       `${API_BASE_URL}/categories`,
-//       {
-//         method: "POST",
-//         body: JSON.stringify(body),
-//       },
-//       true
-//     );
+    return {
+      id: response.data._id,
+      name: response.data.name,
+      description: response.data.description || "",
+      parentId: response.data.parentId || null,
+      children: [],
+    };
+  } catch (error: any) {
+    console.error("Error adding category:", error);
+    throw new Error(error.message || "Không thể thêm danh mục");
+  }
+}
 
-//     return {
-//       id: response.data._id,
-//       name: response.data.name,
-//       description: response.data.description || "",
-//       parentid: response.data.parentid || null,
-//     };
-//   } catch (error: any) {
-//     console.error("Error adding category:", error);
-//     throw new Error(error.message || "Không thể thêm danh mục");
-//   }
-// }
+// Cập nhật danh mục
+export async function updateCategory(id: string, input: CategoryInput): Promise<ICategory> {
+  try {
+    const body: any = {};
+    if (input.name) body.name = input.name;
+    if (input.description) body.description = input.description;
+    if (typeof input.parentId !== "undefined")
+      body.parentId = input.parentId === "" ? null : input.parentId;
 
-// // Cập nhật danh mục
-// export async function updateCategory(id: string, category: CategoryInput): Promise<ICategory> {
-//   try {
-//     const body: any = {};
-//     if (category.name) body.name = category.name;
-//     if (category.description) body.description = category.description;
-//     if (category.parentid !== undefined) body.parentid = category.parentid || null;
+    const response = await fetchWithAuth<SingleCategoryResponse>(
+      `${API_BASE_URL}/categories/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(body),
+      },
+      true
+    );
 
-//     console.log('Sending category update:', body);
-
-//     const response = await fetchWithAuth<SingleCategoryResponse>(
-//       `${API_BASE_URL}/categories/${id}`,
-//       {
-//         method: "PATCH",
-//         body: JSON.stringify(body),
-//       },
-//       true
-//     );
-
-//     return {
-//       id: response.data._id,
-//       name: response.data.name,
-//       description: response.data.description || "",
-//       parentid: response.data.parentid || null,
-//     };
-//   } catch (error: any) {
-//     console.error("Error updating category:", error);
-//     throw new Error(error.message || "Không thể cập nhật danh mục");
-//   }
-// }
-
-// export async function deleteCategory(id: number): Promise<SingleCategoryResponse> {
-//   const res = await fetchWithAuth(`${API_BASE_URL}/category/${id}`, {
-//     method: "DELETE",
-//   });
-//   return (res as Response).json();
-// }
-
-// export async function fetchCategoryById(id: string): Promise<ICategory | null> {
-//   try {
-//     const response = await fetchWithAuth<SingleCategoryResponse>(
-//       `${API_BASE_URL}/categories/${id}`,
-//       { cache: "no-store" },
-//       false
-//     );
-//     if (response.data) {
-//       return {
-//         id: response.data._id,
-//         name: response.data.name,
-//         description: response.data.description || "",
-//         parentid: response.data.parentid || null,
-//       };
-//     }
-//     return null;
-//   } catch (error) {
-//     console.error("Error fetching category by id:", error);
-//     return null;
-//   }
-// }
-
-// // Lấy tất cả danh mục phẳng (API mới)
-// export async function fetchCategoriesFlat(): Promise<ICategory[]> {
-//   try {
-//     const response = await fetchWithAuth<{ status: string; data: any[] }>(
-//       `${API_BASE_URL}/categories/all/flat`,
-//       { cache: "no-store" },
-//       false
-//     );
-//     return response.data.map((item) => ({
-//       id: item._id,
-//       name: item.name,
-//       description: item.description || "",
-//       parentid: item.parentid || null,
-//     }));
-//   } catch (error) {
-//     console.error("Error fetching categories (flat):", error);
-//     return [];
-//   }
-// }
+    return {
+      _id: response.data._id,
+      name: response.data.name,
+      description: response.data.description || "",
+      parentId: response.data.parentId || null,
+      children: [],
+    };
+  } catch (error: any) {
+    console.error("Error updating category:", error);
+    throw new Error(error.message || "Không thể cập nhật danh mục");
+  }
+}

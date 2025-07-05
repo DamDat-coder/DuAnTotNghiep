@@ -10,9 +10,6 @@ export default function ProductBody({
   onDelete,
   onToggleStatus,
 }) {
-  const [switchStates, setSwitchStates] = useState(() =>
-    products.reduce((acc, p) => ({ ...acc, [p._id || p.id]: p.is_active ?? true }), {})
-  );
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
 
   // --- XỬ LÝ XÓA ---
@@ -34,17 +31,9 @@ export default function ProductBody({
   };
 
   // --- XỬ LÝ BẬT/TẮT ---
-  const handleToggleStatus = async (id: string) => {
-    try {
-      if (onToggleStatus) onToggleStatus(id, switchStates[id]);
-      setSwitchStates((prev) => ({
-        ...prev,
-        [id]: !prev[id],
-      }));
-      toast.success("Cập nhật trạng thái thành công!");
-    } catch (error: any) {
-      toast.error(error.message || "Lỗi cập nhật trạng thái!");
-    }
+  const handleToggleStatus = (id: string, currentActive: boolean) => {
+    if (onToggleStatus) onToggleStatus(id, currentActive);
+    // Toast ở cha nếu muốn
   };
 
   // Đóng popup khi click ra ngoài
@@ -121,7 +110,7 @@ export default function ProductBody({
                 className={`w-10 h-6 rounded-full transition relative ${
                   (product.is_active ?? true) ? "bg-[#2563EB]" : "bg-gray-300"
                 }`}
-                onClick={() => handleToggleStatus(productId)}
+                onClick={() => handleToggleStatus(productId, product.is_active)}
                 tabIndex={-1}
               >
                 <span

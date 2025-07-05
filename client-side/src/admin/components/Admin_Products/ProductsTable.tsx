@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductTableWrapper from "./ProductTableWrapper";
 import EditProductForm from "./EditProductForm";
 import AddProductForm from "./AddProductForm"; // Import form popup thêm mới
@@ -17,6 +17,11 @@ export default function ProductsTable({ initialProducts, addButton }) {
     loading: false,
   });
 
+  // Khi vào trang, tự động load danh sách sản phẩm
+  useEffect(() => {
+    reloadProducts();
+  }, []);
+
   // Xử lý khi bấm Sửa
   const handleEditProduct = async (prod) => {
     setEditPopup({ visible: true, productId: prod.id || prod._id, productData: null, loading: true });
@@ -31,8 +36,13 @@ export default function ProductsTable({ initialProducts, addButton }) {
 
   // Sau khi cập nhật xong (thêm/sửa), reload lại danh sách sản phẩm
   const reloadProducts = async () => {
-    const { products: newProducts } = await fetchProducts();
-    setProducts(Array.isArray(newProducts) ? newProducts : []);
+    try {
+      const { data: newProducts } = await fetchProducts();
+      setProducts(Array.isArray(newProducts) ? newProducts : []);
+    } catch (error) {
+      console.error("Lỗi khi load sản phẩm:", error);
+      setProducts([]);
+    }
   };
 
   // Đóng popup Thêm, đồng thời reload list

@@ -10,11 +10,15 @@ export interface OrderItem {
 }
 
 export interface IOrder {
-  id: string;
-  user: { name: string; email: string };
-  total: number;
-  products: { productId: { name: string; price: number; image: string[] }; quantity: number }[];
-  status: "pending" | "success" | "cancelled";
+  _id?: { $oid: string } | string;
+  id?: string;
+  user?: { name: string; email: string };
+  userId?: string | { name: string; email: string; _id?: string };
+  totalPrice: number;
+  items: OrderItem[];
+  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+  createdAt?: string;
+  [key: string]: any;
 }
 
 export interface OrderDetail {

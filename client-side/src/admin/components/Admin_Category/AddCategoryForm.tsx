@@ -1,156 +1,164 @@
 "use client";
+import { useState, useEffect, ChangeEvent } from "react";
+import { fetchCategoryTree, addCategory } from "@/services/categoryApi";
 
-import { useRouter } from "next/navigation";
-import { useState, ChangeEvent, useEffect } from "react";
-import { addCategory, fetchCategories } from "@/services/categoryApi";
-import { ICategory } from "@/types/category";
-
-interface CategoryFormData {
+interface Category {
+  id: string;
   name: string;
   description: string;
-  parentId: string | null;
+  parentId?: string | null;
+  children?: Category[];
 }
 
-export default function AddCategoryForm() {
-  const router = useRouter();
-  const [formData, setFormData] = useState<CategoryFormData>({
+interface AddCategoryFormProps {
+  onClose?: () => void;
+}
+
+export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
-    parentId: null,
+    parentId: "",
   });
-  const [categories, setCategories] = useState<ICategory[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Lấy danh sách danh mục khi component mount
   useEffect(() => {
-    const loadCategories = async () => {
+    const load = async () => {
       try {
-        const fetchedCategories = await fetchCategories();
-        setCategories(fetchedCategories);
+        const cats = await fetchCategoryTree();
+        function normalizeCats(arr: any[]): Category[] {
+          return arr
+            .filter(cat => !!(cat.id || cat._id))
+            .map(cat => ({
+              id: String(cat.id || cat._id),
+              name: cat.name,
+              description: cat.description || "",
+              parentId: cat.parentId ? String(cat.parentId) : "",
+              children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
+            }));
+        }
+        setAllCategories(normalizeCats(cats));
       } catch (err) {
-        console.error("Error loading categories:", err);
-        setError("Không thể tải danh mục cha");
+        setError("Không thể tải danh mục cha.");
+      } finally {
+        setLoading(false);
       }
     };
-    loadCategories();
+    load();
   }, []);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
     try {
       await addCategory({
         name: formData.name,
         description: formData.description,
-        parentId: formData.parentId || null,
+        parentId: formData.parentId === "" ? null : formData.parentId,
       });
       alert("Thêm danh mục thành công!");
-      router.push("/admin/category");
-    } catch (err: any) {
-      console.error("Lỗi khi thêm danh mục:", err);
-      setError(err.message || "Có lỗi xảy ra khi thêm danh mục.");
-    } finally {
-      setIsLoading(false);
+      if (onClose) onClose();
+    } catch (err) {
+      alert("Đã xảy ra lỗi khi thêm danh mục.");
     }
   };
 
+  const renderOptions = (
+    nodes: Category[],
+    depth = 0,
+    path = ""
+  ): JSX.Element[] => {
+    return nodes.flatMap((cat) => {
+      if (!cat.id) return [];
+      const optionKey = `${path}-${cat.id}`;
+      return [
+        <option key={optionKey} value={cat.id}>
+          {"—".repeat(depth)} {cat.name}
+        </option>,
+        ...(cat.children && cat.children.length > 0
+          ? renderOptions(cat.children, depth + 1, optionKey)
+          : []),
+      ];
+    });
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Đang tải dữ liệu...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500 font-semibold py-8">{error}</div>
+    );
+  }
+
   return (
-    <div className="w-full h-full mx-auto bg-white rounded-[2.125rem] px-12 py-8">
-      <h2 className="text-[2rem] font-bold mb-6 text-center">Thêm danh mục</h2>
-
-      {/* Hiển thị lỗi nếu có */}
-      {error && (
-        <div className="text-red-500 text-center mb-4">{error}</div>
-      )}
-
-      {/* Form thêm danh mục */}
-      <form
-        onSubmit={handleSubmit}
-        className="w-[50%] mx-auto flex flex-col gap-4"
-      >
+    <div>
+      <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b rounded-t-2xl">
+        <h2 className="text-[20px] font-bold">Thêm danh mục</h2>
+      </div>
+      <form onSubmit={handleSubmit} className="p-6 pt-4 flex flex-col gap-5">
         {/* Tên danh mục */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Tên danh mục
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
+            Tên danh mục <span className="text-red-500">*</span>
           </label>
           <input
-            type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
             placeholder="Nhập tên danh mục"
-            className="w-full mx-auto block p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
-            maxLength={100}
-            disabled={isLoading}
           />
         </div>
-
         {/* Mô tả danh mục */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
-            Mô tả danh mục
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
+            Mô tả danh mục <span className="text-red-500">*</span>
           </label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Nhập mô tả danh mục"
-            className="w-full mx-auto block p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={4}
-            disabled={isLoading}
+            placeholder="Nhập nội dung mô tả..."
+            className="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
           />
         </div>
-
         {/* Danh mục cha */}
-        <div>
-          <label className="block text-lg font-medium text-gray-700 mb-2">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
             Danh mục cha
           </label>
           <select
             name="parentId"
-            value={formData.parentId || ""}
+            value={formData.parentId ?? ""}
             onChange={handleChange}
-            className="w-full mx-auto block p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            className="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Không có danh mục cha</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            <option value="">-- Không có danh mục cha --</option>
+            {renderOptions(allCategories)}
           </select>
         </div>
-
-        {/* Nút hành động */}
-        <div className="flex justify-center mt-8 gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/admin/category")}
-            className="px-6 py-2 w-full bg-gray-300 text-black font-semibold rounded-md hover:bg-gray-400 transition-colors"
-            disabled={isLoading}
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            className="px-6 py-2 w-full bg-black text-white font-semibold rounded-md hover:opacity-80 transition-opacity disabled:opacity-50"
-            disabled={isLoading}
-          >
-            {isLoading ? "Đang xử lý..." : "Thêm danh mục"}
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="w-full mt-4 bg-black text-white text-base font-semibold py-3 rounded-full hover:opacity-90 transition-all"
+        >
+          Thêm danh mục
+        </button>
       </form>
     </div>
   );

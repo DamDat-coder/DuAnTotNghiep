@@ -18,36 +18,56 @@ import {
   removeFromWishlist,
   getWishlist,
 } from "../controllers/user.controller";
-import { sendSmsOTP, verifySmsOTP } from "../controllers/user.phone.controller";
-import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
+
+import {
+  validateRegister,
+  validateLogin,
+  validateGoogleLogin,
+  validateSendOtp,
+  validateVerifyOtp,
+} from "../middlewares/validators/user.validator";
+
+import {
+  sendSmsOTP,
+  verifySmsOTP,
+} from "../controllers/user.phone.controller";
+
+import {
+  verifyToken,
+  verifyAdmin,
+} from "../middlewares/auth.middleware";
+
+import { validateRequest } from "../middlewares/validateRequest";
 
 const router = Router();
 
-// Quản lý địa chỉ
-router.post("/:id/addresses", addAddress);
-router.put("/:id/addresses/:addressId", updateAddress);
-router.delete("/:id/addresses/:addressId", deleteAddress);
-router.patch("/:id/addresses/:addressId/default", setDefaultAddress);
-
-// Quản lý người dùng
+// Xác thực và quản lý người dùng
 router.get("/me", verifyToken, getCurrentUser);
-router.post("/google-login", googleLogin);
-router.post("/send-otp", sendSmsOTP);
-router.post("/verify-otp", verifySmsOTP);
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", validateRegister, validateRequest, registerUser);
+router.post("/login", validateLogin, validateRequest, loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);
-router.put("/:id", verifyToken, updateUserInfo);
-router.get("/me", verifyToken, getCurrentUser);
+router.post("/google-login", validateGoogleLogin, validateRequest, googleLogin);
 
-// Quản lý người dùng (Chỉ dành cho admin)
-router.get("/", verifyToken, verifyAdmin, getAllUsers);
-router.get("/:id", verifyToken, verifyAdmin, getUserById);
-router.put("/:id/status", verifyToken, verifyAdmin, toggleUserStatus);
+// OTP qua SMS
+router.post("/send-otp", validateSendOtp, validateRequest, sendSmsOTP);
+router.post("/verify-otp", validateVerifyOtp, validateRequest, verifySmsOTP);
 
-// Quản lý yêu thích
+// Địa chỉ
+router.post("/:id/addresses", verifyToken, addAddress);
+router.put("/:id/addresses/:addressId", verifyToken, updateAddress);
+router.delete("/:id/addresses/:addressId", verifyToken, deleteAddress);
+router.patch("/:id/addresses/:addressId/default", verifyToken, setDefaultAddress);
+
+// Danh sách yêu thích
 router.post("/:id/wishlist", verifyToken, addToWishlist);
 router.delete("/:id/wishlist/:productId", verifyToken, removeFromWishlist);
 router.get("/:id/wishlist", verifyToken, getWishlist);
+
+// Quản lý người dùng (Chỉ admin)
+router.get("/", verifyToken, verifyAdmin, getAllUsers);
+router.get("/:id", verifyToken, verifyAdmin, getUserById);
+router.put("/:id", verifyToken, updateUserInfo);
+router.put("/:id/status", verifyToken, verifyAdmin, toggleUserStatus);
+
 export default router;

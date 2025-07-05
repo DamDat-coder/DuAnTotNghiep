@@ -2,24 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import UserModel from "../models/user.model";
-import { OAuth2Client } from "google-auth-library";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
-// Tạo token
-const generateAccessToken = (userId: string, role: string): string => {
-  return jwt.sign({ userId, role }, process.env.JWT_SECRET as string, {
-    expiresIn: "24h",
-  });
-};
-
-// Tạo refresh token
-const generateRefreshToken = (userId: string): string => {
-  return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET as string, {
-    expiresIn: "30d",
-  });
-};
-
-// Xác thực Google
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import { generateAccessToken, generateRefreshToken } from "../config/jwt";
+import { googleClient } from "../config/google";
 
 // Đăng nhập bằng Google
 export const googleLogin = async (

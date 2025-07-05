@@ -5,10 +5,9 @@ import {
   deleteNews,
   getNewsList,
   getNewsDetail,
-  upload,
 } from "../controllers/news.controller";
-
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
+import { upload } from "../middlewares/upload.middleware"; 
 
 const router = express.Router();
 

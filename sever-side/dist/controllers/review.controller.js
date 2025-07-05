@@ -18,7 +18,7 @@ const order_model_1 = __importDefault(require("../models/order.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cloudinary_1 = require("cloudinary");
-const SPAM_KEYWORDS = ["xxx", "lừa đảo", "quảng cáo", "viagra", "hack", "free tiền"];
+const spam_keywords_1 = require("../config/spam-keywords");
 // Tạo đánh giá sản phẩm
 const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -61,7 +61,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             }
         }
         let isSpam = false;
-        for (const keyword of SPAM_KEYWORDS) {
+        for (const keyword of spam_keywords_1.SPAM_KEYWORDS) {
             if (content.toLowerCase().includes(keyword.toLowerCase())) {
                 isSpam = true;
                 break;
@@ -74,7 +74,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             const spamCount = yield review_model_1.default.countDocuments({ userId, status: "spam" });
             const totalSpam = spamCount + 1;
             if (totalSpam === 2) {
-                warning = "⚠️ Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
+                warning = "Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
             }
             else if (totalSpam >= 3) {
                 yield user_model_1.default.findByIdAndUpdate(userId, { is_active: false });

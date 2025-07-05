@@ -27,28 +27,15 @@ exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = expor
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_model_1 = __importDefault(require("../models/user.model"));
-const google_auth_library_1 = require("google-auth-library");
-// Tạo token
-const generateAccessToken = (userId, role) => {
-    return jsonwebtoken_1.default.sign({ userId, role }, process.env.JWT_SECRET, {
-        expiresIn: "24h",
-    });
-};
-// Tạo refresh token
-const generateRefreshToken = (userId) => {
-    return jsonwebtoken_1.default.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
-        expiresIn: "30d",
-    });
-};
-// Xác thực Google
-const googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const jwt_1 = require("../config/jwt");
+const google_1 = require("../config/google");
 // Đăng nhập bằng Google
 const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id_token } = req.body;
         if (!id_token)
             return res.status(400).json({ success: false, message: "Thiếu id_token" });
-        const ticket = yield googleClient.verifyIdToken({
+        const ticket = yield google_1.googleClient.verifyIdToken({
             idToken: id_token,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
@@ -64,15 +51,15 @@ const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
                 email,
                 name,
                 googleId,
-                password: "", // vì không có mật khẩu
-                refreshToken: "", // sẽ gán bên dưới
+                password: "",
+                refreshToken: "",
             });
         }
         if (!user.is_active) {
             return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
         }
-        const accessToken = generateAccessToken(user._id.toString(), user.role);
-        const refreshToken = generateRefreshToken(user._id.toString());
+        const accessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(user._id.toString());
         user.refreshToken = refreshToken;
         yield user.save();
         res.status(200).json({
@@ -124,7 +111,7 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         if (existingUser)
             return res.status(400).json({ success: false, message: "Email đã tồn tại." });
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
-        const refreshToken = generateRefreshToken(email);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(email);
         const newUser = yield user_model_1.default.create({
             email,
             password: hashedPassword,
@@ -132,7 +119,7 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
             phone,
             refreshToken,
         });
-        const accessToken = generateAccessToken(newUser._id.toString(), newUser.role);
+        const accessToken = (0, jwt_1.generateAccessToken)(newUser._id.toString(), newUser.role);
         res.status(201).json({
             success: true,
             message: "Đăng ký thành công.",
@@ -166,8 +153,8 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
             return res.status(401).json({ success: false, message: "Mật khẩu sai." });
         if (!user.is_active)
             return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
-        const accessToken = generateAccessToken(user._id.toString(), user.role);
-        const refreshToken = generateRefreshToken(user._id.toString());
+        const accessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(user._id.toString());
         yield user_model_1.default.updateOne({ _id: user._id }, { refreshToken });
         res.status(200).json({
             success: true,
@@ -199,7 +186,7 @@ const refreshAccessToken = (req, res, next) => __awaiter(void 0, void 0, void 0,
         const user = yield user_model_1.default.findById(decoded.userId);
         if (!user || user.refreshToken !== refreshToken)
             return res.status(403).json({ success: false, message: "Refresh token không hợp lệ." });
-        const newAccessToken = generateAccessToken(user._id.toString(), user.role);
+        const newAccessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
         res.status(200).json({ success: true, accessToken: newAccessToken });
     }
     catch (err) {

@@ -16,12 +16,14 @@ function getAuthHeaders(isFormData: boolean = false) {
       };
 }
 
-export async function refreshToken(): Promise<boolean> {
+// userApi.ts
+export async function refreshToken(): Promise<string | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/users/refresh-token`, {
       method: "POST",
-      credentials: "include",
+      credentials: "include", // Đảm bảo cookie được gửi lên server
     });
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
@@ -33,10 +35,10 @@ export async function refreshToken(): Promise<boolean> {
       throw new Error("No access token in refresh response");
     }
 
-    return true;
+    return data.accessToken;
   } catch (error: any) {
-
-    return false;
+    console.error("refreshToken - Error:", error.message);
+    return null;
   }
 }
 

@@ -22,10 +22,17 @@ const generateRefreshToken = (userId: string): string => {
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Đăng nhập bằng Google
-export const googleLogin = async (req: Request, res: Response, next: NextFunction) => {
+export const googleLogin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id_token } = req.body;
-    if (!id_token) return res.status(400).json({ success: false, message: "Thiếu id_token" });
+    if (!id_token)
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu id_token" });
 
     const ticket = await googleClient.verifyIdToken({
       idToken: id_token,
@@ -33,11 +40,17 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
     });
 
     const payload = ticket.getPayload();
-    if (!payload) return res.status(401).json({ success: false, message: "Xác thực Google thất bại" });
+    if (!payload)
+      return res
+        .status(401)
+        .json({ success: false, message: "Xác thực Google thất bại" });
 
     const { email, name, sub: googleId } = payload;
 
-    if (!email) return res.status(400).json({ success: false, message: "Không lấy được email từ Google" });
+    if (!email)
+      return res
+        .status(400)
+        .json({ success: false, message: "Không lấy được email từ Google" });
 
     let user = await UserModel.findOne({ email });
 
@@ -52,7 +65,9 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (!user.is_active) {
-      return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Tài khoản đã bị khóa." });
     }
 
     const accessToken = generateAccessToken(user._id.toString(), user.role);
@@ -81,10 +96,16 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
 };
 
 // Lấy thông tin người dùng hiện tại
-export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) => {
+export const getCurrentUser = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ message: "Không xác thực được người dùng" });
+    if (!userId)
+      return res
+        .status(401)
+        .json({ message: "Không xác thực được người dùng" });
 
     const currentUser = await UserModel.findById(userId)
       .select("name email role wishlist addresses phone is_active")
@@ -102,12 +123,19 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) =
 };
 
 // Đăng ký
-export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
+export const registerUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { email, password, name, phone } = req.body;
 
     const existingUser = await UserModel.findOne({ email });
-    if (existingUser) return res.status(400).json({ success: false, message: "Email đã tồn tại." });
+    if (existingUser)
+      return res
+        .status(400)
+        .json({ success: false, message: "Email đã tồn tại." });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const refreshToken = generateRefreshToken(email);
@@ -120,7 +148,10 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
       refreshToken,
     });
 
-    const accessToken = generateAccessToken(newUser._id.toString(), newUser.role);
+    const accessToken = generateAccessToken(
+      newUser._id.toString(),
+      newUser.role
+    );
 
     res.status(201).json({
       success: true,
@@ -142,7 +173,11 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
 };
 
 // Đăng nhập
-export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
+export const loginUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     console.time("LOGIN");
 
@@ -178,16 +213,28 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
 };
 
 // Làm mới accessToken
-export const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) return res.status(401).json({ success: false, message: "Thiếu refresh token." });
+    if (!refreshToken)
+      return res
+        .status(401)
+        .json({ success: false, message: "Thiếu refresh token." });
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as JwtPayload;
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET as string
+    ) as JwtPayload;
     const user = await UserModel.findById(decoded.userId);
 
     if (!user || user.refreshToken !== refreshToken)
-      return res.status(403).json({ success: false, message: "Refresh token không hợp lệ." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Refresh token không hợp lệ." });
 
     const newAccessToken = generateAccessToken(user._id.toString(), user.role);
     res.status(200).json({ success: true, accessToken: newAccessToken });
@@ -197,7 +244,11 @@ export const refreshAccessToken = async (req: Request, res: Response, next: Next
 };
 
 // Đăng xuất
-export const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { refreshToken } = req.body;
     const user = await UserModel.findOne({ refreshToken });
@@ -214,7 +265,10 @@ export const logoutUser = async (req: Request, res: Response, next: NextFunction
 };
 
 // Lấy tất cả người dùng
-export const getAllUsers = async (req: Request, res: Response): Promise<Response> => {
+export const getAllUsers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -270,14 +324,21 @@ export const getAllUsers = async (req: Request, res: Response): Promise<Response
 };
 
 // Lấy người dùng theo ID
-export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+export const getUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserModel.findById(req.params.id)
       .select("name email role phone is_active addresses wishlist")
       .populate("wishlist", "name slug image variants.price")
       .lean();
 
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     res.status(200).json({ success: true, data: user });
   } catch (err) {
@@ -286,7 +347,11 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
 };
 
 // Cập nhật thông tin người dùng
-export const updateUserInfo = async (req: Request, res: Response, next: NextFunction) => {
+export const updateUserInfo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { name, phone, role } = req.body;
     const updates: any = {};
@@ -300,29 +365,44 @@ export const updateUserInfo = async (req: Request, res: Response, next: NextFunc
       runValidators: true,
     }).select("-password");
 
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
-    res.status(200).json({ success: true, message: "Cập nhật thành công.", data: user });
+    res
+      .status(200)
+      .json({ success: true, message: "Cập nhật thành công.", data: user });
   } catch (err) {
     next(err);
   }
 };
 
 // Khoá/mở khoá
-export const toggleUserStatus = async (req: Request, res: Response, next: NextFunction) => {
+export const toggleUserStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { is_active } = req.body;
     if (typeof is_active !== "boolean") {
-      return res.status(400).json({ success: false, message: "`is_active` phải là boolean." });
+      return res
+        .status(400)
+        .json({ success: false, message: "`is_active` phải là boolean." });
     }
 
     const user = await UserModel.findById(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
     }
 
     if (user.role === "admin" && !is_active) {
-      return res.status(403).json({ success: false, message: "Không thể khoá tài khoản admin." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Không thể khoá tài khoản admin." });
     }
 
     user.is_active = is_active;
@@ -341,20 +421,27 @@ export const toggleUserStatus = async (req: Request, res: Response, next: NextFu
 };
 
 // Thêm địa chỉ
-export const addAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const addAddress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { street, ward, district, province, is_default } = req.body;
 
     const user = await UserModel.findById(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
     }
 
-    const isDuplicate = user.addresses.some(addr =>
-      addr.street === street &&
-      addr.ward === ward &&
-      addr.district === district &&
-      addr.province === province
+    const isDuplicate = user.addresses.some(
+      (addr) =>
+        addr.street === street &&
+        addr.ward === ward &&
+        addr.district === district &&
+        addr.province === province
     );
 
     if (isDuplicate) {
@@ -365,10 +452,16 @@ export const addAddress = async (req: Request, res: Response, next: NextFunction
     }
 
     if (is_default) {
-      user.addresses.forEach(addr => (addr.is_default = false));
+      user.addresses.forEach((addr) => (addr.is_default = false));
     }
 
-    user.addresses.push({ street, ward, district, province, is_default: !!is_default });
+    user.addresses.push({
+      street,
+      ward,
+      district,
+      province,
+      is_default: !!is_default,
+    });
     await user.save();
 
     res.status(201).json({
@@ -382,14 +475,24 @@ export const addAddress = async (req: Request, res: Response, next: NextFunction
 };
 
 // Cập nhật địa chỉ
-export const updateAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const updateAddress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { street, ward, district, province, is_default } = req.body;
     const user = await UserModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     const address = user.addresses.id(req.params.addressId as string);
-    if (!address) return res.status(404).json({ success: false, message: "Không tìm thấy địa chỉ." });
+    if (!address)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy địa chỉ." });
 
     if (is_default) {
       user.addresses.forEach((addr) => (addr.is_default = false));
@@ -402,96 +505,175 @@ export const updateAddress = async (req: Request, res: Response, next: NextFunct
     address.is_default = is_default ?? address.is_default;
 
     await user.save();
-    res.status(200).json({ success: true, message: "Cập nhật địa chỉ thành công.", data: user.addresses });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Cập nhật địa chỉ thành công.",
+        data: user.addresses,
+      });
   } catch (err) {
     next(err);
   }
 };
 
 // Xoá địa chỉ
-export const deleteAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteAddress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     const address = user.addresses.id(req.params.addressId as string);
-    if (!address) return res.status(404).json({ success: false, message: "Không tìm thấy địa chỉ." });
+    if (!address)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy địa chỉ." });
 
     address.deleteOne();
     await user.save();
 
-    res.status(200).json({ success: true, message: "Xoá địa chỉ thành công.", data: user.addresses });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Xoá địa chỉ thành công.",
+        data: user.addresses,
+      });
   } catch (err) {
     next(err);
   }
 };
 
 // Đặt địa chỉ mặc định
-export const setDefaultAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const setDefaultAddress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     const address = user.addresses.id(req.params.addressId as string);
-    if (!address) return res.status(404).json({ success: false, message: "Không tìm thấy địa chỉ." });
+    if (!address)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy địa chỉ." });
 
     user.addresses.forEach((addr) => (addr.is_default = false));
     address.is_default = true;
 
     await user.save();
-    res.status(200).json({ success: true, message: "Cập nhật mặc định thành công.", data: user.addresses });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Cập nhật mặc định thành công.",
+        data: user.addresses,
+      });
   } catch (err) {
     next(err);
   }
 };
 
 // Thêm sản phẩm vào danh sách yêu thích
-export const addToWishlist = async (req: Request, res: Response, next: NextFunction) => {
+export const addToWishlist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     const productId = req.body.productId;
-    if (!productId) return res.status(400).json({ success: false, message: "Thiếu productId." });
+    if (!productId)
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu productId." });
 
     if (user.wishlist.includes(productId)) {
-      return res.status(400).json({ success: false, message: "Sản phẩm đã tồn tại trong danh sách yêu thích." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Sản phẩm đã tồn tại trong danh sách yêu thích.",
+        });
     }
 
     user.wishlist.push(productId);
     await user.save();
 
-    res.status(200).json({ success: true, message: "Đã thêm vào danh sách yêu thích.", data: user.wishlist });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Đã thêm vào danh sách yêu thích.",
+        data: user.wishlist,
+      });
   } catch (err) {
     next(err);
   }
 };
 
 // Xoá sản phẩm khỏi danh sách yêu thích
-export const removeFromWishlist = async (req: Request, res: Response, next: NextFunction) => {
+export const removeFromWishlist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     const productId = req.params.productId;
     user.wishlist = user.wishlist.filter((id) => id.toString() !== productId);
     await user.save();
 
-    res.status(200).json({ success: true, message: "Đã xoá khỏi danh sách yêu thích.", data: user.wishlist });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Đã xoá khỏi danh sách yêu thích.",
+        data: user.wishlist,
+      });
   } catch (err) {
     next(err);
   }
 };
 
 // Lấy danh sách yêu thích của người dùng
-export const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
+export const getWishlist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserModel.findById(req.params.id)
       .select("wishlist")
       .populate("wishlist", "name slug image variants.price")
       .lean();
 
-    if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
 
     res.status(200).json({ success: true, data: user.wishlist });
   } catch (err) {

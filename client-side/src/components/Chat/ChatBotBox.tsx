@@ -83,7 +83,7 @@ export default function ChatBotBox() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="w-[27rem] h-[35rem] bg-white border border-gray-300 rounded-xl shadow-xl flex flex-col justify-between overflow-hidden gap-3"
+            className="w-[24rem] h-[30rem] bg-white border border-gray-300 rounded-xl flex flex-col justify-between overflow-hidden gap-3 shadow-2xl"
           >
             <div className="p-3 border-b font-semibold text-lg text-white bg-black flex justify-between items-center">
               ChatBot Tư vấn
@@ -155,7 +155,7 @@ export default function ChatBotBox() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg flex items-center space-x-2"
+          className="bg-white hover:bg-gray-200 text-black rounded-full p-3 shadow-lg flex items-center space-x-2"
         >
           <MessageCircle className="w-5 h-5" />
           <span className="text-sm font-medium hidden md:inline">Chat</span>

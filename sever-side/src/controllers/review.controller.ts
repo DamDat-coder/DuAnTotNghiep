@@ -5,8 +5,7 @@ import UserModel from "../models/user.model";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import mongoose from "mongoose";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
-
-const SPAM_KEYWORDS = ["xxx", "lừa đảo", "quảng cáo", "viagra", "hack", "free tiền"];
+import { SPAM_KEYWORDS } from "../config/spam-keywords";
 
 // Tạo đánh giá sản phẩm
 export const createReview = async (req: AuthenticatedRequest, res: Response) => {
@@ -73,7 +72,7 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
       const totalSpam = spamCount + 1;
 
       if (totalSpam === 2) {
-        warning = "⚠️ Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
+        warning = "Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
       } else if (totalSpam >= 3) {
         await UserModel.findByIdAndUpdate(userId, { is_active: false });
         warning = "Tài khoản đã bị khóa vì spam quá nhiều.";

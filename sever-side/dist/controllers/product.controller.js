@@ -20,15 +20,8 @@ const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
 const slugify_1 = __importDefault(require("slugify"));
-const getAllChildCategoryIds = (parentId) => __awaiter(void 0, void 0, void 0, function* () {
-    const children = yield category_model_1.default.find({ parentId }).select("_id");
-    let ids = children.map((child) => child._id.toString());
-    for (const child of children) {
-        const subIds = yield getAllChildCategoryIds(child._id.toString());
-        ids = ids.concat(subIds);
-    }
-    return ids;
-});
+const category_util_1 = require("../utils/category.util");
+const string_util_1 = require("../utils/string.util");
 // Lấy tất cả sản phẩm cho người dùng
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -36,7 +29,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const filter = {};
         if (id_cate && typeof id_cate === "string") {
             const allIds = [id_cate];
-            const childIds = yield getAllChildCategoryIds(id_cate);
+            const childIds = yield (0, category_util_1.getAllChildCategoryIds)(id_cate);
             allIds.push(...childIds);
             const validObjectIds = allIds
                 .filter((id) => mongoose_1.default.Types.ObjectId.isValid(id))
@@ -204,14 +197,7 @@ const getProductById = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.getProductById = getProductById;
-// Lấy sản phẩm theo slug
-function removeVietnameseTones(str) {
-    return str
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/Đ/g, "D");
-}
+// Lấy sản phẩm theo slug 
 const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { slug } = req.params;
@@ -219,7 +205,7 @@ const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, functio
             res.status(400).json({ status: "error", message: "Slug không hợp lệ" });
             return;
         }
-        const normalizedSlug = (0, slugify_1.default)(removeVietnameseTones(slug), { lower: true });
+        const normalizedSlug = (0, slugify_1.default)((0, string_util_1.removeVietnameseTones)(slug), { lower: true });
         const products = yield product_model_1.default
             .find({ slug: { $regex: normalizedSlug, $options: "i" } })
             .populate("category", "name")

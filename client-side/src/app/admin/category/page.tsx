@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import CategoryTable from "@/admin/components/Admin_Category/CategoryTable";
-import { fetchCategoriesFlat } from "@/services/categoryApi";
+// import { fetchCategoriesFlat } from "@/services/categoryApi";
 
 interface Category {
   id: string;

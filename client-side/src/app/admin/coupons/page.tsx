@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import TableSaleWrapper from "@/admin/components/Admin_Sale/TableSaleWrapper";
-import SaleTableBody from "@/admin/components/Admin_Sale/SaleTableBody";
-import { Sale } from "@/types/sale";
+import TablecouponWrapper from "@/admin/components/Admin_Coupon/TableCouponWrapper";
 import { Pagination } from "@/admin/components/ui/Panigation";
 import { fetchCoupons, updateCouponStatus } from "@/services/couponApi";
+import { Coupon } from "@/types/coupon";
+import CouponTableBody from "@/admin/components/Admin_Coupon/CouponTableBody";
 
-export default function SalesPage() {
-  const [sales, setSales] = useState<Sale[]>([]);
+export default function CouponsPage() {
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -17,13 +17,13 @@ export default function SalesPage() {
     fetchCoupons()
       .then((res) => {
         console.log("Coupons from API:", res);
-        setSales(res); // <- fix chỗ này tuỳ theo res
+        setCoupons(res.coupons); // Use res.coupons instead of res
       })
       .catch(console.error);
   }, []);
 
-  const totalPage = Math.ceil(sales.length / pageSize);
-  const paginatedSales = sales.slice(
+  const totalPage = Math.ceil(coupons.length / pageSize);
+  const paginatedCoupons = coupons.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -31,9 +31,9 @@ export default function SalesPage() {
   const handleToggleActive = async (id: string, newValue: boolean) => {
     try {
       await updateCouponStatus(id, newValue);
-      setSales((prev) =>
-        prev.map((sale) =>
-          sale.id === id ? { ...sale, active: newValue } : sale
+      setCoupons((prev) =>
+        prev.map((coupon) =>
+          coupon._id === id ? { ...coupon, active: newValue } : coupon
         )
       );
     } catch (err) {
@@ -46,12 +46,12 @@ export default function SalesPage() {
       pageTitle="Khuyến mãi"
       pageSubtitle="Thông tin chi tiết về các chương trình khuyến mãi của bạn"
     >
-      <TableSaleWrapper>
-        <SaleTableBody
-          sales={paginatedSales}
+      <TablecouponWrapper>
+        <CouponTableBody
+          coupons={paginatedCoupons}
           onToggleActive={handleToggleActive}
         />
-      </TableSaleWrapper>
+      </TablecouponWrapper>
 
       {/* Pagination */}
       <div className="mt-6 flex justify-center">

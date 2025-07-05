@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchAllUsers } from "@/services/userApi";
 import TableWrapper from "@/admin/components/Admin_User/TableWrapper";
-import UserTableBody from "@/admin/components/Admin_User/UserTableBody";
 import { IUser } from "@/types/auth";
 import { Pagination } from "@/admin/components/ui/Panigation";
 
@@ -23,16 +22,15 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
-const filteredUsers = users.filter((user) => {
-  const matchFilter = filter === "all" || user.role === filter;
-  const name = user.name || "";
-  const email = user.email || "";
-  const matchSearch =
-    name.toLowerCase().includes(search.toLowerCase()) ||
-    email.toLowerCase().includes(search.toLowerCase());
-  return matchFilter && matchSearch;
-});
-
+  const filteredUsers = users.filter((user) => {
+    const matchFilter = filter === "all" || user.role === filter;
+    const name = user.name || "";
+    const email = user.email || "";
+    const matchSearch =
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      email.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
 
   const totalPage = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice(
@@ -40,7 +38,7 @@ const filteredUsers = users.filter((user) => {
     currentPage * pageSize
   );
 
-  // Reset về trang 1 nếu lọc hoặc tìm kiếm thay đổi
+  // Reset to page 1 when filter or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filter, search]);
@@ -50,9 +48,14 @@ const filteredUsers = users.filter((user) => {
       pageTitle="Người dùng"
       pageSubtitle="Quản lý người dùng của bạn"
     >
-      <TableWrapper users={users}>
-        {(data) => <UserTableBody users={data} />}
-      </TableWrapper>
+      <TableWrapper
+        users={paginatedUsers}
+        filter={filter}
+        search={search}
+        setFilter={setFilter}
+        setSearch={setSearch}
+        onUpdate={setUsers} // Update user data from TableWrapper
+      />
 
       {/* Pagination */}
       <div className="mt-6 flex justify-center">

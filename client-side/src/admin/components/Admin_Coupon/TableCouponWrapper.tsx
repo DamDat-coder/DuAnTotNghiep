@@ -1,15 +1,15 @@
 import { ReactNode } from "react";
-import SaleControls from "./SaleControlBar";
+import CouponControls from "./CouponControlBar";
 import Image from "next/image";
 
-export default function TableSaleWrapper({
+export default function TableCouponWrapper({
   children,
 }: {
   children: ReactNode;
 }) {
   return (
     <div className="space-y-4 mt-6">
-      <SaleControls />
+      <CouponControls />
 
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
         <table className="min-w-full text-[16px] text-left">

@@ -1,3 +1,5 @@
+import { IProduct } from "./product";
+
 export interface Address {
   _id: string;
   street: string;
@@ -12,13 +14,17 @@ export interface IUser {
   name: string;
   phone: string | null;
   role: "user" | "admin";
+
+  is_active: boolean;
+  addresses?: Address[];
+  wishlist?: IProduct[];
   active: boolean;
-  addresses: Address[];
   defaultAddress?: string;
 }
 
 export type AuthContextType = {
   user: IUser | null;
+  setUser: (user: IUser | null) => void;
   login: (
     identifier: string,
     password: string,
@@ -40,4 +46,26 @@ export type AuthContextType = {
     password: string;
     confirmPassword: string;
   } | null;
+
+  addWishlist: (productId: string) => void;
+  removeWishlist: (productId: string) => void;
+  wishlist: IProduct[];
 };
+
+export interface UserData {
+  _id: string;
+  email: string;
+  name: string;
+  phone?: string | null;
+  avatar?: string | null;
+  role: "user" | "admin";
+  is_active: boolean;
+  addresses?: Address[];
+}
+
+export interface UpdateUserData {
+  name?: string;
+  phone?: string;
+  role?: string;
+  addresses?: IUser["addresses"];
+}

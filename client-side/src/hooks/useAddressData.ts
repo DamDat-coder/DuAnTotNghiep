@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 
+
 interface Province {
   code: number;
   name: string;
+  districts?: District[]; 
 }
 
 interface District {
   code: number;
   name: string;
   province_code: number;
+  wards?: Ward[];
 }
 
 interface Ward {
@@ -29,7 +32,9 @@ export function useAddressData() {
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/p/")
       .then((res) => res.json())
-      .then(setProvinces)
+      .then((data) => {
+        setProvinces(data);
+      })
       .catch(() => setProvinces([]));
   }, []);
 
@@ -39,8 +44,8 @@ export function useAddressData() {
         .then((res) => res.json())
         .then((data) => {
           setDistricts(data.districts);
-          setDistrictCode(null); // reset khi đổi tỉnh
-          setWards([]);
+          setDistrictCode(null); 
+          setWards([]); 
           setWardCode(null);
         })
         .catch(() => {
@@ -59,7 +64,7 @@ export function useAddressData() {
         .then((res) => res.json())
         .then((data) => {
           setWards(data.wards);
-          setWardCode(null); // reset khi đổi quận
+          setWardCode(null); 
         })
         .catch(() => setWards([]));
     } else {

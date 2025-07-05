@@ -98,7 +98,7 @@ export async function fetchAllOrders(
 // 4. Lấy chi tiết đơn hàng theo ID (cho cả user lẫn admin)
 export async function fetchOrderById(id: string): Promise<any> {
   try {
-    const response = await fetchWithAuth<any>(`${API_BASE_URL}/order/${id}`, {
+    const response = await fetchWithAuth<any>(`${API_BASE_URL}/orders/${id}`, {
       cache: "no-store",
     });
     return response;
@@ -114,7 +114,7 @@ export async function updateOrderStatus(
   status: string
 ): Promise<void> {
   try {
-    await fetchWithAuth(`${API_BASE_URL}/order/${orderId}/status`, {
+    await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -129,7 +129,7 @@ export async function updateOrderStatus(
 export async function fetchMyOrders(userId: string): Promise<{ data: any[] }> {
   try {
     const response = await fetchWithAuth<{ data: any[] }>(
-      `${API_BASE_URL}/order/user/${userId}`,
+      `${API_BASE_URL}/orders/user/${userId}`,
       { cache: "no-store" }
     );
     return response;
@@ -142,12 +142,28 @@ export async function fetchMyOrders(userId: string): Promise<{ data: any[] }> {
 // 7. Hủy đơn hàng (người dùng)
 export async function cancelOrder(orderId: string): Promise<void> {
   try {
-    await fetchWithAuth(`${API_BASE_URL}/order/${orderId}/cancel`, {
+    await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/cancel`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Error canceling order:", error);
+    throw error;
+  }
+}
+
+// 6. Lấy danh sách đơn hàng của user đang đăng nhập
+export async function fetchOrdersUser(
+  userId: string
+): Promise<{ data: any[] }> {
+  try {
+    const response = await fetchWithAuth<{ data: any[] }>(
+      `${API_BASE_URL}/orders/user/${userId}`,
+      { cache: "no-store" }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching my orders:", error);
     throw error;
   }
 }

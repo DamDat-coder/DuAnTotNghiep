@@ -45,11 +45,17 @@ export default function ProductGrid({
   ];
   const currentFilters = {
     id_cate: searchParams.get("id_cate") || undefined,
-    sort_by: searchParams.get("sort_by") && validSortOptions.includes(searchParams.get("sort_by") as SortOption)
-      ? (searchParams.get("sort_by") as SortOption)
+    sort_by:
+      searchParams.get("sort_by") &&
+      validSortOptions.includes(searchParams.get("sort_by") as SortOption)
+        ? (searchParams.get("sort_by") as SortOption)
+        : undefined,
+    minPrice: searchParams.get("minPrice")
+      ? Number(searchParams.get("minPrice"))
       : undefined,
-    minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
-    maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
+    maxPrice: searchParams.get("maxPrice")
+      ? Number(searchParams.get("maxPrice"))
+      : undefined,
     color: searchParams.get("color") || undefined,
     size: searchParams.get("size") || undefined,
   };
@@ -110,6 +116,8 @@ export default function ProductGrid({
 
   const renderProductCard = (product: IProduct) => {
     const { price, discountPercent } = getLowestPriceVariant(product);
+    console.log("Product:", product);
+
     const discountedPrice = Math.round(price * (1 - discountPercent / 100));
     return (
       <div className="w-full flex flex-col bg-white relative">

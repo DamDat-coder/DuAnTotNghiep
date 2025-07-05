@@ -72,7 +72,6 @@ export default function UserDropdown() {
             type="button"
             className="block w-full text-[0.875rem] font-medium text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
             onClick={() => {
-              logout();
               setIsDropdownOpen(false);
             }}
           >

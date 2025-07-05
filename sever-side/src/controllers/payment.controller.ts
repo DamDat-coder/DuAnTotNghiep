@@ -112,7 +112,6 @@ export const checkVNPayReturn = async (req: Request, res: Response) => {
 };
 
 // Tạo URL thanh toán ZaloPay
-// Tạo URL thanh toán ZaloPay
 export const createZaloPayPayment = async (req: Request, res: Response) => {
   try {
     const { totalPrice, userId, orderInfo } = req.body;
@@ -133,7 +132,6 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
     });
 
     const embed_data = {
-      redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
       redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
     };
 
@@ -164,10 +162,6 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       .createHmac("sha256", ZALO_PAY.key1)
       .update(dataString)
       .digest("hex");
-    order.mac = crypto
-      .createHmac("sha256", ZALO_PAY.key1)
-      .update(dataString)
-      .digest("hex");
 
     const params = new URLSearchParams();
     Object.entries(order).forEach(([key, value]) => {
@@ -183,25 +177,13 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
         message: "Tạo đơn ZaloPay thất bại!",
         zaloRes: zaloRes.data,
       });
-      return res.status(400).json({
-        message: "Tạo đơn ZaloPay thất bại!",
-        zaloRes: zaloRes.data,
-      });
     }
 
     return res.status(200).json({
       paymentUrl: zaloRes.data.order_url,
       paymentId: payment._id,
     });
-    return res.status(200).json({
-      paymentUrl: zaloRes.data.order_url,
-      paymentId: payment._id,
-    });
   } catch (error) {
-    return res.status(500).json({
-      message: "Không tạo được đơn ZaloPay",
-      error: error instanceof Error ? error.message : error,
-    });
     return res.status(500).json({
       message: "Không tạo được đơn ZaloPay",
       error: error instanceof Error ? error.message : error,
@@ -213,18 +195,7 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
 export const checkZaloPayReturn = async (req: Request, res: Response) => {
   try {
     const {
-      app_id,
-      app_trans_id,
-      app_time,
-      app_user,
-      amount,
-      embed_data,
-      item,
-      description,
-      status,
-      message,
-      trans_id,
-      mac,
+
       app_id,
       app_trans_id,
       app_time,
@@ -250,22 +221,8 @@ export const checkZaloPayReturn = async (req: Request, res: Response) => {
       status,
       message,
       trans_id,
-      app_id,
-      app_trans_id,
-      app_user,
-      amount,
-      app_time,
-      embed_data,
-      item,
-      status,
-      message,
-      trans_id,
     ].join("|");
 
-    const expectedMac = crypto
-      .createHmac("sha256", ZALO_PAY.key1)
-      .update(dataString)
-      .digest("hex");
     const expectedMac = crypto
       .createHmac("sha256", ZALO_PAY.key1)
       .update(dataString)
@@ -275,16 +232,10 @@ export const checkZaloPayReturn = async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ return_code: -1, return_message: "mac not valid" });
-      return res
-        .status(400)
-        .json({ return_code: -1, return_message: "mac not valid" });
     }
 
     const payment = await Payment.findOne({ transaction_code: app_trans_id });
     if (!payment) {
-      return res
-        .status(404)
-        .json({ return_code: -1, return_message: "payment not found" });
       return res
         .status(404)
         .json({ return_code: -1, return_message: "payment not found" });

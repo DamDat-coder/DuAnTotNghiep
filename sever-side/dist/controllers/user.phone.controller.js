@@ -8,21 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifySmsOTP = exports.sendSmsOTP = void 0;
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-const server_sdk_1 = require("@vonage/server-sdk");
-const auth_1 = require("@vonage/auth");
-const credentials = new auth_1.Auth({
-    apiKey: process.env.VONAGE_API_KEY,
-    apiSecret: process.env.VONAGE_API_SECRET,
-});
-const vonage = new server_sdk_1.Vonage(credentials);
-const otpMap = new Map();
+const vonage_1 = require("../config/vonage");
 // Gửi OTP
 const sendSmsOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -31,9 +19,9 @@ const sendSmsOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             return res.status(400).json({ success: false, message: "Vui lòng nhập số điện thoại." });
         }
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        otpMap.set(phone, otp);
+        vonage_1.otpMap.set(phone, otp);
         console.log(`📩 Gửi OTP ${otp} đến số: ${phone}`);
-        yield vonage.sms.send({
+        yield vonage_1.vonage.sms.send({
             to: phone,
             from: process.env.VONAGE_FROM || "Shop4Real",
             text: `Mã OTP Shop4Real của bạn là: ${otp}`,
@@ -56,14 +44,14 @@ const verifySmsOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!phone || !otp) {
             return res.status(400).json({ success: false, message: "Thiếu số điện thoại hoặc mã OTP." });
         }
-        const savedOTP = otpMap.get(phone);
+        const savedOTP = vonage_1.otpMap.get(phone);
         if (!savedOTP) {
             return res.status(400).json({ success: false, message: "OTP không tồn tại hoặc đã hết hạn." });
         }
         if (otp !== savedOTP) {
             return res.status(401).json({ success: false, message: "Mã OTP không chính xác." });
         }
-        otpMap.delete(phone);
+        vonage_1.otpMap.delete(phone);
         return res.json({ success: true, message: "Xác minh OTP thành công." });
     }
     catch (error) {

@@ -10,7 +10,9 @@ const ActiveTabContext = createContext<{
 });
 
 // Provider component to wrap your app with
-export const ActiveTabProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+export const ActiveTabProvider: React.FC<React.PropsWithChildren<{}>> = ({
+  children,
+}) => {
   const [activeTab, setActiveTab] = useState<string>("main");
 
   return (

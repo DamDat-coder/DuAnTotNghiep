@@ -70,6 +70,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("accessToken", accessToken);
       }
 
+      // Fetch wishlist after successful login
+      await fetchWishlist(userData.id);
+
       if (userData.role === "admin") {
         window.location.assign("/admin/dashboard");
       }
@@ -98,6 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         setUser(userData);
         localStorage.setItem("accessToken", accessToken);
+        // Fetch wishlist after successful registration
+        await fetchWishlist(userData.id);
       } else {
         setRegisterFormData({
           name,
@@ -124,6 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     document.cookie = "refreshToken=; path=/; max-age=0";
     window.location.href = "/";
   };
+
   const loginWithGoogle = async (id_token: string) => {
     try {
       const data = await googleLogin(id_token);
@@ -205,8 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     try {
       await addProductToWishlistApi(user.id, productId); // Gọi API thêm sản phẩm vào wishlist
-      const updatedWishlist = [...wishlist, { id: productId }] as IProduct[]; // Cập nhật wishlist
-      setWishlist(updatedWishlist);
+      await fetchWishlist(user.id); // Refresh wishlist để có dữ liệu đầy đủ
       toast.success("Sản phẩm đã được thêm vào danh sách yêu thích.");
     } catch (error) {
       toast.error("Không thể thêm sản phẩm vào danh sách yêu thích.");

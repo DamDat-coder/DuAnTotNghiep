@@ -127,11 +127,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithGoogle = async (id_token: string) => {
     try {
       const data = await googleLogin(id_token);
-
       const { user: userData, accessToken } = data;
       setUser(userData);
       localStorage.setItem("accessToken", accessToken);
-
+      await fetchWishlist(userData.id); // Lấy wishlist sau khi đăng nhập bằng Google
       return true;
     } catch (err) {
       console.error("Google login error", err);
@@ -140,28 +139,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkAuth = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      console.log("No accessToken, clearing user state");
+      setUser(null);
+      setWishlist([]);
+      return;
+    }
+
     try {
       const userData = await fetchUser();
       if (userData) {
         setUser(userData);
-        await fetchWishlist(userData.id); // Lấy wishlist khi có user data
+        await fetchWishlist(userData.id); // Lấy wishlist khi có user
       } else {
-        setUser(null);
+        throw new Error("No user data returned");
       }
     } catch (error: any) {
-      console.error("checkAuth - Error:", error);
-      if (error.message.includes("401")) {
+      if (error?.response?.status === 401) {
         try {
+          console.log("Access token expired, attempting to refresh...");
           const newToken = await refreshToken();
-          localStorage.setItem("accessToken", String(newToken));
-          const userData = await fetchUser();
-          setUser(userData || null);
+          if (newToken) {
+            localStorage.setItem("accessToken", newToken);
+            const userData = await fetchUser();
+            if (userData) {
+              setUser(userData);
+              await fetchWishlist(userData.id); // Lấy wishlist sau khi refresh token
+            } else {
+              throw new Error("No user data after token refresh");
+            }
+          } else {
+            throw new Error("Refresh token failed");
+          }
         } catch (refreshError) {
-          console.error("checkAuth - Refresh token failed:", refreshError);
+          console.error("Refresh token failed:", refreshError);
           setUser(null);
+          setWishlist([]);
+          localStorage.removeItem("accessToken");
+          document.cookie = "refreshToken=; path=/; max-age=0";
+          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
         }
       } else {
+        console.error("Unexpected error in checkAuth:", error);
         setUser(null);
+        setWishlist([]);
+        localStorage.removeItem("accessToken");
+        toast.error("Có lỗi xảy ra khi xác thực người dùng.");
       }
     }
   };

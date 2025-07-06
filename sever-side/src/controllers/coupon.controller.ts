@@ -1,22 +1,51 @@
 import { Request, Response } from 'express';
-import Coupon from '../models/coupon.model';
-import Category from '../models/category.model';
-import Product from '../models/product.model';
+import Coupon from "../models/coupon.model";
+import NotificationModel from "../models/notification.model";
 import mongoose from 'mongoose';
 
 // Lấy tất cả coupon
 export const getAllCoupons = async (req: Request, res: Response) => {
   try {
-    const coupons = await Coupon.find()
-      .populate('applicableCategories', 'name')
-      .populate('applicableProducts', 'name');
+    const {
+      isActive,
+      search,
+      page = "1",
+      limit = "10"
+    } = req.query;
+    const filter: any = {};
 
-    res.status(200).json(coupons);
+    if (isActive !== undefined) {
+      filter.is_active = isActive === "true";
+    }
+    if (search) {
+      filter.code = { $regex: search as string, $options: "i" };
+    }
+
+    const pageNumber = parseInt(page as string) || 1;
+    const limitNumber = parseInt(limit as string) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+    const total = await Coupon.countDocuments(filter);
+    const coupons = await Coupon.find(filter)
+      .populate("applicableCategories", "name")
+      .populate("applicableProducts", "name")
+      .skip(skip)
+      .limit(limitNumber)
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      data: coupons,
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(total / limitNumber),
+      },
+    });
   } catch (error: any) {
-    console.error("Lỗi khi lấy coupon:", error);
+    console.error("Lỗi khi lấy danh sách coupon:", error);
     res.status(500).json({
       message: "Lỗi server",
-      error: error.message || error
+      error: error.message || error,
     });
   }
 };
@@ -56,7 +85,6 @@ export const createCoupon = async (req: Request, res: Response) => {
       applicableProducts,
     } = req.body;
 
-    // Kiểm tra trùng mã
     const existing = await Coupon.findOne({ code });
     if (existing) {
       return res.status(400).json({ message: 'Mã giảm giá đã tồn tại' });
@@ -79,9 +107,19 @@ export const createCoupon = async (req: Request, res: Response) => {
     });
 
     await newCoupon.save();
-    res.status(201).json({ message: 'Tạo mã giảm giá thành công', data: newCoupon });
+
+    await NotificationModel.create({
+      userId: null,
+      title: "Mã giảm giá mới vừa được xuất bản!",
+      message: `Mã "${code}" hiện đã có hiệu lực từ ngày ${new Date(startDate).toLocaleDateString("vi-VN")}.`,
+      type: "coupon",
+      isRead: false,
+    });
+
+    res.status(201).json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+    console.error("Error creating coupon:", error);
+    res.status(500).json({ message: "Lỗi server", error });
   }
 };
 

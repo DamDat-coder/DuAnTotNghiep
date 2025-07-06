@@ -10,7 +10,4 @@ router.get('/check-payment-vnpay', payment_controller_1.checkVNPayReturn);
 // ZaloPay
 router.post("/create-payment-zalopay", payment_controller_1.createZaloPayPayment);
 router.get("/zalopay-callback", payment_controller_1.checkZaloPayReturn);
-// Momo
-router.post("/create-momo-payment", payment_controller_1.createMomoPayment);
-router.get("/momo-callback", payment_controller_1.checkMomoReturn);
 exports.default = router;

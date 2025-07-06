@@ -3,6 +3,8 @@ import OrderModel from "../models/order.model";
 import ProductModel from "../models/product.model";
 import CouponModel from "../models/coupon.model";
 import PaymentModel from "../models/payment.model";
+import NotificationModel from "../models/notification.model";
+import UserModel from "../models/user.model";
 
 // Tạo đơn hàng
 export const createOrder = async (req: Request, res: Response) => {
@@ -18,26 +20,15 @@ export const createOrder = async (req: Request, res: Response) => {
     let shipping = 0;
     let note = "";
 
-    // Nếu là đơn COD thì lấy từ order_info truyền trực tiếp
     if (!paymentId) {
       if (!order_info) return res.status(400).json({ success: false, message: "Thiếu thông tin đơn hàng." });
 
-      ({
-        paymentMethod,
-        userId,
-        address_id,
-        shippingAddress,
-        couponId,
-        items,
-        shipping = 0,
-        note = ""
-      } = order_info);
+      ({ paymentMethod, userId, address_id, shippingAddress, couponId, items, shipping = 0, note = "" } = order_info);
 
       if (paymentMethod !== "cod") {
         return res.status(400).json({ success: false, message: "Phương thức thanh toán không hợp lệ." });
       }
     } else {
-      // Với các phương thức online (vnpay, momo,...)
       const payment = await PaymentModel.findById(paymentId);
       if (!payment || !payment.order_info || !payment.userId) {
         return res.status(400).json({ success: false, message: "Thông tin thanh toán không hợp lệ." });
@@ -52,27 +43,16 @@ export const createOrder = async (req: Request, res: Response) => {
         return res.status(409).json({ success: false, message: "Đơn hàng đã được tạo từ giao dịch này." });
       }
 
-      ({
-        paymentMethod,
-        address_id,
-        shippingAddress,
-        couponId,
-        items,
-        shipping = 0,
-        note = ""
-      } = payment.order_info);
+      ({ paymentMethod, address_id, shippingAddress, couponId, items, shipping = 0, note = "" } = payment.order_info);
       userId = payment.userId;
     }
 
-    // Tính toán đơn hàng
     const orderItems = [];
     let totalPrice = 0;
 
     for (const item of items) {
       const product = await ProductModel.findById(item.productId);
-      if (!product) {
-        return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm." });
-      }
+      if (!product) return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm." });
 
       const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
       if (!variant || variant.stock < item.quantity) {
@@ -97,7 +77,6 @@ export const createOrder = async (req: Request, res: Response) => {
       await product.save();
     }
 
-    // Áp dụng mã giảm giá
     if (couponId) {
       const coupon = await CouponModel.findById(couponId);
       if (coupon && coupon.is_active) {
@@ -140,6 +119,26 @@ export const createOrder = async (req: Request, res: Response) => {
       paymentId: paymentId || null,
     });
 
+    // Gửi thông báo cho người dùng đã đặt hàng
+    await NotificationModel.create({
+      userId,
+      title: "Đơn hàng của bạn đã được tạo thành công!",
+      message: `Đơn hàng #${order._id} đã được xác nhận. Cảm ơn bạn đã mua sắm tại Shop4Real!`,
+      type: "order",
+      isRead: false,
+    });
+
+    // Gửi thông báo cho tất cả admin
+    const admins = await UserModel.find({ role: "admin" }).select("_id").lean();
+    const adminNotis = admins.map((admin) => ({
+      userId: admin._id,
+      title: "Có đơn hàng mới!",
+      message: `Đơn hàng #${order._id} vừa được tạo bởi người dùng.`,
+      type: "order",
+      isRead: false,
+    }));
+    await NotificationModel.insertMany(adminNotis);
+
     return res.status(201).json({ success: true, message: "Tạo đơn hàng thành công.", data: order });
   } catch (err) {
     console.error("Lỗi tạo đơn hàng:", err);
@@ -150,15 +149,60 @@ export const createOrder = async (req: Request, res: Response) => {
 // Lấy tất cả đơn hàng (Admin)
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const orders = await OrderModel.find()
-      .populate("userId", "name email")
-      .populate("couponId", "code discountValue")
-      .populate("paymentId", "amount status")
-      .sort({ createdAt: -1 });
+    const {
+      page = "1",
+      limit = "10",
+      search,
+      status,
+    } = req.query;
 
-    res.status(200).json({ success: true, data: orders });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+    const pageNum = Math.max(parseInt(page as string), 1);
+    const limitNum = Math.max(parseInt(limit as string), 1);
+    const skip = (pageNum - 1) * limitNum;
+
+    const query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (search) {
+      const users = await UserModel.find({
+        name: { $regex: search as string, $options: "i" },
+      }).select("_id");
+
+      const userIds = users.map((user) => user._id);
+      query.userId = { $in: userIds };
+    }
+
+    const [orders, total] = await Promise.all([
+      OrderModel.find(query)
+        .populate("userId", "name email")
+        .populate("couponId", "code discountValue")
+        .populate("paymentId", "amount status paymentMethod")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      OrderModel.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: orders,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err: any) {
+    console.error("Lỗi khi lấy đơn hàng:", err);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ.",
+      error: err.message,
+    });
   }
 };
 
@@ -193,7 +237,7 @@ export const getOrderById = async (req: Request, res: Response) => {
   }
 };
 
-// Cập nhật trạng thái đơn hàng
+// Cập nhật trạng thái đơn hàng 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
@@ -207,13 +251,25 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       req.params.id,
       { status },
       { new: true }
-    );
+    ).populate("userId", "name email");
 
     if (!order) {
       return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
     }
 
-    res.status(200).json({ success: true, message: "Cập nhật trạng thái thành công.", data: order });
+    await NotificationModel.create({
+      userId: order.userId._id,
+      title: `Đơn hàng #${order._id} đã được cập nhật`,
+      message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
+      type: "order",
+      isRead: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật trạng thái thành công.",
+      data: order,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }

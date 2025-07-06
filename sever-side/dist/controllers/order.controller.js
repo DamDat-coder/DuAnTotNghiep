@@ -17,6 +17,8 @@ const order_model_1 = __importDefault(require("../models/order.model"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
+const notification_model_1 = __importDefault(require("../models/notification.model"));
+const user_model_1 = __importDefault(require("../models/user.model"));
 // Tạo đơn hàng
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
@@ -30,26 +32,15 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         let items;
         let shipping = 0;
         let note = "";
-        // Nếu là đơn COD thì lấy từ order_info truyền trực tiếp
         if (!paymentId) {
             if (!order_info)
                 return res.status(400).json({ success: false, message: "Thiếu thông tin đơn hàng." });
-            ({
-                paymentMethod,
-                userId,
-                address_id,
-                shippingAddress,
-                couponId,
-                items,
-                shipping = 0,
-                note = ""
-            } = order_info);
+            ({ paymentMethod, userId, address_id, shippingAddress, couponId, items, shipping = 0, note = "" } = order_info);
             if (paymentMethod !== "cod") {
                 return res.status(400).json({ success: false, message: "Phương thức thanh toán không hợp lệ." });
             }
         }
         else {
-            // Với các phương thức online (vnpay, momo,...)
             const payment = yield payment_model_1.default.findById(paymentId);
             if (!payment || !payment.order_info || !payment.userId) {
                 return res.status(400).json({ success: false, message: "Thông tin thanh toán không hợp lệ." });
@@ -61,25 +52,15 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             if (existingOrder) {
                 return res.status(409).json({ success: false, message: "Đơn hàng đã được tạo từ giao dịch này." });
             }
-            ({
-                paymentMethod,
-                address_id,
-                shippingAddress,
-                couponId,
-                items,
-                shipping = 0,
-                note = ""
-            } = payment.order_info);
+            ({ paymentMethod, address_id, shippingAddress, couponId, items, shipping = 0, note = "" } = payment.order_info);
             userId = payment.userId;
         }
-        // Tính toán đơn hàng
         const orderItems = [];
         let totalPrice = 0;
         for (const item of items) {
             const product = yield product_model_1.default.findById(item.productId);
-            if (!product) {
+            if (!product)
                 return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm." });
-            }
             const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
             if (!variant || variant.stock < item.quantity) {
                 return res.status(400).json({ success: false, message: "Biến thể không hợp lệ hoặc hết hàng." });
@@ -99,7 +80,6 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             product.salesCount += item.quantity;
             yield product.save();
         }
-        // Áp dụng mã giảm giá
         if (couponId) {
             const coupon = yield coupon_model_1.default.findById(couponId);
             if (coupon && coupon.is_active) {
@@ -136,6 +116,24 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             items: orderItems,
             paymentId: paymentId || null,
         });
+        // Gửi thông báo cho người dùng đã đặt hàng
+        yield notification_model_1.default.create({
+            userId,
+            title: "Đơn hàng của bạn đã được tạo thành công!",
+            message: `Đơn hàng #${order._id} đã được xác nhận. Cảm ơn bạn đã mua sắm tại Shop4Real!`,
+            type: "order",
+            isRead: false,
+        });
+        // Gửi thông báo cho tất cả admin
+        const admins = yield user_model_1.default.find({ role: "admin" }).select("_id").lean();
+        const adminNotis = admins.map((admin) => ({
+            userId: admin._id,
+            title: "Có đơn hàng mới!",
+            message: `Đơn hàng #${order._id} vừa được tạo bởi người dùng.`,
+            type: "order",
+            isRead: false,
+        }));
+        yield notification_model_1.default.insertMany(adminNotis);
         return res.status(201).json({ success: true, message: "Tạo đơn hàng thành công.", data: order });
     }
     catch (err) {
@@ -147,15 +145,49 @@ exports.createOrder = createOrder;
 // Lấy tất cả đơn hàng (Admin)
 const getOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const orders = yield order_model_1.default.find()
-            .populate("userId", "name email")
-            .populate("couponId", "code discountValue")
-            .populate("paymentId", "amount status")
-            .sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: orders });
+        const { page = "1", limit = "10", search, status, } = req.query;
+        const pageNum = Math.max(parseInt(page), 1);
+        const limitNum = Math.max(parseInt(limit), 1);
+        const skip = (pageNum - 1) * limitNum;
+        const query = {};
+        if (status) {
+            query.status = status;
+        }
+        if (search) {
+            const users = yield user_model_1.default.find({
+                name: { $regex: search, $options: "i" },
+            }).select("_id");
+            const userIds = users.map((user) => user._id);
+            query.userId = { $in: userIds };
+        }
+        const [orders, total] = yield Promise.all([
+            order_model_1.default.find(query)
+                .populate("userId", "name email")
+                .populate("couponId", "code discountValue")
+                .populate("paymentId", "amount status paymentMethod")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            order_model_1.default.countDocuments(query),
+        ]);
+        res.status(200).json({
+            success: true,
+            data: orders,
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum),
+            },
+        });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+        console.error("Lỗi khi lấy đơn hàng:", err);
+        res.status(500).json({
+            success: false,
+            message: "Lỗi máy chủ.",
+            error: err.message,
+        });
     }
 });
 exports.getOrders = getOrders;
@@ -190,7 +222,7 @@ const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getOrderById = getOrderById;
-// Cập nhật trạng thái đơn hàng
+// Cập nhật trạng thái đơn hàng 
 const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { status } = req.body;
@@ -198,11 +230,22 @@ const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ." });
         }
-        const order = yield order_model_1.default.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const order = yield order_model_1.default.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate("userId", "name email");
         if (!order) {
             return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
         }
-        res.status(200).json({ success: true, message: "Cập nhật trạng thái thành công.", data: order });
+        yield notification_model_1.default.create({
+            userId: order.userId._id,
+            title: `Đơn hàng #${order._id} đã được cập nhật`,
+            message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
+            type: "order",
+            isRead: false,
+        });
+        res.status(200).json({
+            success: true,
+            message: "Cập nhật trạng thái thành công.",
+            data: order,
+        });
     }
     catch (err) {
         res.status(500).json({ success: false, message: "Lỗi máy chủ." });

@@ -4,72 +4,108 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import TableNewWrapper from "@/admin/components/Admin_New/TableNewWrapper";
 import NewControlBar from "@/admin/components/Admin_New/NewControlBar";
-import AddNewModal from "@/admin/components/Admin_New/AddNewModal";
 import { getNewsList } from "@/services/newApi";
 import { News, NewsFilterStatus } from "@/types/new";
-import NewsTableBody from "@/admin/components/Admin_New/NewTableBody";
 import { Pagination } from "@/admin/components/ui/Panigation";
+import NewsTableBody from "@/admin/components/Admin_New/NewTableBody";
 
 export default function NewsPage() {
   const [newsList, setNewsList] = useState<News[]>([]);
-  const [filteredNews, setFilteredNews] = useState<News[]>([]);
+  const [displayedNews, setDisplayedNews] = useState<News[]>([]); // For client-side search preview
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<NewsFilterStatus>("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [token, setToken] = useState<string | null>(null);
   const pageSize = 10;
 
-  // Lấy token từ localStorage khi mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem("accessToken");
-    setToken(storedToken);
-  }, []);
 
-  // Lấy danh sách tin tức từ API
+
+  // Fetch news when filter/debouncedSearch/page changes
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const { news, totalPages } = await getNewsList(currentPage, pageSize);
-        setNewsList(news);
-        setTotalPages(totalPages);
+        console.log("Fetching news with params:", {
+          currentPage,
+          pageSize,
+          filter,
+          debouncedSearch,
+        }); // Debug
+        let isPublished: boolean | undefined = undefined;
+        if (filter === "published") isPublished = true;
+        else if (filter === "draft") isPublished = false;
+
+        const response = await getNewsList(
+          currentPage,
+          pageSize,
+          undefined,
+          isPublished,
+          debouncedSearch || undefined
+        );
+        console.log("API response:", response); // Debug
+
+        let filteredNews = response.news;
+        if (filter === "upcoming") {
+          filteredNews = response.news.filter(
+            (item) =>
+              item.published_at &&
+              new Date(item.published_at) > new Date() &&
+              !item.is_published
+          );
+        }
+        setNewsList(filteredNews);
+        setDisplayedNews(filteredNews); // Initialize displayed news
+        setTotalPages(response.totalPages);
         setLoading(false);
+        console.log("News list updated:", filteredNews); // Debug
       } catch (err: any) {
-        setError("Không thể tải danh sách tin tức");
-        setLoading(false);
+        if (err.name !== "AbortError") {
+          console.error("Fetch error:", err.message); // Debug
+          setError(err.message || "Không thể tải danh sách tin tức");
+          setLoading(false);
+        }
       }
     };
     fetchNews();
-  }, [currentPage]);
+    return () => abortController.abort();
+  }, [currentPage, debouncedSearch, filter]);
 
-  // Lọc và tìm kiếm phía client
+  // Client-side search preview
   useEffect(() => {
-    const filtered = newsList.filter((item) => {
-      const matchFilter = filter === "all" || item.status === filter;
-      const matchSearch =
-        item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.category_id?.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.user_id?.name.toLowerCase().includes(search.toLowerCase());
-      return matchFilter && matchSearch;
-    });
-    setFilteredNews(filtered);
-    setCurrentPage(1); // Reset về trang 1 khi lọc hoặc tìm kiếm
-  }, [newsList, filter, search]);
+    console.log("Applying client-side search preview:", search); // Debug
+    if (search) {
+      const filtered = newsList.filter((news) =>
+        news.title.toLowerCase().includes(search.toLowerCase())
+      );
+      setDisplayedNews(filtered);
+    } else {
+      setDisplayedNews(newsList); // Reset to full list when search is cleared
+    }
+  }, [search, newsList]);
 
-  // Xử lý xóa tin tức
-  const handleDelete = (id: string) => {
-    setNewsList(newsList.filter((news) => news.id !== id));
-    setFilteredNews(filteredNews.filter((news) => news.id !== id));
+  // Handle search changes
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setDebouncedSearch(val); // Update debouncedSearch immediately for API call
+    setCurrentPage(1); // Reset to page 1
+    console.log("Search changed:", val); // Debug
   };
 
-  // Tính toán dữ liệu phân trang
-  const paginatedNews = filteredNews.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // Handle news deletion
+  const handleDelete = (id: string) => {
+    setNewsList((prev) => prev.filter((news) => news.id !== id));
+    setDisplayedNews((prev) => prev.filter((news) => news.id !== id));
+  };
+
+  // Debug newsList and displayedNews
+  useEffect(() => {
+    console.log("Current newsList:", newsList); // Debug
+    console.log("Current displayedNews:", displayedNews); // Debug
+  }, [newsList, displayedNews]);
 
   if (loading) {
     return (
@@ -93,22 +129,47 @@ export default function NewsPage() {
     );
   }
 
+  if (displayedNews.length === 0) {
+    return (
+      <AdminLayout
+        pageTitle="Tin tức"
+        pageSubtitle="Quản lý bài viết và trạng thái xuất bản"
+      >
+        <div className="space-y-4 mt-6">
+          <NewControlBar
+            onFilterChange={(val) => {
+              setFilter(val as NewsFilterStatus);
+              setCurrentPage(1);
+            }}
+            onSearchChange={handleSearchChange}
+            loading={loading}
+          />
+          <div className="text-center py-4 text-gray-500">
+            Không tìm thấy tin tức phù hợp với tiêu chí tìm kiếm.
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout
       pageTitle="Tin tức"
       pageSubtitle="Quản lý bài viết và trạng thái xuất bản"
     >
       <div className="space-y-4 mt-6">
-        <div className="flex justify-between items-center">
-          <NewControlBar
-            onFilterChange={setFilter}
-            onSearchChange={setSearch}
-          />
-        </div>
+        <NewControlBar
+          onFilterChange={(val) => {
+            setFilter(val as NewsFilterStatus);
+            setCurrentPage(1);
+          }}
+          onSearchChange={handleSearchChange}
+          loading={loading}
+        />
         <TableNewWrapper>
           <NewsTableBody
-            newsList={paginatedNews}
-            token={token}
+            newsList={displayedNews} // Use displayedNews for rendering
+            token={null}
             onDelete={handleDelete}
           />
         </TableNewWrapper>

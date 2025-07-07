@@ -10,7 +10,7 @@ import { fetchCategoryTree } from "@/services/categoryApi";
 interface EditCouponModalProps {
   coupon: Coupon;
   onClose: () => void;
-  onSave: (updatedCoupon: Coupon) => void; // Callback to update parent state
+  onSave: (updatedCoupon: Coupon) => void;
 }
 
 export default function EditCouponModal({
@@ -18,11 +18,13 @@ export default function EditCouponModal({
   onClose,
   onSave,
 }: EditCouponModalProps) {
+  const [mounted, setMounted] = useState(false);
   const startDateRef = useRef<HTMLInputElement | null>(null);
   const endDateRef = useRef<HTMLInputElement | null>(null);
   const [categories, setCategories] = useState<ICategoryNews[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Chỉ format date khi component đã mount để tránh hydration mismatch
   const [form, setForm] = useState({
     code: coupon.code,
     category: coupon.applicableCategories?.[0]?._id || "",
@@ -30,12 +32,35 @@ export default function EditCouponModal({
     value: coupon.discountValue.toString(),
     minOrder: coupon.minOrderAmount?.toString() || "",
     maxDiscount: coupon.maxDiscountAmount?.toString() || "",
-    startDate: new Date(coupon.startDate).toISOString().split("T")[0],
-    endDate: new Date(coupon.endDate).toISOString().split("T")[0],
+    startDate: "",
+    endDate: "",
     usage: coupon.usageLimit?.toString() || "",
     description: coupon.description || "",
     is_active: coupon.is_active,
   });
+
+  // Xử lý hydration - chỉ format date sau khi component mount
+  useEffect(() => {
+    setMounted(true);
+    setForm((prev) => ({
+      ...prev,
+      startDate: new Date(coupon.startDate).toISOString().split("T")[0],
+      endDate: new Date(coupon.endDate).toISOString().split("T")[0],
+    }));
+  }, [coupon.startDate, coupon.endDate]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategoryTree();
+        setCategories(data);
+      } catch (err) {
+        setError("Lỗi khi tải danh mục.");
+        console.error("Error loading categories:", err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -87,31 +112,21 @@ export default function EditCouponModal({
       const result = await updateCoupon(coupon._id, payload);
       console.log("Kết quả cập nhật mã giảm giá:", result);
       alert("Cập nhật mã giảm giá thành công!");
-      onSave(result); 
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      onSave(result);
+      onClose();
     } catch (err) {
       console.error("Lỗi khi cập nhật mã giảm giá:", err);
       alert("Đã xảy ra lỗi khi cập nhật mã giảm giá.");
     }
   };
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await fetchCategoryTree();
-        setCategories(data);
-      } catch (err) {
-        setError("Lỗi khi tải danh mục.");
-        console.error("Error loading categories:", err);
-      }
-    };
-    loadCategories();
-  }, []);
-
   const isFormValid =
     form.code && form.value && form.startDate && form.endDate && form.usage;
+
+  // Không render modal cho đến khi component đã mount
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -134,6 +149,14 @@ export default function EditCouponModal({
           </div>
         </div>
         <div className="w-full h-px bg-[#E7E7E7]" />
+
+        {/* Error display */}
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
         <div className="pl-6 pr-6">
           <form className="text-sm" onSubmit={handleSubmit}>
@@ -156,7 +179,7 @@ export default function EditCouponModal({
               <select
                 name="category"
                 value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                onChange={handleChange}
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] appearance-none"
               >
                 <option value="">Chọn danh mục (Nếu có)</option>
@@ -331,7 +354,7 @@ export default function EditCouponModal({
               </div>
             </div>
 
-            <div>
+            <div className="mb-8">
               <label className="block font-bold mb-4">
                 Mô tả chương trình<span className="text-red-500 ml-1">*</span>
               </label>
@@ -346,8 +369,7 @@ export default function EditCouponModal({
 
             {/* Submit */}
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               disabled={!isFormValid}
               className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold mt-4 ${
                 !isFormValid

@@ -94,22 +94,14 @@ export default function UsersPage() {
       )}
 
       {/* Phân trang */}
-      {!loading && users.length > 0 && totalPages > 1 && (
-        <div className="mt-6 flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPage={totalPages}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
-        </div>
-      )}
 
-      {/* Tổng số người dùng */}
-      {!loading && (
-        <p className="text-center mt-4 text-gray-600">
-          Tổng số người dùng: {total}
-        </p>
-      )}
+      <div className="mt-6 flex justify-center">
+        <Pagination
+          currentPage={currentPage}
+          totalPage={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      </div>
     </AdminLayout>
   );
 }

@@ -14,8 +14,17 @@ export interface Coupon {
   usageLimit: number | null;
   usedCount: number;
   is_active: boolean;
-  applicableCategories: ICategoryNews[]; 
-  applicableProducts: string[]; 
+  applicableCategories: ICategoryNews[];
+  applicableProducts: string[];
   createdAt: string;
   updatedAt: string;
+}
+export interface CouponResponse {
+  data: Coupon[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }

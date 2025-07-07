@@ -29,6 +29,7 @@ export interface NewsPayload {
   category_id: ICategoryNews;
   tags?: string[];
   is_published?: boolean;
-  files?: File[];
   thumbnail?: string | null;
+  news_image?: string[];
+  published_at?: Date;
 }

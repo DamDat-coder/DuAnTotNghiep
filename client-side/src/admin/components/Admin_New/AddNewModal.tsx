@@ -4,40 +4,70 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ICategory } from "@/types/category";
-import { News } from "@/types/new";
+import { News, NewsPayload } from "@/types/new";
 import { IUser } from "@/types/auth";
-import { createNews } from "@/services/newApi";
+import { createNews, updateNews } from "@/services/newApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
-import { toast } from "react-hot-toast"; // Import react-hot-toast
+import { toast } from "react-hot-toast";
+import { ClipLoader } from "react-spinners";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
-const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } = process.env;
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET =
+  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_NEW_PRESET;
 
 export default function AddNewModal({ onClose }: { onClose: () => void }) {
+  const [image, setImage] = useState<string | null>(null); // Chỉ dùng URL từ Cloudinary
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [date, setDate] = useState("");
-  const [image, setImage] = useState<string | null>(null);
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);
-
+  const [loading, setLoading] = useState(false);
   const [action, setAction] = useState<"draft" | "preview" | "publish">(
     "draft"
   );
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      setError("Thiếu thông tin Cloudinary hoặc tệp hình ảnh.");
+    console.debug("Debug: Bắt đầu tải ảnh lên Cloudinary");
+    console.debug("Debug: CLOUDINARY_CLOUD_NAME", CLOUDINARY_CLOUD_NAME);
+
+    if (!file) {
+      console.debug("Debug: Không có file được chọn");
+      setError("Không có tệp hình ảnh được chọn.");
       return;
     }
 
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      console.debug("Debug: Thiếu thông tin cấu hình Cloudinary", {
+        CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_UPLOAD_PRESET,
+      });
+      setError("Thiếu thông tin Cloudinary.");
+      return;
+    }
+
+    console.debug("Debug: Thông tin file", {
+      name: file.name,
+      size: `${(file.size / 1024).toFixed(2)} KB`,
+      type: file.type,
+    });
+
+    setLoading(true);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "news");
+
+    console.debug("Debug: Gửi yêu cầu tải ảnh tới Cloudinary", {
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+      folder: "news",
+    });
 
     try {
       const response = await fetch(
@@ -48,13 +78,30 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         }
       );
 
-      if (!response.ok) throw new Error("Upload failed");
+      console.debug("Debug: Phản hồi từ Cloudinary", {
+        status: response.status,
+        statusText: response.statusText,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.debug("Debug: Lỗi từ Cloudinary", errorData);
+        throw new Error("Upload failed");
+      }
 
       const data = await response.json();
-      setImage(data.secure_url);
+      console.debug("Debug: Tải ảnh thành công", {
+        secure_url: data.secure_url,
+        public_id: data.public_id,
+        format: data.format,
+      });
+      setImage(data.secure_url); // Lưu URL sau khi upload
     } catch (err) {
-      console.error("Error uploading to Cloudinary:", err);
+      console.error("Debug: Lỗi khi tải ảnh lên Cloudinary", err);
       setError("Lỗi khi tải hình ảnh lên Cloudinary.");
+    } finally {
+      setLoading(false);
+      console.debug("Debug: Kết thúc quá trình tải ảnh");
     }
   };
 
@@ -77,41 +124,41 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    const payload: News = {
-      _id: null,
-      id: "",
-      user_id: {} as IUser,
+    const payload: NewsPayload = {
       title,
       content,
       slug: title.toLowerCase().replace(/\s+/g, "-"),
       category_id: selectedCategory || { _id: category, name: "" },
-      date: action === "publish" ? date : "",
-      status:
-        action === "publish"
-          ? "published"
-          : action === "draft"
-          ? "draft"
-          : "upcoming",
-      thumbnail: image || null,
       tags,
-      news_image: image ? [image] : [],
-      createdAt: undefined,
-      updatedAt: undefined,
       is_published: action === "publish",
+      thumbnail: image || null,
+      news_image: image ? [image] : [],
       published_at: action === "publish" ? new Date(date) : undefined,
     };
 
     console.log("Payload to send:", payload);
 
     try {
-      await createNews(payload);
+      const createdNews = await createNews(payload);
       toast.success("Tạo tin tức thành công!");
 
-      setTimeout(() => {
-        window.location.reload(); 
-      }, 1000);
+      // Nếu hành động là "publish", cập nhật tin tức để đặt is_published và published_at
+      if (action === "publish") {
+        if (!createdNews.id) {
+          throw new Error("ID tin tức không hợp lệ sau khi tạo");
+        }
+        await updateNews(createdNews.id, {
+          is_published: true,
+          published_at: new Date(date),
+        });
+        toast.success("Cập nhật trạng thái xuất bản thành công!");
+      }
+
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 1000);
     } catch (err: any) {
-      console.error("Lỗi khi tạo tin tức:", err);
+      console.error("Lỗi khi tạo hoặc cập nhật tin tức:", err);
       setError(err.message);
       toast.error("Đã xảy ra lỗi khi tạo tin tức.");
     }
@@ -203,7 +250,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                     />
 
                     <div className="flex gap-2 mt-6">
-                      {/* Button: Lưu bản nháp */}
                       <button
                         type="button"
                         onClick={() => setAction("draft")}
@@ -215,8 +261,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       >
                         Lưu bản nháp
                       </button>
-
-                      {/* Button: Xem trước */}
                       <button
                         type="button"
                         onClick={() => setAction("preview")}
@@ -228,8 +272,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       >
                         Xem trước
                       </button>
-
-                      {/* Button: Xuất bản */}
                       <button
                         type="button"
                         onClick={() => setAction("publish")}
@@ -249,7 +291,14 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       Hình đại diện<span className="text-red-500 ml-1">*</span>
                     </label>
                     <label className="w-[338px] h-[212px] border border-dashed border-gray-300 rounded-[12px] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-                      {image ? (
+                      {loading ? (
+                        <ClipLoader
+                          color="#3B82F6"
+                          loading={loading}
+                          size={40}
+                          aria-label="Đang tải ảnh"
+                        />
+                      ) : image ? (
                         <img
                           src={image}
                           alt="Preview"

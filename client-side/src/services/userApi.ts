@@ -617,7 +617,7 @@ export async function fetchAllUsersAdmin(
   page: number = 1, // Thêm tham số page
   limit: number = 10, // Thêm tham số limit
   role?: string, // Thêm tham số role (tùy chọn)
-  is_block?: boolean // Thêm tham số is_block (tùy chọn)
+  is_active?: boolean 
 ): Promise<{
   users: IUser[] | null;
   total: number;
@@ -631,7 +631,9 @@ export async function fetchAllUsersAdmin(
       limit: limit.toString(),
       ...(search && { search }), // Chỉ thêm search nếu có giá trị
       ...(role && { role }), // Chỉ thêm role nếu có giá trị
-      ...(typeof is_block !== "undefined" && { is_block: is_block.toString() }), // Chỉ thêm is_block nếu được cung cấp
+      ...(typeof is_active !== "undefined" && {
+        is_active: is_active.toString(),
+      }), // Chỉ thêm is_block nếu được cung cấp
     });
 
     const response = await fetchWithAuth<any>(
@@ -654,7 +656,6 @@ export async function fetchAllUsersAdmin(
       avatar: userData.avatar || null,
       role: userData.role,
       is_active: userData.is_active,
-      active: userData.is_active,
       addresses: userData.addresses || [],
     }));
 

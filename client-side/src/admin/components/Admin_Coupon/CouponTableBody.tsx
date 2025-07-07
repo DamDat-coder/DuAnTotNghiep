@@ -1,9 +1,9 @@
-import { deleteCoupon, fetchCoupons } from "@/services/couponApi";
+import { deleteCoupon, updateCouponStatus } from "@/services/couponApi";
 import { Coupon } from "@/types/coupon";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import EditCouponModal from "./EditCouponModal";
-
+import toast from "react-hot-toast";
 
 function SimpleSwitch({
   checked,
@@ -96,7 +96,7 @@ const deleteConfirmation = async (
       alert("Mã giảm giá đã được xóa thành công!");
       onDelete();
     } catch (error) {
-      console.error("Failed to delete coupon:", error);
+      console.error("Lỗi khi xóa mã giảm giá:", error);
       alert("Xóa mã giảm giá thất bại!");
     }
   } else {
@@ -105,33 +105,26 @@ const deleteConfirmation = async (
 };
 
 export default function CouponTableBody({
+  coupons,
   onToggleActive,
+  onCouponsChange,
+  onEditCoupon,
 }: {
+  coupons: Coupon[];
   onToggleActive: (id: string, newValue: boolean) => void;
+  onCouponsChange: (newCoupons: Coupon[]) => void;
+  onEditCoupon: (coupon: Coupon) => void;
 }) {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { coupons } = await fetchCoupons();
-        setCoupons(coupons);
-      } catch (error) {
-        console.error("Failed to fetch coupons:", error);
-      }
-    };
-    fetchData();
-  }, []);
-
   const handleEdit = (coupon: Coupon) => {
-    setSelectedCoupon(coupon);
+    onEditCoupon(coupon);
   };
 
   const handleSave = (updatedCoupon: Coupon) => {
-    setCoupons((prev) =>
-      prev.map((c) => (c._id === updatedCoupon._id ? updatedCoupon : c))
+    onCouponsChange(
+      coupons.map((c) => (c._id === updatedCoupon._id ? updatedCoupon : c))
     );
     setSelectedCoupon(null);
   };
@@ -140,10 +133,27 @@ export default function CouponTableBody({
     deleteConfirmation(
       couponId,
       () => {
-        setCoupons((prev) => prev.filter((c) => c._id !== couponId));
+        onCouponsChange(coupons.filter((c) => c._id !== couponId));
       },
       () => setActionDropdownId(null)
     );
+  };
+
+  const handleToggleActive = async (id: string, newValue: boolean) => {
+    try {
+      await toast.promise(updateCouponStatus(id, newValue), {
+        loading: "Đang cập nhật trạng thái...",
+        success: "Cập nhật trạng thái thành công!",
+        error: "Cập nhật trạng thái thất bại!",
+      });
+      onCouponsChange(
+        coupons.map((coupon) =>
+          coupon._id === id ? { ...coupon, is_active: newValue } : coupon
+        )
+      );
+    } catch (err: any) {
+      // Không cần toast.error ở đây nữa vì toast.promise đã xử lý
+    }
   };
 
   if (coupons.length === 0) {
@@ -167,7 +177,7 @@ export default function CouponTableBody({
             {coupon.code}
           </td>
           <td className="px-4 h-[64px] whitespace-normal break-words">
-            {coupon.description}
+            {coupon.description || "Không có mô tả"}
           </td>
           <td className="px-4 h-[64px] whitespace-normal break-words">
             {new Date(coupon.startDate).toLocaleDateString("vi-VN")} -{" "}
@@ -178,8 +188,8 @@ export default function CouponTableBody({
           </td>
           <td className="px-5 py-4">
             <SimpleSwitch
-              checked={coupon.is_active === true}
-              onChange={(value) => onToggleActive(coupon._id, value)}
+              checked={coupon.is_active}
+              onChange={(value) => handleToggleActive(coupon._id, value)}
             />
           </td>
           <td className="w-[60px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px] align-middle relative">
@@ -212,13 +222,9 @@ export default function CouponTableBody({
           </td>
         </tr>
       ))}
-      {selectedCoupon && (
-        <EditCouponModal
-          coupon={selectedCoupon}
-          onClose={() => setSelectedCoupon(null)}
-          onSave={handleSave}
-        />
-      )}
+      {/* Đừng render modal ở đây */}
     </>
   );
 }
+
+// Ở component cha (page.tsx), render EditCouponModal ngoài table:

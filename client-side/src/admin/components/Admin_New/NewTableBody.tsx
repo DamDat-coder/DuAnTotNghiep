@@ -84,10 +84,8 @@ export default function NewsTableBody({
               {news.category_id?.name || "Chưa có danh mục"}
             </td>
             <td className="px-4 py-4">
-              {news.is_published
-                ? news.published_at
-                  ? new Date(news.published_at).toLocaleDateString("vi-VN") // Kiểm tra xem published_at có hợp lệ không
-                  : "Chưa có ngày xuất bản"
+              {news.is_published && news.published_at
+                ? new Date(news.published_at).toLocaleDateString("vi-VN")
                 : "Chưa xuất bản"}
             </td>
 

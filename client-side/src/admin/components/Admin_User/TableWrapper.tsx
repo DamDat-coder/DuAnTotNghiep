@@ -4,6 +4,8 @@ import Image from "next/image";
 import { IUser } from "@/types/auth";
 import { fetchAllUsers, toggleUserStatus } from "@/services/userApi";
 import EditUserModal from "./EditUserModal";
+import toast from "react-hot-toast"; // Giả định import
+import { useAuth } from "@/contexts/AuthContext"; // Giả định import
 
 interface Props {
   users: IUser[];
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export default function TableWrapper({ users, children }: Props) {
+  const { user } = useAuth(); // Giả định lấy user hiện tại
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -23,6 +26,7 @@ export default function TableWrapper({ users, children }: Props) {
       email.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
+
   function SimpleSwitch({
     checked,
     onChange,
@@ -80,45 +84,120 @@ export default function TableWrapper({ users, children }: Props) {
     loadUserStatus();
   }, []);
 
-  const handleStatusChange = async (
+  const handleStatusChange = async (userId: string, value: boolean) => {
+    // Find the user in the original users array
+    const userIndex = users.findIndex((u) => u.id === userId);
+    const targetUser = users[userIndex];
+
+    if (user?.role === "admin" && !value && targetUser?.role === "admin") {
+      toast.error("Không thể khóa tài khoản admin khác.");
+      return;
+    }
+
+    if (!value) {
+      toast(
+        (t) => (
+          <div>
+            <p>Bạn có chắc muốn khóa tài khoản này?</p>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={async () => {
+                  toast.dismiss(t.id);
+                  await performStatusChange(userIndex, userId, value);
+                }}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: Infinity }
+      );
+    } else {
+      await performStatusChange(userIndex, userId, value);
+    }
+  };
+
+  const performStatusChange = async (
     index: number,
     userId: string,
     value: boolean
   ) => {
     const updatedStates = [...states];
+    const originalValue = updatedStates[index];
+
+    // Optimistically update UI
     updatedStates[index] = value;
     setStates(updatedStates);
 
-    const updatedUser = await toggleUserStatus(userId, value);
+    try {
+      // Use toast.promise to avoid duplicate toasts
+      const updatedUser = await toast.promise(toggleUserStatus(userId, value), {
+        loading: "Đang cập nhật...",
+        success: value ? "Đã mở khóa tài khoản." : "Đã khóa tài khoản.",
+        error: (err) => `Lỗi: ${err.message || "Cập nhật trạng thái thất bại"}`,
+      });
 
-    if (!updatedUser) {
-      updatedStates[index] = !value;
+      if (!updatedUser) {
+        // Rollback state if no user returned
+        updatedStates[index] = originalValue;
+        setStates(updatedStates);
+        return;
+      }
+
+      // Send email notification for account lock
+      if (!value) {
+        await sendEmailNotification(userId, updatedUser.email, value);
+      }
+    } catch (error) {
+      // Rollback state on error
+      updatedStates[index] = originalValue;
       setStates(updatedStates);
-      alert("Cập nhật trạng thái thất bại");
-    } else {
-      console.log("Trạng thái người dùng sau khi cập nhật:", updatedUser);
     }
   };
 
-  const handleEditClick = (user: IUser) => {
-    setSelectedUser(user); // Lưu thông tin người dùng vào state
-    setShowModal(true); // Mở modal
+  // Hàm giả định gửi email (cần triển khai trong services/userApi)
+  const sendEmailNotification = async (
+    userId: string,
+    email: string,
+    isActive: boolean
+  ) => {
+    // Giả định API gửi email, cần định nghĩa trong services/userApi
+    // Ví dụ: await sendEmail({ to: email, subject: "Tài khoản bị khóa", body: "Tài khoản của bạn đã bị khóa." });
+    console.log(
+      `Gửi email thông báo cho ${email}: Tài khoản ${
+        isActive ? "được mở khóa" : "bị khóa"
+      }.`
+    );
+    // Thay console.log bằng API call thực tế
   };
 
-  const handleUpdateUser = (updatedUser: IUser) => {
-    // Cập nhật thông tin người dùng trong state
+  const handleEditClick = (user: IUser) => {
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const handleUpdateUser = (updatedUser: IUser | null) => {
+    if (!updatedUser) return;
     const updatedUsers = users.map((user) =>
       user.id === updatedUser.id ? updatedUser : user
     );
-    // Cập nhật lại state với danh sách người dùng mới
     // setUsers(updatedUsers); // Nếu bạn quản lý state users ở đây
   };
+
   return (
     <div className="space-y-4 mt-6">
       <UserControlBar onFilterChange={setFilter} onSearchChange={setSearch} />
 
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
-        <table className="min-w-full text-[16px]  text-left">
+        <table className="min-w-full text-[16px] text-left">
           <thead className="bg-[#F8FAFC] text-[#94A3B8]">
             <tr className="overflow-hidden">
               <th className="w-[77px] px-4 h-[64px] align-middle py-0 rounded-tl-[12px] rounded-bl-[12px]">
@@ -150,7 +229,7 @@ export default function TableWrapper({ users, children }: Props) {
             </tr>
           </thead>
           <tbody>
-            {users.map((user, index) => (
+            {filteredUsers.map((user, index) => (
               <tr
                 key={user.id}
                 className="border-b text-[#0F172A] font-[500] text-[16px] hover:bg-[#F9FAFB] transition-colors duration-150"
@@ -162,10 +241,8 @@ export default function TableWrapper({ users, children }: Props) {
                 <td className="px-5 py-4 capitalize">{user.role}</td>
                 <td className="px-5 py-4">
                   <SimpleSwitch
-                    checked={states[index]}
-                    onChange={(value) =>
-                      handleStatusChange(index, user.id, value)
-                    }
+                    checked={states[users.findIndex((u) => u.id === user.id)]}
+                    onChange={(value) => handleStatusChange(user.id, value)}
                   />
                 </td>
                 <th className="w-[64px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px] align-middle relative">
@@ -186,7 +263,6 @@ export default function TableWrapper({ users, children }: Props) {
                         alt="three_dot"
                       />
                     </button>
-                    {/* Dropdown */}
                     {actionDropdownId === user.id && (
                       <div
                         ref={popupRef}

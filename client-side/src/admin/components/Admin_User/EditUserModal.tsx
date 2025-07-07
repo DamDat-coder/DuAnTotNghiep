@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { IUser } from "@/types/auth";
 import { updateUser } from "@/services/userApi";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -76,16 +77,18 @@ export default function EditUserModal({
         const updatedData = await updateUser(user.id, { role: form.role });
         console.log("update:", updatedData);
 
-        alert("Cập nhật thành công.");
+        toast.success("Cập nhật thành công.");
         onUpdate(updatedData);
-        onClose();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } catch (error) {
         console.error("Lỗi cập nhật người dùng:", error);
-        alert("Đã có lỗi xảy ra, vui lòng thử lại.");
+        toast.error("Đã có lỗi xảy ra, vui lòng thử lại.");
         onUpdate(null);
       }
     } else {
-      alert("Không có thay đổi nào để lưu.");
+      toast("Không có thay đổi nào để lưu.");
       onUpdate(null);
     }
   };

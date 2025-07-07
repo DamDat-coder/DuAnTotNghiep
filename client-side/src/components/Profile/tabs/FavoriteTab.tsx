@@ -1,64 +1,87 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWishlist } from "@/contexts/WishlistContext";
 import toast from "react-hot-toast";
 import { IProduct } from "@/types/product";
 import { useAuth } from "@/contexts/AuthContext";
 import { getWishlistFromApi, removeFromWishlistApi } from "@/services/userApi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+// Hàm lấy giá thấp nhất từ variants - same as ProductGrid
 const getLowestPriceVariant = (product: IProduct) => {
   if (!product.variants || product.variants.length === 0) {
-    return { price: 0, discountPercent: 0, discountedPrice: 0 };
+    return { price: 0, discountPercent: 0 };
   }
   return product.variants.reduce(
     (min, variant) =>
-      variant.discountedPrice < min.discountedPrice ? variant : min,
+      variant.price && variant.price < min.price ? variant : min,
     product.variants[0]
   );
 };
 
 export default function FavoriteTab() {
-  const { wishlist, setWishlist } = useWishlist(); // Lấy wishlist từ context
-  const { user } = useAuth(); // Lấy user từ AuthContext
+  const { wishlist, setWishlist } = useWishlist();
+  const { user } = useAuth();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchWishlist = async () => {
-      if (user) {
-        const wishlistFromDB = await getWishlistFromApi(user.id); // Gọi API lấy wishlist từ DB
-        setWishlist(wishlistFromDB); // Cập nhật wishlist vào state
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const wishlistFromDB = await getWishlistFromApi(user.id);
+        setWishlist(wishlistFromDB);
+      } catch (error) {
+        console.error("Error fetching wishlist:", error);
+        toast.error("Không thể tải danh sách yêu thích.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchWishlist();
-  }, [user, setWishlist]); // Gọi lại khi user thay đổi
+  }, [user, setWishlist]);
 
   const handleRemoveFromWishlist = async (productId: string) => {
-    if (user) {
-      try {
-        // Gọi API để xóa sản phẩm khỏi wishlist trong DB
-        await removeFromWishlistApi(user.id, productId);
+    if (!user) return;
 
-        // Cập nhật lại wishlist trong state
-        setWishlist((prevWishlist) =>
-          prevWishlist.filter((item) => item.id !== productId)
-        );
-
-        // Thông báo thành công
-        toast.success("Đã xóa khỏi wishlist!");
-
-        // Refresh lại trang
-        console.log("Removed product from wishlist:", productId);
-        router.refresh();
-      } catch (error) {
-        toast.error("Không thể xóa sản phẩm khỏi wishlist.");
-        console.error("Error removing product from wishlist:", error);
-      }
+    setIsLoading(true);
+    try {
+      await removeFromWishlistApi(user.id, productId);
+      setWishlist(
+        (prevWishlist) => prevWishlist.filter((item) => item.id !== productId) // Use id for consistency
+      );
+      toast.success("Đã xóa khỏi danh sách yêu thích!");
+      router.refresh();
+    } catch (error) {
+      toast.error("Không thể xóa sản phẩm khỏi danh sách yêu thích.");
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <div
+          className="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent text-blue-600 rounded-full"
+          role="status"
+          aria-label="loading"
+        >
+          <span className="sr-only">Đang tải...</span>
+        </div>
+        <p className="mt-2 text-gray-600">Đang tải danh sách yêu thích...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -71,42 +94,52 @@ export default function FavoriteTab() {
         ) : (
           <div className="space-y-6">
             {wishlist.map((product) => {
-              // Kiểm tra và lấy giá trị hợp lệ cho price và discountedPrice
-              const { price, discountPercent, discountedPrice } =
-                getLowestPriceVariant(product);
+              const { price, discountPercent } = getLowestPriceVariant(product);
 
-              // Đảm bảo giá trị price và discountedPrice là hợp lệ
-              const validPrice = price && price > 0 ? price : 0;
-              const validDiscountedPrice =
-                discountedPrice && discountedPrice > 0 ? discountedPrice : 0;
+              // Calculate discounted price same as ProductGrid
+              const discountedPrice = Math.round(
+                price * (1 - discountPercent / 100)
+              );
+
+              const productImage =
+                product.images && product.images.length > 0
+                  ? `/product/img/${product.images[0]}`
+                  : "/placeholder.jpg";
+              const productName = product.name || "Sản phẩm không tên";
+              const categoryName =
+                product.category?.name || "Danh mục không xác định";
 
               return (
                 <div
-                  key={product.id}
+                  key={product.id} // Use id for consistency
                   className="flex items-center gap-4 border-b pb-4"
                 >
                   {/* Hình ảnh */}
-                  <Image
-                    src={
-                      product.images && product.images[0]
-                        ? `/product/img/${product.images[0]}`
-                        : "/placeholder.jpg" // Ảnh placeholder khi không có ảnh
-                    }
-                    alt={product.name || "Sản phẩm"}
-                    width={96}
-                    height={96}
-                    className="object-cover rounded"
-                  />
+                  <Link href={`/products/${product.id}`}>
+                    <Image
+                      src={productImage}
+                      alt={productName}
+                      width={96}
+                      height={96}
+                      className="object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                    />
+                  </Link>
 
                   {/* Thông tin */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{product.name}</h3>
-                    <p className="text-gray-500 text-sm">
-                      {product.category?.name || "Danh mục"}
-                    </p>
+                  <div className="flex-1 flex items-center justify-between">
+                    <div>
+                      <Link href={`/products/${product.id}`}>
+                        <h3 className="font-semibold hover:text-blue-600 cursor-pointer transition-colors">
+                          {productName}
+                        </h3>
+                      </Link>
+                      <p className="text-gray-500 text-sm">{categoryName}</p>
+                    </div>
                     <button
-                      onClick={() => handleRemoveFromWishlist(product.id)}
-                      aria-label={`Xóa ${product.name} khỏi wishlist`}
+                      onClick={() => handleRemoveFromWishlist(product.id)} // Use id for consistency
+                      aria-label={`Xóa ${productName} khỏi wishlist`}
+                      disabled={isLoading}
+                      className="ml-4"
                     >
                       <div className="w-8 h-8 rounded-full bg-white border-2 border-solid border-[#E7E7E7] flex justify-center items-center">
                         <Image
@@ -124,11 +157,11 @@ export default function FavoriteTab() {
                   <div className="text-right">
                     {discountPercent > 0 && (
                       <div className="text-sm text-gray-400 line-through">
-                        {validPrice.toLocaleString("vi-VN")}₫
+                        {price.toLocaleString("vi-VN")}₫
                       </div>
                     )}
                     <div className="text-red-600 font-semibold">
-                      {validDiscountedPrice.toLocaleString("vi-VN")}₫
+                      {discountedPrice.toLocaleString("vi-VN")}₫
                     </div>
                   </div>
                 </div>

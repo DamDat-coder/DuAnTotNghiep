@@ -11,6 +11,7 @@ import FavoriteTab from "@/components/Profile/tabs/FavoriteTab";
 import OrderTab from "@/components/Profile/tabs/OrderTab";
 import OrderDetail from "@/components/Profile/tabs/OrderDetail";
 import { useEffect, useState } from "react";
+import { useActiveTab } from "@/contexts/ActiveTabContext";
 
 const tabMap: Record<string, string> = {
   profile: "Hồ sơ",
@@ -23,8 +24,7 @@ const tabMap: Record<string, string> = {
 export default function ProfilePage() {
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
-
-  const [activeTab, setActiveTab] = useState("main");
+  const { activeTab, setActiveTab } = useActiveTab();
   const [selectedOrder, setSelectedOrder] = useState<OrderDetailType | null>(
     null
   );
@@ -43,12 +43,6 @@ export default function ProfilePage() {
       setActiveTab("Hồ sơ");
     }
   }, [isMobile, activeTab]);
-
-  // Cập nhật activeTab và URL khi nhấp vào icon yêu thích
-  const handleFavoriteClick = () => {
-    setActiveTab("Yêu thích");
-    window.history.pushState({}, "", "/profile?tab=favorite"); // Cập nhật URL
-  };
 
   const renderTabContent = () => {
     switch (activeTab) {

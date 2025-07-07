@@ -6,15 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 import { IProduct } from "@/types/product";
 import LikeIcon from "./LikeIcon";
-import {
-  addProductToWishlistApi,
-  removeFromWishlistApi,
-} from "@/services/userApi"; // Import các API gọi
+import { useState } from "react";
 
 interface WishlistButtonProps {
   product: IProduct;
-  variant?: "white" | "black"; // Chọn icon màu
-  borderColor?: "black" | "white" | "none"; // Chọn màu viền
+  variant?: "white" | "black";
+  borderColor?: "black" | "white" | "none";
 }
 
 export default function WishlistButton({
@@ -26,41 +23,25 @@ export default function WishlistButton({
   const { user } = useAuth();
   const router = useRouter();
   const isLiked = isInWishlist(product.id);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleWishlistToggle = async () => {
+    if (isLoading) return;
     if (!user) {
-      toast.error("Vui lòng đăng nhập để thêm vào wishlist!");
+      toast.error("🔐 Vui lòng đăng nhập để thêm vào danh sách yêu thích!");
       return;
     }
 
-    // Nếu sản phẩm chưa có trong wishlist
-    if (!isLiked) {
-      try {
-        // Thêm sản phẩm vào wishlist của DB qua API
-        await addProductToWishlistApi(user.id, product.id);
-        addToWishlist(product); // Cập nhật vào state wishlist
-        toast.success("Đã thêm vào wishlist!");
-      } catch (error) {
-        console.error("Lỗi khi thêm sản phẩm vào wishlist:", error);
-        toast.error("Không thể thêm sản phẩm vào wishlist.");
+    setIsLoading(true);
+    try {
+      if (!isLiked) {
+        await addToWishlist(product);
+      } else {
+        await removeFromWishlist(product.id);
       }
-    } else {
-      try {
-        // Xoá sản phẩm khỏi wishlist của DB qua API
-        await removeFromWishlistApi(user.id, product.id);
-        removeFromWishlist(product.id); // Cập nhật vào state wishlist
-        toast.success("Đã xóa khỏi wishlist!");
-      } catch (error) {
-        console.error("Lỗi khi xóa sản phẩm khỏi wishlist:", error);
-        toast.error("Không thể xóa sản phẩm khỏi wishlist.");
-      }
+    } finally {
+      setIsLoading(false);
     }
-    console.log(
-      "Wishlist toggled for product:",
-      product.id,
-      "isLiked:",
-      !isLiked
-    );
   };
 
   return (
@@ -69,6 +50,7 @@ export default function WishlistButton({
       onClick={handleWishlistToggle}
       role="button"
       aria-label={isLiked ? "Xóa khỏi wishlist" : "Thêm vào wishlist"}
+      disabled={isLoading} // Vô hiệu hóa khi đang loading
     >
       <LikeIcon variant={variant} isActive={isLiked} />
     </button>

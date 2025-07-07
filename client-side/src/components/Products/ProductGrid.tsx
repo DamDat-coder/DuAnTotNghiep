@@ -116,7 +116,6 @@ export default function ProductGrid({
 
   const renderProductCard = (product: IProduct) => {
     const { price, discountPercent } = getLowestPriceVariant(product);
-    console.log("Product:", product);
 
     const discountedPrice = Math.round(price * (1 - discountPercent / 100));
     return (

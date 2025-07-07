@@ -489,37 +489,67 @@ export const removeFromWishlistApi = async (
 };
 
 export async function getWishlistFromApi(userId: string): Promise<IProduct[]> {
-  try {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      console.error("Không có token. Vui lòng đăng nhập lại.");
-      return [];
-    }
-
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/wishlist`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || "Lấy danh sách wishlist thất bại.");
-    }
-
-    const data = await response.json();
-    if (!data || !data.data) {
-      console.error("Không có dữ liệu wishlist.");
-      return [];
-    }
-
-    return data.data;
-  } catch (error) {
-    console.error("Error fetching wishlist:", error);
-    return [];
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    throw new Error("Không có token. Vui lòng đăng nhập lại.");
   }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/wishlist`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Lấy danh sách wishlist thất bại.");
+  }
+
+  const data = await response.json();
+  if (!data || !data.data) {
+    throw new Error("Không có dữ liệu wishlist.");
+  }
+
+  // The backend returns incomplete product data, so we need to fetch complete details
+  const wishlistItems = data.data;
+  const completeProducts: IProduct[] = [];
+
+  // Fetch complete product details for each item in wishlist
+  for (const item of wishlistItems) {
+    try {
+      const productId = item._id || item.id;
+      const completeProduct = await fetchProductById(productId);
+      if (completeProduct) {
+        completeProducts.push(completeProduct);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to fetch complete product data for ID: ${item._id || item.id}`,
+        error
+      );
+      // If we can't fetch complete data, use the limited data we have
+      const transformedItem = {
+        ...item,
+        id: item._id || item.id,
+        category: item.category || {
+          _id: null,
+          name: "Danh mục không xác định",
+        },
+        variants: item.variants || [],
+        images: item.image || item.images || [],
+        is_active: item.is_active ?? true,
+        salesCount: item.salesCount || 0,
+        description: item.description || "",
+        categoryId: item.category?._id || null,
+        slug: item.slug || "",
+      };
+      completeProducts.push(transformedItem as IProduct);
+    }
+  }
+
+  return completeProducts;
 }
 
 export async function addAddressWhenCheckout(
@@ -579,5 +609,63 @@ export async function setDefaultAddress(
   } catch (error: any) {
     console.error("Error setting default address:", error);
     throw new Error(error.message || "Không thể cập nhật địa chỉ mặc định");
+  }
+}
+
+export async function fetchAllUsersAdmin(
+  search: string = "", // Thêm tham số search
+  page: number = 1, // Thêm tham số page
+  limit: number = 10, // Thêm tham số limit
+  role?: string, // Thêm tham số role (tùy chọn)
+  is_block?: boolean // Thêm tham số is_block (tùy chọn)
+): Promise<{
+  users: IUser[] | null;
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  try {
+    // Tạo query string từ các tham số
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(search && { search }), // Chỉ thêm search nếu có giá trị
+      ...(role && { role }), // Chỉ thêm role nếu có giá trị
+      ...(typeof is_block !== "undefined" && { is_block: is_block.toString() }), // Chỉ thêm is_block nếu được cung cấp
+    });
+
+    const response = await fetchWithAuth<any>(
+      `${API_BASE_URL}/users?${queryParams.toString()}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response || !response.data || !Array.isArray(response.data)) {
+      console.error("Dữ liệu không hợp lệ:", response);
+      return { users: null, total: 0, totalPages: 0, currentPage: page };
+    }
+
+    const users: IUser[] = response.data.map((userData: UserData) => ({
+      id: userData._id,
+      email: userData.email,
+      name: userData.name,
+      phone: userData.phone || null,
+      avatar: userData.avatar || null,
+      role: userData.role,
+      is_active: userData.is_active,
+      active: userData.is_active,
+      addresses: userData.addresses || [],
+    }));
+
+    return {
+      users,
+      total: response.total || 0,
+      totalPages: response.totalPages || 0,
+      currentPage: response.currentPage || page,
+    };
+  } catch (error: any) {
+    console.error("Lỗi khi lấy danh sách người dùng:", error);
+    return { users: null, total: 0, totalPages: 0, currentPage: page };
   }
 }

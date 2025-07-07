@@ -1,8 +1,8 @@
+import { ICategoryNews } from "./category";
 import { SortOption } from "./filter";
 
 // types/product.ts
 export interface IProduct {
-  quantity: ReactNode;
   id: string;
   name: string;
   slug: string;

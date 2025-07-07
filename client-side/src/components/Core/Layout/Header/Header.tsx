@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import NotificationIcon from "./Notification";
 import { debounce } from "lodash";
+import { useActiveTab } from "@/contexts/ActiveTabContext";
 
 interface HeaderProps {
   title: string;
@@ -40,6 +41,12 @@ export default function Header({ title }: HeaderProps) {
   const inputRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const lookupButtonRef = useRef<HTMLButtonElement>(null);
+  const { setActiveTab } = useActiveTab(); // Get setActiveTab from context
+
+  const handleFavoriteClick = () => {
+    setActiveTab("Yêu thích"); // Update active tab to "Yêu thích"
+    window.history.pushState({}, "", "/profile?tab=favorite"); // Update URL
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -130,10 +137,7 @@ export default function Header({ title }: HeaderProps) {
     setSearchTerm(suggestion);
     setIsLookupOpen(false);
   };
-  const handleFavoriteClick = () => {
-    setActiveTab("Yêu thích");
-    window.history.pushState({}, "", "/profile?tab=favorite");
-  };
+
   return (
     <>
       <nav

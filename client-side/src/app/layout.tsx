@@ -1,4 +1,3 @@
-// app/layout.tsx
 "use client";
 
 import { Lora } from "next/font/google";
@@ -12,8 +11,10 @@ import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
+import { ActiveTabProvider } from "@/contexts/ActiveTabContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ChatBotBox from "@/components/Chat/ChatBotBox";
+import { Toaster } from "react-hot-toast";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -42,21 +43,49 @@ export default function RootLayout({
           <AuthProvider>
             <MenuProvider>
               <LookupProvider>
-                {!isAdminRoute && <Header title="My App" setActiveTab={function (tab: string): void {
-                  throw new Error("Function not implemented.");
-                } } />}
-                <CartProvider>
-                  <WishlistProvider>
-                    <main className={mainClassName}>{children}</main>
-                    {!isAdminRoute && <ChatBotBox />}
-                  </WishlistProvider>
-                </CartProvider>
-                {!isAdminRoute}
-                {!isAdminRoute && <Footer />}
+                <ActiveTabProvider>
+                  {!isAdminRoute && (
+                    <Header
+                      title="My App"
+                      setActiveTab={function (tab: string): void {
+                        throw new Error("Function not implemented.");
+                      }}
+                    />
+                  )}
+                  <CartProvider>
+                    <WishlistProvider>
+                      <main className={mainClassName}>{children}</main>
+                      {!isAdminRoute && <ChatBotBox />}
+                    </WishlistProvider>
+                  </CartProvider>
+                  {!isAdminRoute && <Footer />}
+                </ActiveTabProvider>
               </LookupProvider>
             </MenuProvider>
           </AuthProvider>
         </GoogleOAuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+            success: {
+              style: {
+                background: "#4ade80",
+                color: "#fff",
+              },
+            },
+            error: {
+              style: {
+                background: "#ef4444",
+                color: "#fff",
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );

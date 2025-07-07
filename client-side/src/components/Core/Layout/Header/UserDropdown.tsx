@@ -4,12 +4,13 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActiveTab } from "@/contexts/ActiveTabContext";
 
 export default function UserDropdown() {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+  const { setActiveTab } = useActiveTab();
   // Đóng dropdown khi nhấn ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,7 +26,10 @@ export default function UserDropdown() {
   }, []);
 
   if (!user) return null;
-
+  const handleOrderClick = () => {
+    setActiveTab("Đơn hàng"); // Update active tab to "Yêu thích"
+    window.history.pushState({}, "", "/profile?tab=order"); // Update URL
+  };
   return (
     <div
       ref={dropdownRef}
@@ -63,7 +67,8 @@ export default function UserDropdown() {
             Thông tin người dùng
           </Link>
           <Link
-            href="/profile?tab=order"
+            href="#"
+            onClick={handleOrderClick}
             className="block px-4 py-2 text-[0.875rem] font-medium text-gray-700 hover:bg-gray-100"
           >
             Đơn hàng

@@ -28,7 +28,11 @@ export default function ProfileTab() {
     setDistrictCode,
     setWardCode,
   } = useAddressData();
-
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email || "");
+    }
+  }, [user]);
   useEffect(() => {
     if (user) {
       console.log(user);
@@ -36,6 +40,7 @@ export default function ProfileTab() {
       setName(user.name || "");
       setPhone(user.phone || "");
       const defaultAddress = user.addresses?.find((addr) => addr.is_default);
+
       console.log(defaultAddress);
 
       if (defaultAddress) {

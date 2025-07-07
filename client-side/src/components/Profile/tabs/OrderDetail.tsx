@@ -15,17 +15,17 @@ interface OrderDetailProps {
 export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [products, setProducts] = useState<(IProduct & { quantity: number })[]>(
-    []
-  );
+  const [products, setProducts] = useState<
+    (IProduct & { quantity: number; image?: string; price: number })[]
+  >([]);
 
   useEffect(() => {
     async function fetchUserData() {
       try {
-        const fetchedUser = await fetchUser(); // Gọi API lấy thông tin người dùng
-        setUser(fetchedUser); // Lưu trữ thông tin người dùng vào state
+        const fetchedUser = await fetchUser();
+        setUser(fetchedUser);
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        // Xử lý lỗi im lặng, người dùng đã được thông báo qua UI
       } finally {
         setIsLoading(false);
       }
@@ -40,25 +40,31 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         const fetchedProducts = await Promise.all(
           order.items.map(async (item) => {
             const product = await fetchProductById(item.productId);
-            return {
-              ...product,
-              quantity: item.quantity,
-              image: item.image, // Use image from order item
-              price: item.price, // Use price from order item
-            };
+            return product
+              ? {
+                  ...product,
+                  quantity: item.quantity,
+                  image: item.image, // Sử dụng image từ order item
+                  price: item.price, // Sử dụng price từ order item
+                }
+              : null;
           })
         );
         setProducts(
           fetchedProducts.filter((p) => p !== null) as (IProduct & {
             quantity: number;
+            image?: string;
+            price: number;
           })[]
         );
       } catch (error) {
-        console.error("Error fetching products:", error);
+        // Xử lý lỗi im lặng, người dùng đã được thông báo qua UI
       }
     }
 
-    fetchOrderProducts();
+    if (order.items.length > 0) {
+      fetchOrderProducts();
+    }
   }, [order.items]);
 
   if (isLoading) {
@@ -136,12 +142,20 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
 
       {/* Danh sách sản phẩm */}
       <div className="space-y-6">
-        {order.items.map((item, index) => (
+        {products.map((product, index) => (
           <div key={index} className="flex items-center gap-8 w-full">
             <div className="w-[94px] h-[94px] relative">
               <Image
-                src={item.image || "/placeholder.png"}
-                alt={item.name}
+                src={
+                  product.image && product.image.length > 0
+                    ? `/product/img/${
+                        product.image.startsWith("/")
+                          ? product.image.slice(1)
+                          : product.image
+                      }`
+                    : "/placeholder.jpg"
+                }
+                alt={product.name || "Sản phẩm"}
                 fill
                 className="object-cover rounded"
                 sizes="94px"
@@ -149,14 +163,21 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
             </div>
             <div className="flex justify-between items-center w-full">
               <div className="space-y-1">
-                <p className="font-semibold">{item.name}</p>
-                <p className="text-sm text-gray-600">
-                  Màu: {item.color}, Kích thước: {item.size}
+                <p className="font-semibold">
+                  {product.name || "Sản phẩm không tên"}
                 </p>
-                <p className="text-sm text-gray-600">SL: {item.quantity}</p>
+                <p className="text-sm text-gray-600">
+                  Màu: {Array.isArray(product.variants)
+                    ? ((product.variants[0] as { color?: string })?.color || "Chưa xác định")
+                    : ((product.variants as { color?: string } | undefined)?.color || "Chưa xác định")}, Kích thước:{" "}
+                  {Array.isArray(product.variants)
+                    ? ((product.variants[0] as { size?: string })?.size || "Chưa xác định")
+                    : ((product.variants as { size?: string } | undefined)?.size || "Chưa xác định")}
+                </p>
+                <p className="text-sm text-gray-600">SL: {product.quantity}</p>
               </div>
               <div className="text-[#FF0000] font-semibold text-sm whitespace-nowrap">
-                {(item.price * item.quantity).toLocaleString("vi-VN")}₫
+                {(product.price * product.quantity).toLocaleString("vi-VN")}₫
               </div>
             </div>
           </div>
@@ -169,15 +190,17 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         <div className="flex justify-between items-start gap-[18px]">
           <div className="w-[679px] space-y-[12px] leading-relaxed">
             <p>
-              <strong>Tên người nhận:</strong> {user.name}
+              <strong>Tên người nhận:</strong> {user.name || "Chưa cập nhật"}
             </p>
             <p>
-              <strong>Số điện thoại:</strong> {user.phone}
+              <strong>Số điện thoại:</strong> {user.phone || "Chưa cập nhật"}
             </p>
             <p>
-              {/* <strong>Địa chỉ nhận hàng:</strong> {order.shippingAddress.street}
-              , {order.shippingAddress.ward}, {order.shippingAddress.district},{" "}
-              {order.shippingAddress.province} */}
+              <strong>Địa chỉ nhận hàng:</strong>{" "}
+              {order.shippingAddress?.street || ""},{" "}
+              {order.shippingAddress?.ward || ""},{" "}
+              {order.shippingAddress?.district || ""},{" "}
+              {order.shippingAddress?.province || ""}
             </p>
             <p>
               <strong>Phương thức thanh toán:</strong>{" "}

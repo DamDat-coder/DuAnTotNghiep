@@ -1,21 +1,20 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { IProduct } from "@/types/product";
 import {
   addProductToWishlistApi,
   removeFromWishlistApi,
   getWishlistFromApi,
-} from "@/services/userApi"; // Đảm bảo bạn đã import đúng hàm
+} from "@/services/userApi";
 import toast from "react-hot-toast";
-import { fetchProductById } from "@/services/productApi";
-import { useAuth } from "@/contexts/AuthContext"; // Đảm bảo bạn đã tạo AuthContext
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WishlistContextType {
   wishlist: IProduct[];
   setWishlist: React.Dispatch<React.SetStateAction<IProduct[]>>;
-  addToWishlist: (product: IProduct) => void;
-  removeFromWishlist: (productId: string) => void;
+  addToWishlist: (product: IProduct) => Promise<void>;
+  removeFromWishlist: (productId: string) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
 }
 
@@ -28,39 +27,36 @@ export const WishlistProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { user } = useAuth(); // Lấy user từ AuthContext
+  const { user } = useAuth();
   const [wishlist, setWishlist] = useState<IProduct[]>([]);
+  const isApiCalled = useRef(false); // Ngăn useEffect gọi lại do Strict Mode
 
   useEffect(() => {
     const initializeWishlist = async () => {
+      if (isApiCalled.current) return;
+      isApiCalled.current = true;
+
       if (typeof window !== "undefined") {
-        // Lấy wishlist từ localStorage
         const savedWishlist = localStorage.getItem("wishlist");
         if (savedWishlist) {
           try {
-            setWishlist(JSON.parse(savedWishlist)); // Đặt wishlist từ localStorage
+            setWishlist(JSON.parse(savedWishlist));
           } catch (error) {
-            console.error("Error parsing wishlist from localStorage:", error);
+            // Không làm gì nếu parse lỗi
           }
         }
 
-        // Lấy wishlist từ DB nếu có
         if (user) {
           try {
-            // Lấy wishlist từ DB, đây có thể là mảng các ID sản phẩm (string[])
-            const wishlistFromDB: string[] = await getWishlistFromApi(user.id); // Giả sử API trả về mảng ID sản phẩm
-
+            const wishlistFromDB: IProduct[] = await getWishlistFromApi(
+              user.id
+            );
             if (wishlistFromDB) {
-              // Chuyển đổi các ID thành sản phẩm chi tiết (IProduct[])
-              const detailedWishlist = await getProductDetails(wishlistFromDB); // Chuyển đổi các ID thành IProduct[]
-              setWishlist(detailedWishlist);
-              localStorage.setItem(
-                "wishlist",
-                JSON.stringify(detailedWishlist)
-              ); // Lưu vào localStorage
+              setWishlist(wishlistFromDB);
+              localStorage.setItem("wishlist", JSON.stringify(wishlistFromDB));
             }
           } catch (error) {
-            console.error("Error fetching wishlist from DB:", error);
+            // Không làm gì nếu API lỗi
           }
         }
       }
@@ -69,71 +65,52 @@ export const WishlistProvider = ({
     initializeWishlist();
   }, [user]);
 
-  // Hàm để lấy chi tiết sản phẩm từ ID
-  const getProductDetails = async (
-    productIds: string[]
-  ): Promise<IProduct[]> => {
-    const products: IProduct[] = [];
-    for (const id of productIds) {
-      const product = await fetchProductById(id); // Giả sử bạn có hàm fetchProductById để lấy chi tiết sản phẩm
-      if (product) products.push(product);
-    }
-    return products;
-  };
-
   const saveWishlistToLocalStorage = (updatedWishlist: IProduct[]) => {
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
       } catch (error) {
-        console.error("Error saving wishlist to localStorage:", error);
+        // Không làm gì nếu lưu localStorage lỗi
       }
     }
   };
 
   const addToWishlist = async (product: IProduct) => {
-    setWishlist((prev) => {
-      if (!prev.find((item) => item.id === product.id)) {
-        const updatedWishlist = [...prev, product];
-        saveWishlistToLocalStorage(updatedWishlist);
+    if (wishlist.find((item) => item.id === product.id)) {
+      return; // Ngăn thêm trùng lặp
+    }
 
-        if (user) {
-          // Gọi API để thêm sản phẩm vào DB
-          addProductToWishlistApi(user.id, product.id)
-            .then((response) => {
-              toast.success("Product added to wishlist!");
-            })
-            .catch((error) => {
-              console.error("Error adding product to wishlist:", error);
-              toast.error("Failed to add product to wishlist.");
-            });
-        }
+    const prevWishlist = [...wishlist];
+    setWishlist([...wishlist, product]);
 
-        return updatedWishlist;
+    try {
+      if (user) {
+        await addProductToWishlistApi(user.id, product.id);
       }
-      return prev;
-    });
+      saveWishlistToLocalStorage([...wishlist, product]);
+      toast.success("Đã thêm vào danh sách yêu thích!");
+    } catch (error) {
+      setWishlist(prevWishlist);
+      toast.error("Không thể thêm sản phẩm vào danh sách yêu thích.");
+    }
   };
 
   const removeFromWishlist = async (productId: string) => {
-    setWishlist((prev) => {
-      const updatedWishlist = prev.filter((item) => item.id !== productId);
-      saveWishlistToLocalStorage(updatedWishlist);
+    const prevWishlist = [...wishlist]; // Lưu trạng thái trước
+    setWishlist(wishlist.filter((item) => item.id !== productId)); // Cập nhật tạm thời
 
+    try {
       if (user) {
-        // Gọi API để xoá sản phẩm khỏi DB
-        removeFromWishlistApi(user.id, productId)
-          .then((response) => {
-            toast.success("Product removed from wishlist!");
-          })
-          .catch((error) => {
-            console.error("Error removing product from wishlist:", error);
-            toast.error("Failed to remove product from wishlist.");
-          });
+        await removeFromWishlistApi(user.id, productId); // Gọi API xóa khỏi DB
       }
-
-      return updatedWishlist;
-    });
+      saveWishlistToLocalStorage(
+        wishlist.filter((item) => item.id !== productId)
+      );
+      toast.success("Đã xóa khỏi danh sách yêu thích!");
+    } catch (error) {
+      setWishlist(prevWishlist); // Rollback nếu API thất bại
+      toast.error("Không thể xóa sản phẩm khỏi danh sách yêu thích.");
+    }
   };
 
   const isInWishlist = (productId: string) => {

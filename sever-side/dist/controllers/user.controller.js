@@ -34,7 +34,9 @@ const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
     try {
         const { id_token } = req.body;
         if (!id_token)
-            return res.status(400).json({ success: false, message: "Thiếu id_token" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Thiếu id_token" });
         const ticket = yield google_1.googleClient.verifyIdToken({
             idToken: id_token,
             audience: process.env.GOOGLE_CLIENT_ID,
@@ -55,8 +57,6 @@ const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
                 email,
                 name,
                 googleId,
-                password: "",
-                refreshToken: "",
                 password: "",
                 refreshToken: "",
             });
@@ -199,7 +199,9 @@ const refreshAccessToken = (req, res, next) => __awaiter(void 0, void 0, void 0,
         const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
         const user = yield user_model_1.default.findById(decoded.userId);
         if (!user || user.refreshToken !== refreshToken)
-            return res.status(403).json({ success: false, message: "Refresh token không hợp lệ." });
+            return res
+                .status(403)
+                .json({ success: false, message: "Refresh token không hợp lệ." });
         const newAccessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
         res.status(200).json({ success: true, accessToken: newAccessToken });
     }

@@ -65,6 +65,8 @@ export async function login(
 }
 
 export const googleLogin = async (id_token: string) => {
+  console.log(id_token);
+  
   const res = await fetch(
     `${API_BASE_URL}/users/google-login`,
     {

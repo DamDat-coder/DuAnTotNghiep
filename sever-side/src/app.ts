@@ -16,23 +16,28 @@ import paymentRoutes from "./routes/payment.routers";
 import reviewRoutes from './routes/review.routes';
 import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
-
 dotenv.config();
 
 const app = express();
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
 });
 app.use(limiter);
 app.use(xss());
 app.use(hpp());
-
 app.use(cors({
-  origin: "http://localhost:3300", 
+  origin: (origin, callback) => {
+    const allowedOrigins = ["http://localhost:3300"];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 

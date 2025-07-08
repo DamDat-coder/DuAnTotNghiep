@@ -79,23 +79,23 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         ? localStorage.getItem("accessToken")
         : null;
     if (!accessToken) {
-      alert("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
+      toast.error("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
       return;
     }
     if (!selectedColor) {
-      alert("Vui lòng chọn màu sắc!");
+      toast.error("Vui lòng chọn màu sắc!");
       return;
     }
     if (!selectedSize) {
-      alert("Vui lòng chọn kích thước!");
+      toast.error("Vui lòng chọn kích thước!");
       return;
     }
     if (quantity < 1) {
-      alert("Số lượng phải lớn hơn 0!");
+      toast.error("Số lượng phải lớn hơn 0!");
       return;
     }
     if (!selectedVariant || selectedVariant.stock < quantity) {
-      alert("Sản phẩm không đủ hàng!");
+      toast.error("Sản phẩm không đủ hàng!");
       return;
     }
 
@@ -115,7 +115,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
 
     // Thêm vào giỏ hàng qua CartContext
     dispatch({ type: "add", item: cartItem });
-    alert("Bạn đã thêm vào giỏ hàng thành công!")
+    toast.error("Bạn đã thêm vào giỏ hàng thành công!");
     onClose();
   };
 

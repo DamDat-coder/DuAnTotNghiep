@@ -8,26 +8,44 @@ import {
   markAllNotificationsAsRead,
 } from "@/services/notificationApi";
 import { INotification } from "@/types/notification";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Notification() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   // Lấy thông báo khi mount
   useEffect(() => {
+    if (!user) return; // ✅ Chưa đăng nhập => không gọi API
+
     async function loadNotifications() {
       try {
         const response = await fetchNotifications();
         setNotifications(response.data);
         setHasUnread(response.data.some((n) => !n.is_read));
-      } catch (error) {
+      } catch (error: any) {
+        // ✅ Nếu lỗi từ token (403), đừng hiện toast
+        if (
+          error?.status === 403 ||
+          error?.message?.includes("Token không hợp lệ")
+        ) {
+          console.warn(
+            "Token không hợp lệ hoặc hết hạn, bỏ qua loadNotifications"
+          );
+          return;
+        }
+
+        // ✅ Các lỗi khác mới hiện toast
+        console.error("Lỗi khi tải thông báo:", error);
         toast.error("Không thể tải thông báo");
       }
     }
+
     loadNotifications();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     setHasUnread(notifications.some((n) => !n.is_read));
@@ -120,8 +138,10 @@ export default function Notification() {
 
           <ul className="divide-y">
             {notifications.length === 0 ? (
-              <li className="px-4 py-3 text-center text-gray-500">
-                Không có thông báo
+              <li className="px-4 py-3 text-center text-gray-500 text-sm">
+                {!user
+                  ? "Vui lòng đăng nhập để nhận thông báo"
+                  : "Không có thông báo"}
               </li>
             ) : (
               notifications.map((notification) => {
@@ -163,7 +183,7 @@ export default function Notification() {
                   <li
                     key={notification._id}
                     onClick={handleSingleClick}
-                    className={`flex gap-2 px-4 py-3 ${
+                    className={`flex gap-2 px-4 py-3 cursor-pointer ${
                       !notification.is_read ? "bg-[#ECF8FF]" : ""
                     }`}
                   >

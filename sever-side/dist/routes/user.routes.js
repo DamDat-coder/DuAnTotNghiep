@@ -13,7 +13,7 @@ router.post("/register", user_validator_1.validateRegister, validateRequest_1.va
 router.post("/login", user_validator_1.validateLogin, validateRequest_1.validateRequest, user_controller_1.loginUser);
 router.post("/logout", user_controller_1.logoutUser);
 router.post("/refresh-token", user_controller_1.refreshAccessToken);
-router.post("/google-login", user_validator_1.validateGoogleLogin, validateRequest_1.validateRequest, user_controller_1.googleLogin);
+router.post("/google-login", validateRequest_1.validateRequest, user_controller_1.googleLogin);
 // OTP qua SMS
 router.post("/send-otp", user_validator_1.validateSendOtp, validateRequest_1.validateRequest, user_phone_controller_1.sendSmsOTP);
 router.post("/verify-otp", user_validator_1.validateVerifyOtp, validateRequest_1.validateRequest, user_phone_controller_1.verifySmsOTP);

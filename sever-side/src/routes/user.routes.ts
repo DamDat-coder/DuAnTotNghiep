@@ -47,7 +47,7 @@ router.post("/register", validateRegister, validateRequest, registerUser);
 router.post("/login", validateLogin, validateRequest, loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);
-router.post("/google-login", validateGoogleLogin, validateRequest, googleLogin);
+router.post("/google-login", validateRequest, googleLogin);
 
 // OTP qua SMS
 router.post("/send-otp", validateSendOtp, validateRequest, sendSmsOTP);

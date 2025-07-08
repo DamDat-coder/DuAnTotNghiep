@@ -33,5 +33,5 @@ exports.validateVerifyOtp = [
         .withMessage("OTP không hợp lệ."),
 ];
 exports.validateGoogleLogin = [
-    (0, express_validator_1.body)("token").notEmpty().withMessage("Token đăng nhập Google không được để trống."),
+    (0, express_validator_1.body)("id_token").notEmpty().withMessage("Token đăng nhập Google không được để trống."),
 ];

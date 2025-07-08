@@ -36,7 +36,7 @@ export default function CartDesktop({
   const checkSelect = () => {
     // Kiểm tra có sản phẩm được chọn không
     if (selectedItemsCount === 0) {
-      alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
       return;
     }
 
@@ -46,7 +46,7 @@ export default function CartDesktop({
         ? localStorage.getItem("accessToken")
         : null;
     if (!accessToken) {
-      alert("Bạn vui lòng đăng nhập trước khi thanh toán!");
+      toast.error("Bạn vui lòng đăng nhập trước khi thanh toán!");
       return;
     }
 

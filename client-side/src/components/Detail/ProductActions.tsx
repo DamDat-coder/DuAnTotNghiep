@@ -6,6 +6,7 @@ import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import WishlistButton from "../Core/Layout/WishlistButton/WishlistButton";
+import toast from "react-hot-toast";
 
 interface ProductActionsProps {
   product: IProduct;
@@ -137,11 +138,11 @@ export default function ProductActions({
 
   const handleAddToCart = () => {
     if (!selectedColor) {
-      alert("Vui lòng chọn màu sắc trước!");
+      toast.error("Vui lòng chọn màu sắc trước!");
       return;
     }
     if (!selectedSize) {
-      alert("Vui lòng chọn size trước!");
+      toast.error("Vui lòng chọn size trước!");
       return;
     }
 
@@ -149,7 +150,7 @@ export default function ProductActions({
       (v) => v.size === selectedSize && v.color === selectedColor
     );
     if (!variant || variant.stock === 0) {
-      alert("Sản phẩm này hiện không có sẵn!");
+      toast.error("Sản phẩm này hiện không có sẵn!");
       return;
     }
 
@@ -166,7 +167,7 @@ export default function ProductActions({
     };
 
     dispatch({ type: "add", item: cartItem });
-    alert("Đã thêm vào giỏ hàng!");
+    toast.error("Đã thêm vào giỏ hàng!");
   };
 
   const toggleLike = () => {
@@ -320,10 +321,7 @@ export default function ProductActions({
             </div>
           </div>
           <div className="z-40 w-11 h-11 border-2 border-solid border-black flex justify-center items-center">
-            <WishlistButton
-              product={product}
-              variant="black"
-            />
+            <WishlistButton product={product} variant="black" />
           </div>
         </div>
         <div className="flex flex-col gap-3">

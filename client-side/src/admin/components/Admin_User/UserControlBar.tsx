@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
+import { debounce } from "lodash";
 import AddUserModal from "./AddUserModal";
 
 const options = [
@@ -22,15 +23,31 @@ export default function UserControlBar({
   const [openDropdown, setOpenDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+  // Debounce hàm onSearchChange
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      onSearchChange(value);
+    }, 500), // Chờ 500ms trước khi gọi onSearchChange
+    [onSearchChange]
+  );
+
+  // Xử lý thay đổi filter
   const handleFilter = (opt: (typeof options)[number]) => {
     setSelected(opt);
     setOpenDropdown(false);
     onFilterChange(opt.value);
   };
 
+  // Xử lý thay đổi giá trị tìm kiếm
   const handleSearch = (val: string) => {
     setSearch(val);
-    onSearchChange(val);
+    debouncedSearch(val); // Gọi hàm debounce thay vì onSearchChange trực tiếp
+  };
+
+  // Xử lý xóa từ khóa tìm kiếm
+  const handleClearSearch = () => {
+    setSearch("");
+    onSearchChange(""); // Gọi ngay lập tức để cập nhật kết quả
   };
 
   return (
@@ -73,8 +90,8 @@ export default function UserControlBar({
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm"
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Tìm kiếm theo tên hoặc email"
               className="w-full h-full pl-10 pr-10 border border-gray-300 rounded-[12px] text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <Image
@@ -84,22 +101,24 @@ export default function UserControlBar({
               alt="search"
               className="absolute top-1/2 left-3 transform -translate-y-1/2"
             />
-            <button
-              onClick={() => setSearch("")}
-              className="absolute top-1/2 right-3 transform -translate-y-1/2"
-            >
-              <Image
-                src="/admin_user/close.svg"
-                width={14}
-                height={14}
-                alt="clear"
-              />
-            </button>
+            {search && ( // Chỉ hiển thị nút xóa khi có từ khóa
+              <button
+                onClick={handleClearSearch}
+                className="absolute top-1/2 right-3 transform -translate-y-1/2"
+              >
+                <Image
+                  src="/admin_user/close.svg"
+                  width={14}
+                  height={14}
+                  alt="clear"
+                />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Add User Button */}
-        <div className="pr-6">
+        {/* <div className="pr-6">
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 bg-black text-white px-5 h-12 rounded-[12px] text-sm font-medium hover:opacity-90"
@@ -112,7 +131,7 @@ export default function UserControlBar({
             />
             Thêm người dùng
           </button>
-        </div>
+        </div> */}
       </div>
 
       {showModal && <AddUserModal onClose={() => setShowModal(false)} />}

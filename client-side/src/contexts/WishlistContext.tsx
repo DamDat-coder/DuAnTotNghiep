@@ -1,63 +1,116 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { IProduct } from "@/types/product";
+import {
+  addProductToWishlistApi,
+  removeFromWishlistApi,
+  getWishlistFromApi,
+} from "@/services/userApi";
+import toast from "react-hot-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WishlistContextType {
   wishlist: IProduct[];
-  addToWishlist: (product: IProduct) => void;
-  removeFromWishlist: (productId: string) => void;
+  setWishlist: React.Dispatch<React.SetStateAction<IProduct[]>>;
+  addToWishlist: (product: IProduct) => Promise<void>;
+  removeFromWishlist: (productId: string) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
 }
 
-const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
+const WishlistContext = createContext<WishlistContextType | undefined>(
+  undefined
+);
 
-export const WishlistProvider = ({ children }: { children: React.ReactNode }) => {
+export const WishlistProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const { user } = useAuth();
   const [wishlist, setWishlist] = useState<IProduct[]>([]);
+  const isApiCalled = useRef(false); // Ngăn useEffect gọi lại do Strict Mode
 
-  // Khởi tạo wishlist từ localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedWishlist = localStorage.getItem("wishlist");
-      if (savedWishlist) {
-        try {
-          setWishlist(JSON.parse(savedWishlist));
-        } catch (error) {
-          console.error("Error parsing wishlist from localStorage:", error);
+    const initializeWishlist = async () => {
+      if (isApiCalled.current) return;
+      isApiCalled.current = true;
+
+      if (typeof window !== "undefined") {
+        const savedWishlist = localStorage.getItem("wishlist");
+        if (savedWishlist) {
+          try {
+            setWishlist(JSON.parse(savedWishlist));
+          } catch (error) {
+            // Không làm gì nếu parse lỗi
+          }
+        }
+
+        if (user) {
+          try {
+            const wishlistFromDB: IProduct[] = await getWishlistFromApi(
+              user.id
+            );
+            if (wishlistFromDB) {
+              setWishlist(wishlistFromDB);
+              localStorage.setItem("wishlist", JSON.stringify(wishlistFromDB));
+            }
+          } catch (error) {
+            // Không làm gì nếu API lỗi
+          }
         }
       }
-    }
-  }, []);
+    };
 
-  // Lưu wishlist vào localStorage khi thay đổi
+    initializeWishlist();
+  }, [user]);
+
   const saveWishlistToLocalStorage = (updatedWishlist: IProduct[]) => {
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
-        console.log("Saved wishlist to localStorage:", updatedWishlist);
       } catch (error) {
-        console.error("Error saving wishlist to localStorage:", error);
+        // Không làm gì nếu lưu localStorage lỗi
       }
     }
   };
 
-  const addToWishlist = (product: IProduct) => {
-    setWishlist((prev) => {
-      if (!prev.find((item) => item.id === product.id)) {
-        const updatedWishlist = [...prev, product];
-        saveWishlistToLocalStorage(updatedWishlist);
-        return updatedWishlist;
+  const addToWishlist = async (product: IProduct) => {
+    if (wishlist.find((item) => item.id === product.id)) {
+      return; // Ngăn thêm trùng lặp
+    }
+
+    const prevWishlist = [...wishlist];
+    setWishlist([...wishlist, product]);
+
+    try {
+      if (user) {
+        await addProductToWishlistApi(user.id, product.id);
       }
-      return prev;
-    });
+      saveWishlistToLocalStorage([...wishlist, product]);
+      toast.success("Đã thêm vào danh sách yêu thích!");
+    } catch (error) {
+      setWishlist(prevWishlist);
+      toast.error("Không thể thêm sản phẩm vào danh sách yêu thích.");
+    }
   };
 
-  const removeFromWishlist = (productId: string) => {
-    setWishlist((prev) => {
-      const updatedWishlist = prev.filter((item) => item.id !== productId);
-      saveWishlistToLocalStorage(updatedWishlist);
-      return updatedWishlist;
-    });
+  const removeFromWishlist = async (productId: string) => {
+    const prevWishlist = [...wishlist]; // Lưu trạng thái trước
+    setWishlist(wishlist.filter((item) => item.id !== productId)); // Cập nhật tạm thời
+
+    try {
+      if (user) {
+        await removeFromWishlistApi(user.id, productId); // Gọi API xóa khỏi DB
+      }
+      saveWishlistToLocalStorage(
+        wishlist.filter((item) => item.id !== productId)
+      );
+      toast.success("Đã xóa khỏi danh sách yêu thích!");
+    } catch (error) {
+      setWishlist(prevWishlist); // Rollback nếu API thất bại
+      toast.error("Không thể xóa sản phẩm khỏi danh sách yêu thích.");
+    }
   };
 
   const isInWishlist = (productId: string) => {
@@ -66,7 +119,13 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
 
   return (
     <WishlistContext.Provider
-      value={{ wishlist, addToWishlist, removeFromWishlist, isInWishlist }}
+      value={{
+        wishlist,
+        setWishlist,
+        addToWishlist,
+        removeFromWishlist,
+        isInWishlist,
+      }}
     >
       {children}
     </WishlistContext.Provider>

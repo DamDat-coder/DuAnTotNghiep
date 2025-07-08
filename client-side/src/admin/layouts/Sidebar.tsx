@@ -45,7 +45,7 @@ const sidebarItems: SidebarItem[] = [
   },
   {
     label: "Khuyến mãi",
-    href: "/admin/sales",
+    href: "/admin/coupons",
     icon: "/admin/sidebar/sale.svg",
     iconActive: "/admin/sidebar/sale_active.svg",
   },

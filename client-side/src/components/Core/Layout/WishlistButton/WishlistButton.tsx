@@ -6,11 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 import { IProduct } from "@/types/product";
 import LikeIcon from "./LikeIcon";
+import { useState } from "react";
 
 interface WishlistButtonProps {
   product: IProduct;
-  variant?: "white" | "black"; // Chọn icon màu
-  borderColor?: "black" | "white" | "none"; // Chọn màu viền
+  variant?: "white" | "black";
+  borderColor?: "black" | "white" | "none";
 }
 
 export default function WishlistButton({
@@ -22,21 +23,25 @@ export default function WishlistButton({
   const { user } = useAuth();
   const router = useRouter();
   const isLiked = isInWishlist(product.id);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleWishlistToggle = () => {
+  const handleWishlistToggle = async () => {
+    if (isLoading) return;
     if (!user) {
-      toast.error("Vui lòng đăng nhập để thêm vào wishlist!");
+      toast.error("🔐 Vui lòng đăng nhập để thêm vào danh sách yêu thích!");
       return;
     }
 
-    if (isLiked) {
-      removeFromWishlist(product.id);
-      toast.success("Đã xóa khỏi wishlist!");
-    } else {
-      addToWishlist(product);
-      toast.success("Đã thêm vào wishlist!");
+    setIsLoading(true);
+    try {
+      if (!isLiked) {
+        await addToWishlist(product);
+      } else {
+        await removeFromWishlist(product.id);
+      }
+    } finally {
+      setIsLoading(false);
     }
-    console.log("Wishlist toggled for product:", product.id, "isLiked:", !isLiked); // Debug
   };
 
   return (
@@ -45,11 +50,9 @@ export default function WishlistButton({
       onClick={handleWishlistToggle}
       role="button"
       aria-label={isLiked ? "Xóa khỏi wishlist" : "Thêm vào wishlist"}
+      disabled={isLoading} // Vô hiệu hóa khi đang loading
     >
-      <LikeIcon
-        variant={variant}
-        isActive={isLiked}
-      />
+      <LikeIcon variant={variant} isActive={isLiked} />
     </button>
   );
 }

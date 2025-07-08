@@ -1,5 +1,6 @@
 // src/hooks/useIsMobile.ts
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 
 export default function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);

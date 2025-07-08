@@ -1,174 +1,128 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
-import dynamic from "next/dynamic";
-import { ICategory } from "@/types/category";
-import { News, NewsPayload } from "@/types/new";
-import { IUser } from "@/types/auth";
-import { createNews, updateNews } from "@/services/newApi";
-import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
-import { ClipLoader } from "react-spinners";
+import { News } from "@/types/new";
+import { updateNews } from "@/services/newApi";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { ICategory } from "@/types/category";
+import { fetchCategoryTree } from "@/services/categoryApi";
+import { IUser } from "@/types/auth";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET =
-  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_NEW_PRESET;
-
-export default function AddNewModal({ onClose }: { onClose: () => void }) {
-  const [image, setImage] = useState<string | null>(null); // Chỉ dùng URL từ Cloudinary
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [date, setDate] = useState("");
-  const [category, setCategory] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+const EditNewsModal = ({
+  newsData,
+  onClose,
+}: {
+  newsData: News;
+  onClose: () => void;
+}) => {
+  const [title, setTitle] = useState(newsData.title);
+  const [content, setContent] = useState(newsData.content);
+  const [tags, setTags] = useState(newsData.tags || []);
+  const [category, setCategory] = useState(newsData.category_id._id);
   const [error, setError] = useState<string | null>(null);
+  const [image, setImage] = useState(newsData.thumbnail);
   const [categories, setCategories] = useState<ICategory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState<"draft" | "preview" | "publish">(
-    "draft"
+  const [isPublished, setIsPublished] = useState<boolean>(!!newsData.is_published);
+  const [publishedAt, setPublishedAt] = useState<string>(
+    newsData.published_at ? new Date(newsData.published_at).toISOString().slice(0, 16) : ""
   );
+
+  useEffect(() => {
+    setTitle(newsData.title);
+    setContent(newsData.content);
+    setTags(newsData.tags || []);
+    setCategory(newsData.category_id._id);
+    setImage(newsData.thumbnail || null);
+    setIsPublished(!!newsData.is_published);
+    setPublishedAt(
+      newsData.published_at ? new Date(newsData.published_at).toISOString().slice(0, 16) : ""
+    );
+  }, [newsData]); // Đảm bảo khi data thay đổi sẽ update lại các state
+
+  const handleSave = async (publishStatus?: boolean) => {
+    if (!title || !content || !category) {
+      setError("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+
+    const selectedCategory = categories.find((cat) => cat._id === category);
+    if (!selectedCategory) {
+      setError("Danh mục không hợp lệ.");
+      return;
+    }
+
+    // Nếu truyền publishStatus thì dùng, không thì lấy theo state
+    const is_published = typeof publishStatus === "boolean" ? publishStatus : isPublished;
+    const published_at =
+      is_published
+        ? (publishedAt ? new Date(publishedAt) : new Date())
+        : null;
+
+    const updatedNewsData: Partial<News> = {
+      title,
+      content,
+      tags,
+      category_id: selectedCategory,
+      thumbnail: image || null,
+      is_published,
+      published_at,
+    };
+
+    try {
+      await updateNews(newsData._id as string, updatedNewsData);
+      toast.success("Cập nhật tin tức thành công!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err) {
+      setError("Lỗi khi cập nhật tin tức.");
+      toast.error("Cập nhật thất bại!");
+      console.error("Update failed:", err);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.debug("Debug: Bắt đầu tải ảnh lên Cloudinary");
-    console.debug("Debug: CLOUDINARY_CLOUD_NAME", CLOUDINARY_CLOUD_NAME);
+    if (!file) return;
 
-    if (!file) {
-      console.debug("Debug: Không có file được chọn");
-      setError("Không có tệp hình ảnh được chọn.");
-      return;
-    }
-
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      console.debug("Debug: Thiếu thông tin cấu hình Cloudinary", {
-        CLOUDINARY_CLOUD_NAME,
-        CLOUDINARY_UPLOAD_PRESET,
-      });
-      setError("Thiếu thông tin Cloudinary.");
-      return;
-    }
-
-    console.debug("Debug: Thông tin file", {
-      name: file.name,
-      size: `${(file.size / 1024).toFixed(2)} KB`,
-      type: file.type,
-    });
-
-    setLoading(true);
+    // Thực hiện upload lên Cloudinary (nếu có)
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", "news");
-
-    console.debug("Debug: Gửi yêu cầu tải ảnh tới Cloudinary", {
-      cloudName: CLOUDINARY_CLOUD_NAME,
-      uploadPreset: CLOUDINARY_UPLOAD_PRESET,
-      folder: "news",
-    });
+    formData.append(
+      "upload_preset",
+      process.env.CLOUDINARY_UPLOAD_PRESET || ""
+    );
 
     try {
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
         {
           method: "POST",
           body: formData,
         }
       );
 
-      console.debug("Debug: Phản hồi từ Cloudinary", {
-        status: response.status,
-        statusText: response.statusText,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.debug("Debug: Lỗi từ Cloudinary", errorData);
-        throw new Error("Upload failed");
-      }
+      if (!response.ok) throw new Error("Upload failed");
 
       const data = await response.json();
-      console.debug("Debug: Tải ảnh thành công", {
-        secure_url: data.secure_url,
-        public_id: data.public_id,
-        format: data.format,
-      });
-      setImage(data.secure_url); // Lưu URL sau khi upload
+      setImage(data.secure_url); // Lưu lại URL hình ảnh
     } catch (err) {
-      console.error("Debug: Lỗi khi tải ảnh lên Cloudinary", err);
+      console.error("Error uploading to Cloudinary:", err);
       setError("Lỗi khi tải hình ảnh lên Cloudinary.");
-    } finally {
-      setLoading(false);
-      console.debug("Debug: Kết thúc quá trình tải ảnh");
     }
   };
-
   const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputTags = e.target.value.split(/[, ]+/).filter((tag) => tag.trim());
     setTags(inputTags);
   };
-
-  const handleSubmit = async () => {
-    if (action === "publish" && !date) {
-      setError("Vui lòng chọn ngày đăng khi xuất bản!");
-      return;
-    }
-
-    setError(null);
-
-    const selectedCategory = categories.find((cat) => cat._id === category);
-    if (!selectedCategory && category) {
-      setError("Danh mục không hợp lệ.");
-      return;
-    }
-
-    const payload: NewsPayload = {
-      title,
-      content,
-      slug: title.toLowerCase().replace(/\s+/g, "-"),
-      category_id: selectedCategory || { _id: category, name: "" },
-      tags,
-      is_published: action === "publish",
-      thumbnail: image || null,
-      news_image: image ? [image] : [],
-      published_at: action === "publish" ? new Date(date) : undefined,
-    };
-
-    console.log("Payload to send:", payload);
-
-    try {
-      const createdNews = await createNews(payload);
-      toast.success("Tạo tin tức thành công!");
-
-      // Nếu hành động là "publish", cập nhật tin tức để đặt is_published và published_at
-      if (action === "publish") {
-        if (!createdNews.id) {
-          throw new Error("ID tin tức không hợp lệ sau khi tạo");
-        }
-        await updateNews(createdNews.id, {
-          is_published: true,
-          published_at: new Date(date),
-        });
-        toast.success("Cập nhật trạng thái xuất bản thành công!");
-      }
-
-      // setTimeout(() => {
-      //   window.location.reload();
-      // }, 1000);
-    } catch (err: any) {
-      console.error("Lỗi khi tạo hoặc cập nhật tin tức:", err);
-      setError(err.message);
-      toast.error("Đã xảy ra lỗi khi tạo tin tức.");
-    }
-  };
-
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategoryTree();
-        console.log("Loaded categories:", data);
         setCategories(data);
       } catch (err) {
         setError("Lỗi khi tải danh mục.");
@@ -184,7 +138,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
-            <h2 className="text-lg font-bold">Thêm Tin Tức Mới</h2>
+            <h2 className="text-lg font-bold">Sửa Tin Tức</h2>
             <button
               onClick={onClose}
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
@@ -217,8 +171,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   />
                 </div>
                 <Editor
-                  value={content}
-                  onChange={(newContent) => setContent(newContent)}
+                  value={content || ""}
+                  onChange={(newContent: string) => setContent(newContent)}
                 />
               </div>
             </div>
@@ -230,15 +184,13 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
                       Ngày đăng
-                      {action === "publish" && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
+                      {false && <span className="text-red-500 ml-1">*</span>}
                     </label>
                     <input
                       type="datetime-local"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      disabled={action !== "publish"}
+                      value={publishedAt}
+                      onChange={(e) => setPublishedAt(e.target.value)}
+                      disabled={!isPublished}
                       className="w-full h-[46px] border border-[#D1D1D1] rounded-[12px] appearance-none"
                     />
                     <Image
@@ -250,36 +202,37 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                     />
 
                     <div className="flex gap-2 mt-6">
+                      {/* Lưu bản nháp */}
                       <button
                         type="button"
-                        onClick={() => setAction("draft")}
-                        className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
-                          action === "draft"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
+                        onClick={() => {
+                          setIsPublished(false);
+                          handleSave(false);
+                        }}
+                        className="flex-1 w-[120px] h-10 rounded-[4px] text-sm"
                       >
                         Lưu bản nháp
                       </button>
+
+                      {/* Xem trước */}
                       <button
                         type="button"
-                        onClick={() => setAction("preview")}
-                        className={`flex-1 w-[94px] h-10 rounded-[4px] text-sm ${
-                          action === "preview"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
+                        onClick={() => {
+                          // Xử lý xem trước nếu cần
+                        }}
+                        className="flex-1 w-[94px] h-10 rounded-[4px] text-sm"
                       >
                         Xem trước
                       </button>
+
+                      {/* Xuất bản */}
                       <button
                         type="button"
-                        onClick={() => setAction("publish")}
-                        className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm ${
-                          action === "publish"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
+                        onClick={() => {
+                          setIsPublished(true);
+                          handleSave(true);
+                        }}
+                        className="flex-1 w-[91px] h-10 rounded-[4px] text-sm"
                       >
                         Xuất bản
                       </button>
@@ -291,14 +244,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       Hình đại diện<span className="text-red-500 ml-1">*</span>
                     </label>
                     <label className="w-[338px] h-[212px] border border-dashed border-gray-300 rounded-[12px] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-                      {loading ? (
-                        <ClipLoader
-                          color="#3B82F6"
-                          loading={loading}
-                          size={40}
-                          aria-label="Đang tải ảnh"
-                        />
-                      ) : image ? (
+                      {image ? (
                         <img
                           src={image}
                           alt="Preview"
@@ -371,10 +317,10 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   </div>
                   <button
                     type="button"
-                    onClick={handleSubmit}
+                    onClick={handleSave}
                     className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
                   >
-                    Tạo tin tức
+                    Lưu tin tức
                   </button>
                   {error && <p className="text-red-500 mt-2">{error}</p>}
                 </div>
@@ -385,4 +331,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-}
+};
+
+export default EditNewsModal;

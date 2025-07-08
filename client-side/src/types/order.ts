@@ -1,32 +1,51 @@
 export interface OrderItem {
-  id: string;
+  productId: string;
   name: string;
-  price: number;
-  discountPercent: number;
   image: string;
-  size: string;
   color: string;
+  size: string;
+  price: number;
   quantity: number;
 }
 
+export interface ShippingAddress {
+  street: string;
+  ward: string;
+  district: string;
+  province: string;
+  is_default?: boolean;
+}
+
 export interface IOrder {
-  _id?: { $oid: string } | string;
-  id?: string;
-  user?: { name: string; email: string };
-  userId?: string | { name: string; email: string; _id?: string };
+  _id: string;
+  userId: string;
+  couponId?: string | null;
+  address_id: string;
+  shippingAddress: ShippingAddress;
   totalPrice: number;
-  items: OrderItem[];
+  shipping: number;
   status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
-  createdAt?: string;
-  [key: string]: any;
+  paymentMethod: "cod" | "vnpay" | "momo" | "zalopay";
+  paymentId?: string | null;
+  items: OrderItem[];
+  note?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface OrderDetail {
-  id: string;
-  orderCode: string;
-  purchaseDate: string;
-  customerEmail: string;
-  products: { name: string; quantity: number }[];
-  total: number;
-  status: "pending" | "success" | "cancelled";
+  _id: string;
+  userId: string;
+  couponId?: string | null;
+  address_id: string;
+  shippingAddress: ShippingAddress;
+  totalPrice: number;
+  shipping: number;
+  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+  paymentMethod: "cod" | "vnpay" | "momo" | "zalopay";
+  paymentId?: string | null;
+  items: OrderItem[];
+  note?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

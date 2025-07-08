@@ -491,7 +491,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="font-semibold block mb-1 text-sm">Tồn kho</label>
+                  <label className="font-semibold block mb-1 text-sm">Số lượng nhập kho</label>
                   <input
                     type="number"
                     min={0}

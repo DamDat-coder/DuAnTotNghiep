@@ -8,6 +8,7 @@ import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
 import { fetchProducts } from "@/services/productApi";
 import CartTablet from "@/components/Cart/CartTablet";
+import { Toaster } from "react-hot-toast";
 
 const getLowestPriceVariant = (product: IProduct) => {
   if (!product.variants || product.variants.length === 0) {
@@ -95,12 +96,13 @@ export default function Cart() {
   const removeItem = (id: string, size: string) => {
     const item = cart.items.find((i) => i.id === id && i.size === size);
     if (!item) return;
-    dispatch({ type: "delete", item });
+    dispatch({ type: "remove", item });
   };
 
   return (
     <div className="py-8">
       <Container>
+        <Toaster position="top-right" />
         <h1 className="text-[2rem] font-bold text-left">Giỏ hàng của bạn</h1>
         <div className="flex flex-col gap-4 pt-6 relative">
           <div className="flex items-center gap-2">

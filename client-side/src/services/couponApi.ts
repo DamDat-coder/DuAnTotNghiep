@@ -134,18 +134,19 @@ export async function validateCoupon(
   data?: { id: string; discountValue: number; discountType: string };
 }> {
   try {
-    const response = await fetchWithAuth<Coupon[]>(`${API_BASE_URL}/coupons`, {
+    const url = `${API_BASE_URL}/coupons?search=${encodeURIComponent(
+      code
+    )}&isActive=true&limit=1`;
+    const response = await fetchWithAuth<{ data: Coupon[] }>(url, {
       cache: "no-store",
     });
 
-    const coupon = response.find((c) => c.code === code);
+    const coupon = response.data?.find(
+      (c) => c.code.toLowerCase() === code.toLowerCase()
+    );
+
     if (!coupon) {
       return { success: false, message: "Mã giảm giá không hợp lệ." };
-    }
-
-    // Kiểm tra điều kiện áp dụng mã giảm giá
-    if (!coupon.is_active) {
-      return { success: false, message: "Mã giảm giá không còn hoạt động." };
     }
 
     const now = new Date();
@@ -186,11 +187,40 @@ export async function validateCoupon(
 }
 
 // Lấy tất cả mã giảm giá
-export async function fetchAllCoupons(): Promise<Coupon[]> {
+export async function fetchAllCoupons(
+  isActive?: boolean,
+  search?: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<{
+  data: Coupon[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}> {
   try {
-    const response = await fetchWithAuth<Coupon[]>(`${API_BASE_URL}/coupons`, {
+    const queryParams = new URLSearchParams();
+    if (isActive !== undefined)
+      queryParams.append("isActive", String(isActive));
+    if (search) queryParams.append("search", search);
+    queryParams.append("page", String(page));
+    queryParams.append("limit", String(limit));
+
+    const response = await fetchWithAuth<{
+      data: Coupon[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>(`${API_BASE_URL}/coupons?${queryParams.toString()}`, {
       cache: "no-store",
     });
+
     return response;
   } catch (error) {
     console.error("Error fetching coupons:", error);

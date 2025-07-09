@@ -14,6 +14,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { ActiveTabProvider } from "@/contexts/ActiveTabContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ChatBotBox from "@/components/Chat/ChatBotBox";
+import { CategoriesProvider } from "@/contexts/CategoriesContext";
 import { Toaster } from "react-hot-toast";
 
 const lora = Lora({
@@ -43,7 +44,7 @@ export default function RootLayout({
           <AuthProvider>
             <MenuProvider>
               <LookupProvider>
-                <ActiveTabProvider>
+                <CategoriesProvider>
                   {!isAdminRoute && (
                     <Header
                       title="My App"
@@ -58,8 +59,9 @@ export default function RootLayout({
                       {!isAdminRoute && <ChatBotBox />}
                     </WishlistProvider>
                   </CartProvider>
-                  {!isAdminRoute && <Footer />}
-                </ActiveTabProvider>
+                  {!isAdminRoute}
+                </CategoriesProvider>
+                {!isAdminRoute && <Footer />}
               </LookupProvider>
             </MenuProvider>
           </AuthProvider>
@@ -69,20 +71,8 @@ export default function RootLayout({
           toastOptions={{
             duration: 3000,
             style: {
-              background: "#363636",
-              color: "#fff",
-            },
-            success: {
-              style: {
-                background: "#4ade80",
-                color: "#fff",
-              },
-            },
-            error: {
-              style: {
-                background: "#ef4444",
-                color: "#fff",
-              },
+              background: "#fff",
+              color: "#363636",
             },
           }}
         />

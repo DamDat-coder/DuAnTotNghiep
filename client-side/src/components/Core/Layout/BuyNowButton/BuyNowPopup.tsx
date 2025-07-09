@@ -42,12 +42,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   }, [isOpen, isSizeChartOpen]);
 
   // Lấy danh sách kích thước và màu sắc từ variants
-  const sizes = Array.from(
-    new Set(product.variants.map((v) => v.size))
-  ).map((size) => ({
-    value: size,
-    inStock: product.variants.some((v) => v.size === size && v.stock > 0),
-  }));
+  const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
+    (size) => ({
+      value: size,
+      inStock: product.variants.some((v) => v.size === size && v.stock > 0),
+    })
+  );
 
   const colors = Array.from(new Set(product.variants.map((v) => v.color)));
 
@@ -76,9 +76,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
   // Xử lý xác nhận mua ngay
   const handleConfirm = () => {
-    const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const accessToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
     if (!accessToken) {
-      alert("Bạn vui lòng đăng nhập trước khi mua hàng!");
+      toast.error("Bạn vui lòng đăng nhập trước khi mua hàng!");
       return;
     }
     if (!selectedColor) {
@@ -97,6 +100,8 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       toast.error("Sản phẩm không đủ hàng!");
       return;
     }
+
+    dispatch({ type: "resetSelected" });
 
     // Tạo cartItem
     const cartItem = {
@@ -182,13 +187,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
               {/* Hình ảnh sản phẩm */}
               <Image
-                src={`/product/img/${
-                  Array.isArray(product.images) && product.images.length > 0
-                    ? typeof product.images[0] === "string"
-                      ? product.images[0]
-                      : ""
-                    : ""
-                }`}
+                src={product.images[0]}
                 alt={product.name || "Sản phẩm"}
                 width={200}
                 height={200}
@@ -203,7 +202,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-red-500 font-bold text-lg">
-                      {(selectedVariant?.discountedPrice || product.variants[0]?.discountedPrice || 0).toLocaleString("vi-VN")}₫
+                      {(
+                        selectedVariant?.discountedPrice ||
+                        product.variants[0]?.discountedPrice ||
+                        0
+                      ).toLocaleString("vi-VN")}
+                      ₫
                     </p>
                     {selectedVariant && selectedVariant.discountPercent > 0 && (
                       <p className="text-sm text-[#374151] line-through">
@@ -380,7 +384,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999]"
             onClick={handleCloseSizeChart}
           >
             <motion.div

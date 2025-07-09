@@ -1,3 +1,4 @@
+import { ICategoryNews } from "./category";
 import { SortOption } from "./filter";
 
 // types/product.ts

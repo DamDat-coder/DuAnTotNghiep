@@ -167,7 +167,7 @@ export default function ProductActions({
     };
 
     dispatch({ type: "add", item: cartItem });
-    toast.error("Đã thêm vào giỏ hàng!");
+    toast.success("Đã thêm vào giỏ hàng!");
   };
 
   const toggleLike = () => {

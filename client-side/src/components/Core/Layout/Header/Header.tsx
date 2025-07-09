@@ -55,9 +55,9 @@ export default function Header({ title }: HeaderProps) {
     if (isLookupOpen && defaultSuggestions.length === 0) {
       const loadDefaultSuggestions = async () => {
         try {
-          const response = await fetchProducts({ sort: "best-seller" });
-          const suggestions = response.products
-            .map((product) => product.name)
+          const response = await fetchProducts({});
+          const suggestions = response.data
+            .map((product: any) => product.name)
             .slice(0, 5);
           setDefaultSuggestions(suggestions);
         } catch (error) {
@@ -138,7 +138,11 @@ export default function Header({ title }: HeaderProps) {
       >
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between relative">
-            <Link href="/" className="flex items-center flex-shrink-0" aria-label="Trang chủ">
+            <Link
+              href="/"
+              className="flex items-center flex-shrink-0"
+              aria-label="Trang chủ"
+            >
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -212,7 +216,9 @@ export default function Header({ title }: HeaderProps) {
                                 {searchTerm.trim() === "" ? (
                                   <SearchSuggestions
                                     suggestions={suggestions}
-                                    handleSuggestionClick={handleSuggestionClick}
+                                    handleSuggestionClick={
+                                      handleSuggestionClick
+                                    }
                                     onClick={handleSuggestionClick}
                                   />
                                 ) : (

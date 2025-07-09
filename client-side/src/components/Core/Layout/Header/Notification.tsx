@@ -111,7 +111,7 @@ export default function Notification() {
       </button>
 
       {isOpen && (
-        <div className="absolute font-description right-0 mt-2 w-[320px] bg-white shadow-xl rounded-lg z-50 overflow-y-scroll scroll-hidden">
+        <div className="absolute font-description right-0 mt-2 w-[320px] h-[18.75rem] overflow-y-scroll bg-white shadow-xl z-50 scroll-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <span className="font-semibold text-sm text-black">Thông báo</span>
             <button

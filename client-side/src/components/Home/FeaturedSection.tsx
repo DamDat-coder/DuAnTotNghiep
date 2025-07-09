@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { IFeaturedProducts } from "@/types/product";
-import { fetchCategoryTree } from "@/services/categoryApi";
-import FeaturedSwiper from "./FeaturedSwiper";
 import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
-import { ICategory } from "@/types/category";
+import FeaturedSwiper from "./FeaturedSwiper";
+import { useCategories } from "@/contexts/CategoriesContext";
 
 interface FeaturedSectionProps {
   featuredSection: IFeaturedProducts[];
@@ -21,54 +21,18 @@ export default function FeaturedSection({
   tabletSlidesPerView = 2.5,
 }: FeaturedSectionProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<ICategory[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tree, isLoading, error } = useCategories();
+  const categories = tree.filter(
+    (cat) =>
+      cat.parentId === null &&
+      cat._id !== "684d0f12543e02998d9df097" &&
+      cat.name !== "Bài viết"
+  );
 
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        setLoading(true);
-        const categoryTree = await fetchCategoryTree();
-        const filteredCategories = categoryTree.filter(
-          (cat) =>
-            cat.parentId === null &&
-            cat._id !== "684d0f12543e02998d9df097" &&
-            cat.name !== "Bài viết"
-        );
-        setCategories(filteredCategories);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadCategories();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="text-center font-body">
-        <p>Đang tải danh mục...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-red-500 font-body">
-        <p>Lỗi: {error}</p>
-      </div>
-    );
-  }
-
-  if (!featuredSection || featuredSection.length === 0) {
-    return (
-      <div className="text-center text-gray-500 font-body">
-        <p>Không có sản phẩm nào để hiển thị.</p>
-      </div>
-    );
-  }
+  if (isLoading) return <p>Đang tải danh mục...</p>;
+  if (error) return <p className="text-red-500">Lỗi: {error}</p>;
+  if (!featuredSection || featuredSection.length === 0)
+    return <p className="text-gray-500">Không có sản phẩm nào để hiển thị.</p>;
 
   return (
     <FadeInWhenVisible>
@@ -93,7 +57,10 @@ export default function FeaturedSection({
               ? categories.find((cat) => cat.name === product.gender)
               : null;
             const genderLink = matchedCategory
-              ? { href: `/products?id_cate=${matchedCategory._id}`, label: product.gender }
+              ? {
+                  href: `/products?id_cate=${matchedCategory._id}`,
+                  label: product.gender,
+                }
               : { href: "/products", label: "Danh mục" };
 
             return (

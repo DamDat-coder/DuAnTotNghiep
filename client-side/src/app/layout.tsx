@@ -14,6 +14,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ChatBotBox from "@/components/Chat/ChatBotBox";
+import { CategoriesProvider } from "@/contexts/CategoriesContext";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -42,14 +43,16 @@ export default function RootLayout({
           <AuthProvider>
             <MenuProvider>
               <LookupProvider>
-                {!isAdminRoute && <Header title="My App" />}
-                <CartProvider>
-                  <WishlistProvider>
-                    <main className={mainClassName}>{children}</main>
-                    {!isAdminRoute && <ChatBotBox />}
-                  </WishlistProvider>
-                </CartProvider>
-                {!isAdminRoute}
+                <CategoriesProvider>
+                  {!isAdminRoute && <Header title="My App" />}
+                  <CartProvider>
+                    <WishlistProvider>
+                      <main className={mainClassName}>{children}</main>
+                      {!isAdminRoute && <ChatBotBox />}
+                    </WishlistProvider>
+                  </CartProvider>
+                  {!isAdminRoute}
+                </CategoriesProvider>
                 {!isAdminRoute && <Footer />}
               </LookupProvider>
             </MenuProvider>

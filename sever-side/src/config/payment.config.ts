@@ -12,7 +12,7 @@ export const ZALO_PAY = {
 export const vnpay = new VNPay({
   tmnCode: process.env.VNPAY_TMNCODE!,
   secureSecret: process.env.VNPAY_HASH_SECRET!,
-  vnpayHost: "https://sandbox.vnpayment.vn", // có thể dùng process.env.VNPAY_HOST nếu cần
+  vnpayHost: "https://sandbox.vnpayment.vn",
   testMode: true,
   hashAlgorithm: HashAlgorithm.SHA512,
   loggerFn: () => {},

@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const product_controller_1 = require("../controllers/product.controller");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
-const product_validator_1 = require("../middlewares/validators/product.validator");
 const multer_1 = __importDefault(require("multer"));
 const router = express_1.default.Router();
 const storage = multer_1.default.memoryStorage();
@@ -15,7 +14,7 @@ router.get("/admin", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmi
 router.get("/", product_controller_1.getAllProducts);
 router.get("/:id", product_controller_1.getProductById);
 router.get("/slug/:slug", product_controller_1.getProductBySlug);
-router.post("/", upload.array("images", 20), auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_validator_1.validateCreateProduct, product_controller_1.createProduct);
-router.put("/:id", upload.array("images", 20), auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_validator_1.validateUpdateProduct, product_controller_1.updateProduct);
-router.patch("/:id/lock", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_validator_1.validateLockProduct, product_controller_1.lockProduct);
+router.post("/", upload.array("images", 20), auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.createProduct);
+router.put("/:id", upload.array("images", 20), auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.updateProduct);
+router.patch("/:id/lock", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.lockProduct);
 exports.default = router;

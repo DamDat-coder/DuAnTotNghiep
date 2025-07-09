@@ -17,15 +17,10 @@ import {
   addToWishlist,
   removeFromWishlist,
   getWishlist,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/user.controller";
 
-import {
-  validateRegister,
-  validateLogin,
-  validateGoogleLogin,
-  validateSendOtp,
-  validateVerifyOtp,
-} from "../middlewares/validators/user.validator";
 
 import {
   sendSmsOTP,
@@ -43,15 +38,17 @@ const router = Router();
 
 // Xác thực và quản lý người dùng
 router.get("/me", verifyToken, getCurrentUser);
-router.post("/register", validateRegister, validateRequest, registerUser);
-router.post("/login", validateLogin, validateRequest, loginUser);
+router.post("/register", validateRequest, registerUser);
+router.post("/login",  validateRequest, loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);
-router.post("/google-login", validateGoogleLogin, validateRequest, googleLogin);
+router.post("/google-login", validateRequest, googleLogin);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 // OTP qua SMS
-router.post("/send-otp", validateSendOtp, validateRequest, sendSmsOTP);
-router.post("/verify-otp", validateVerifyOtp, validateRequest, verifySmsOTP);
+router.post("/send-otp",  validateRequest, sendSmsOTP);
+router.post("/verify-otp", validateRequest, verifySmsOTP);
 
 // Địa chỉ
 router.post("/:id/addresses", verifyToken, addAddress);

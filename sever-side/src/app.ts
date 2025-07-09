@@ -16,13 +16,12 @@ import paymentRoutes from "./routes/payment.routers";
 import reviewRoutes from './routes/review.routes';
 import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
-
 dotenv.config();
 
 const app = express();
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
+  windowMs: 15 * 60 * 1000,
+  max: 500,
   message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
 });
 app.use(limiter);
@@ -32,7 +31,7 @@ app.use(hpp());
 app.use(cors({
   origin: "http://localhost:3300", 
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 

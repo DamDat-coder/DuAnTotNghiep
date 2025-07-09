@@ -101,7 +101,6 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
 });
 exports.checkVNPayReturn = checkVNPayReturn;
 // Tạo URL thanh toán ZaloPay
-// Tạo URL thanh toán ZaloPay
 const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { totalPrice, userId, orderInfo } = req.body;
@@ -118,7 +117,6 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             order_info: orderInfo,
         });
         const embed_data = {
-            redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
             redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
         };
         const order = {
@@ -158,25 +156,13 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
                 message: "Tạo đơn ZaloPay thất bại!",
                 zaloRes: zaloRes.data,
             });
-            return res.status(400).json({
-                message: "Tạo đơn ZaloPay thất bại!",
-                zaloRes: zaloRes.data,
-            });
         }
-        return res.status(200).json({
-            paymentUrl: zaloRes.data.order_url,
-            paymentId: payment._id,
-        });
         return res.status(200).json({
             paymentUrl: zaloRes.data.order_url,
             paymentId: payment._id,
         });
     }
     catch (error) {
-        return res.status(500).json({
-            message: "Không tạo được đơn ZaloPay",
-            error: error instanceof Error ? error.message : error,
-        });
         return res.status(500).json({
             message: "Không tạo được đơn ZaloPay",
             error: error instanceof Error ? error.message : error,
@@ -199,16 +185,6 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
             status,
             message,
             trans_id,
-            app_id,
-            app_trans_id,
-            app_user,
-            amount,
-            app_time,
-            embed_data,
-            item,
-            status,
-            message,
-            trans_id,
         ].join("|");
         const expectedMac = crypto_1.default
             .createHmac("sha256", payment_config_1.ZALO_PAY.key1)
@@ -218,15 +194,9 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
             return res
                 .status(400)
                 .json({ return_code: -1, return_message: "mac not valid" });
-            return res
-                .status(400)
-                .json({ return_code: -1, return_message: "mac not valid" });
         }
         const payment = yield payment_model_1.default.findOne({ transaction_code: app_trans_id });
         if (!payment) {
-            return res
-                .status(404)
-                .json({ return_code: -1, return_message: "payment not found" });
             return res
                 .status(404)
                 .json({ return_code: -1, return_message: "payment not found" });
@@ -266,7 +236,7 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
                         color: i.color,
                         size: i.size,
                         quantity: i.quantity,
-                        price: (_a = i.price) !== null && _a !== void 0 ? _a : 0, // tùy logic, bạn có thể lấy giá tại thời điểm thanh toán
+                        price: (_a = i.price) !== null && _a !== void 0 ? _a : 0,
                     });
                 }),
             });
@@ -278,9 +248,6 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
         return res.redirect(redirectUrl);
     }
     catch (error) {
-        return res
-            .status(500)
-            .json({ return_code: -1, return_message: "internal error" });
         return res
             .status(500)
             .json({ return_code: -1, return_message: "internal error" });

@@ -21,12 +21,6 @@ export default function OrderItems({ orderItems }: OrderItemsProps) {
   return (
     <div className="flex flex-col gap-4">
       {orderItems.map((item) => {
-        // Xử lý URL ảnh tương tự CartItem.tsx
-        const imageSrc = item.image
-          ? item.image.startsWith("/")
-            ? item.image
-            : "/product/img/" + item.image
-          : "/images/placeholder.jpg";
         const displayColor =
           colorMap[item.color] || item.color || "Không xác định";
         return (
@@ -35,7 +29,7 @@ export default function OrderItems({ orderItems }: OrderItemsProps) {
             className="flex items-center gap-4 py-4 border-b"
           >
             <Image
-              src={imageSrc}
+              src={item.image}
               alt={item.name}
               width={110}
               height={110}

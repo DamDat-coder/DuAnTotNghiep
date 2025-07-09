@@ -101,6 +101,8 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       return;
     }
 
+    dispatch({ type: "resetSelected" });
+
     // Tạo cartItem
     const cartItem = {
       id: product.id,
@@ -185,13 +187,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
               {/* Hình ảnh sản phẩm */}
               <Image
-                src={`/product/img/${
-                  Array.isArray(product.images) && product.images.length > 0
-                    ? typeof product.images[0] === "string"
-                      ? product.images[0]
-                      : ""
-                    : ""
-                }`}
+                src={product.images[0]}
                 alt={product.name || "Sản phẩm"}
                 width={200}
                 height={200}
@@ -388,7 +384,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999]"
             onClick={handleCloseSizeChart}
           >
             <motion.div

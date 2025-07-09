@@ -218,7 +218,7 @@ export default function ProductDetailsSection({
           {user && (
             <form
               onSubmit={handleSubmitReview}
-              className="space-y-4 bg-gray-200 px-4 py-3"
+              className="space-y-4 border-gray-400 border border-solid px-4 py-3"
             >
               <label className="block text-base font-bold text-black ">
                 Gửi phiếu đánh giá của bạn! :

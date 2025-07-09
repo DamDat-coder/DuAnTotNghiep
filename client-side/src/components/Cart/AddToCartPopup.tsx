@@ -168,13 +168,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
 
                 {/* Hình ảnh sản phẩm */}
                 <Image
-                  src={`/product/img/${
-                    Array.isArray(product.images) && product.images.length > 0
-                      ? typeof product.images[0] === "string"
-                        ? product.images[0]
-                        : ""
-                      : ""
-                  }`}
+                  src={product.images[0]}
                   alt={product.name || "Sản phẩm"}
                   width={200}
                   height={200}

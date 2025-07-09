@@ -19,18 +19,15 @@ export default function ProductActions({
   sizes,
   stock,
 }: ProductActionsProps) {
-  // Khởi tạo với variant đầu tiên
   const firstVariant = product.variants[0];
-  const [selectedSize, setSelectedSize] = useState<string | null>(
-    firstVariant?.size || null
-  );
-  const [selectedColor, setSelectedColor] = useState<string | null>(
-    firstVariant?.color || null
-  );
+  const [selectedSize, setSelectedSize] = useState<string | null>(firstVariant?.size || null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(firstVariant?.color || null);
   const [isLiked, setIsLiked] = useState(false);
   const dispatch = useCartDispatch();
   const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
-  const [selectedVariant, setSelectedVariant] = useState<{
+
+  // ✅ Đổi tên state từ selectedVariant → selectedVariantPrice để tránh trùng
+  const [selectedVariantPrice, setSelectedVariantPrice] = useState<{
     price: number;
     discountedPrice?: number;
     discountPercent: number;
@@ -44,47 +41,41 @@ export default function ProductActions({
       : null
   );
 
-  // Lấy danh sách màu sắc từ variants
-  const colors = Array.from(new Set(product.variants.map((v) => v.color))).map(
-    (color) => ({
-      name: color,
-      hex:
-        color === "Xám"
-          ? "#808080"
-          : color === "Đen"
-          ? "#000000"
-          : color === "Đỏ"
-          ? "#FF0000"
-          : "#FFFFFF",
-    })
-  );
+  const colors = Array.from(new Set(product.variants.map((v) => v.color))).map((color) => ({
+    name: color,
+    hex:
+      color === "Xám"
+        ? "#808080"
+        : color === "Đen"
+        ? "#000000"
+        : color === "Đỏ"
+        ? "#FF0000"
+        : "#FFFFFF",
+  }));
 
-  // Lấy danh sách kích thước khả dụng dựa trên màu sắc đã chọn
   const availableSizes = selectedColor
     ? product.variants
         .filter((v) => v.color === selectedColor && v.stock > 0)
         .map((v) => v.size)
     : sizes.map((s) => s.value);
 
-  // Cập nhật giá tiền khi chọn màu và kích thước
   useEffect(() => {
     if (selectedColor && selectedSize) {
       const variant = product.variants.find(
         (v) => v.color === selectedColor && v.size === selectedSize
       );
       if (variant) {
-        setSelectedVariant({
+        setSelectedVariantPrice({
           price: variant.price,
           discountedPrice: variant.discountedPrice || variant.price,
           discountPercent: variant.discountPercent,
         });
       } else {
-        setSelectedVariant(null);
+        setSelectedVariantPrice(null);
       }
     } else {
-      // Nếu chưa chọn đủ màu và kích thước, giữ variant đầu tiên
       const lowestVariant = product.variants[0];
-      setSelectedVariant({
+      setSelectedVariantPrice({
         price: lowestVariant.price,
         discountedPrice: lowestVariant.discountedPrice || lowestVariant.price,
         discountPercent: lowestVariant.discountPercent,
@@ -92,17 +83,20 @@ export default function ProductActions({
     }
   }, [selectedColor, selectedSize, product.variants]);
 
+  // ✅ Đây là biến chứa variant chính xác đang chọn (có stock)
+  const selectedVariant = product.variants.find(
+    (v) => v.size === selectedSize && v.color === selectedColor
+  );
+
+  const maxQuantity = selectedVariant ? selectedVariant.stock : 0;
+
   useEffect(() => {
-    const savedLikes = JSON.parse(
-      localStorage.getItem("likedProducts") || "{}"
-    );
+    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
     setIsLiked(savedLikes[product.id] || false);
   }, [product.id]);
 
   useEffect(() => {
-    const savedLikes = JSON.parse(
-      localStorage.getItem("likedProducts") || "{}"
-    );
+    const savedLikes = JSON.parse(localStorage.getItem("likedProducts") || "{}");
     localStorage.setItem(
       "likedProducts",
       JSON.stringify({ ...savedLikes, [product.id]: isLiked })
@@ -121,10 +115,7 @@ export default function ProductActions({
   }, [isSizeChartOpen]);
 
   const handleSizeChange = (size: string) => {
-    if (
-      sizes.find((s) => s.value === size)?.inStock &&
-      (!selectedColor || availableSizes.includes(size))
-    ) {
+    if (sizes.find((s) => s.value === size)?.inStock && (!selectedColor || availableSizes.includes(size))) {
       setSelectedSize(size);
     }
   };
@@ -146,10 +137,7 @@ export default function ProductActions({
       return;
     }
 
-    const variant = product.variants.find(
-      (v) => v.size === selectedSize && v.color === selectedColor
-    );
-    if (!variant || variant.stock === 0) {
+    if (!selectedVariant || selectedVariant.stock === 0) {
       toast.error("Sản phẩm này hiện không có sẵn!");
       return;
     }
@@ -157,8 +145,8 @@ export default function ProductActions({
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: variant.discountedPrice || variant.price,
-      discountPercent: variant.discountPercent,
+      price: selectedVariant.discountedPrice || selectedVariant.price,
+      discountPercent: selectedVariant.discountPercent,
       image: product.images[0] || "",
       quantity: 1,
       size: selectedSize,
@@ -186,26 +174,23 @@ export default function ProductActions({
   return (
     <>
       <div className="flex flex-col gap-9 tablet:py-6 laptop:py-8 laptop:gap-py-8 desktop:py-8 desktop:gap-py-8">
-        {/* Giá tiền động */}
-        {selectedVariant && (
+        {/* Giá tiền */}
+        {selectedVariantPrice && (
           <div className="flex items-center gap-4">
             <div className="text-red-500 font-bold text-lg">
-              {(
-                selectedVariant.discountedPrice || selectedVariant.price
-              ).toLocaleString("vi-VN")}
-              ₫
+              {(selectedVariantPrice.discountedPrice || selectedVariantPrice.price).toLocaleString("vi-VN")}₫
             </div>
             <div
               className={`text-sm text-gray-500 line-through ${
-                !selectedVariant.discountPercent ? "hidden" : "block"
+                !selectedVariantPrice.discountPercent ? "hidden" : "block"
               }`}
             >
-              {selectedVariant.price.toLocaleString("vi-VN")}₫
+              {selectedVariantPrice.price.toLocaleString("vi-VN")}₫
             </div>
           </div>
         )}
 
-        {/* Section 2: Colors */}
+        {/* Màu sắc */}
         <div>
           <h3 className="font-semibold mb-2">Màu sắc</h3>
           <div className="flex gap-3 flex-wrap">
@@ -247,6 +232,8 @@ export default function ProductActions({
             })}
           </div>
         </div>
+
+        {/* Size */}
         <div>
           <div className="flex w-full justify-between items-center">
             <h3 className="font-semibold">Sizes</h3>
@@ -256,20 +243,14 @@ export default function ProductActions({
                 className="flex justify-center items-center gap-2 ml-4"
                 aria-label="Mở bảng kích thước"
               >
-                <Image
-                  src="/product/product_size.svg"
-                  alt="Bảng size"
-                  width={20}
-                  height={20}
-                />
+                <Image src="/product/product_size.svg" alt="Bảng size" width={20} height={20} />
                 <p>Bảng size</p>
               </button>
             </div>
           </div>
           <div className="pt-3 flex flex-wrap gap-2 mt-2">
             {sizes.map((size) => {
-              const isAvailable =
-                !selectedColor || availableSizes.includes(size.value);
+              const isAvailable = !selectedColor || availableSizes.includes(size.value);
               return (
                 <button
                   key={size.value}
@@ -288,13 +269,13 @@ export default function ProductActions({
               );
             })}
           </div>
-          <div className="pt-3 text-red-500 text-sm font-medium">
-            Còn {stock} sản phẩm
-          </div>
+          {selectedVariant && (
+            <p className="text-sm text-gray-500 mt-1">Còn {maxQuantity} sản phẩm</p>
+          )}
         </div>
       </div>
 
-      {/* Section 3: Actions */}
+      {/* Action buttons */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="relative w-[95%]">
@@ -303,21 +284,11 @@ export default function ProductActions({
               className="relative z-10 bg-black text-white w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between"
             >
               <span>THÊM VÀO GIỎ HÀNG</span>
-              <Image
-                src="/product/product_addToCart_angle.svg"
-                alt="Thêm vào giỏ hàng"
-                width={20}
-                height={20}
-              />
+              <Image src="/product/product_addToCart_angle.svg" alt="Thêm vào giỏ hàng" width={20} height={20} />
             </button>
-            <div className="absolute bottom-[-0.3rem] right-[1rem] bg-white border-2 border-black border-solid w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
+            <div className="absolute bottom-[-0.3rem] right-[1rem] bg-white border-2 border-black w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
               <span>THÊM VÀO GIỎ HÀNG</span>
-              <Image
-                src="/product/product_addToCart_angle.svg"
-                alt="Thêm vào giỏ hàng"
-                width={20}
-                height={20}
-              />
+              <Image src="/product/product_addToCart_angle.svg" alt="Thêm vào giỏ hàng" width={20} height={20} />
             </div>
           </div>
           <div className="z-40 w-11 h-11 border-2 border-solid border-black flex justify-center items-center">
@@ -326,27 +297,17 @@ export default function ProductActions({
         </div>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <Image
-              src="/product/product_section3_delivery.svg"
-              alt="Free shipping"
-              width={20}
-              height={20}
-            />
+            <Image src="/product/product_section3_delivery.svg" alt="Free shipping" width={20} height={20} />
             <span className="text-sm">Free ship khi đơn hàng trên 1 triệu</span>
           </div>
           <div className="flex items-center gap-2">
-            <Image
-              src="/product/product_section3_swap.svg"
-              alt="Easy return"
-              width={20}
-              height={20}
-            />
+            <Image src="/product/product_section3_swap.svg" alt="Easy return" width={20} height={20} />
             <span className="text-sm">Đổi trả hàng dễ dàng</span>
           </div>
         </div>
       </div>
 
-      {/* Popup bảng kích thước */}
+      {/* Size chart popup */}
       <AnimatePresence>
         {isSizeChartOpen && (
           <motion.div
@@ -369,13 +330,7 @@ export default function ProductActions({
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold"
                 aria-label="Đóng bảng kích thước"
               >
-                <Image
-                  src="/nav/nav_clear.svg"
-                  alt="Close Icon"
-                  width={16}
-                  height={16}
-                  className="w-4 h-4"
-                />
+                <Image src="/nav/nav_clear.svg" alt="Close Icon" width={16} height={16} className="w-4 h-4" />
               </button>
               <Image
                 key="size_chart_img"

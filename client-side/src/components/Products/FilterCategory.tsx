@@ -15,16 +15,24 @@ export default function FilterCategory({
 }: FilterCategoryProps) {
   const { flat, isLoading, error } = useCategories();
 
-  // Loại bỏ "Bài viết" và tạo danh sách tùy chọn
+  // Loại bỏ "Bài viết" và chỉ lấy danh mục cha
   const categoryOptions: CategoryOption[] = useMemo(() => {
     if (!flat) return [];
-    return flat
-      .filter((cat) => cat._id !== "684d0f12543e02998d9df097")
+    // Lọc danh mục cha (parentId: null) và loại bỏ "Bài viết"
+    const parentCategories = flat
+      .filter(
+        (cat) => cat.parentId === null && cat._id !== "684d0f12543e02998d9df097"
+      )
       .map((cat) => ({
         value: cat._id,
         label: cat.name,
-      }))
-      .sort((a, b) => b.label.localeCompare(a.label));
+      }));
+
+    // Sắp xếp theo thứ tự: Nam, Nữ, Unisex
+    const order = ["Unisex", "Nam", "Nữ"];
+    return parentCategories.sort(
+      (a, b) => order.indexOf(a.label) - order.indexOf(b.label)
+    );
   }, [flat]);
 
   if (isLoading) {

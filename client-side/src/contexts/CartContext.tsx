@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useReducer, useEffect } from "react";
+import { createContext, useContext, useReducer } from "react";
 import { ICartItem } from "@/types/cart";
 
 interface CartState {
@@ -8,38 +8,54 @@ interface CartState {
 }
 
 interface CartAction {
-  type: "add" | "update" | "delete" | "clear";
+  type:
+    | "add"
+    | "update"
+    | "remove"
+    | "updateQuantity"
+    | "toggleSelect"
+    | "toggleSelectAll"
+    | "clear"
+    | "resetSelected";
   item?: ICartItem;
+  id?: string;
+  size?: string;
+  color?: string;
+  quantity?: number;
+  selectAll?: boolean;
 }
 
-export const CartContext = createContext<CartState | null>(null);
-export const CartDispatchContext = createContext<React.Dispatch<CartAction> | null>(null);
+interface CartContextType {
+  items: ICartItem[];
+  dispatch: React.Dispatch<CartAction>;
+}
 
-const initialCart: CartState = {
-  items: [],
-};
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
-function cartReducer(state: CartState, action: CartAction): CartState {
+const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case "add":
       if (!action.item) return state;
       const existingItem = state.items.find(
-        (item) => item.id === action.item!.id && item.size === action.item!.size
+        (item) =>
+          item.id === action.item!.id &&
+          item.size === action.item!.size &&
+          item.color === action.item!.color
       );
       if (existingItem) {
         return {
           ...state,
           items: state.items.map((item) =>
-            item.id === action.item!.id && item.size === action.item!.size
+            item.id === action.item!.id &&
+            item.size === action.item!.size &&
+            item.color === action.item!.color
               ? { ...item, quantity: item.quantity + action.item!.quantity }
               : item
           ),
         };
       }
-      return {
-        ...state,
-        items: [...state.items, action.item],
-      };
+      return { ...state, items: [...state.items, action.item] };
+
     case "update":
       return {
         ...state,
@@ -49,60 +65,88 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : item
         ),
       };
-    case "delete":
+    case "remove":
       return {
         ...state,
         items: state.items.filter(
-          (item) => !(item.id === action.item!.id && item.size === action.item!.size)
+          (item) =>
+            !(
+              item.id === action.id &&
+              item.size === action.size &&
+              item.color === action.color
+            )
         ),
       };
+
+    case "updateQuantity":
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.id === action.id &&
+          item.size === action.size &&
+          item.color === action.color
+            ? { ...item, quantity: action.quantity || 1 }
+            : item
+        ),
+      };
+
+    case "toggleSelect":
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.id === action.id &&
+          item.size === action.size &&
+          item.color === action.color
+            ? { ...item, selected: !item.selected }
+            : item
+        ),
+      };
+
+    case "toggleSelectAll":
+      return {
+        ...state,
+        items: state.items.map((item) => ({
+          ...item,
+          selected: action.selectAll ?? false,
+        })),
+      };
+
     case "clear":
-      return { items: [] };
+      return { ...state, items: [] };
+
+    case "resetSelected":
+      return {
+        ...state,
+        items: state.items.map((item) => ({ ...item, selected: false })),
+      };
+
     default:
-      throw new Error("Unknown action type");
+      return state;
   }
-}
+};
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, dispatch] = useReducer(cartReducer, initialCart);
-
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      const parsedCart = JSON.parse(savedCart);
-      parsedCart.items.forEach((item: ICartItem) => {
-        dispatch({ type: "add", item });
-      });
-    }
-  }, []);
-
-  // Save cart to localStorage on update
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const [state, dispatch] = useReducer(cartReducer, { items: [] });
 
   return (
-    <CartContext.Provider value={cart}>
-      <CartDispatchContext.Provider value={dispatch}>
-        {children}
-      </CartDispatchContext.Provider>
+    <CartContext.Provider value={{ items: state.items, dispatch }}>
+      {children}
     </CartContext.Provider>
   );
-}
+};
 
-export function useCart() {
+export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
-}
+};
 
-export function useCartDispatch() {
-  const context = useContext(CartDispatchContext);
+export const useCartDispatch = () => {
+  const context = useContext(CartContext);
   if (!context) {
     throw new Error("useCartDispatch must be used within a CartProvider");
   }
-  return context;
-}
+  return context.dispatch;
+};

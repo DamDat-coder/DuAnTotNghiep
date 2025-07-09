@@ -96,7 +96,7 @@ export default function Cart() {
   const removeItem = (id: string, size: string) => {
     const item = cart.items.find((i) => i.id === id && i.size === size);
     if (!item) return;
-    dispatch({ type: "delete", item });
+    dispatch({ type: "remove", item });
   };
 
   return (

@@ -1,5 +1,6 @@
 import { PaymentInfo } from "@/types/payment";
 import { API_BASE_URL, fetchWithAuth } from "./api";
+import { IOrder } from "@/types/order";
 // Initiate payment
 // Khởi tạo thanh toán
 export async function initiatePayment(
@@ -55,6 +56,7 @@ export async function createOrder(
         body: JSON.stringify({ paymentId, userId }),
       }
     );
+    console.log("Order API response:", res);
     return res;
   } catch (error: any) {
     console.error("Error creating order:", error);
@@ -140,12 +142,34 @@ export async function fetchMyOrders(userId: string): Promise<{ data: any[] }> {
 }
 
 // 7. Hủy đơn hàng (người dùng)
-export async function cancelOrder(orderId: string): Promise<void> {
+export async function cancelOrder(orderId: string): Promise<IOrder> {
   try {
-    await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/cancel`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/orders/${orderId}/cancel`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("Order to cancel:", orderId);
+    if (
+      response &&
+      typeof response === "object" &&
+      "ok" in response &&
+      typeof (response as Response).ok === "boolean"
+    ) {
+      if (!(response as Response).ok) {
+        const errorData = await (response as Response).json();
+        throw new Error(errorData.message || "Không thể hủy đơn hàng!");
+      }
+      const data = await (response as Response).json();
+      return data.data; // Trả về đơn hàng đã cập nhật từ response
+    }
+
+    // Otherwise, assume response is already the data
+    return response as IOrder;
   } catch (error) {
     console.error("Error canceling order:", error);
     throw error;

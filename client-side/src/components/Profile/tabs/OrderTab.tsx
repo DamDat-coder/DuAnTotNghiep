@@ -1,17 +1,17 @@
+// Orders.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import CancelOrderModal from "../modals/CancelOrderModal";
+import CancelOrderModal from "../modals/CancelOrderModal"; // Đảm bảo tên file khớp
 import { IOrder } from "@/types/order";
-import { fetchOrdersUser } from "@/services/orderApi";
+import { fetchOrdersUser, cancelOrder } from "@/services/orderApi"; // Thay updateOrderStatus bằng cancelOrder
 import { fetchUser } from "@/services/userApi";
 
 interface OrderTabProps {
   setActiveTab: (tab: string) => void;
   setSelectedOrder: (order: IOrder) => void;
 }
-
 
 export default function Orders({
   setActiveTab,
@@ -36,6 +36,7 @@ export default function Orders({
         const response = await fetchOrdersUser(user.id);
         if (response?.data) {
           setOrders(response.data);
+          console.log("Fetched orders:", response.data);
         } else {
           setOrders([]);
         }
@@ -48,6 +49,30 @@ export default function Orders({
     }
     fetchOrders();
   }, []);
+
+  // Hàm xử lý hủy đơn hàng
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      const updatedOrder = await cancelOrder(orderId); // Gọi API cancelOrder
+      // Cập nhật danh sách đơn hàng trong state
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId
+            ? { ...order, status: updatedOrder.status }
+            : order
+        )
+      );
+      console.log("Order cancelled successfully:", updatedOrder);
+
+      toast.success("Đã hủy đơn hàng thành công!");
+    } catch (error: any) {
+      toast.error(error.message || "Không thể hủy đơn hàng!");
+      console.error("Error cancelling order:", error);
+    } finally {
+      setShowCancelModal(false);
+      setOrderToCancel(null);
+    }
+  };
 
   const statusTabs = [
     { label: "Tất cả", value: "all" },
@@ -130,7 +155,9 @@ export default function Orders({
                   ? "font-bold border-b-2 border-black"
                   : "font-normal hover:text-gray-800"
               }`}
-            onClick={() => setSelectedStatus(tab.value as typeof selectedStatus)}
+            onClick={() =>
+              setSelectedStatus(tab.value as typeof selectedStatus)
+            }
           >
             {tab.label}
           </button>
@@ -186,6 +213,8 @@ export default function Orders({
                   order.status === "confirmed") && (
                   <button
                     onClick={() => {
+                      // Debug: Log thông tin đơn hàng khi click nút Hủy
+                      console.log("Order to cancel:", order);
                       setOrderToCancel(order._id);
                       setShowCancelModal(true);
                     }}
@@ -207,11 +236,7 @@ export default function Orders({
             setShowCancelModal(false);
             setOrderToCancel(null);
           }}
-          onConfirm={() => {
-            setShowCancelModal(false);
-            setOrderToCancel(null);
-            toast.success("Đã gửi yêu cầu hủy đơn hàng.");
-          }}
+          onConfirm={() => handleCancelOrder(orderToCancel)} // Gọi handleCancelOrder
         />
       )}
     </div>

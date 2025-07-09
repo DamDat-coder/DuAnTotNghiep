@@ -119,7 +119,7 @@ export default function CouponTableBody({
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 
   const handleEdit = (coupon: Coupon) => {
-    onEditCoupon(coupon);
+    setSelectedCoupon(coupon);
   };
 
   const handleSave = (updatedCoupon: Coupon) => {
@@ -222,9 +222,13 @@ export default function CouponTableBody({
           </td>
         </tr>
       ))}
-      {/* Đừng render modal ở đây */}
+      {selectedCoupon && (
+        <EditCouponModal
+          coupon={selectedCoupon}
+          onSave={handleSave}
+          onClose={() => setSelectedCoupon(null)}
+        />
+      )}
     </>
   );
 }
-
-// Ở component cha (page.tsx), render EditCouponModal ngoài table:

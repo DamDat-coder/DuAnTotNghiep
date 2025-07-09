@@ -1,18 +1,37 @@
 import { ReactNode } from "react";
 import CouponControlBar from "./CouponControlBar";
 import Image from "next/image";
+import CouponTableBody from "./CouponTableBody"; // Import CouponTableBody
+import { Coupon } from "@/types/coupon";
 
 interface TableCouponWrapperProps {
   children: ReactNode;
   onSearchChange: (value: string) => void;
   onFilterChange: (value: string) => void;
+  coupons: Coupon[];
+  onToggleActive: (id: string, newValue: boolean) => void;
+  onCouponsChange: (newCoupons: any[]) => void;
+  onEditCoupon: (coupon: any) => void; // Thay bằng Coupon nếu có type
 }
 
 export default function TableCouponWrapper({
   children,
   onSearchChange,
   onFilterChange,
+  coupons,
+  onToggleActive,
+  onCouponsChange,
+  onEditCoupon,
 }: TableCouponWrapperProps) {
+  const filteredUsers = coupons.filter((user) => {
+    const matchFilter = filter === "all" || user.role === filter;
+    const name = user.name || "";
+    const email = user.email || "";
+    const matchSearch =
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      email.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
   return (
     <div className="space-y-4 mt-6">
       <CouponControlBar
@@ -51,9 +70,17 @@ export default function TableCouponWrapper({
               </th>
             </tr>
           </thead>
-          <tbody>{children}</tbody>
+          <tbody>
+            <CouponTableBody
+              coupons={coupons}
+              onToggleActive={onToggleActive}
+              onCouponsChange={onCouponsChange}
+              onEditCoupon={onEditCoupon}
+            />
+          </tbody>
         </table>
       </div>
+      {children && children(filteredCoupons)}
     </div>
   );
 }

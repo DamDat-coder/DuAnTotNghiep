@@ -617,7 +617,7 @@ export async function fetchAllUsersAdmin(
   page: number = 1, // Thêm tham số page
   limit: number = 10, // Thêm tham số limit
   role?: string, // Thêm tham số role (tùy chọn)
-  is_active?: boolean 
+  is_active?: boolean
 ): Promise<{
   users: IUser[] | null;
   total: number;
@@ -647,7 +647,6 @@ export async function fetchAllUsersAdmin(
       console.error("Dữ liệu không hợp lệ:", response);
       return { users: null, total: 0, totalPages: 0, currentPage: page };
     }
-
     const users: IUser[] = response.data.map((userData: UserData) => ({
       id: userData._id,
       email: userData.email,
@@ -656,11 +655,12 @@ export async function fetchAllUsersAdmin(
       avatar: userData.avatar || null,
       role: userData.role,
       is_active: userData.is_active,
+      active: userData.is_active,
       addresses: userData.addresses || [],
     }));
 
     return {
-      users,
+      users: users,
       total: response.total || 0,
       totalPages: response.totalPages || 0,
       currentPage: response.currentPage || page,
@@ -668,5 +668,30 @@ export async function fetchAllUsersAdmin(
   } catch (error: any) {
     console.error("Lỗi khi lấy danh sách người dùng:", error);
     return { users: null, total: 0, totalPages: 0, currentPage: page };
+  }
+}
+
+// Thêm hàm fetchUserById vào userApi.ts
+export async function fetchUserById(userId: string): Promise<IUser | null> {
+  try {
+    const response = await fetchWithAuth<any>(
+      `${API_BASE_URL}/users/${userId}`,
+      {
+        cache: "no-store",
+      }
+    );
+    if (!response || !response.user) return null;
+    return {
+      id: response.user._id,
+      email: response.user.email,
+      name: response.user.name,
+      phone: response.user.phone || null,
+      role: response.user.role,
+      is_active: response.user.is_active,
+      active: response.user.is_active,
+      addresses: response.user.addresses || [],
+    };
+  } catch {
+    return null;
   }
 }

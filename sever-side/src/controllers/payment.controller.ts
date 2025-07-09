@@ -279,7 +279,7 @@ export const checkZaloPayReturn = async (req: Request, res: Response) => {
           color: i.color,
           size: i.size,
           quantity: i.quantity,
-          price: i.price ?? 0, // tùy logic, bạn có thể lấy giá tại thời điểm thanh toán
+          price: i.price ?? 0, 
         })),
       });
     }

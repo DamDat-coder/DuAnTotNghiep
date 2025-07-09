@@ -1,4 +1,3 @@
-// app/layout.tsx
 "use client";
 
 import { Lora } from "next/font/google";
@@ -12,6 +11,7 @@ import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
+import { ActiveTabProvider } from "@/contexts/ActiveTabContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ChatBotBox from "@/components/Chat/ChatBotBox";
 import { CategoriesProvider } from "@/contexts/CategoriesContext";
@@ -58,6 +58,28 @@ export default function RootLayout({
             </MenuProvider>
           </AuthProvider>
         </GoogleOAuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+            success: {
+              style: {
+                background: "#4ade80",
+                color: "#fff",
+              },
+            },
+            error: {
+              style: {
+                background: "#ef4444",
+                color: "#fff",
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );

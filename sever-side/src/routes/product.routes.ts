@@ -9,11 +9,7 @@ import {
   lockProduct,
 } from "../controllers/product.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
-import {
-  validateCreateProduct,
-  validateUpdateProduct,
-  validateLockProduct,
-} from "../middlewares/validators/product.validator";
+
 import multer from "multer";
 
 const router = express.Router();
@@ -30,7 +26,6 @@ router.post(
   upload.array("images", 20),
   verifyToken,
   verifyAdmin,
-  validateCreateProduct,
   createProduct
 );
 
@@ -39,10 +34,9 @@ router.put(
   upload.array("images", 20),
   verifyToken,
   verifyAdmin,
-  validateUpdateProduct,
   updateProduct
 );
 
-router.patch("/:id/lock", verifyToken, verifyAdmin, validateLockProduct, lockProduct);
+router.patch("/:id/lock", verifyToken, verifyAdmin, lockProduct);
 
 export default router;

@@ -1,15 +1,24 @@
 import { ReactNode } from "react";
-import SaleControls from "./SaleControlBar";
+import CouponControlBar from "./CouponControlBar";
 import Image from "next/image";
 
-export default function TableSaleWrapper({
-  children,
-}: {
+interface TableCouponWrapperProps {
   children: ReactNode;
-}) {
+  onSearchChange: (value: string) => void;
+  onFilterChange: (value: string) => void;
+}
+
+export default function TableCouponWrapper({
+  children,
+  onSearchChange,
+  onFilterChange,
+}: TableCouponWrapperProps) {
   return (
     <div className="space-y-4 mt-6">
-      <SaleControls />
+      <CouponControlBar
+        onSearchChange={onSearchChange}
+        onFilterChange={onFilterChange}
+      />
 
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
         <table className="min-w-full text-[16px] text-left">
@@ -42,7 +51,6 @@ export default function TableSaleWrapper({
               </th>
             </tr>
           </thead>
-
           <tbody>{children}</tbody>
         </table>
       </div>

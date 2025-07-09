@@ -23,12 +23,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = exports.getCurrentUser = exports.googleLogin = void 0;
+exports.resetPassword = exports.forgotPassword = exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = exports.getCurrentUser = exports.googleLogin = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_model_1 = __importDefault(require("../models/user.model"));
-const jwt_1 = require("../config/jwt");
+const jwt_1 = require("../utils/jwt");
 const google_1 = require("../config/google");
+const mailer_1 = require("../utils/mailer");
+const resetTokenStore_1 = require("../utils/resetTokenStore");
 // Đăng nhập bằng Google
 const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -573,3 +576,48 @@ const getWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getWishlist = getWishlist;
+// Gửi email quên mật khẩu
+const forgotPassword = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email } = req.body;
+        const user = yield user_model_1.default.findOne({ email });
+        if (!user)
+            return res.status(404).json({ success: false, message: "Không tìm thấy email." });
+        const token = crypto_1.default.randomBytes(32).toString("hex");
+        const expiresAt = Date.now() + 15 * 60 * 1000; // 15 phút
+        resetTokenStore_1.resetTokens.set(token, { email, expiresAt, userId: user._id.toString() });
+        const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+        yield (0, mailer_1.sendResetPasswordEmail)(email, resetLink);
+        res.status(200).json({ success: true, message: "Đã gửi email khôi phục." });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+exports.forgotPassword = forgotPassword;
+// Đặt lại mật khẩu mới
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        if (!password) {
+            return res.status(400).json({ success: false, message: "Mật khẩu không được để trống" });
+        }
+        const tokenData = resetTokenStore_1.resetTokens.get(token);
+        if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
+            return res.status(400).json({ success: false, message: "Token không hợp lệ hoặc đã hết hạn." });
+        }
+        const user = yield user_model_1.default.findById(tokenData.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+        }
+        user.password = yield bcryptjs_1.default.hash(password, 10);
+        yield user.save();
+        resetTokenStore_1.resetTokens.delete(token);
+        return res.status(200).json({ success: true, message: "Mật khẩu đã được đặt lại thành công." });
+    }
+    catch (error) {
+        return res.status(500).json({ success: false, message: "Đã xảy ra lỗi." });
+    }
+});
+exports.resetPassword = resetPassword;

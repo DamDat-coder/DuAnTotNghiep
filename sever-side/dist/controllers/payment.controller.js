@@ -236,7 +236,7 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
                         color: i.color,
                         size: i.size,
                         quantity: i.quantity,
-                        price: (_a = i.price) !== null && _a !== void 0 ? _a : 0, // tùy logic, bạn có thể lấy giá tại thời điểm thanh toán
+                        price: (_a = i.price) !== null && _a !== void 0 ? _a : 0,
                     });
                 }),
             });

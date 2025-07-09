@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from "express";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs"; 
+import crypto from "crypto";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import UserModel from "../models/user.model";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
-import { generateAccessToken, generateRefreshToken } from "../config/jwt";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { googleClient } from "../config/google";
+import { sendResetPasswordEmail } from "../utils/mailer";
+import { resetTokens } from "../utils/resetTokenStore";
 
 // Đăng nhập bằng Google
 export const googleLogin = async (
@@ -44,8 +47,8 @@ export const googleLogin = async (
         email,
         name,
         googleId,
-        password: "", 
-        refreshToken: "", 
+        password: "",
+        refreshToken: "",
       });
     }
 
@@ -286,7 +289,7 @@ export const getAllUsers = async (
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
-      .select("name email role is_block createdAt")
+      .select("name email role is_active createdAt")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
@@ -663,5 +666,59 @@ export const getWishlist = async (
     res.status(200).json({ success: true, data: user.wishlist });
   } catch (err) {
     next(err);
+  }
+};
+
+// Gửi email quên mật khẩu
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+    const user = await UserModel.findOne({ email });
+    if (!user)
+      return res.status(404).json({ success: false, message: "Không tìm thấy email." });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 phút
+
+resetTokens.set(token, { email, expiresAt, userId: user._id.toString() });
+
+
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    await sendResetPasswordEmail(email, resetLink);
+
+    res.status(200).json({ success: true, message: "Đã gửi email khôi phục." });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Đặt lại mật khẩu mới
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: "Mật khẩu không được để trống" });
+    }
+
+    const tokenData = resetTokens.get(token);
+    if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
+      return res.status(400).json({ success: false, message: "Token không hợp lệ hoặc đã hết hạn." });
+    }
+
+    const user = await UserModel.findById(tokenData.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
+
+    resetTokens.delete(token);
+
+    return res.status(200).json({ success: true, message: "Mật khẩu đã được đặt lại thành công." });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Đã xảy ra lỗi." });
   }
 };

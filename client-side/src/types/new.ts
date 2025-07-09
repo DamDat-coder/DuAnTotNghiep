@@ -1,35 +1,35 @@
+import { IUser } from "./auth";
+import { ICategoryNews } from "./category";
+
+export type NewsFilterStatus = "all" | "published" | "draft" | "upcoming";
+
 export interface News {
-  id: number;
-  author: string;
+  _id: string | null;
+  id: string;
+  user_id: IUser;
   title: string;
-  category: string;
+  content: string;
+  slug: string;
+  category_id: ICategoryNews;
   date: string;
   status: "published" | "draft" | "upcoming";
+  thumbnail?: string | null;
+  tags?: string[];
+  news_image?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  is_published?: boolean;
+  published_at?: Date;
 }
 
-export const dummyNews: News[] = [
-  {
-    id: 1,
-    author: "Hà Nhựt Tân",
-    title: "5 xu hướng thời trang hè 2025",
-    category: "Thời trang",
-    date: "30/05/2025",
-    status: "published",
-  },
-  {
-    id: 2,
-    author: "Hà Nhựt Tân",
-    title: "Cách phối đồ công sở thanh lịch",
-    category: "Thời trang",
-    date: "29/06/2025",
-    status: "upcoming",
-  },
-  {
-    id: 3,
-    author: "Hà Nhựt Tân",
-    title: "Top 10 mẫu váy maxi cho mùa hè",
-    category: "Trang phục nữ",
-    date: "28/05/2025",
-    status: "draft",
-  },
-];
+export interface NewsPayload {
+  title: string;
+  content: string;
+  slug: string;
+  category_id: ICategoryNews;
+  tags?: string[];
+  is_published?: boolean;
+  thumbnail?: string | null;
+  news_image?: string[];
+  published_at?: Date;
+}

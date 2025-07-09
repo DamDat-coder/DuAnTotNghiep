@@ -1,5 +1,3 @@
-"use client";
-
 import {
   createContext,
   useContext,
@@ -10,6 +8,15 @@ import {
 import { AuthContextType, IUser } from "../types/auth";
 import { login, register, fetchUser } from "../services/userApi";
 import { refreshToken } from "@/services/api";
+
+import toast from "react-hot-toast";
+import {
+  addProductToWishlistApi,
+  removeFromWishlistApi,
+  getWishlistFromApi,
+} from "@/services/userApi";
+import { IProduct } from "@/types/product";
+
 import { googleLogin } from "@/services/userApi";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     confirmPassword: string;
   } | null>(null);
   const [openLoginWithData, setOpenLoginWithData] = useState(false);
+  const [wishlist, setWishlist] = useState<IProduct[]>([]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -62,6 +70,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("accessToken", accessToken);
       }
 
+      // Fetch wishlist after successful login
+      await fetchWishlist(userData.id);
+
       if (userData.role === "admin") {
         window.location.assign("/admin/dashboard");
       }
@@ -80,7 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     keepLoggedIn: boolean
   ): Promise<boolean> => {
     try {
-      console.log(name, email, password);
       const result = await register(name, email, password);
       if (!result) {
         throw new Error("Không thể đăng ký tài khoản.");
@@ -91,6 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         setUser(userData);
         localStorage.setItem("accessToken", accessToken);
+        // Fetch wishlist after successful registration
+        await fetchWishlist(userData.id);
       } else {
         setRegisterFormData({
           name,
@@ -112,17 +124,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logoutHandler = () => {
     setUser(null);
+    setWishlist([]); // Reset wishlist khi logout
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; path=/; max-age=0";
+    window.location.href = "/";
   };
+
   const loginWithGoogle = async (id_token: string) => {
     try {
       const data = await googleLogin(id_token);
-
       const { user: userData, accessToken } = data;
       setUser(userData);
       localStorage.setItem("accessToken", accessToken);
-
+      await fetchWishlist(userData.id); // Lấy wishlist sau khi đăng nhập bằng Google
       return true;
     } catch (err) {
       console.error("Google login error", err);
@@ -132,43 +146,88 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuth = async () => {
     const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      console.log("No accessToken, clearing user state");
+      setUser(null);
+      setWishlist([]);
+      return;
+    }
 
     try {
-      // Nếu có token, thử fetch user
-      if (accessToken) {
-        const userData = await fetchUser();
-        if (userData) {
-          setUser(userData);
-          return;
-        }
-      }
-
-      // Không có token hoặc fetch thất bại => thử refresh token
-      console.warn("checkAuth - Access token không hợp lệ, đang làm mới...");
-      const newToken = await refreshToken();
-      console.log(newToken);
-      
-      if (newToken) {
-        localStorage.setItem("accessToken", newToken);
-
-        const retriedUser = await fetchUser();
-        if (retriedUser) {
-          setUser(retriedUser);
-        } else {
-          console.warn("checkAuth - fetchUser sau khi refresh vẫn fail");
-          setUser(null);
-          localStorage.removeItem("accessToken");
-        }
+      const userData = await fetchUser();
+      if (userData) {
+        setUser(userData);
+        await fetchWishlist(userData.id); // Lấy wishlist khi có user
       } else {
-        // Refresh thất bại
-        console.warn("checkAuth - Làm mới token thất bại");
-        setUser(null);
-        localStorage.removeItem("accessToken");
+        throw new Error("No user data returned");
       }
     } catch (error: any) {
-      console.error("checkAuth - Lỗi bất ngờ:", error.message);
-      setUser(null);
-      localStorage.removeItem("accessToken");
+      if (error?.response?.status === 401) {
+        try {
+          console.log("Access token expired, attempting to refresh...");
+          const newToken = await refreshToken();
+          if (newToken) {
+            localStorage.setItem("accessToken", newToken);
+            const userData = await fetchUser();
+            if (userData) {
+              setUser(userData);
+              await fetchWishlist(userData.id); // Lấy wishlist sau khi refresh token
+            } else {
+              throw new Error("No user data after token refresh");
+            }
+          } else {
+            throw new Error("Refresh token failed");
+          }
+        } catch (refreshError) {
+          console.error("Refresh token failed:", refreshError);
+          setUser(null);
+          setWishlist([]);
+          localStorage.removeItem("accessToken");
+          document.cookie = "refreshToken=; path=/; max-age=0";
+          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        }
+      } else {
+        console.error("Unexpected error in checkAuth:", error);
+        setUser(null);
+        setWishlist([]);
+        localStorage.removeItem("accessToken");
+        toast.error("Có lỗi xảy ra khi xác thực người dùng.");
+      }
+    }
+  };
+
+  // Hàm lấy wishlist
+  const fetchWishlist = async (userId: string) => {
+    try {
+      const products = await getWishlistFromApi(userId);
+      setWishlist(products);
+    } catch (error) {
+      console.error("Lỗi khi lấy wishlist:", error);
+    }
+  };
+
+  // Thêm sản phẩm vào wishlist
+  const addWishlist = async (productId: string) => {
+    if (!user) return;
+    try {
+      await addProductToWishlistApi(user.id, productId); // Gọi API thêm sản phẩm vào wishlist
+      await fetchWishlist(user.id); // Refresh wishlist để có dữ liệu đầy đủ
+      toast.success("Sản phẩm đã được thêm vào danh sách yêu thích.");
+    } catch (error) {
+      toast.error("Không thể thêm sản phẩm vào danh sách yêu thích.");
+    }
+  };
+
+  // Xoá sản phẩm khỏi wishlist
+  const removeWishlist = async (productId: string) => {
+    if (!user) return;
+    try {
+      await removeFromWishlistApi(user.id, productId); // Gọi API xoá sản phẩm khỏi wishlist
+      const updatedWishlist = wishlist.filter((item) => item.id !== productId); // Cập nhật wishlist
+      setWishlist(updatedWishlist);
+      toast.success("Sản phẩm đã được xoá khỏi danh sách yêu thích.");
+    } catch (error) {
+      toast.error("Không thể xoá sản phẩm khỏi danh sách yêu thích.");
     }
   };
 
@@ -176,6 +235,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         login: loginHandler,
         register: registerHandler,
         logout: logoutHandler,
@@ -183,6 +243,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         openLoginWithData,
         setOpenLoginWithData,
         registerFormData,
+        addWishlist,
+        removeWishlist,
+        wishlist,
       }}
     >
       {children}

@@ -21,7 +21,7 @@ dotenv.config();
 const app = express();
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
 });
 app.use(limiter);

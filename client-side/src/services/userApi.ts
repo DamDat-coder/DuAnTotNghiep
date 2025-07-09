@@ -1,12 +1,9 @@
-import { Address, IUser } from "../types/auth";
+import { Address, IUser, UpdateUserData, UserData } from "../types/auth";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
+import { fetchProductById } from "./productApi";
+import { IProduct } from "@/types/product";
 
-interface UpdateUserData {
-  name?: string;
-  phone?: string;
-  addresses?: IUser["addresses"];
-}
 interface AddAddressResponse {
   message: string;
   data: Address[];
@@ -21,6 +18,7 @@ interface UpdateDefaultAddressResponse {
   message: string;
   data: Address;
 }
+
 // Hàm đăng nhập
 export async function login(
   email: string,
@@ -48,6 +46,7 @@ export async function login(
       name: data.data.user.name,
       phone: data.data.user.phone || null,
       role: data.data.user.role,
+      is_active: data.data.user.is_active,
       active: data.data.user.is_active,
       addresses: [],
     };
@@ -65,16 +64,11 @@ export async function login(
 }
 
 export const googleLogin = async (id_token: string) => {
-  console.log(id_token);
-  
-  const res = await fetch(
-    `${API_BASE_URL}/users/google-login`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_token }),
-    }
-  );
+  const res = await fetch(`${API_BASE_URL}/users/google-login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_token }),
+  });
 
   if (!res.ok) {
     const text = await res.text();
@@ -90,6 +84,7 @@ export const googleLogin = async (id_token: string) => {
     role: data.data.user.role,
     active: data.data.user.is_active,
     addresses: [],
+    is_active: true,
   };
 
   if (isBrowser()) {
@@ -138,6 +133,7 @@ export async function register(
       role: data.data.user.role || "user",
       active: data.data.user.is_active,
       addresses: [],
+      is_active: true,
     };
     console.log("User - Register" + user.id);
 
@@ -159,58 +155,71 @@ export async function fetchUser(): Promise<IUser | null> {
       console.warn("fetchUser - Invalid user data:", data);
       return null;
     }
-    return {
+
+    const user = {
       id: data.user._id,
       email: data.user.email,
       name: data.user.name,
       phone: data.user.phone || null,
       role: data.user.role,
+      is_active: data.user.is_active,
       active: data.user.is_active,
       addresses: data.user.addresses || [],
     };
+
+    return user;
   } catch (error: any) {
     console.error("fetchUser - Error:", error.message);
     return null;
   }
 }
 
-// Lấy danh sách tất cả user
 export async function fetchAllUsers(): Promise<IUser[] | null> {
   try {
-    const data = await fetchWithAuth<any[]>(`${API_BASE_URL}/users`, {
+    const response = await fetchWithAuth<any>(`${API_BASE_URL}/users`, {
       cache: "no-store",
     });
 
-    if (!data || !Array.isArray(data)) {
-      throw new Error("Dữ liệu users không hợp lệ");
+    if (!response || !response.data || !Array.isArray(response.data)) {
+      console.error("Invalid data:", response);
+      return null;
     }
 
-    const users: IUser[] = data.map((userData) => ({
+    const users: IUser[] = response.data.map((userData: UserData) => ({
       id: userData._id,
       email: userData.email,
       name: userData.name,
       phone: userData.phone || null,
       avatar: userData.avatar || null,
       role: userData.role,
+      is_active: userData.is_active,
       active: userData.is_active,
-      addresses: userData.is_addresses,
+      addresses: userData.addresses || [],
     }));
-
     return users;
   } catch (error: any) {
-    if (error.message.includes("403")) {
-      console.warn("User does not have admin privileges");
-      return null;
-    }
+    console.error("Error fetching users:", error);
     return null;
   }
 }
 
-export async function updateUser(data: UpdateUserData): Promise<IUser | null> {
+export async function updateUser(
+  userId: string,
+  data: UpdateUserData
+): Promise<IUser | null> {
+  let returnValue = null;
   try {
     const token = localStorage.getItem("accessToken");
-    const res = await fetchWithAuth<{ user: IUser }>(
-      `${API_BASE_URL}/users/update`,
+
+    // Nếu không có token, trả về null hoặc có thể thông báo người dùng đăng nhập lại
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return returnValue;
+    }
+
+    // Gửi yêu cầu PUT để cập nhật thông tin người dùng
+    const result = await fetchWithAuth<{ user: IUser }>( // fetchWithAuth giờ trả về dữ liệu trực tiếp
+      `${API_BASE_URL}/users/${userId}`,
       {
         method: "PUT",
         headers: {
@@ -220,14 +229,329 @@ export async function updateUser(data: UpdateUserData): Promise<IUser | null> {
         body: JSON.stringify(data),
       }
     );
-    return res.user;
+    console.log("API response:", result);
+    // Kiểm tra xem API có trả về dữ liệu hợp lệ không
+    if (result && result.user) {
+      returnValue = result.user;
+    }
+    return returnValue;
   } catch (error: any) {
     console.error("Cập nhật user thất bại:", error.message);
+    return returnValue;
+  }
+}
+
+export async function toggleUserStatus(userId: string, is_active: boolean) {
+  try {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return null;
+    }
+
+    const result = await fetchWithAuth<{ success: boolean; data: IUser }>(
+      `${API_BASE_URL}/users/${userId}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ is_active }),
+      }
+    );
+
+    if (result && result.success) {
+      return result.data; // Trả về người dùng đã cập nhật
+    } else {
+      throw new Error("Không thể cập nhật trạng thái người dùng.");
+    }
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái người dùng:", error);
     return null;
   }
 }
 
-// Thêm địa chỉ mới
+export async function addAddress(
+  userId: string,
+  addressData: any
+): Promise<IUser | null> {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return null;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/addresses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(addressData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Cập nhật địa chỉ thất bại.");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    console.error("Thêm địa chỉ thất bại:", error.message);
+    return null;
+  }
+}
+
+// Function to update an address for a user
+export async function updateAddress(
+  userId: string,
+  addressId: string,
+  addressData: any
+): Promise<IUser | null> {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return null;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/users/${userId}/addresses/${addressId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(addressData),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Cập nhật địa chỉ thất bại.");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    console.error("Cập nhật địa chỉ thất bại:", error.message);
+    return null;
+  }
+}
+
+// Function to delete an address for a user
+export async function deleteAddress(
+  userId: string,
+  addressId: string
+): Promise<IUser | null> {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return null;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/users/${userId}/addresses/${addressId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Xoá địa chỉ thất bại.");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    console.error("Xoá địa chỉ thất bại:", error.message);
+    return null;
+  }
+}
+
+// // Function to set a specific address as default
+// export async function setDefaultAddress(
+//   userId: string,
+//   addressId: string
+// ): Promise<IUser | null> {
+//   try {
+//     const token = localStorage.getItem("accessToken");
+//     if (!token) {
+//       console.error("Không có token. Vui lòng đăng nhập lại.");
+//       return null;
+//     }
+
+//     const response = await fetch(
+//       `${API_BASE_URL}/users/${userId}/addresses/${addressId}/default`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       throw new Error(data.message || "Cập nhật địa chỉ mặc định thất bại.");
+//     }
+
+//     return data.data;
+//   } catch (error: any) {
+//     console.error("Cập nhật địa chỉ mặc định thất bại:", error.message);
+//     return null;
+//   }
+// }
+
+export const addProductToWishlistApi = async (
+  userId: string,
+  productId: string
+) => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/wishlist`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productId }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(
+        data.message || "Thêm sản phẩm vào danh sách yêu thích thất bại."
+      );
+    }
+
+    const data = await response.json(); // Trả về dữ liệu đã thêm vào wishlist
+    return data;
+  } catch (error) {
+    console.error("Lỗi khi thêm sản phẩm vào wishlist:", error);
+    throw error;
+  }
+};
+
+export const removeFromWishlistApi = async (
+  userId: string,
+  productId: string
+) => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.error("Không có token. Vui lòng đăng nhập lại.");
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/users/${userId}/wishlist/${productId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(
+        data.message || "Xoá sản phẩm khỏi danh sách yêu thích thất bại."
+      );
+    }
+
+    const data = await response.json(); // Trả về dữ liệu đã cập nhật wishlist
+    return data;
+  } catch (error) {
+    console.error("Lỗi khi xoá sản phẩm khỏi wishlist:", error);
+    throw error;
+  }
+};
+
+export async function getWishlistFromApi(userId: string): Promise<IProduct[]> {
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    throw new Error("Không có token. Vui lòng đăng nhập lại.");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/wishlist`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Lấy danh sách wishlist thất bại.");
+  }
+
+  const data = await response.json();
+  if (!data || !data.data) {
+    throw new Error("Không có dữ liệu wishlist.");
+  }
+
+  // The backend returns incomplete product data, so we need to fetch complete details
+  const wishlistItems = data.data;
+  const completeProducts: IProduct[] = [];
+
+  // Fetch complete product details for each item in wishlist
+  for (const item of wishlistItems) {
+    try {
+      const productId = item._id || item.id;
+      const completeProduct = await fetchProductById(productId);
+      if (completeProduct) {
+        completeProducts.push(completeProduct);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to fetch complete product data for ID: ${item._id || item.id}`,
+        error
+      );
+      // If we can't fetch complete data, use the limited data we have
+      const transformedItem = {
+        ...item,
+        id: item._id || item.id,
+        category: item.category || {
+          _id: null,
+          name: "Danh mục không xác định",
+        },
+        variants: item.variants || [],
+        images: item.image || item.images || [],
+        is_active: item.is_active ?? true,
+        salesCount: item.salesCount || 0,
+        description: item.description || "",
+        categoryId: item.category?._id || null,
+        slug: item.slug || "",
+      };
+      completeProducts.push(transformedItem as IProduct);
+    }
+  }
+
+  return completeProducts;
+}
+
 export async function addAddressWhenCheckout(
   userId: string,
   address: {
@@ -285,5 +609,64 @@ export async function setDefaultAddress(
   } catch (error: any) {
     console.error("Error setting default address:", error);
     throw new Error(error.message || "Không thể cập nhật địa chỉ mặc định");
+  }
+}
+
+export async function fetchAllUsersAdmin(
+  search: string = "", // Thêm tham số search
+  page: number = 1, // Thêm tham số page
+  limit: number = 10, // Thêm tham số limit
+  role?: string, // Thêm tham số role (tùy chọn)
+  is_active?: boolean 
+): Promise<{
+  users: IUser[] | null;
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  try {
+    // Tạo query string từ các tham số
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(search && { search }), // Chỉ thêm search nếu có giá trị
+      ...(role && { role }), // Chỉ thêm role nếu có giá trị
+      ...(typeof is_active !== "undefined" && {
+        is_active: is_active.toString(),
+      }), // Chỉ thêm is_block nếu được cung cấp
+    });
+
+    const response = await fetchWithAuth<any>(
+      `${API_BASE_URL}/users?${queryParams.toString()}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response || !response.data || !Array.isArray(response.data)) {
+      console.error("Dữ liệu không hợp lệ:", response);
+      return { users: null, total: 0, totalPages: 0, currentPage: page };
+    }
+
+    const users: IUser[] = response.data.map((userData: UserData) => ({
+      id: userData._id,
+      email: userData.email,
+      name: userData.name,
+      phone: userData.phone || null,
+      avatar: userData.avatar || null,
+      role: userData.role,
+      is_active: userData.is_active,
+      addresses: userData.addresses || [],
+    }));
+
+    return {
+      users,
+      total: response.total || 0,
+      totalPages: response.totalPages || 0,
+      currentPage: response.currentPage || page,
+    };
+  } catch (error: any) {
+    console.error("Lỗi khi lấy danh sách người dùng:", error);
+    return { users: null, total: 0, totalPages: 0, currentPage: page };
   }
 }

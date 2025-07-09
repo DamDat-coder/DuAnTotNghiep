@@ -17,8 +17,8 @@ export default function FilterPrice({
   setMaxPrice,
 }: FilterPriceProps) {
   const MIN_VALUE = 0;
-  const MAX_VALUE = 10000000;
-  const STEP = 100000;
+  const MAX_VALUE = 7000000;
+  const STEP = 70000;
 
   const [value, setValue] = useState<[number, number]>([
     minPrice ?? MIN_VALUE,

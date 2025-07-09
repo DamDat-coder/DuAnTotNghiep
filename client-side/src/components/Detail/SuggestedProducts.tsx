@@ -42,7 +42,7 @@ export default function SuggestedProducts({ products, renderProductCard }: Sugge
           </div>
         </div>
         {/* Tablet: Grid 2 cột */}
-        <div className="hidden tablet:block desktop:hidden">
+        <div className="hidden tablet:block desktop:hidden z-[40]">
           <div className="grid grid-cols-2 gap-6">
             {products.map((product) => (
               <div key={product.id}>{renderProductCard(product)}</div>
@@ -57,7 +57,7 @@ export default function SuggestedProducts({ products, renderProductCard }: Sugge
               slidesPerView={3}
               loop={false}
               grabCursor={true}
-              className="select-none w-full"
+              className="select-none w-full z-[40]"
             >
               {products.map((product) => (
                 <SwiperSlide key={product.id}>{renderProductCard(product)}</SwiperSlide>

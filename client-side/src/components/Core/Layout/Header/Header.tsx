@@ -63,9 +63,9 @@ export default function Header({ title }: HeaderProps) {
     if (isLookupOpen && defaultSuggestions.length === 0) {
       const loadDefaultSuggestions = async () => {
         try {
-          const response = await fetchProducts({ sort: "best-seller" });
-          const suggestions = response.products
-            .map((product) => product.name)
+          const response = await fetchProducts({});
+          const suggestions = response.data
+            .map((product: any) => product.name)
             .slice(0, 5);
           setDefaultSuggestions(suggestions);
         } catch (error) {

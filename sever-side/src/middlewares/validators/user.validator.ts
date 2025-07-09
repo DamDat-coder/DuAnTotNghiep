@@ -34,5 +34,5 @@ export const validateVerifyOtp = [
 ];
 
 export const validateGoogleLogin = [
-  body("token").notEmpty().withMessage("Token đăng nhập Google không được để trống."),
+  body("id_token").notEmpty().withMessage("Token đăng nhập Google không được để trống."),
 ];

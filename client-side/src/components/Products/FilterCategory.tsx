@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { CategoryOption } from "@/types/filter";
-import { fetchCategoryTree, flattenCategories } from "@/services/categoryApi";
-import { ICategory } from "@/types/category";
+import { useCategories } from "@/contexts/CategoriesContext";
 
 interface FilterCategoryProps {
   selectedCategory: string | null;
@@ -14,39 +13,29 @@ export default function FilterCategory({
   selectedCategory,
   setSelectedCategory,
 }: FilterCategoryProps) {
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { flat, isLoading, error } = useCategories();
 
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        setLoading(true);
-        const categoryTree = await fetchCategoryTree();
-        // Lấy danh sách phẳng và loại trừ "Bài viết"
-        const flatCategories = categoryTree.filter(
-          (cat) => cat._id !== "684d0f12543e02998d9df097"
-        );
-        // Map sang CategoryOption, thêm tên danh mục cha nếu có
-        const categoryOptions: CategoryOption[] = flatCategories.map((cat) => {
-          return {
-            value: cat._id,
-            label: cat.name,
-          };
-        });
-        // Sắp xếp theo label
-        categoryOptions.sort((a, b) => b.label.localeCompare(a.label));
-        setCategories(categoryOptions);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadCategories();
-  }, []);
+  // Loại bỏ "Bài viết" và chỉ lấy danh mục cha
+  const categoryOptions: CategoryOption[] = useMemo(() => {
+    if (!flat) return [];
+    // Lọc danh mục cha (parentId: null) và loại bỏ "Bài viết"
+    const parentCategories = flat
+      .filter(
+        (cat) => cat.parentId === null && cat._id !== "684d0f12543e02998d9df097"
+      )
+      .map((cat) => ({
+        value: cat._id,
+        label: cat.name,
+      }));
 
-  if (loading) {
+    // Sắp xếp theo thứ tự: Nam, Nữ, Unisex
+    const order = ["Unisex", "Nam", "Nữ"];
+    return parentCategories.sort(
+      (a, b) => order.indexOf(a.label) - order.indexOf(b.label)
+    );
+  }, [flat]);
+
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-4 border-b pb-4 mt-4">
         <h3 className="text-base font-bold">Danh mục</h3>
@@ -64,7 +53,7 @@ export default function FilterCategory({
     );
   }
 
-  if (categories.length === 0) {
+  if (categoryOptions.length === 0) {
     return (
       <div className="flex flex-col gap-4 border-b pb-4 mt-4">
         <h3 className="text-base font-bold">Danh mục</h3>
@@ -88,7 +77,7 @@ export default function FilterCategory({
           />
           <span>Tất cả danh mục</span>
         </label>
-        {categories.map((option) => (
+        {categoryOptions.map((option) => (
           <label
             key={option.value}
             className="flex items-center gap-2 text-sm cursor-pointer"

@@ -1,53 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_BASE_URL, fetchWithAuth } from "@/services/api";
 import toast, { Toaster } from "react-hot-toast";
 import CancelOrderModal from "../modals/CancelOrderModal";
-
-interface Order {
-  _id: string;
-  createdAt: string;
-  status: "pending" | "processing" | "shipping" | "success" | "cancelled";
-  totalPrice: number;
-  shippingAddress: string;
-  couponId?: string;
-  userId: string;
-  products: {
-    productId: {
-      _id: string;
-      name: string;
-      price: number;
-      image: string[];
-    };
-    quantity: number;
-  }[];
-  paymentMethod?: string;
-}
+import { IOrder } from "@/types/order";
+import { fetchOrdersUser } from "@/services/orderApi";
+import { fetchUser } from "@/services/userApi";
 
 interface OrderTabProps {
   setActiveTab: (tab: string) => void;
-  setSelectedOrder: (order: any) => void;
+  setSelectedOrder: (order: IOrder) => void;
 }
+
 
 export default function Orders({
   setActiveTab,
   setSelectedOrder,
 }: OrderTabProps) {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<IOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState<
+    "all" | IOrder["status"]
+  >("all");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const response = await fetchWithAuth<{ data: Order[] }>(
-          `${API_BASE_URL}/order/user/orders`,
-          { cache: "no-store" }
-        );
-        setOrders(response.data);
+        const user = await fetchUser();
+        if (!user || !user.id) {
+          toast.error("Không thể lấy thông tin người dùng!");
+          return;
+        }
+        const response = await fetchOrdersUser(user.id);
+        if (response?.data) {
+          setOrders(response.data);
+        } else {
+          setOrders([]);
+        }
       } catch (error) {
         toast.error("Không thể tải danh sách đơn hàng!");
         console.error("Error fetching orders:", error);
@@ -60,14 +51,14 @@ export default function Orders({
 
   const statusTabs = [
     { label: "Tất cả", value: "all" },
-    { label: "Đã giao", value: "success" },
-    { label: "Đang giao", value: "shipping" },
-    { label: "Đang xử lý", value: "processing" },
     { label: "Chờ xác nhận", value: "pending" },
+    { label: "Đang xử lý", value: "confirmed" },
+    { label: "Đang giao", value: "shipping" },
+    { label: "Đã giao", value: "delivered" },
     { label: "Đã hủy", value: "cancelled" },
   ];
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: IOrder["status"]) => {
     const baseStyle =
       "flex items-center justify-center w-[118px] h-[38px] text-[16px] rounded-[8px] font-medium";
     switch (status) {
@@ -77,7 +68,7 @@ export default function Orders({
             Chờ xác nhận
           </span>
         );
-      case "processing":
+      case "confirmed":
         return (
           <span className={`${baseStyle} bg-[#E5F6FD] text-[#007BFF]`}>
             Đang xử lý
@@ -89,7 +80,7 @@ export default function Orders({
             Đang giao
           </span>
         );
-      case "success":
+      case "delivered":
         return (
           <span className={`${baseStyle} bg-[#EDF7ED] text-[#2E7D32]`}>
             Đã giao
@@ -110,6 +101,11 @@ export default function Orders({
     }
   };
 
+  const filteredOrders =
+    selectedStatus === "all"
+      ? orders
+      : orders.filter((order) => order.status === selectedStatus);
+
   if (isLoading) {
     return (
       <div className="text-center py-10 text-gray-500 font-medium">
@@ -117,10 +113,6 @@ export default function Orders({
       </div>
     );
   }
-
-  const filteredOrders = orders.filter((order) =>
-    selectedStatus === "all" ? true : order.status === selectedStatus
-  );
 
   return (
     <div>
@@ -133,18 +125,19 @@ export default function Orders({
           <button
             key={tab.value}
             className={`pb-3 text-[16px] text-black transition-all duration-200 relative
-    ${
-      selectedStatus === tab.value
-        ? " font-bold"
-        : " font-normal hover:text-black"
-    }`}
-            onClick={() => setSelectedStatus(tab.value)}
+              ${
+                selectedStatus === tab.value
+                  ? "font-bold border-b-2 border-black"
+                  : "font-normal hover:text-gray-800"
+              }`}
+            onClick={() => setSelectedStatus(tab.value as typeof selectedStatus)}
           >
             {tab.label}
           </button>
         ))}
       </div>
       <div className="h-[1px] w-full bg-[#D1D1D1] mb-6" />
+
       {filteredOrders.length === 0 ? (
         <p className="text-center text-gray-500">Bạn chưa có đơn hàng nào.</p>
       ) : (
@@ -163,40 +156,34 @@ export default function Orders({
               <div className="space-y-1 text-sm text-gray-700 mb-[16px]">
                 <p>
                   Ngày đặt:{" "}
-                  {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                  {order.createdAt
+                    ? new Date(order.createdAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })
+                    : "N/A"}
                 </p>
                 <p>Tổng tiền: {order.totalPrice.toLocaleString("vi-VN")}₫</p>
                 <p>
                   Thanh toán:{" "}
-                  {order.paymentMethod?.toUpperCase() || "Chưa thanh toán"}
+                  {order.paymentMethod
+                    ? order.paymentMethod.toUpperCase()
+                    : "Chưa thanh toán"}
                 </p>
               </div>
               <div className="flex gap-3 w-[225px]">
                 <button
                   onClick={() => {
-                    setSelectedOrder({
-                      id: order._id,
-                      orderCode: order._id,
-                      purchaseDate: new Date(
-                        order.createdAt
-                      ).toLocaleDateString("vi-VN"),
-                      customerEmail: order.userId,
-                      products: order.products.map((p) => ({
-                        name: p.productId.name,
-                        quantity: p.quantity,
-                      })),
-                      total: order.totalPrice,
-                      status: order.status,
-                    });
+                    setSelectedOrder(order);
                     setActiveTab("Chi tiết đơn hàng");
                   }}
                   className="w-[127px] h-[42px] border border-black rounded text-sm hover:bg-gray-100"
                 >
                   Xem chi tiết
                 </button>
-
                 {(order.status === "pending" ||
-                  order.status === "processing") && (
+                  order.status === "confirmed") && (
                   <button
                     onClick={() => {
                       setOrderToCancel(order._id);
@@ -213,12 +200,16 @@ export default function Orders({
         </div>
       )}
 
-      {showCancelModal && (
+      {showCancelModal && orderToCancel && (
         <CancelOrderModal
-          onClose={() => setShowCancelModal(false)}
-          onConfirm={() => {
-            console.log("Hủy đơn:", orderToCancel);
+          orderId={orderToCancel}
+          onClose={() => {
             setShowCancelModal(false);
+            setOrderToCancel(null);
+          }}
+          onConfirm={() => {
+            setShowCancelModal(false);
+            setOrderToCancel(null);
             toast.success("Đã gửi yêu cầu hủy đơn hàng.");
           }}
         />

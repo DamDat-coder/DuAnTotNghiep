@@ -289,7 +289,7 @@ export const getAllUsers = async (
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
-      .select("name email role is_block createdAt")
+      .select("name email role is_active createdAt")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })

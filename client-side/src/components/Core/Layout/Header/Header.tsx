@@ -19,14 +19,17 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import NotificationIcon from "./Notification";
 import { debounce } from "lodash";
+import { useActiveTab } from "@/contexts/ActiveTabContext";
 
 interface HeaderProps {
   title: string;
+  setActiveTab: (tab: string) => void;
 }
 
 export default function Header({ title }: HeaderProps) {
   const { isOpen: isMenuOpen, setIsOpen: setIsMenuOpen } = useMenu();
-  const { user, openLoginWithData, setOpenLoginWithData, registerFormData } = useAuth();
+  const { user, openLoginWithData, setOpenLoginWithData, registerFormData } =
+    useAuth();
   const { isLookupOpen, setIsLookupOpen } = useLookup();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -38,6 +41,12 @@ export default function Header({ title }: HeaderProps) {
   const inputRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const lookupButtonRef = useRef<HTMLButtonElement>(null);
+  const { setActiveTab } = useActiveTab(); // Get setActiveTab from context
+
+  const handleFavoriteClick = () => {
+    setActiveTab("Yêu thích"); // Update active tab to "Yêu thích"
+    window.history.pushState({}, "", "/profile?tab=favorite"); // Update URL
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -50,7 +59,6 @@ export default function Header({ title }: HeaderProps) {
     }
   }, [openLoginWithData, setOpenLoginWithData]);
 
-  // Tải gợi ý mặc định khi mở kính lúp
   useEffect(() => {
     if (isLookupOpen && defaultSuggestions.length === 0) {
       const loadDefaultSuggestions = async () => {
@@ -138,7 +146,11 @@ export default function Header({ title }: HeaderProps) {
       >
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
           <div className="flex h-16 items-center justify-between relative">
-            <Link href="/" className="flex items-center flex-shrink-0" aria-label="Trang chủ">
+            <Link
+              href="/"
+              className="flex items-center flex-shrink-0"
+              aria-label="Trang chủ"
+            >
               <Image
                 src="/nav/logo.svg"
                 alt="Logo"
@@ -212,7 +224,9 @@ export default function Header({ title }: HeaderProps) {
                                 {searchTerm.trim() === "" ? (
                                   <SearchSuggestions
                                     suggestions={suggestions}
-                                    handleSuggestionClick={handleSuggestionClick}
+                                    handleSuggestionClick={
+                                      handleSuggestionClick
+                                    }
                                     onClick={handleSuggestionClick}
                                   />
                                 ) : (
@@ -251,9 +265,10 @@ export default function Header({ title }: HeaderProps) {
                 </div>
 
                 <Link
-                  href="/profile?tab=favorite"
+                  href="#"
                   className="text-gray-400 hover:text-black hidden tablet:hidden laptop:block desktop:block"
                   aria-label="Danh sách yêu thích"
+                  onClick={handleFavoriteClick}
                 >
                   <Image
                     src="/nav/nav_like_desktop.svg"

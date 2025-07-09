@@ -81,9 +81,7 @@ export default function AdminHeader({
 
         <div className="w-[333px] h-[77px] flex items-center bg-black text-white rounded-[32px] px-4">
           <Image
-            src={
-              admin.avatar || "/admin/admin_header/admin_header_user_avatar.svg"
-            }
+            src={"/admin/admin_header/admin_header_user_avatar.svg"}
             alt="Avatar"
             width={40}
             height={40}

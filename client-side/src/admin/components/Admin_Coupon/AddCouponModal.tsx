@@ -1,30 +1,25 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createCoupon } from "@/services/couponApi";
+import { Coupon } from "@/types/coupon";
+import { ICategoryNews } from "@/types/category";
+import { fetchCategoryTree } from "@/services/categoryApi";
+import toast from "react-hot-toast";
 
-interface AddSaleModalProps {
+interface AddCouponModalProps {
   onClose: () => void;
 }
 
-export default function AddSaleModal({ onClose }: AddSaleModalProps) {
+export default function AddCouponModal({ onClose }: AddCouponModalProps) {
   const startDateRef = useRef<HTMLInputElement | null>(null);
   const endDateRef = useRef<HTMLInputElement | null>(null);
+  const [categories, setCategories] = useState<ICategoryNews[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [form, setForm] = useState<{
-    code: string;
-    category: string;
-    type: string;
-    value: string;
-    minOrder: string;
-    maxDiscount: string;
-    startDate: string;
-    endDate: string;
-    usage: string;
-    status: "active" | "inactive";
-    description: string;
-  }>({
+  const [form, setForm] = useState({
     code: "",
     category: "",
     type: "%",
@@ -34,8 +29,8 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
     startDate: "",
     endDate: "",
     usage: "",
-    status: "active",
     description: "",
+    is_active: true,
   });
 
   const handleChange = (
@@ -43,20 +38,81 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "is_active") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value === "true",
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      await createCoupon(form);
-      alert("Tạo mã giảm giá thành công!");
-      onClose(); // Đóng modal sau khi thêm thành công
-    } catch (err) {
-      alert("Đã xảy ra lỗi khi tạo mã giảm giá.");
-      console.error(err);
+      const selectedCategory = categories.find(
+        (cat) => cat._id === form.category
+      );
+
+      if (form.category && !selectedCategory) {
+        setError("Danh mục không hợp lệ.");
+        return;
+      }
+
+      const payload: Partial<Coupon> = {
+        code: form.code,
+        description: form.description,
+        discountType: form.type === "%" ? "percentage" : "fixed",
+        discountValue: Number(form.value),
+        minOrderAmount: form.minOrder ? Number(form.minOrder) : null,
+        maxDiscountAmount: form.maxDiscount ? Number(form.maxDiscount) : null,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        usageLimit: form.usage ? Number(form.usage) : null,
+        is_active: form.is_active,
+        usedCount: 0,
+        applicableCategories: selectedCategory ? [selectedCategory] : [],
+        applicableProducts: [],
+      };
+
+      const result = await createCoupon(payload);
+      console.log("Kết quả tạo mã giảm giá:", result);
+      toast.success("Tạo mã giảm giá thành công!");
+      onClose();
+      // Reload trang để hiển thị coupon mới
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Lỗi khi tạo mã giảm giá:", err);
+      setError(err.message || "Đã xảy ra lỗi khi tạo mã giảm giá.");
+      toast.error("Đã xảy ra lỗi khi tạo mã giảm giá.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategoryTree();
+        setCategories(data);
+      } catch (err) {
+        setError("Lỗi khi tải danh mục.");
+        console.error("Error loading categories:", err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const isFormValid =
+    form.code && form.value && form.startDate && form.endDate && form.usage && form.description;
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -79,6 +135,14 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
           </div>
         </div>
         <div className="w-full h-px bg-[#E7E7E7]" />
+        
+        {/* Error display */}
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
         <div className="pl-6 pr-6">
           <form className="text-sm" onSubmit={handleSubmit}>
@@ -92,22 +156,31 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                 onChange={handleChange}
                 placeholder="Nhập tên mã km"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
+                required
               />
             </div>
 
+            {/* Danh mục không bắt buộc */}
             <div className="mb-8 relative">
-              <label className="block font-bold mb-4">
-                Danh mục áp dụng<span className="text-red-500 ml-1">*</span>
-              </label>
+              <label className="block font-bold mb-4">Danh mục áp dụng</label>
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] appearance-none"
               >
-                <option value="">Chọn danh mục</option>
-                <option value="men">Nam</option>
-                <option value="women">Nữ</option>
+                <option value="">Chọn danh mục (Nếu có)</option>
+                {categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>
+                    Không có danh mục
+                  </option>
+                )}
               </select>
               <Image
                 src="/admin_user/chevron-down.svg"
@@ -149,6 +222,7 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   onChange={handleChange}
                   placeholder="Vd: 20 hoặc 50000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
+                  required
                 />
               </div>
             </div>
@@ -156,7 +230,6 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div>
                 <label className="block font-bold mb-4">
-                  {" "}
                   Đơn tối thiểu (đ)
                 </label>
                 <input
@@ -180,7 +253,6 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {/* Ngày bắt đầu */}
               <div className="relative">
                 <label className="block font-bold mb-4">
                   Ngày bắt đầu<span className="text-red-500 ml-1">*</span>
@@ -192,6 +264,7 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   value={form.startDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
+                  required
                 />
                 <button
                   type="button"
@@ -207,7 +280,6 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                 </button>
               </div>
 
-              {/* Ngày kết thúc */}
               <div className="relative">
                 <label className="block font-bold mb-4">
                   Ngày kết thúc<span className="text-red-500 ml-1">*</span>
@@ -219,6 +291,7 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   value={form.endDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
+                  required
                 />
                 <button
                   type="button"
@@ -246,6 +319,7 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   onChange={handleChange}
                   placeholder="Vd: 200"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
+                  required
                 />
               </div>
               <div className="relative">
@@ -253,13 +327,13 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                   Trạng thái<span className="text-red-500 ml-1">*</span>
                 </label>
                 <select
-                  name="status"
-                  value={form.status}
+                  name="is_active"
+                  value={form.is_active.toString()}
                   onChange={handleChange}
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] appearance-none"
                 >
-                  <option value="active">Kích hoạt</option>
-                  <option value="inactive">Tạm ngừng</option>
+                  <option value="true">Kích hoạt</option>
+                  <option value="false">Tạm ngừng</option>
                 </select>
                 <Image
                   src="/admin_user/Vector.svg"
@@ -271,7 +345,7 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
               </div>
             </div>
 
-            <div>
+            <div className="mb-8">
               <label className="block font-bold mb-4">
                 Mô tả chương trình<span className="text-red-500 ml-1">*</span>
               </label>
@@ -281,15 +355,21 @@ export default function AddSaleModal({ onClose }: AddSaleModalProps) {
                 onChange={handleChange}
                 placeholder="Nhập nội dung chương trình, điều kiện áp dụng..."
                 className="w-full min-h-[200px] px-4 py-3 border border-[#E2E8F0] rounded-[12px]"
+                required
               />
             </div>
 
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-4"
+              disabled={!isFormValid || isSubmitting}
+              className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold mt-4 ${
+                !isFormValid || isSubmitting
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:opacity-90"
+              }`}
             >
-              Thêm mã giảm giá
+              {isSubmitting ? "Đang tạo..." : "Thêm mã giảm giá"}
             </button>
           </form>
         </div>

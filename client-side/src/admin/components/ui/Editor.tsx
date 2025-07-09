@@ -1,54 +1,81 @@
-"use client";
-
 import { Editor as TinyMCEEditor } from "@tinymce/tinymce-react";
-import { useRef } from "react";
 
-// Import từ local (sau khi đã cài đặt `tinymce`)
-import "tinymce/tinymce";
-import "tinymce/icons/default";
-import "tinymce/themes/silver";
-
-// Plugins
-import "tinymce/plugins/advlist";
-import "tinymce/plugins/anchor";
-import "tinymce/plugins/autolink";
-import "tinymce/plugins/autosave";
-import "tinymce/plugins/code";
-import "tinymce/plugins/fullscreen";
-import "tinymce/plugins/help";
-import "tinymce/plugins/image";
-import "tinymce/plugins/link";
-import "tinymce/plugins/lists";
-import "tinymce/plugins/media";
-import "tinymce/plugins/preview";
-import "tinymce/plugins/searchreplace";
-import "tinymce/plugins/table";
-import "tinymce/plugins/visualblocks";
-import "tinymce/plugins/wordcount";
-
-export default function Editor({
-  value,
-  onChange,
-}: {
+interface EditorProps {
   value: string;
   onChange: (content: string) => void;
-}) {
-  const editorRef = useRef(null);
+}
+
+export default function Editor({ value, onChange }: EditorProps) {
+  const handleEditorChange = (content: string) => {
+    onChange(content); // Use content directly here
+  };
 
   return (
     <TinyMCEEditor
-      onEditorChange={(newValue) => onChange(newValue)}
-      value={value}
+      apiKey="w4n4wo86o3unfsou6o5j2mxt8rk3phw815e566ztw3xyg6bu"
+      value={value} // Bind the value to the editor
       init={{
         height: 500,
         menubar: "file edit view insert format tools table help",
-        plugins:
-          "advlist anchor autolink autosave code fullscreen help image link lists media preview searchreplace table visualblocks wordcount",
+        plugins: [
+          "anchor",
+          "autolink",
+          "charmap",
+          "codesample",
+          "emoticons",
+          "image",
+          "link",
+          "lists",
+          "media",
+          "searchreplace",
+          "table",
+          "visualblocks",
+          "wordcount",
+          "checklist",
+          "mediaembed",
+          "casechange",
+          "formatpainter",
+          "pageembed",
+          "a11ychecker",
+          "tinymcespellchecker",
+          "permanentpen",
+          "powerpaste",
+          "advtable",
+          "advcode",
+          "editimage",
+          "advtemplate",
+          "ai",
+          "mentions",
+          "tinycomments",
+          "tableofcontents",
+          "footnotes",
+          "mergetags",
+          "autocorrect",
+          "typography",
+          "inlinecss",
+          "markdown",
+          "importword",
+          "exportword",
+          "exportpdf",
+        ],
         toolbar:
-          "undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist checklist | forecolor backcolor | link image media | code preview fullscreen",
-        content_style:
-          "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+          "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat",
+        tinycomments_mode: "embedded",
+        tinycomments_author: "Author name",
+        mergetags_list: [
+          { value: "First.Name", title: "First Name" },
+          { value: "Email", title: "Email" },
+        ],
+        ai_request: (
+          request: any,
+          respondWith: { string: (callback: () => Promise<string>) => void }
+        ) => {
+          respondWith.string(() =>
+            Promise.reject("See docs to implement AI Assistant")
+          );
+        },
       }}
+      onEditorChange={handleEditorChange} // Correctly handle editor changes
     />
   );
 }

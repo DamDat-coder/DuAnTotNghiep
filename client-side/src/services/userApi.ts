@@ -92,7 +92,7 @@ export const googleLogin = async (id_token: string) => {
     document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=3600`;
   }
 
-  return { user, accessToken: data.accessToken };
+  return { user, accessToken: data.data.accessToken };
 };
 
 export async function register(

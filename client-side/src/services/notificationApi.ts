@@ -1,20 +1,5 @@
+import { NotificationResponse } from "@/types/notification";
 import { API_BASE_URL, fetchWithAuth } from "./api";
-
-interface Notification {
-  _id: string;
-  userId?: string;
-  title: string;
-  message: string;
-  is_read: boolean;
-  createdAt: string;
-  icon?: string; // Icon tùy chọn cho giao diện
-}
-
-interface NotificationResponse {
-  success: boolean;
-  data: Notification[];
-  message?: string;
-}
 
 export async function fetchNotifications(): Promise<NotificationResponse> {
   try {

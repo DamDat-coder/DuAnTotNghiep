@@ -30,11 +30,6 @@ export default function CartItem({
   onRemove,
   onSelect,
 }: CartItemProps) {
-  const imageSrc = item.image
-    ? item.image.startsWith("/")
-      ? item.image
-      : "/product/img/" + item.image
-    : "/images/placeholder.jpg";
 
   // Lấy tên màu từ colorMap, mặc định là item.color nếu không tìm thấy
   const displayColor = colorMap[item.color] || item.color || "Không xác định";
@@ -52,8 +47,8 @@ export default function CartItem({
           />
 
           <Image
-            src={imageSrc}
-            alt={imageSrc}
+            src={item.image}
+            alt={item.image}
             width={110}
             height={110}
             className="w-[6.9rem] h-[6.9rem] object-cover rounded desktop:w-[150px] desktop:h-[150px]"
@@ -125,8 +120,8 @@ export default function CartItem({
           />
 
           <Image
-            src={imageSrc}
-            alt={imageSrc}
+            src={item.image}
+            alt={item.image}
             width={110}
             height={110}
             className="w-[6.9rem] h-[6.9rem] object-cover rounded desktop:w-[150px] desktop:h-[150px]"

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { debounce } from "lodash";
+import AddCouponModal from "./AddCouponModal";
 
 const options = [
   { value: "all", label: "Tất cả trạng thái" },
@@ -20,6 +21,7 @@ export default function CouponControlBar({
   const [selected, setSelected] = useState(options[0]);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // Debounce hàm onSearchChange
   const debouncedSearch = useCallback(
@@ -54,6 +56,7 @@ export default function CouponControlBar({
   };
 
   return (
+  <>
     <div className="flex items-center justify-between w-full mb-6">
       {/* Filter & Search */}
       <div className="flex items-center gap-6">
@@ -118,6 +121,19 @@ export default function CouponControlBar({
           )}
         </div>
       </div>
+
+      {/* Add New Button */}
+      <button
+        onClick={() => setShowModal(true)}
+        className="flex items-center gap-2 bg-black text-white px-4 h-12 rounded-[12px] text-sm font-medium hover:opacity-90"
+        aria-label="Thêm tin tức mới"
+      >
+        <Image src="/admin_user/plus.svg" width={10} height={10} alt="Thêm" />
+        Thêm mã giảm giá mới
+      </button>
     </div>
+
+    {showModal && <AddCouponModal onClose={() => setShowModal(false)} />}
+  </>
   );
 }

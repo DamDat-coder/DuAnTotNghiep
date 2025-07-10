@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { IUser } from "@/types/auth";
-import { updateUser } from "@/services/userApi";
+import { fetchUserById, updateUser } from "@/services/userApi";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
@@ -53,7 +53,6 @@ export default function EditUserModal({
     }
   }, [user]);
 
-  // Handle form changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -69,14 +68,11 @@ export default function EditUserModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (user && isRoleChanged) {
       const updatedUser = { ...user, role: form.role };
-
       try {
         const updatedData = await updateUser(user.id, { role: form.role });
         console.log("update:", updatedData);
-
         toast.success("Cập nhật thành công.");
         onUpdate(updatedData);
         setTimeout(() => {
@@ -159,89 +155,23 @@ export default function EditUserModal({
             </div>
             {/* Address */}
             <div className="mb-8">
-              <label className="block font-semibold mb-4">Nhập địa chỉ</label>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="relative">
-                  <label className="text-gray-500 text-sm mb-1 block">
-                    Tỉnh / Thành
-                  </label>
-                  <select
-                    name="province"
-                    value={form.province}
-                    onChange={handleChange}
-                    className="w-full h-[56px] px-4 pr-10 border border-[#B0B0B0] rounded-[4px] appearance-none"
-                  >
-                    <option value="">Chọn tỉnh / thành</option>
-                    <option value="hanoi">Hà Nội</option>
-                    <option value="hcm">TP. Hồ Chí Minh</option>
-                  </select>
-                  <Image
-                    src="/admin_user/Vector.svg"
-                    width={14}
-                    height={14}
-                    alt="arrow down"
-                    className="absolute right-3 top-[calc(50%+10px)] transform -translate-y-1/2 pointer-events-none"
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="text-gray-500 text-sm mb-1 block">
-                    Quận / Huyện
-                  </label>
-                  <select
-                    name="district"
-                    value={form.district}
-                    onChange={handleChange}
-                    className="w-full h-[56px] px-4 border border-[#B0B0B0] rounded-[4px] appearance-none"
-                  >
-                    <option value="">Chọn quận / huyện</option>
-                  </select>
-                  <Image
-                    src="/admin_user/Vector.svg"
-                    width={14}
-                    height={14}
-                    alt="arrow down"
-                    className="absolute right-3 top-[calc(50%+10px)] transform -translate-y-1/2 pointer-events-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="text-gray-500 text-sm mb-1 block">
-                    Phường / Xã
-                  </label>
-                  <select
-                    name="ward"
-                    value={form.ward}
-                    onChange={handleChange}
-                    className="w-full h-[56px] px-4 border border-[#B0B0B0] rounded-[4px] appearance-none"
-                  >
-                    <option value="">Chọn phường / xã</option>
-                  </select>
-                  <Image
-                    src="/admin_user/Vector.svg"
-                    width={14}
-                    height={14}
-                    alt="arrow down"
-                    className="absolute right-3 top-[calc(50%+10px)] transform -translate-y-1/2 pointer-events-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-gray-500 text-sm mb-1 block">
-                    Địa chỉ
-                  </label>
-                  <input
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    placeholder="Địa chỉ"
-                    className="w-full h-[56px] px-4 border border-[#888888] rounded-[4px]"
-                    disabled
-                  />
-                </div>
-              </div>
+              <label className="block font-bold mb-4">Địa chỉ</label>
+              {user.addresses && user.addresses.length > 0 ? (
+                user.addresses.map((addr, index) => (
+                  <div key={index} className="mb-4">
+                    <p className="text-gray-700">
+                      {addr.street || "Chưa có đường"},{" "}
+                      {addr.ward || "Chưa có phường/xã"},{" "}
+                      {addr.district || "Chưa có quận/huyện"},{" "}
+                      {addr.province || "Chưa có tỉnh/thành"}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">
+                  Người dùng chưa cập nhật địa chỉ
+                </p>
+              )}
             </div>
             {/* Role */}
             <div>

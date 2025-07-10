@@ -14,7 +14,6 @@ export interface IUser {
   name: string;
   phone: string | null;
   role: "user" | "admin";
-
   is_active: boolean;
   addresses?: Address[];
   wishlist?: IProduct[];

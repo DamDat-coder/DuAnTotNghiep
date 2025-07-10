@@ -1,20 +1,48 @@
 import { ReactNode } from "react";
 import CouponControlBar from "./CouponControlBar";
 import Image from "next/image";
+import CouponTableBody from "./CouponTableBody"; // Import CouponTableBody
+import { Coupon } from "@/types/coupon";
 
 interface TableCouponWrapperProps {
   children: ReactNode;
   onSearchChange: (value: string) => void;
   onFilterChange: (value: string) => void;
+  coupons: Coupon[];
+  onToggleActive: (id: string, newValue: boolean) => void;
+  onCouponsChange: (newCoupons: any[]) => void;
+  onEditCoupon: (coupon: any) => void; // Thay bằng Coupon nếu có type
+
 }
 
 export default function TableCouponWrapper({
   children,
   onSearchChange,
   onFilterChange,
+
+  coupons,
+  onToggleActive,
+  onCouponsChange,
+  onEditCoupon,
 }: TableCouponWrapperProps) {
-  return (
-    <div className="space-y-4 mt-6">
+  // Add local state for filter and search if not passed as props
+  import { useState } from "react";
+
+  const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState<string>("");
+
+  const filteredUsers = coupons.filter((user) => {
+    const matchFilter = filter === "all" || user.role === filter;
+    const name = user.name || "";
+    const email = user.email || "";
+    const matchSearch =
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      email.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+return (
+  <div className="space-y-4 mt-6">
       <CouponControlBar
         onSearchChange={onSearchChange}
         onFilterChange={onFilterChange}
@@ -51,6 +79,16 @@ export default function TableCouponWrapper({
               </th>
             </tr>
           </thead>
+
+          <tbody>
+            <CouponTableBody
+              coupons={coupons}
+              onToggleActive={onToggleActive}
+              onCouponsChange={onCouponsChange}
+              onEditCoupon={onEditCoupon}
+            />
+          </tbody>
+
           <tbody>{children}</tbody>
         </table>
       </div>

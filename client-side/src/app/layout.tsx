@@ -44,23 +44,25 @@ export default function RootLayout({
           <AuthProvider>
             <MenuProvider>
               <LookupProvider>
-                <CategoriesProvider>
-                  {!isAdminRoute && (
-                    <Header
-                      title="My App"
-                      setActiveTab={function (tab: string): void {
-                        throw new Error("Function not implemented.");
-                      }}
-                    />
-                  )}
-                  <CartProvider>
-                    <WishlistProvider>
-                      <main className={mainClassName}>{children}</main>
-                      {!isAdminRoute && <ChatBotBox />}
-                    </WishlistProvider>
-                  </CartProvider>
-                  {!isAdminRoute}
-                </CategoriesProvider>
+                <ActiveTabProvider>
+                  <CategoriesProvider>
+                    {!isAdminRoute && (
+                      <Header
+                        title="My App"
+                        setActiveTab={function (tab: string): void {
+                          throw new Error("Function not implemented.");
+                        }}
+                      />
+                    )}
+                    <CartProvider>
+                      <WishlistProvider>
+                        <main className={mainClassName}>{children}</main>
+                        {!isAdminRoute && <ChatBotBox />}
+                      </WishlistProvider>
+                    </CartProvider>
+                    {!isAdminRoute && <Footer />}
+                  </CategoriesProvider>
+                </ActiveTabProvider>
                 {!isAdminRoute && <Footer />}
               </LookupProvider>
             </MenuProvider>

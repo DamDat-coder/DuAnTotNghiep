@@ -378,9 +378,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Nếu có file mới → xoá cũ + upload mới
+    // Nếu có file mới → xoá ảnh cũ + upload mới
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      // Xoá ảnh cũ khỏi Cloudinary
       if (existingProduct.image && existingProduct.image.length > 0) {
         for (const img of existingProduct.image) {
           const publicId = img.split('/').pop()?.split('.')[0];
@@ -394,7 +393,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         }
       }
 
-      // Upload ảnh mới
       const imageUrls: string[] = [];
       for (const file of req.files as Express.Multer.File[]) {
         const result = await new Promise<UploadApiResponse>((resolve, reject) => {
@@ -412,11 +410,20 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 
       product.image = imageUrls;
     } else {
-      // Giữ ảnh cũ
       product.image = existingProduct.image;
     }
 
-    // Cập nhật thông tin danh mục nếu có
+    // Parse lại variants nếu là string
+    if (typeof product.variants === 'string') {
+      try {
+        product.variants = JSON.parse(product.variants);
+      } catch (error) {
+        res.status(400).json({ status: 'error', message: 'Định dạng variants không hợp lệ' });
+        return;
+      }
+    }
+
+    // Cập nhật danh mục nếu có
     if (product.category?._id) {
       const category = await categoryModel.findById(product.category._id).lean();
       if (!category) {
@@ -441,7 +448,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       ...updatedProduct,
       category: {
         _id: updatedProduct.category._id,
-        name: updatedProduct.category.name,
+name: updatedProduct.category.name,
       },
     };
 
@@ -450,13 +457,34 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       message: 'Cập nhật sản phẩm thành công',
       data: result,
     });
+
+    // Gửi thông báo đến người dùng (sản phẩm cập nhật lại)
+    setImmediate(() => {
+      (async () => {
+        try {
+          const users = await UserModel.find({}).select("_id").lean();
+          const notifications = users.map((user) => ({
+            userId: user._id,
+            title: "Sản phẩm vừa được cập nhật!",
+            message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
+            type: "product",
+            isRead: false,
+          }));
+          await NotificationModel.insertMany(notifications);
+          console.log("Thông báo cập nhật sản phẩm đã gửi.");
+        } catch (error) {
+          console.error("❌ Gửi thông báo thất bại:", error);
+        }
+      })();
+    });
+
   } catch (error: any) {
     console.error('Lỗi khi cập nhật sản phẩm:', error);
     if (error.code === 11000) {
       res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
-      return;
+    } else {
+      res.status(500).json({ status: 'error', message: error.message });
     }
-    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 

@@ -1,17 +1,19 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { fetchOrderById, updateOrderStatus } from "@/services/orderApi";
-import { fetchAllOrders } from "@/services/orderApi";
 
+// THÊM props setOrders vào đây!
 type StatusOption = { key: string; label: string; color: string; };
 
 export default function EditOrderForm({
   orderId,
   onClose,
+  setOrders,
   STATUS,
 }: {
   orderId: string;
   onClose: () => void;
+  setOrders: React.Dispatch<React.SetStateAction<any[]>>;
   STATUS: StatusOption[];
 }) {
   const [order, setOrder] = useState<any>(null);
@@ -61,13 +63,20 @@ export default function EditOrderForm({
     );
   };
 
+  // Cập nhật trạng thái chỉ trên FE, không reload!
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
     try {
       await updateOrderStatus(orderId, status);
-      window.location.reload(); // Reload lại trang ngay sau khi cập nhật thành công
-      onClose(); // (Có thể bỏ dòng này vì reload sẽ đóng popup)
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          (order._id === orderId || order.id === orderId)
+            ? { ...order, status }
+            : order
+        )
+      );
+      onClose();
     } finally {
       setUpdating(false);
     }

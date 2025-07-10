@@ -4,13 +4,14 @@ import { Pagination } from "../ui/Panigation";
 import OrderControlBar from "./OrderControlBar";
 import OrderBody from "./OrderBody";
 import EditOrderForm from "./OrderEditForm";
-import { fetchAllOrders } from "@/services/orderApi";
 
 export default function OrderTableWrapper({
   orders,
+  setOrders,
   STATUS,
 }: {
   orders: IOrder[];
+  setOrders: React.Dispatch<React.SetStateAction<IOrder[]>>;
   STATUS: any[];
 }) {
   const [filter, setFilter] = useState("all");
@@ -86,6 +87,7 @@ export default function OrderTableWrapper({
           <tbody>
             <OrderBody
               orders={pageData}
+              setOrders={setOrders}
               STATUS={STATUS}
               onEdit={handleEdit}
             />
@@ -105,6 +107,7 @@ export default function OrderTableWrapper({
         <EditOrderForm
           orderId={editOrderId}
           onClose={handleCloseEditForm}
+          setOrders={setOrders}
           STATUS={STATUS}
         />
       )}

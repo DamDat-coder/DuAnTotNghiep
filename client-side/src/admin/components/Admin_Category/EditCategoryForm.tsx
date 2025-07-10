@@ -15,6 +15,29 @@ interface EditCategoryFormProps {
   onClose?: () => void;
 }
 
+// Hàm lấy tất cả id con/cháu (dùng để loại khỏi dropdown)
+function getAllChildIds(node: Category): string[] {
+  if (!node.children || node.children.length === 0) return [];
+  let ids: string[] = [];
+  node.children.forEach(child => {
+    ids.push(child.id);
+    ids = ids.concat(getAllChildIds(child));
+  });
+  return ids;
+}
+
+// Hàm tìm node theo id trong cây
+function findNodeById(nodes: Category[], id: string): Category | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export default function EditCategoryForm({
   category: initialCategory,
   onClose,
@@ -29,6 +52,9 @@ export default function EditCategoryForm({
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Lưu danh sách tất cả các id con/cháu của chính nó để exclude khỏi dropdown
+  const [excludedIds, setExcludedIds] = useState<string[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -47,7 +73,16 @@ export default function EditCategoryForm({
               children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
             }));
         }
-        setAllCategories(normalizeCats(cats));
+        const normalized = normalizeCats(cats);
+        setAllCategories(normalized);
+
+        // Tìm node hiện tại và lấy all id con/cháu
+        const currentNode = findNodeById(normalized, String(initialCategory.id));
+        if (currentNode) {
+          setExcludedIds([currentNode.id, ...getAllChildIds(currentNode)]);
+        } else {
+          setExcludedIds([String(initialCategory.id)]);
+        }
       } catch (err) {
         setError("Không thể tải danh mục cha.");
       } finally {
@@ -55,7 +90,7 @@ export default function EditCategoryForm({
       }
     };
     load();
-  }, []);
+  }, [initialCategory.id]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -76,18 +111,19 @@ export default function EditCategoryForm({
       });
       alert("Cập nhật danh mục thành công!");
       if (onClose) onClose();
-    } catch (err) {
-      alert("Đã xảy ra lỗi khi cập nhật.");
+    } catch (err: any) {
+      alert(err?.response?.data?.message || err?.message || "Đã xảy ra lỗi khi cập nhật.");
     }
   };
 
+  // renderOptions mới, exclude các id bị cấm (chính nó & all con/cháu)
   const renderOptions = (
     nodes: Category[],
     depth = 0,
     path = ""
   ): JSX.Element[] => {
     return nodes.flatMap((cat) => {
-      if (!cat.id || cat.id === formData.id) return [];
+      if (!cat.id || excludedIds.includes(cat.id)) return [];
       const optionKey = `${path}-${cat.id}`;
       return [
         <option key={optionKey} value={cat.id}>

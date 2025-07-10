@@ -6,12 +6,14 @@ import { ICategory } from "@/types/category";
 import { addProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 
-const sizeOptions = ["S", "M", "L", "XL", "2XL"];
+const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL"];
 const colorOptions = [
   { value: "Đen", label: "Đen" },
   { value: "Trắng", label: "Trắng" },
   { value: "Xám", label: "Xám" },
   { value: "Đỏ", label: "Đỏ" },
+  { value: "Xanh da trời", label: "Xanh da trời" },
+  { value: "Nâu", label: "Nâu" },
   { value: "Hồng", label: "Hồng" },
 ];
 

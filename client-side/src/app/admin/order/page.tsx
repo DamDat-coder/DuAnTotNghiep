@@ -1,3 +1,4 @@
+// page.tsx
 "use client";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
@@ -5,7 +6,6 @@ import OrderTableWrapper from "@/admin/components/Admin_Order/OrderTableWrapper"
 import { fetchAllOrders } from "@/services/orderApi";
 import { Toaster } from "react-hot-toast";
 
-// Khai báo STATUS đầy đủ
 const STATUS = [
   { key: "pending", label: "Chờ xác nhận", color: "bg-yellow-100 text-yellow-500" },
   { key: "confirmed", label: "Đã xác nhận", color: "bg-blue-100 text-blue-500" },
@@ -23,8 +23,7 @@ export default function OrderPage() {
       setLoading(true);
       try {
         const response = await fetchAllOrders({ page: 1, limit: 100 });
-        // ====> KHÔNG MAP LẠI, TRUYỀN NGUYÊN DATA API VỀ!
-        setOrders(response.data);  
+        setOrders(response.data);
       } catch (e) {
         setOrders([]);
       }
@@ -42,7 +41,7 @@ export default function OrderPage() {
         ) : orders.length === 0 ? (
           <div className="text-center py-8 text-gray-400">Không có đơn hàng nào</div>
         ) : (
-          <OrderTableWrapper orders={orders} STATUS={STATUS} />
+          <OrderTableWrapper orders={orders} setOrders={setOrders} STATUS={STATUS} />
         )}
       </div>
     </AdminLayout>

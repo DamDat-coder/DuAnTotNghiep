@@ -72,7 +72,14 @@ export default function ProductBody({
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg overflow-hidden bg-[#f3f3f3] flex items-center justify-center">
                   <Image
-                    src={product.images && product.images[0] ? `/product/img/${product.images[0]}` : "/no-image.png"}
+                    // Nếu images[0] là link cloudinary thì dùng luôn, còn nếu chỉ là tên file thì thêm prefix
+                    src={
+                      product.images && product.images[0]
+                        ? (product.images[0].startsWith("http")
+                            ? product.images[0]
+                            : `/product/img/${product.images[0]}`)
+                        : "/no-image.png"
+                    }
                     width={40}
                     height={40}
                     alt={product.name || "No image"}

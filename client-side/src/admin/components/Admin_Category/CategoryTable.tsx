@@ -14,6 +14,7 @@ interface CategoryTableProps {
 function normalizeCategory(cat: any): ICategory {
   return {
     _id: cat._id || cat.id,
+    id: String (cat._id || cat.id), // Đảm bảo id là chuỗi
     name: cat.name,
     description: cat.description ?? "",
     parentId: cat.parentId ?? cat.parentid ?? null,

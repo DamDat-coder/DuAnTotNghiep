@@ -15,6 +15,7 @@ interface ProductResponse {
   total: number;
   data: IProduct[];
 }
+
 // Tách hàm map dữ liệu
 function mapToIProduct(e: any): IProduct {
   return {
@@ -33,7 +34,9 @@ function mapToIProduct(e: any): IProduct {
       size: v.size,
       stock: v.stock,
       discountPercent: v.discountPercent ?? 0,
-      discountedPrice: v.discountedPrice ?? 0,
+      discountedPrice: v.discountedPrice ?? Math.round(
+        v.price * (1 - (v.discountPercent ?? 0) / 100)
+      ),
     })),
     images: Array.isArray(e.image) ? e.image : e.images || [],
     is_active: e.is_active ?? true,
@@ -95,6 +98,7 @@ export async function fetchProducts(
     throw new Error(error.message || "Không thể tải sản phẩm");
   }
 }
+
 // Các hàm khác (addProduct, fetchProductById, editProduct, deleteProduct, fetchProductBySlug) giữ nguyên
 export async function addProduct(product: {
   name: string;
@@ -126,18 +130,18 @@ export async function addProduct(product: {
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("slug", product.slug);
-    if (product.description) {
-      formData.append("description", product.description);
-    }
-    formData.append("category[_id]", product.categoryId);
+    if (product.description) formData.append("description", product.description);
+    // BE của bạn đang nhận category[_id], giữ nguyên nếu đúng.
+    formData.append("category._id", product.categoryId);
 
-    // Gửi biến thể dạng chuỗi JSON
+    // Serialize variants thành JSON string
     formData.append("variants", JSON.stringify(product.variants));
 
-    // Gửi từng ảnh với key "images"
+    // Upload nhiều ảnh
     product.images.forEach((image) => {
       formData.append("images", image);
     });
+
     formData.append("is_active", String(product.is_active ?? true));
 
     const res = await fetchWithAuth<any>(`${API_BASE_URL}/products`, {
@@ -145,35 +149,13 @@ export async function addProduct(product: {
       body: formData,
     });
 
-    // Mapping trả về về đúng IProduct
-    return {
-      id: res.data._id,
-      name: res.data.name,
-      slug: res.data.slug,
-      description: res.data.description || "",
-      category: {
-        _id: res.data.category?._id || null,
-        name: res.data.category?.name || "Không rõ",
-      },
-      categoryId: res.data.category?._id || null,
-      variants: (res.data.variants || []).map((v: any) => ({
-        price: v.price,
-        color: v.color,
-        size: v.size,
-        stock: v.stock,
-        discountPercent: v.discountPercent ?? 0,
-      })),
-      images: res.data.image || [],
-      is_active: res.data.is_active ?? true,
-      salesCount: res.data.salesCount || 0,
-    };
+    // CHUẨN HÓA: dùng mapToIProduct
+    return mapToIProduct(res.data);
   } catch (error: any) {
     console.error("Lỗi khi thêm sản phẩm:", error);
-    // Có thể throw để phía UI hiển thị lỗi, hoặc return null tuỳ bạn
     return null;
   }
 }
-
 
 export async function fetchProductById(id: string): Promise<IProduct | null> {
   try {
@@ -234,23 +216,13 @@ export async function editProduct(
     const formData = new FormData();
     if (product.name) formData.append("name", product.name);
     if (product.slug) formData.append("slug", product.slug);
-    if (product.description)
-      formData.append("description", product.description);
-    if (product.categoryId)
-      formData.append("category[_id]", product.categoryId);
+    if (product.description) formData.append("description", product.description);
+    // ĐÚNG: nên gửi category._id đúng BE mong đợi
+    if (product.categoryId) formData.append("category._id", product.categoryId);
     if (product.variants) {
-      product.variants.forEach((variant, index) => {
-        formData.append(`variants[${index}][price]`, variant.price.toString());
-        formData.append(`variants[${index}][color]`, variant.color);
-        formData.append(`variants[${index}][size]`, variant.size);
-        formData.append(`variants[${index}][stock]`, variant.stock.toString());
-        formData.append(
-          `variants[${index}][discountPercent]`,
-          (variant.discountPercent ?? 0).toString()
-        );
-      });
+      formData.append("variants", JSON.stringify(product.variants));
     }
-    if (product.images) {
+    if (product.images && product.images.length > 0) {
       product.images.forEach((image) => {
         formData.append("images", image);
       });
@@ -263,39 +235,10 @@ export async function editProduct(
       body: formData,
     });
 
-    const updatedProduct: IProduct = {
-      id: res.data._id,
-      name: res.data.name,
-      slug: res.data.slug,
-      description: res.data.description || "",
-      category: {
-        _id: res.data.category?._id || null,
-        name: res.data.category?.name || "Không rõ",
-      },
-      categoryId: res.data.category?._id || null,
-      variants: (res.data.variants || []).map((v: any) => ({
-        price: v.price,
-        color: v.color,
-        size: v.size,
-        stock: v.stock,
-        discountPercent: v.discountPercent ?? 0,
-      })),
-      images: res.data.image || [],
-      is_active: res.data.is_active ?? true,
-      salesCount: res.data.salesCount || 0,
-    };
-
-    return updatedProduct;
+    return mapToIProduct(res.data);
   } catch (error: any) {
     console.error(`Lỗi khi chỉnh sửa sản phẩm ${id}:`, error);
-    const message = error.message || "Đã xảy ra lỗi khi chỉnh sửa sản phẩm";
-    if (message.includes("Tên hoặc slug sản phẩm đã tồn tại")) {
-      throw new Error("Tên hoặc slug sản phẩm đã tồn tại");
-    }
-    if (message.includes("Danh mục không tồn tại")) {
-      throw new Error("Danh mục không tồn tại");
-    }
-    throw new Error(message);
+    throw new Error(error.message || "Đã xảy ra lỗi khi chỉnh sửa sản phẩm");
   }
 }
 
@@ -369,7 +312,6 @@ export async function lockProduct(id: string, is_active: boolean) {
     throw new Error(error.message || "Lỗi cập nhật trạng thái!");
   }
 }
-
 
 export async function fetchProductsAdmin(
   query: ProductQuery = {}

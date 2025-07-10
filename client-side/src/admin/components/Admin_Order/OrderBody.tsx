@@ -1,14 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { updateOrderStatus } from "@/services/orderApi";
 
-function formatDate(dateString?: string) {
-  if (!dateString) return "Không xác định";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN");
-}
-
+// THÊM props setOrders vào đây!
 export default function OrderBody({
   orders,
+  setOrders,
   STATUS,
   onEdit,
   onView,
@@ -49,18 +45,31 @@ export default function OrderBody({
     );
   };
 
+  // Cập nhật trạng thái chỉ trên FE, không reload!
   const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
     if (oldStatus === newStatus) return;
     setUpdatingStatusId(orderId);
     try {
       await updateOrderStatus(orderId, newStatus);
-      window.location.reload();
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          (order._id === orderId || order.id === orderId)
+            ? { ...order, status: newStatus }
+            : order
+        )
+      );
     } catch (e) {
       alert("Lỗi khi cập nhật trạng thái");
     }
     setUpdatingStatusId(null);
     setStatusDropdownId(null);
   };
+
+  function formatDate(dateString?: string) {
+    if (!dateString) return "Không xác định";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN");
+  }
 
   if (!orders || orders.length === 0) {
     return (

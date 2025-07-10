@@ -38,7 +38,7 @@ export default function ConfirmCancelOrderModal({ onClose, onConfirm }: Props) {
 
         {/* Tiêu đề */}
         <h2 className="text-[24px] font-semibold text-[#0F172A] mb-2">
-          Xác nhận hủy dơn hàng?{" "}
+          Xác nhận hủy đơn hàng?{" "}
         </h2>
 
         {/* Mô tả */}

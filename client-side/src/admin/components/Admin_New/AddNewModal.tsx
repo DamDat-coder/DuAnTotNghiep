@@ -10,6 +10,7 @@ import { createNews, updateNews } from "@/services/newApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
+import PreviewNew from "./PreviewNew";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
@@ -27,9 +28,16 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState<"draft" | "preview" | "publish">(
-    "draft"
-  );
+  const [action, setAction] = useState<"draft" | "publish">("draft");
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+
+  const handlePreview = () => {
+    setIsPreviewVisible(true); // Show the preview modal
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewVisible(false); // Close the preview modal
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,7 +139,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       category_id: selectedCategory || { _id: category, name: "" },
       tags,
       is_published: action === "publish",
-      thumbnail: image || null,
+      thumbnail: image || "",
       news_image: image ? [image] : [],
       published_at: action === "publish" ? new Date(date) : undefined,
     };
@@ -142,7 +150,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       const createdNews = await createNews(payload);
       toast.success("Tạo tin tức thành công!");
 
-      // Nếu hành động là "publish", cập nhật tin tức để đặt is_published và published_at
       if (action === "publish") {
         if (!createdNews.id) {
           throw new Error("ID tin tức không hợp lệ sau khi tạo");
@@ -151,12 +158,12 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
           is_published: true,
           published_at: new Date(date),
         });
-        toast.success("Cập nhật trạng thái xuất bản thành công!");
+        // toast.success("Cập nhật trạng thái xuất bản thành công!");
       }
 
-      // setTimeout(() => {
-      //   window.location.reload();
-      // }, 1000);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: any) {
       console.error("Lỗi khi tạo hoặc cập nhật tin tức:", err);
       setError(err.message);
@@ -246,9 +253,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       width={18}
                       height={18}
                       alt="calendar"
-                      className="absolute right-3 top-[calc(50%-10px)] transform -translate-y-1/2 pointer-events-none"
+                      className="absolute right-3 top-[calc(50%-40px)] transform -translate-y-1/2 pointer-events-none"
                     />
-
                     <div className="flex gap-2 mt-6">
                       <button
                         type="button"
@@ -259,18 +265,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                             : "border border-gray-300"
                         }`}
                       >
-                        Lưu bản nháp
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAction("preview")}
-                        className={`flex-1 w-[94px] h-10 rounded-[4px] text-sm ${
-                          action === "preview"
-                            ? "bg-black text-white"
-                            : "border border-gray-300"
-                        }`}
-                      >
-                        Xem trước
+                        Bản nháp
                       </button>
                       <button
                         type="button"
@@ -284,6 +279,32 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                         Xuất bản
                       </button>
                     </div>
+
+                    {/* Add Preview button to show content preview before publish */}
+                    <div className="mt-4">
+                      {action === "draft" || action === "publish" ? (
+                        <button
+                          type="button"
+                          onClick={handlePreview}
+                          className="flex-1 w-[120px] h-10 rounded-[4px] text-sm bg-blue-500 text-white"
+                        >
+                          Xem trước
+                        </button>
+                      ) : null}
+                    </div>
+                    {isPreviewVisible && (
+                      <PreviewNew
+                        title={title}
+                        content={content}
+                        category={
+                          categories.find((cat) => cat._id === category)
+                            ?.name || ""
+                        }
+                        tags={tags}
+                        image={image}
+                        onClose={handleClosePreview}
+                      />
+                    )}
                   </div>
 
                   <div className="mb-8">

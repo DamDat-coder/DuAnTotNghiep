@@ -63,8 +63,7 @@ export default function Orders({
             : order
         )
       );
-      console.log("Order cancelled successfully:", updatedOrder);
-
+      // Hiển thị thông báo thành công
       toast.success("Đã hủy đơn hàng thành công!");
     } catch (error: any) {
       toast.error(error.message || "Không thể hủy đơn hàng!");

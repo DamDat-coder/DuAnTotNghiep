@@ -3,7 +3,7 @@ import CouponControlBar from "./CouponControlBar";
 import Image from "next/image";
 import CouponTableBody from "./CouponTableBody"; // Import CouponTableBody
 import { Coupon } from "@/types/coupon";
-
+ import { useState } from "react";
 interface TableCouponWrapperProps {
   children: ReactNode;
   onSearchChange: (value: string) => void;
@@ -26,7 +26,7 @@ export default function TableCouponWrapper({
   onEditCoupon,
 }: TableCouponWrapperProps) {
   // Add local state for filter and search if not passed as props
-  import { useState } from "react";
+ 
 
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");

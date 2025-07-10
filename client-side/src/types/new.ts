@@ -1,7 +1,7 @@
 import { IUser } from "./auth";
 import { ICategoryNews } from "./category";
 
-export type NewsFilterStatus = "all" | "published" | "draft" | "upcoming";
+export type NewsFilterStatus = "all" | "published" | "draft";
 
 export interface News {
   _id: string | null;
@@ -12,7 +12,7 @@ export interface News {
   slug: string;
   category_id: ICategoryNews;
   date: string;
-  status: "published" | "draft" | "upcoming";
+  status: "published" | "draft";
   thumbnail?: string | null;
   tags?: string[];
   news_image?: string[];

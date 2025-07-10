@@ -9,6 +9,7 @@ import Image from "next/image";
 import { ICategory } from "@/types/category";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { IUser } from "@/types/auth";
+import PreviewNew from "./PreviewNew";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
@@ -26,11 +27,16 @@ const EditNewsModal = ({
   const [error, setError] = useState<string | null>(null);
   const [image, setImage] = useState(newsData.thumbnail);
   const [categories, setCategories] = useState<ICategory[]>([]);
-  const [isPublished, setIsPublished] = useState<boolean>(!!newsData.is_published);
-  const [publishedAt, setPublishedAt] = useState<string>(
-    newsData.published_at ? new Date(newsData.published_at).toISOString().slice(0, 16) : ""
+  const [isPublished, setIsPublished] = useState<boolean>(
+    !!newsData.is_published
   );
-
+  const [publishedAt, setPublishedAt] = useState<string>(
+    newsData.published_at
+      ? new Date(newsData.published_at).toISOString().slice(0, 16)
+      : ""
+  );
+  const [action, setAction] = useState<"draft" | "publish">("draft");
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   useEffect(() => {
     setTitle(newsData.title);
     setContent(newsData.content);
@@ -39,7 +45,9 @@ const EditNewsModal = ({
     setImage(newsData.thumbnail || null);
     setIsPublished(!!newsData.is_published);
     setPublishedAt(
-      newsData.published_at ? new Date(newsData.published_at).toISOString().slice(0, 16) : ""
+      newsData.published_at
+        ? new Date(newsData.published_at).toISOString().slice(0, 16)
+        : ""
     );
   }, [newsData]); // Đảm bảo khi data thay đổi sẽ update lại các state
 
@@ -56,11 +64,13 @@ const EditNewsModal = ({
     }
 
     // Nếu truyền publishStatus thì dùng, không thì lấy theo state
-    const is_published = typeof publishStatus === "boolean" ? publishStatus : isPublished;
-    const published_at =
-      is_published
-        ? (publishedAt ? new Date(publishedAt) : new Date())
-        : null;
+    const is_published =
+      typeof publishStatus === "boolean" ? publishStatus : isPublished;
+    const published_at = is_published
+      ? publishedAt
+        ? new Date(publishedAt)
+        : new Date()
+      : null;
 
     const updatedNewsData: Partial<News> = {
       title,
@@ -83,6 +93,14 @@ const EditNewsModal = ({
       toast.error("Cập nhật thất bại!");
       console.error("Update failed:", err);
     }
+  };
+
+  const handlePreview = () => {
+    setIsPreviewVisible(true); // Show the preview modal
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewVisible(false); // Close the preview modal
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +202,9 @@ const EditNewsModal = ({
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
                       Ngày đăng
-                      {false && <span className="text-red-500 ml-1">*</span>}
+                      {action === "publish" && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
                     </label>
                     <input
                       type="datetime-local"
@@ -198,45 +218,58 @@ const EditNewsModal = ({
                       width={18}
                       height={18}
                       alt="calendar"
-                      className="absolute right-3 top-[calc(50%-10px)] transform -translate-y-1/2 pointer-events-none"
+                      className="absolute right-3 top-[calc(50%-40px)] transform -translate-y-1/2 pointer-events-none"
                     />
-
                     <div className="flex gap-2 mt-6">
-                      {/* Lưu bản nháp */}
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsPublished(false);
-                          handleSave(false);
-                        }}
-                        className="flex-1 w-[120px] h-10 rounded-[4px] text-sm"
+                        onClick={() => setAction("draft")}
+                        className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
+                          action === "draft"
+                            ? "bg-black text-white"
+                            : "border border-gray-300"
+                        }`}
                       >
-                        Lưu bản nháp
+                        Bản nháp
                       </button>
-
-                      {/* Xem trước */}
                       <button
                         type="button"
-                        onClick={() => {
-                          // Xử lý xem trước nếu cần
-                        }}
-                        className="flex-1 w-[94px] h-10 rounded-[4px] text-sm"
-                      >
-                        Xem trước
-                      </button>
-
-                      {/* Xuất bản */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsPublished(true);
-                          handleSave(true);
-                        }}
-                        className="flex-1 w-[91px] h-10 rounded-[4px] text-sm"
+                        onClick={() => setAction("publish")}
+                        className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm ${
+                          action === "publish"
+                            ? "bg-black text-white"
+                            : "border border-gray-300"
+                        }`}
                       >
                         Xuất bản
                       </button>
                     </div>
+
+                    {/* Add Preview button to show content preview before publish */}
+                    <div className="mt-4">
+                      {action === "draft" || action === "publish" ? (
+                        <button
+                          type="button"
+                          onClick={handlePreview}
+                          className="flex-1 w-[120px] h-10 rounded-[4px] text-sm bg-blue-500 text-white"
+                        >
+                          Xem trước
+                        </button>
+                      ) : null}
+                    </div>
+                    {isPreviewVisible && (
+                      <PreviewNew
+                        title={title}
+                        content={content}
+                        category={
+                          categories.find((cat) => cat._id === category)
+                            ?.name || ""
+                        }
+                        tags={tags}
+                        image={image}
+                        onClose={handleClosePreview}
+                      />
+                    )}
                   </div>
 
                   <div className="mb-8">
@@ -317,7 +350,7 @@ const EditNewsModal = ({
                   </div>
                   <button
                     type="button"
-                    onClick={handleSave}
+                    onClick={() => handleSave()}
                     className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
                   >
                     Lưu tin tức

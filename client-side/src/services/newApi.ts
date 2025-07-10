@@ -43,10 +43,10 @@ export const getNewsList = async (
     const url = `${API_BASE_URL}/news?${params}`;
     console.log("URL gọi API:", url);
 
-    const result = await fetchWithAuth(url, {
+    const result = (await fetchWithAuth(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-    }) as ApiResponse<any>;
+    })) as ApiResponse<any>;
 
     if (!result.data || !Array.isArray(result.data)) {
       throw new Error(result.message || "Không thể lấy danh sách tin tức");

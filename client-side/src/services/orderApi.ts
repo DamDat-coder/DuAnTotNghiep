@@ -153,22 +153,6 @@ export async function cancelOrder(orderId: string): Promise<IOrder> {
         },
       }
     );
-    console.log("Order to cancel:", orderId);
-    if (
-      response &&
-      typeof response === "object" &&
-      "ok" in response &&
-      typeof (response as Response).ok === "boolean"
-    ) {
-      if (!(response as Response).ok) {
-        const errorData = await (response as Response).json();
-        throw new Error(errorData.message || "Không thể hủy đơn hàng!");
-      }
-      const data = await (response as Response).json();
-      return data.data; // Trả về đơn hàng đã cập nhật từ response
-    }
-
-    // Otherwise, assume response is already the data
     return response as IOrder;
   } catch (error) {
     console.error("Error canceling order:", error);

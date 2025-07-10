@@ -7,6 +7,7 @@ import { fetchProducts } from "@/services/productApi";
 import { fetchFeaturedSection } from "@/services/featuredSectionApi";
 import { fetchMemberBenefits } from "@/services/memberBenefitApi";
 import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
+import { Toaster } from "react-hot-toast";
 
 async function getHomeData() {
   try {
@@ -60,6 +61,7 @@ export default async function Home() {
       role="main"
       aria-label="Trang chủ"
     >
+      <Toaster position="top-right" />
       {/* Banner đầu */}
       <Banner
         status="Vừa ra mắt"

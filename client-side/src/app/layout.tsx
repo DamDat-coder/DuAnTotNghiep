@@ -14,6 +14,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { ActiveTabProvider } from "@/contexts/ActiveTabContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ChatBotBox from "@/components/Chat/ChatBotBox";
+import { CategoriesProvider } from "@/contexts/CategoriesContext";
 import { Toaster } from "react-hot-toast";
 
 const lora = Lora({
@@ -44,22 +45,25 @@ export default function RootLayout({
             <MenuProvider>
               <LookupProvider>
                 <ActiveTabProvider>
-                  {!isAdminRoute && (
-                    <Header
-                      title="My App"
-                      setActiveTab={function (tab: string): void {
-                        throw new Error("Function not implemented.");
-                      }}
-                    />
-                  )}
-                  <CartProvider>
-                    <WishlistProvider>
-                      <main className={mainClassName}>{children}</main>
-                      {!isAdminRoute && <ChatBotBox />}
-                    </WishlistProvider>
-                  </CartProvider>
-                  {!isAdminRoute && <Footer />}
+                  <CategoriesProvider>
+                    {!isAdminRoute && (
+                      <Header
+                        title="My App"
+                        setActiveTab={function (tab: string): void {
+                          throw new Error("Function not implemented.");
+                        }}
+                      />
+                    )}
+                    <CartProvider>
+                      <WishlistProvider>
+                        <main className={mainClassName}>{children}</main>
+                        {!isAdminRoute && <ChatBotBox />}
+                      </WishlistProvider>
+                    </CartProvider>
+                    {!isAdminRoute && <Footer />}
+                  </CategoriesProvider>
                 </ActiveTabProvider>
+                {!isAdminRoute && <Footer />}
               </LookupProvider>
             </MenuProvider>
           </AuthProvider>
@@ -69,20 +73,8 @@ export default function RootLayout({
           toastOptions={{
             duration: 3000,
             style: {
-              background: "#363636",
-              color: "#fff",
-            },
-            success: {
-              style: {
-                background: "#4ade80",
-                color: "#fff",
-              },
-            },
-            error: {
-              style: {
-                background: "#ef4444",
-                color: "#fff",
-              },
+              background: "#fff",
+              color: "#363636",
             },
           }}
         />

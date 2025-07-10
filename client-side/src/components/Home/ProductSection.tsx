@@ -9,7 +9,6 @@ import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
 import AddToCartPopup from "../Cart/AddToCartPopup"; // Import mới
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
-import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductSectionProps {
@@ -108,15 +107,11 @@ export default function ProductSection({
   const renderProductCard = (product: IProduct) => {
     const { price, discountPercent } = getLowestPriceVariant(product.variants);
     const discountPrice = Math.round(price * (1 - discountPercent / 100));
-    const imageSrc = product.images[0]
-      ? `/product/img/${product.images[0]}`
-      : "/placeholder-image.jpg";
-
     return (
       <div className="w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">
           <Image
-            src={imageSrc}
+            src={product.images[0]}
             alt={product.name || "Sản phẩm"}
             width={200}
             height={200}

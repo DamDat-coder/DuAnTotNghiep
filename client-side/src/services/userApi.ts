@@ -92,7 +92,7 @@ export const googleLogin = async (id_token: string) => {
     document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=3600`;
   }
 
-  return { user, accessToken: data.accessToken };
+  return { user, accessToken: data.data.accessToken };
 };
 
 export async function register(
@@ -647,6 +647,7 @@ export async function fetchAllUsersAdmin(
       console.error("Dữ liệu không hợp lệ:", response);
       return { users: null, total: 0, totalPages: 0, currentPage: page };
     }
+
     const users: IUser[] = response.data.map((userData: UserData) => ({
       id: userData._id,
       email: userData.email,
@@ -660,7 +661,7 @@ export async function fetchAllUsersAdmin(
     }));
 
     return {
-      users: users,
+      users,
       total: response.total || 0,
       totalPages: response.totalPages || 0,
       currentPage: response.currentPage || page,

@@ -12,17 +12,25 @@ interface TableCouponWrapperProps {
   onToggleActive: (id: string, newValue: boolean) => void;
   onCouponsChange: (newCoupons: any[]) => void;
   onEditCoupon: (coupon: any) => void; // Thay bằng Coupon nếu có type
+
 }
 
 export default function TableCouponWrapper({
   children,
   onSearchChange,
   onFilterChange,
+
   coupons,
   onToggleActive,
   onCouponsChange,
   onEditCoupon,
 }: TableCouponWrapperProps) {
+  // Add local state for filter and search if not passed as props
+  import { useState } from "react";
+
+  const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState<string>("");
+
   const filteredUsers = coupons.filter((user) => {
     const matchFilter = filter === "all" || user.role === filter;
     const name = user.name || "";
@@ -32,8 +40,9 @@ export default function TableCouponWrapper({
       email.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
-  return (
-    <div className="space-y-4 mt-6">
+
+return (
+  <div className="space-y-4 mt-6">
       <CouponControlBar
         onSearchChange={onSearchChange}
         onFilterChange={onFilterChange}
@@ -70,6 +79,7 @@ export default function TableCouponWrapper({
               </th>
             </tr>
           </thead>
+
           <tbody>
             <CouponTableBody
               coupons={coupons}
@@ -78,9 +88,10 @@ export default function TableCouponWrapper({
               onEditCoupon={onEditCoupon}
             />
           </tbody>
+
+          <tbody>{children}</tbody>
         </table>
       </div>
-      {children && children(filteredCoupons)}
     </div>
   );
 }

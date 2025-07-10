@@ -119,7 +119,11 @@ export default function CouponTableBody({
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 
   const handleEdit = (coupon: Coupon) => {
+
     setSelectedCoupon(coupon);
+
+    onEditCoupon(coupon);
+
   };
 
   const handleSave = (updatedCoupon: Coupon) => {
@@ -222,6 +226,7 @@ export default function CouponTableBody({
           </td>
         </tr>
       ))}
+
       {selectedCoupon && (
         <EditCouponModal
           coupon={selectedCoupon}
@@ -232,3 +237,7 @@ export default function CouponTableBody({
     </>
   );
 }
+
+      
+
+

@@ -11,6 +11,7 @@ import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
 import { IProduct } from "@/types/product";
 import { SortOption } from "@/types/filter";
+import { Toaster } from "react-hot-toast";
 
 interface News {
   id: string;
@@ -193,6 +194,7 @@ export default function ProductsPage() {
   return (
     <div className="gap-14 pb-14 overflow-x-hidden flex flex-col">
       <Container className="flex flex-col gap-[3.375rem] w-full">
+        <Toaster position="top-right" />
         <div>
           <Breadcrumb />
           <CategorySwiper categories={categories} />

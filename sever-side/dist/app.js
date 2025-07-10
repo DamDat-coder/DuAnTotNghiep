@@ -25,14 +25,22 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 500,
     message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
 });
 app.use(limiter);
 app.use((0, xss_clean_1.default)());
 app.use((0, hpp_1.default)());
 app.use((0, cors_1.default)({
-    origin: "http://localhost:3300",
+    origin: (origin, callback) => {
+        const allowedOrigins = ["http://localhost:3300"];
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]

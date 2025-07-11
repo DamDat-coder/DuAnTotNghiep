@@ -50,6 +50,15 @@ export type AuthContextType = {
   addWishlist: (productId: string) => void;
   removeWishlist: (productId: string) => void;
   wishlist: IProduct[];
+  refreshUser: () => Promise<void>;
+  setRegisterFormData: React.Dispatch<
+    React.SetStateAction<{
+      name: string;
+      email: string;
+      password: string;
+      confirmPassword: string;
+    } | null>
+  >;
 };
 
 export interface UserData {
@@ -68,4 +77,9 @@ export interface UpdateUserData {
   phone?: string;
   role?: string;
   addresses?: IUser["addresses"];
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
 }

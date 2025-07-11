@@ -3,7 +3,7 @@ import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
 import { fetchProductById } from "./productApi";
 import { IProduct } from "@/types/product";
-
+import { ForgotPasswordResponse } from "@/types/auth";
 interface AddAddressResponse {
   message: string;
   data: Address[];
@@ -380,42 +380,6 @@ export async function deleteAddress(
   }
 }
 
-// // Function to set a specific address as default
-// export async function setDefaultAddress(
-//   userId: string,
-//   addressId: string
-// ): Promise<IUser | null> {
-//   try {
-//     const token = localStorage.getItem("accessToken");
-//     if (!token) {
-//       console.error("Không có token. Vui lòng đăng nhập lại.");
-//       return null;
-//     }
-
-//     const response = await fetch(
-//       `${API_BASE_URL}/users/${userId}/addresses/${addressId}/default`,
-//       {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`,
-//         },
-//       }
-//     );
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       throw new Error(data.message || "Cập nhật địa chỉ mặc định thất bại.");
-//     }
-
-//     return data.data;
-//   } catch (error: any) {
-//     console.error("Cập nhật địa chỉ mặc định thất bại:", error.message);
-//     return null;
-//   }
-// }
-
 export const addProductToWishlistApi = async (
   userId: string,
   productId: string
@@ -617,7 +581,7 @@ export async function fetchAllUsersAdmin(
   page: number = 1, // Thêm tham số page
   limit: number = 10, // Thêm tham số limit
   role?: string, // Thêm tham số role (tùy chọn)
-  is_active?: boolean 
+  is_active?: boolean
 ): Promise<{
   users: IUser[] | null;
   total: number;
@@ -670,3 +634,36 @@ export async function fetchAllUsersAdmin(
     return { users: null, total: 0, totalPages: 0, currentPage: page };
   }
 }
+
+export const forgotPassword = async (
+  email: string
+): Promise<ForgotPasswordResponse> => {
+  const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Có lỗi xảy ra khi gửi yêu cầu khôi phục mật khẩu."
+    );
+  }
+
+  return data;
+};
+export const resetPassword = async (token: string, password: string): Promise<ForgotPasswordResponse> => {
+  const response = await fetch(`${API_BASE_URL}/users/reset-password/${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Có lỗi xảy ra khi đặt lại mật khẩu.");
+  }
+
+  return data;
+};

@@ -261,7 +261,7 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
         const total = yield user_model_1.default.countDocuments(filter);
         const users = yield user_model_1.default.find(filter)
-            .select("name email role is_block createdAt")
+            .select("name email role is_active createdAt")
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })

@@ -8,6 +8,7 @@ interface AddressPopupProps {
   selectedAddress: Address | null;
   onSelect: (address: Address) => void;
   onClose: () => void;
+  isLoading: boolean;
 }
 
 export default function AddressPopup({

@@ -52,6 +52,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
+  const refreshUser = async () => {
+    try {
+      const userData = await fetchUser();
+      console.log("DEBUG AuthContext - Refreshed user", userData);
+      if (userData) {
+        setUser(userData);
+        await fetchWishlist(userData.id);
+      } else {
+        setUser(null);
+        setWishlist([]);
+      }
+    } catch (error) {
+      console.error("DEBUG AuthContext - Error refreshing user", error);
+      setUser(null);
+      setWishlist([]);
+    }
+  };
+  const checkAuth = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      console.log("No accessToken, clearing user state");
+      setUser(null);
+      setWishlist([]);
+      return;
+    }
+
+    try {
+      const userData = await fetchUser();
+      if (userData) {
+        setUser(userData);
+        await fetchWishlist(userData.id); // Lấy wishlist khi có user
+      } else {
+        throw new Error("No user data returned");
+      }
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        try {
+          console.log("Access token expired, attempting to refresh...");
+          const newToken = await refreshToken();
+          if (newToken) {
+            localStorage.setItem("accessToken", newToken);
+            const userData = await fetchUser();
+            if (userData) {
+              setUser(userData);
+              await fetchWishlist(userData.id); // Lấy wishlist sau khi refresh token
+            } else {
+              throw new Error("No user data after token refresh");
+            }
+          } else {
+            throw new Error("Refresh token failed");
+          }
+        } catch (refreshError) {
+          console.error("Refresh token failed:", refreshError);
+          setUser(null);
+          setWishlist([]);
+          localStorage.removeItem("accessToken");
+          document.cookie = "refreshToken=; path=/; max-age=0";
+          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        }
+      } else {
+        console.error("Unexpected error in checkAuth:", error);
+        setUser(null);
+        setWishlist([]);
+        localStorage.removeItem("accessToken");
+        toast.error("Có lỗi xảy ra khi xác thực người dùng.");
+      }
+    }
+  };
   const loginHandler = async (
     identifier: string,
     password: string,
@@ -70,9 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("accessToken", accessToken);
       }
 
-      // Fetch wishlist after successful login
       await fetchWishlist(userData.id);
-
       if (userData.role === "admin") {
         window.location.assign("/admin/dashboard");
       }
@@ -144,58 +210,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkAuth = async () => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
-      console.log("No accessToken, clearing user state");
-      setUser(null);
-      setWishlist([]);
-      return;
-    }
-
-    try {
-      const userData = await fetchUser();
-      if (userData) {
-        setUser(userData);
-        await fetchWishlist(userData.id); // Lấy wishlist khi có user
-      } else {
-        throw new Error("No user data returned");
-      }
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
-        try {
-          console.log("Access token expired, attempting to refresh...");
-          const newToken = await refreshToken();
-          if (newToken) {
-            localStorage.setItem("accessToken", newToken);
-            const userData = await fetchUser();
-            if (userData) {
-              setUser(userData);
-              await fetchWishlist(userData.id); // Lấy wishlist sau khi refresh token
-            } else {
-              throw new Error("No user data after token refresh");
-            }
-          } else {
-            throw new Error("Refresh token failed");
-          }
-        } catch (refreshError) {
-          console.error("Refresh token failed:", refreshError);
-          setUser(null);
-          setWishlist([]);
-          localStorage.removeItem("accessToken");
-          document.cookie = "refreshToken=; path=/; max-age=0";
-          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
-        }
-      } else {
-        console.error("Unexpected error in checkAuth:", error);
-        setUser(null);
-        setWishlist([]);
-        localStorage.removeItem("accessToken");
-        toast.error("Có lỗi xảy ra khi xác thực người dùng.");
-      }
-    }
-  };
-
   // Hàm lấy wishlist
   const fetchWishlist = async (userId: string) => {
     try {
@@ -245,6 +259,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         registerFormData,
         addWishlist,
         removeWishlist,
+        setRegisterFormData,
+        refreshUser,
         wishlist,
       }}
     >

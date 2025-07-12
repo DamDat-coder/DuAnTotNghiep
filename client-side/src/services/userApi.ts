@@ -1,4 +1,10 @@
-import { Address, IUser, UpdateUserData, UserData } from "../types/auth";
+import {
+  Address,
+  IUser,
+  ResetPasswordResponse,
+  UpdateUserData,
+  UserData,
+} from "../types/auth";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
 import { fetchProductById } from "./productApi";
@@ -653,12 +659,19 @@ export const forgotPassword = async (
 
   return data;
 };
-export const resetPassword = async (token: string, password: string): Promise<ForgotPasswordResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/reset-password/${token}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
-  });
+
+export const resetPassword = async (
+  token: string,
+  password: string
+): Promise<ResetPasswordResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/users/reset-password/${token}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    }
+  );
 
   const data = await response.json();
   if (!response.ok) {

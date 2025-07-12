@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!result) {
         throw new Error("Email hoặc mật khẩu không đúng.");
       }
-
+      toast.success("Đăng nhập thành công");
       const { user: userData, accessToken } = result;
       setUser(userData);
 
@@ -139,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       await fetchWishlist(userData.id);
+
       if (userData.role === "admin") {
         window.location.assign("/admin/dashboard");
       }

@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import { resetPassword } from "@/services/userApi";
+import { login, resetPassword } from "@/services/userApi";
 import { useRouter } from "next/navigation";
-interface ResetPasswordPopupProps {
+import { useAuth } from "@/contexts/AuthContext";
+
+type ResetPasswordPopupProps = {
   isOpen: boolean;
   token: string;
   onClose: () => void;
-}
-import { useAuth } from "@/contexts/AuthContext";
+};
 
 export default function ResetPasswordPopup({
   isOpen,
@@ -25,16 +26,25 @@ export default function ResetPasswordPopup({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginNow, setLoginNow] = useState(true);
   const [errors, setErrors] = useState<{
     password?: string;
     confirmPassword?: string;
   }>({});
   const router = useRouter();
+  const { setOpenLoginWithData, setRegisterFormData } = useAuth();
+  const [storedEmail, setStoredEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const email = localStorage.getItem("resetEmail");
+    setStoredEmail(email);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  const { setOpenLoginWithData, setRegisterFormData } = useAuth();
+
   const validate = () => {
     const errs: typeof errors = {};
     if (!formData.password || formData.password.length < 6) {
@@ -49,22 +59,42 @@ export default function ResetPasswordPopup({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate() || !storedEmail) return;
 
     try {
       setLoading(true);
-      await resetPassword(token, formData.password); // gọi API BE
-      toast.success("Đặt lại mật khẩu thành công!");
-      onClose();
-      router.push("/");
+      const result = await resetPassword(token, formData.password);
+      toast.success(result.message || "Đặt lại mật khẩu thành công!");
+
+      if (loginNow) {
+        try {
+          const loginSuccess = await login(storedEmail, formData.password);
+          if (loginSuccess) {
+            toast.success("Đăng nhập thành công với mật khẩu mới!");
+            router.push("/");
+          }
+        } catch {
+          toast.error("Đặt lại mật khẩu thành công, nhưng đăng nhập thất bại.");
+        }
+      } else {
+        onClose();
+        setRegisterFormData({
+          email: storedEmail,
+          password: formData.password,
+          confirmPassword: formData.password,
+          name: "",
+        });
+        setOpenLoginWithData(true);
+      }
     } catch (err: any) {
       toast.error(err.message || "Đặt lại mật khẩu thất bại.");
     } finally {
+      localStorage.removeItem("resetEmail");
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !storedEmail) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -153,10 +183,22 @@ export default function ResetPasswordPopup({
             )}
           </div>
 
+          <div className="flex items-center gap-2 mt-2">
+            <label className="flex items-center gap-2 text-sm mt-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={loginNow}
+                onChange={() => setLoginNow(!loginNow)}
+                className="w-4 h-4 accent-black"
+              />
+              Đăng nhập ngay với mật khẩu mới
+            </label>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="bg-black text-white py-2 rounded hover:bg-gray-800"
+            className="bg-black text-white py-2 rounded hover:bg-gray-800 mt-2"
           >
             {loading ? "Đang xử lý..." : "Xác nhận"}
           </button>

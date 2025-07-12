@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { forgotPassword } from "@/services/userApi";
+import router from "next/router";
 
 interface ForgotPasswordPopupProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export default function ForgotPasswordPopup({
     setLoading(true);
     try {
       const data = await forgotPassword(email);
+      localStorage.setItem("resetEmail", email);
       toast.success(data.message || "Đã gửi email khôi phục.");
       onClose();
     } catch (err: any) {
@@ -76,7 +78,11 @@ export default function ForgotPasswordPopup({
       >
         <button onClick={onClose} className="absolute top-4 right-4">
           <svg className="size-6" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
 
@@ -110,7 +116,10 @@ export default function ForgotPasswordPopup({
 
           <p className="text-sm text-center">
             Quay lại{" "}
-            <button className="text-black font-bold hover:underline" onClick={onOpenLogin}>
+            <button
+              className="text-black font-bold hover:underline"
+              onClick={onOpenLogin}
+            >
               đăng nhập
             </button>
           </p>

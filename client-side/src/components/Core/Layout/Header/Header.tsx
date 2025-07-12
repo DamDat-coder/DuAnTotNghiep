@@ -162,7 +162,7 @@ export default function Header({ title }: HeaderProps) {
                 height={40}
                 className="h-auto w-auto"
                 draggable={false}
-                loading="lazy"
+                priority
               />
             </Link>
             <div className="flex-1 flex justify-center mr-[6.9375rem]">

@@ -119,23 +119,13 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
     // Thêm vào giỏ hàng
     dispatch({ type: "add", item: cartItem });
+    const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
+    localStorage.setItem("cartSelectedIds", JSON.stringify([selectedId]));
+
     toast.success("Đã thêm vào giỏ hàng!");
 
-    // Tạo query params
-    const query = new URLSearchParams({
-      productId: product.id,
-      name: product.name || "",
-      size: selectedSize,
-      color: selectedColor,
-      quantity: quantity.toString(),
-      price: selectedVariant.discountedPrice.toString(),
-      discountPercent: selectedVariant.discountPercent.toString(),
-      buyNow: "true",
-      image: product.images[0] || "",
-    }).toString();
-
     // Chuyển hướng đến checkout
-    router.push(`/checkout?${query}`);
+    router.push("/checkout");
     onClose();
   };
 

@@ -105,7 +105,7 @@ export const useCheckout = () => {
         return newFormData;
       });
       console.log(user);
-      
+
       // 2. Xử lý danh sách địa chỉ
       setAddresses(user.addresses);
       console.log("DEBUG useCheckout - Set addresses", user.addresses);
@@ -370,11 +370,9 @@ export const useCheckout = () => {
         },
       };
 
-      // Gọi API thanh toán
       const paymentResponse = await initiatePayment(paymentInfo);
-
-      if (!paymentResponse.paymentUrl) {
-        // Với COD (hoặc bất kỳ phương thức nào không cần redirect)
+      if (paymentInfo.orderInfo.paymentMethod === "cod") {
+        // 🧠 Flow COD: có paymentId ngay, nên gọi tiếp createOrder
         const orderResponse = await createOrder(
           paymentResponse.paymentId,
           user.id
@@ -383,10 +381,13 @@ export const useCheckout = () => {
         toast.success("Đơn hàng đã được xác nhận!");
         router.push("/profile?tab=orders");
       } else {
-        // Với các cổng thanh toán online (vnpay, momo, zalopay)
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
-        window.location.href = paymentResponse.paymentUrl;
+        if (paymentResponse.paymentUrl) {
+          window.location.href = paymentResponse.paymentUrl;
+        } else {
+          toast.error("Không tìm thấy đường dẫn thanh toán!");
+        }
       }
     } catch (error: any) {
       console.error("Lỗi khi tạo đơn hàng:", error);

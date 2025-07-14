@@ -20,16 +20,18 @@ export interface News {
   updatedAt?: string;
   is_published?: boolean;
   published_at?: Date;
+  meta_description: string;
 }
 
 export interface NewsPayload {
   title: string;
   content: string;
   slug: string;
-  category_id: ICategoryNews;
+  category_id: { _id: string; name?: string };
   tags?: string[];
   is_published?: boolean;
-  thumbnail?: string | null;
-  news_image?: string[];
+  thumbnail?: File;
+  news_image?: File[];
   published_at?: Date;
+  meta_description: string;
 }

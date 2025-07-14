@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { IUser } from "@/types/auth";
+import { Address, IUser } from "@/types/auth";
 import { fetchUserById, updateUser } from "@/services/userApi";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -24,44 +24,79 @@ export default function EditUserModal({
     name: "",
     email: "",
     phone: "",
-    province: "",
-    district: "",
-    ward: "",
-    address: "",
     role: "",
   });
 
-  const [originalRole, setOriginalRole] = useState(""); // Lưu giá trị ban đầu của role
-  const [isRoleChanged, setIsRoleChanged] = useState(false); // Kiểm tra xem role có thay đổi hay không
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [originalRole, setOriginalRole] = useState("");
+  const [isRoleChanged, setIsRoleChanged] = useState(false);
+  const [showAllAddresses, setShowAllAddresses] = useState(false);
 
-  // Pre-populate the form with user data when it changes
   useEffect(() => {
     if (user) {
       setForm({
         name: user.name,
         email: user.email,
         phone: user.phone || "Chưa có",
-        province: user.addresses?.[0]?.province || "",
-        district: user.addresses?.[0]?.district || "",
-        ward: user.addresses?.[0]?.ward || "",
-        address: user.addresses?.[0]?.street || "",
         role: user.role,
       });
-
-      // Lưu giá trị ban đầu của role
       setOriginalRole(user.role);
+
+      // Fetch addresses using user.id with fallback to user.addresses
+      const fetchAddresses = async () => {
+        try {
+          const userData = await fetchUserById(user.id);
+          // console.log("Fetched user data:", userData);
+          if (userData && userData.addresses) {
+            setAddresses(userData.addresses);
+          } else {
+            console.warn(
+              "No addresses in fetched user data, using prop fallback"
+            );
+            setAddresses(user.addresses || []);
+          }
+        } catch (error) {
+          console.error("Error fetching addresses:", error);
+          toast.error(
+            "Không thể tải địa chỉ người dùng, sử dụng dữ liệu hiện tại."
+          );
+          setAddresses(user.addresses || []); // Fallback to prop data
+        }
+      };
+
+      fetchAddresses();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Debug: Log addresses to verify data
+    console.log("EditUserModal - Addresses state:", addresses);
+    console.log("EditUserModal - User object:", user);
+    console.log("EditUserModal - User addresses:", user.addresses);
+  }, [addresses, user]);
+
+  // Xử lý địa chỉ để lấy 1 mặc định + 2 mới nhất (không trùng mặc định)
+  const defaultAddress = addresses.find((a) => a.is_default);
+  const otherAddresses = addresses
+    .filter((a) => !a.is_default)
+    .sort((a, b) => (b._id > a._id ? 1 : -1)); // mới nhất lên đầu
+
+  const addressesToShow = [
+    ...(defaultAddress ? [defaultAddress] : []),
+    ...otherAddresses.slice(0, defaultAddress ? 2 : 3),
+  ];
+
+  const hasMore = addresses.length > addressesToShow.length;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
 
-    // Kiểm tra nếu role có thay đổi
-    if (e.target.name === "role" && e.target.value !== originalRole) {
+    if (name === "role" && value !== originalRole) {
       setIsRoleChanged(true);
-    } else {
+    } else if (name === "role") {
       setIsRoleChanged(false);
     }
   };
@@ -69,15 +104,11 @@ export default function EditUserModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user && isRoleChanged) {
-      const updatedUser = { ...user, role: form.role };
       try {
-        const updatedData = await updateUser(user.id, { role: form.role });
-        console.log("update:", updatedData);
+        const updatedUser = await updateUser(user.id, { role: form.role });
         toast.success("Cập nhật thành công.");
-        onUpdate(updatedData);
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        onUpdate(updatedUser);
+        onClose(); // Close modal instead of reloading
       } catch (error) {
         console.error("Lỗi cập nhật người dùng:", error);
         toast.error("Đã có lỗi xảy ra, vui lòng thử lại.");
@@ -92,7 +123,6 @@ export default function EditUserModal({
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white rounded-br-[16px] rounded-bl-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative">
-        {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
             <h2 className="text-lg font-semibold">Chỉnh sửa người dùng</h2>
@@ -110,7 +140,6 @@ export default function EditUserModal({
           </div>
         </div>
         <div className="w-full h-px bg-[#E7E7E7] mb-3" />
-        {/* Form */}
         <div className="pl-6 pr-6">
           <form className="space-y-5 text-sm" onSubmit={handleSubmit}>
             {/* Name */}
@@ -124,7 +153,7 @@ export default function EditUserModal({
                 onChange={handleChange}
                 placeholder="Nhập họ tên"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled // Do not allow name editing
+                disabled
               />
             </div>
             {/* Email */}
@@ -138,7 +167,7 @@ export default function EditUserModal({
                 onChange={handleChange}
                 placeholder="Nhập email"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                disabled // Do not allow email editing
+                disabled
               />
             </div>
             {/* Phone */}
@@ -150,27 +179,41 @@ export default function EditUserModal({
                 onChange={handleChange}
                 placeholder="Nhập số điện thoại"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                disabled // Display phone but do not allow editing
+                disabled
               />
             </div>
             {/* Address */}
             <div className="mb-8">
               <label className="block font-bold mb-4">Địa chỉ</label>
-              {user.addresses && user.addresses.length > 0 ? (
-                user.addresses.map((addr, index) => (
-                  <div key={index} className="mb-4">
-                    <p className="text-gray-700">
-                      {addr.street || "Chưa có đường"},{" "}
-                      {addr.ward || "Chưa có phường/xã"},{" "}
-                      {addr.district || "Chưa có quận/huyện"},{" "}
-                      {addr.province || "Chưa có tỉnh/thành"}
-                    </p>
+              {addressesToShow.length > 0 ? (
+                addressesToShow.map((address, index) => (
+                  <div
+                    key={address._id || index}
+                    className="p-2 border-b last:border-b-0 flex items-center"
+                  >
+                    <span
+                      className={`flex-1${
+                        address.is_default ? " text-green-600" : ""
+                      }`}
+                    >
+                      {address.street || "Chưa có đường"},{" "}
+                      {address.ward || "Chưa có phường/xã"},{" "}
+                      {address.district || "Chưa có quận/huyện"},{" "}
+                      {address.province || "Chưa có tỉnh/thành"}, Việt Nam
+                    </span>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500">
-                  Người dùng chưa cập nhật địa chỉ
-                </p>
+                <p className="text-gray-500">Người dùng chưa có địa chỉ nào.</p>
+              )}
+              {hasMore && (
+                <button
+                  type="button"
+                  className="mt-2 text-black underline"
+                  onClick={() => setShowAllAddresses(true)}
+                >
+                  Xem tất cả địa chỉ
+                </button>
               )}
             </div>
             {/* Role */}
@@ -191,13 +234,46 @@ export default function EditUserModal({
             <button
               type="submit"
               className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
-              disabled={!isRoleChanged} // Disable button if role is not changed
+              disabled={!isRoleChanged}
             >
               Lưu thay đổi
             </button>
           </form>
         </div>
       </div>
+      {/* Popup hiện tất cả địa chỉ */}
+      {showAllAddresses && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-xl w-[450px] max-h-[80vh] overflow-y-auto p-6 relative">
+            <h3 className="text-lg font-semibold mb-4">Tất cả địa chỉ</h3>
+            <button
+              className="absolute top-2 right-2 text-gray-500"
+              onClick={() => setShowAllAddresses(false)}
+            >
+              Đóng
+            </button>
+            {[...addresses]
+              .sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
+              .map((address, idx) => (
+                <div
+                  key={address._id || idx}
+                  className="p-2 border-b last:border-b-0 flex items-center"
+                >
+                  <span
+                    className={`flex-1${
+                      address.is_default ? " text-green-600" : ""
+                    }`}
+                  >
+                    {address.street || "Chưa có đường"},{" "}
+                    {address.ward || "Chưa có phường/xã"},{" "}
+                    {address.district || "Chưa có quận/huyện"},{" "}
+                    {address.province || "Chưa có tỉnh/thành"}, Việt Nam
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

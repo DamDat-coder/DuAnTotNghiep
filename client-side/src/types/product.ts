@@ -64,3 +64,8 @@ export interface IMemberBenefit {
   image: string;
   benefit: string;
 }
+
+export interface ProductReview {
+  _id: string;
+  name: string;
+}

@@ -1,18 +1,17 @@
-// Orders.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import CancelOrderModal from "../modals/CancelOrderModal"; // Đảm bảo tên file khớp
+import CancelOrderModal from "../modals/CancelOrderModal";
 import { IOrder } from "@/types/order";
-import { fetchOrdersUser, cancelOrder } from "@/services/orderApi"; // Thay updateOrderStatus bằng cancelOrder
+import { fetchOrdersUser } from "@/services/orderApi";
 import { fetchUser } from "@/services/userApi";
+import { useCancelOrder } from "@/hooks/useCancelOrder";
 
 interface OrderTabProps {
   setActiveTab: (tab: string) => void;
   setSelectedOrder: (order: IOrder) => void;
 }
-
 
 export default function Orders({
   setActiveTab,
@@ -23,8 +22,15 @@ export default function Orders({
   const [selectedStatus, setSelectedStatus] = useState<
     "all" | IOrder["status"]
   >("all");
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+
+  const {
+    showCancelModal,
+    orderToCancel,
+    isCancelling,
+    handleCancelOrder,
+    openCancelModal,
+    closeCancelModal,
+  } = useCancelOrder(orders, setOrders);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -50,29 +56,6 @@ export default function Orders({
     }
     fetchOrders();
   }, []);
-
-  // Hàm xử lý hủy đơn hàng
-  const handleCancelOrder = async (orderId: string) => {
-    try {
-      const updatedOrder = await cancelOrder(orderId); // Gọi API cancelOrder
-      // Cập nhật danh sách đơn hàng trong state
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order._id === orderId
-            ? { ...order, status: updatedOrder.status }
-            : order
-        )
-      );
-      // Hiển thị thông báo thành công
-      toast.success("Đã hủy đơn hàng thành công!");
-    } catch (error: any) {
-      toast.error(error.message || "Không thể hủy đơn hàng!");
-      console.error("Error cancelling order:", error);
-    } finally {
-      setShowCancelModal(false);
-      setOrderToCancel(null);
-    }
-  };
 
   const statusTabs = [
     { label: "Tất cả", value: "all" },
@@ -119,8 +102,8 @@ export default function Orders({
         );
       default:
         return (
-          <span className={`${baseStyle} bg-gray-300 text-black`}>
-            Không xác định
+          <span className={`${baseStyle} bg-[#FDECEA] text-[#D93025]`}>
+            Đã hủy
           </span>
         );
     }
@@ -144,7 +127,6 @@ export default function Orders({
       <Toaster position="top-right" />
       <h1 className="text-xl font-semibold mb-6">ĐƠN HÀNG</h1>
 
-      {/* Tabs */}
       <div className="flex gap-6 border-b border-[#E0E0E0]">
         {statusTabs.map((tab) => (
           <button
@@ -172,7 +154,7 @@ export default function Orders({
           {filteredOrders.map((order) => (
             <div
               key={order._id}
-              className="w-[894px] bg-white rounded-[8px] shadow-custom-order p-6"
+              className="w-full bg-white rounded-[8px] shadow-custom-order p-6"
             >
               <div className="flex justify-between items-start mb-[16px]">
                 <p className="font-bold text-sm text-black">
@@ -209,18 +191,15 @@ export default function Orders({
                 >
                   Xem chi tiết
                 </button>
-                {(order.status === "pending" ||
-                  order.status === "confirmed") && (
+                {(order.status === "pending") && (
                   <button
-                    onClick={() => {
-                      // Debug: Log thông tin đơn hàng khi click nút Hủy
-                      console.log("Order to cancel:", order);
-                      setOrderToCancel(order._id);
-                      setShowCancelModal(true);
-                    }}
+                    onClick={() => openCancelModal(order._id)}
                     className="w-[82px] h-[42px] bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600"
+                    disabled={isCancelling}
                   >
-                    Hủy
+                    {isCancelling && orderToCancel === order._id
+                      ? "Đang hủy..."
+                      : "Hủy"}
                   </button>
                 )}
               </div>
@@ -232,11 +211,8 @@ export default function Orders({
       {showCancelModal && orderToCancel && (
         <CancelOrderModal
           orderId={orderToCancel}
-          onClose={() => {
-            setShowCancelModal(false);
-            setOrderToCancel(null);
-          }}
-          onConfirm={() => handleCancelOrder(orderToCancel)} // Gọi handleCancelOrder
+          onClose={closeCancelModal}
+          onConfirm={() => handleCancelOrder(orderToCancel)}
         />
       )}
     </div>

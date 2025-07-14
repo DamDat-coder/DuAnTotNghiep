@@ -14,23 +14,21 @@ import PreviewNew from "./PreviewNew";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET =
-  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_NEW_PRESET;
-
 export default function AddNewModal({ onClose }: { onClose: () => void }) {
-  const [image, setImage] = useState<string | null>(null); // Chỉ dùng URL từ Cloudinary
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [date, setDate] = useState("");
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState(""); // Thêm state này
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState<"draft" | "publish">("draft");
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
-
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [newsImages, setNewsImages] = useState<File[]>([]);
+  const [meta_description, setMeta_description] = useState("");
   const handlePreview = () => {
     setIsPreviewVisible(true); // Show the preview modal
   };
@@ -39,88 +37,69 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
     setIsPreviewVisible(false); // Close the preview modal
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.debug("Debug: Bắt đầu tải ảnh lên Cloudinary");
-    console.debug("Debug: CLOUDINARY_CLOUD_NAME", CLOUDINARY_CLOUD_NAME);
-
-    if (!file) {
-      console.debug("Debug: Không có file được chọn");
-      setError("Không có tệp hình ảnh được chọn.");
-      return;
-    }
-
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      console.debug("Debug: Thiếu thông tin cấu hình Cloudinary", {
-        CLOUDINARY_CLOUD_NAME,
-        CLOUDINARY_UPLOAD_PRESET,
-      });
-      setError("Thiếu thông tin Cloudinary.");
-      return;
-    }
-
-    console.debug("Debug: Thông tin file", {
-      name: file.name,
-      size: `${(file.size / 1024).toFixed(2)} KB`,
-      type: file.type,
-    });
-
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", "news");
-
-    console.debug("Debug: Gửi yêu cầu tải ảnh tới Cloudinary", {
-      cloudName: CLOUDINARY_CLOUD_NAME,
-      uploadPreset: CLOUDINARY_UPLOAD_PRESET,
-      folder: "news",
-    });
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      console.debug("Debug: Phản hồi từ Cloudinary", {
-        status: response.status,
-        statusText: response.statusText,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.debug("Debug: Lỗi từ Cloudinary", errorData);
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
-      console.debug("Debug: Tải ảnh thành công", {
-        secure_url: data.secure_url,
-        public_id: data.public_id,
-        format: data.format,
-      });
-      setImage(data.secure_url); // Lưu URL sau khi upload
-    } catch (err) {
-      console.error("Debug: Lỗi khi tải ảnh lên Cloudinary", err);
-      setError("Lỗi khi tải hình ảnh lên Cloudinary.");
-    } finally {
-      setLoading(false);
-      console.debug("Debug: Kết thúc quá trình tải ảnh");
+    if (file) {
+      setThumbnail(file);
     }
   };
 
   const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputTags = e.target.value.split(/[, ]+/).filter((tag) => tag.trim());
-    setTags(inputTags);
+    // Allow both commas and spaces as valid tag separators
+    const inputTags = e.target.value
+      .split(/[,; \t]+/) // Split by comma, space, semicolon or tabs
+      .map((tag) => tag.trim()) // Trim spaces from each tag
+      .filter((tag) => tag); // Filter out empty strings
+
+    setTags(inputTags); // Update the tags state
+  };
+
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInput(e.target.value);
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.key === "Enter" ||
+      e.key === "," ||
+      e.key === ";" 
+    ) {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (newTag && !tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+      }
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (index: number) => {
+    setTags(tags.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
+    if (!title) {
+      toast.error("Vui lòng nhập tên bài viết!");
+      return;
+    }
+    if (!content.trim()) {
+      toast.error("Vui lòng nhập nội dung bài viết!");
+      return;
+    }
+    if (!category) {
+      toast.error("Vui lòng chọn danh mục!");
+      return;
+    }
+    if (!thumbnail) {
+      toast.error("Vui lòng chọn hình đại diện!");
+      return;
+    }
+    if (!meta_description) {
+      toast.error("Vui lòng nhập mô tả SEO!");
+      return;
+    }
     if (action === "publish" && !date) {
-      setError("Vui lòng chọn ngày đăng khi xuất bản!");
+      toast.error("Vui lòng chọn ngày đăng khi xuất bản!");
       return;
     }
 
@@ -139,14 +118,18 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       category_id: selectedCategory || { _id: category, name: "" },
       tags,
       is_published: action === "publish",
-      thumbnail: image || "",
-      news_image: image ? [image] : [],
+      thumbnail: thumbnail || undefined,
+      meta_description: meta_description || "",
       published_at: action === "publish" ? new Date(date) : undefined,
     };
 
-    console.log("Payload to send:", payload);
+    console.log("Payload to send:", {
+      ...payload,
+      thumbnail: payload.thumbnail?.name,
+    });
 
     try {
+      setLoading(true);
       const createdNews = await createNews(payload);
       toast.success("Tạo tin tức thành công!");
 
@@ -158,7 +141,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
           is_published: true,
           published_at: new Date(date),
         });
-        // toast.success("Cập nhật trạng thái xuất bản thành công!");
       }
 
       setTimeout(() => {
@@ -168,18 +150,21 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       console.error("Lỗi khi tạo hoặc cập nhật tin tức:", err);
       setError(err.message);
       toast.error("Đã xảy ra lỗi khi tạo tin tức.");
+    } finally {
+      setLoading(false);
     }
   };
-
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategoryTree();
-        console.log("Loaded categories:", data);
-        setCategories(data);
+        const parent = data.find(
+          (cat) => cat.name === "Bài viết" || cat.slug === "bai-viet"
+        );
+        const newsCategories = parent?.children || [];
+        setCategories(newsCategories);
       } catch (err) {
         setError("Lỗi khi tải danh mục.");
-        console.error("Error loading categories:", err);
       }
     };
     loadCategories();
@@ -227,6 +212,18 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   value={content}
                   onChange={(newContent) => setContent(newContent)}
                 />
+                <div className="mt-6">
+                  <label className="block font-bold mb-4">
+                    Mô tả SEO <span>(&lt;150 ký tự)</span>
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <textarea
+                    placeholder="Nhập mô tả SEO"
+                    value={meta_description}
+                    onChange={(e) => setMeta_description(e.target.value)}
+                    className="w-full h-24 px-4 border border-gray-200 rounded-[12px] text-[#94A3B8]"
+                  />
+                </div>
               </div>
             </div>
 
@@ -301,7 +298,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                             ?.name || ""
                         }
                         tags={tags}
-                        image={image}
                         onClose={handleClosePreview}
                       />
                     )}
@@ -317,12 +313,12 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                           color="#3B82F6"
                           loading={loading}
                           size={40}
-                          aria-label="Đang tải ảnh"
+                          aria-label="Đang xử lý"
                         />
-                      ) : image ? (
+                      ) : thumbnail ? (
                         <img
-                          src={image}
-                          alt="Preview"
+                          src={URL.createObjectURL(thumbnail)}
+                          alt="Thumbnail Preview"
                           className="object-cover w-full h-full"
                         />
                       ) : (
@@ -334,14 +330,14 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                             height={32}
                           />
                           <span className="mt-2 text-sm text-gray-500">
-                            New Image
+                            Hình đại diện
                           </span>
                         </>
                       )}
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleImageUpload}
+                        onChange={handleThumbnailChange}
                         className="hidden"
                       />
                     </label>
@@ -384,11 +380,30 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                     </label>
                     <input
                       type="text"
-                      value={tags.join(", ")}
-                      onChange={handleTagsChange}
-                      placeholder="Nhập tag (tách bằng dấu phẩy hoặc khoảng trắng)"
+                      value={tagInput}
+                      onChange={handleTagInputChange}
+                      onKeyDown={handleTagInputKeyDown}
+                      placeholder="Nhập tag, nhấn Enter hoặc dấu phẩy để thêm"
                       className="w-full h-12 px-4 border border-gray-300 rounded-[12px] text-sm"
                     />
+                  </div>
+                  {/* Display the tags as individual tag elements */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center"
+                      >
+                        #{tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(index)}
+                          className="ml-2 text-red-500"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
                   </div>
                   <button
                     type="button"

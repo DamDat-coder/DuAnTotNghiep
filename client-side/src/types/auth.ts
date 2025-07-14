@@ -68,3 +68,17 @@ export interface UpdateUserData {
   role?: string;
   addresses?: IUser["addresses"];
 }
+export interface ResetPasswordData {
+  oldPassword: string;
+  password: string;
+  confirmPassword?: string;
+}
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface UserReview {
+  _id: string;
+  name: string;
+}

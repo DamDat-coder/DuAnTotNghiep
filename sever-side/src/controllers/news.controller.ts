@@ -4,12 +4,19 @@ import newsModel, { INews } from "../models/news.model";
 import UserModel from "../models/user.model";
 import NotificationModel from "../models/notification.model";
 import { v2 as cloudinary } from "cloudinary";
-import { MulterRequest, normalizeFiles } from "../middlewares/upload.middleware";
+import {
+  MulterRequest,
+  normalizeFiles,
+} from "../middlewares/upload.middleware";
 
 // Thêm tin tức
-export const createNews = async (req: MulterRequest, res: Response): Promise<void> => {
+export const createNews = async (
+  req: MulterRequest,
+  res: Response
+): Promise<void> => {
   try {
-    const { title, content, slug, category_id, tags } = req.body;
+    const { title, content, slug, category_id, tags, meta_description } =
+      req.body;
     const user_id = req.user?.userId;
 
     if (!title || !content || !slug || !category_id || !user_id) {
@@ -32,25 +39,21 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
     }
 
     const files = normalizeFiles(req.files);
-    const imageUrls: string[] = [];
+    let thumbnail: string | null = null;
 
     if (files.length > 0) {
-      const uploads = await Promise.all(
-        files.map(
-          (file) =>
-            new Promise<string>((resolve, reject) => {
-              const stream = cloudinary.uploader.upload_stream(
-                { folder: "news" },
-                (error, result) => {
-                  if (error || !result) return reject(error);
-                  resolve(result.secure_url);
-                }
-              );
-              stream.end(file.buffer);
-            })
-        )
-      );
-      imageUrls.push(...uploads);
+      const result = await new Promise<string>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "news" },
+          (error, result) => {
+            if (error || !result) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        stream.end(files[0].buffer);
+      });
+
+      thumbnail = result;
     }
 
     const newsData: Partial<INews> = {
@@ -60,8 +63,8 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       category_id: new mongoose.Types.ObjectId(category_id),
       user_id: new mongoose.Types.ObjectId(user_id),
       tags: tags ? tags.split(",") : [],
-      thumbnail: imageUrls[0] || null,
-      news_image: imageUrls.slice(1),
+      thumbnail,
+      meta_description,
       is_published: false,
     };
 
@@ -73,7 +76,7 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       .populate("user_id", "name email")
       .populate("category_id", "name");
 
-    // Gửi thông báo cho tất cả user
+    // Gửi thông báo
     setImmediate(async () => {
       try {
         const users = await UserModel.find({}).select("_id").lean();
@@ -106,19 +109,34 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
 };
 
 // Cập nhật tin tức
-export const updateNews = async (req: MulterRequest, res: Response): Promise<void> => {
+export const updateNews = async (
+  req: MulterRequest,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
-    const { title, content, slug, category_id, tags, is_published } = req.body;
+    const {
+      title,
+      content,
+      slug,
+      category_id,
+      tags,
+      is_published,
+      meta_description,
+    } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID tin tức không hợp lệ" });
       return;
     }
 
     const existingNews = await newsModel.findById(id);
     if (!existingNews) {
-      res.status(404).json({ status: "error", message: "Tin tức không tồn tại" });
+      res
+        .status(404)
+        .json({ status: "error", message: "Tin tức không tồn tại" });
       return;
     }
 
@@ -127,6 +145,7 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
     if (content) updates.content = content;
     if (slug) updates.slug = slug;
     if (tags) updates.tags = tags.split(",");
+    if (meta_description) updates.meta_description = meta_description;
 
     if (
       typeof is_published === "boolean" ||
@@ -144,23 +163,18 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
 
     const files = normalizeFiles(req.files);
     if (files.length > 0) {
-      const imageUrls: string[] = [];
-      for (const file of files) {
-        const result = await new Promise<string | null>((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "news" },
-            (error, result) => {
-              if (error || !result) return reject(error);
-              resolve(result.secure_url);
-            }
-          );
-          stream.end(file.buffer);
-        });
-        if (result) imageUrls.push(result);
-      }
+      const result = await new Promise<string>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "news" },
+          (error, result) => {
+            if (error || !result) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        stream.end(files[0].buffer);
+      });
 
-      updates.thumbnail = imageUrls[0] || null;
-      updates.news_image = imageUrls.slice(1);
+      updates.thumbnail = result;
     }
 
     const updatedNews = await newsModel
@@ -183,23 +197,33 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
 };
 
 // Xoá tin tức
-export const deleteNews = async (req: Request, res: Response): Promise<void> => {
+export const deleteNews = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID tin tức không hợp lệ" });
       return;
     }
 
     await newsModel.findByIdAndDelete(id);
-    res.status(200).json({ status: "success", message: "Xóa tin tức thành công" });
+    res
+      .status(200)
+      .json({ status: "success", message: "Xóa tin tức thành công" });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
 
 // Lấy danh sách tin tức
-export const getNewsList = async (req: Request, res: Response): Promise<void> => {
+export const getNewsList = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const {
       page = "1",
@@ -218,7 +242,6 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
       query.category_id = category_id;
     }
 
-  
     if (isPublished !== undefined) {
       query.is_published = isPublished === "true";
     }
@@ -228,7 +251,8 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
     }
 
     const [news, total] = await Promise.all([
-      newsModel.find(query)
+      newsModel
+        .find(query)
         .populate("user_id", "name email")
         .populate("category_id", "name")
         .sort({ createdAt: -1 })
@@ -256,12 +280,17 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
 };
 
 // Lấy chi tiết tin tức
-export const getNewsDetail = async (req: Request, res: Response): Promise<void> => {
+export const getNewsDetail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID tin tức không hợp lệ" });
       return;
     }
 
@@ -271,7 +300,9 @@ export const getNewsDetail = async (req: Request, res: Response): Promise<void> 
       .populate("category_id", "name");
 
     if (!news) {
-      res.status(404).json({ status: "error", message: "Không tìm thấy tin tức" });
+      res
+        .status(404)
+        .json({ status: "error", message: "Không tìm thấy tin tức" });
       return;
     }
 

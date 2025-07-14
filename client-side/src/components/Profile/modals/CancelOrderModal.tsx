@@ -3,6 +3,7 @@ import React from "react";
 import Image from "next/image";
 
 interface Props {
+  orderId: string;
   onClose: () => void;
   onConfirm: () => void;
 }

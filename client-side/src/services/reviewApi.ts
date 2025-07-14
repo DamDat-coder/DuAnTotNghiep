@@ -74,3 +74,45 @@ export async function createReview(
     throw error;
   }
 }
+
+// Lấy tất cả đánh giá (admin)
+export async function fetchAllReviews(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "approved" | "spam";
+}): Promise<{
+  success: boolean;
+  data: Review[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}> {
+  const query = new URLSearchParams();
+  if (params?.page) query.append("page", params.page.toString());
+  if (params?.limit) query.append("limit", params.limit.toString());
+  if (params?.search) query.append("search", params.search);
+  if (params?.status) query.append("status", params.status);
+
+  const url = `${API_BASE_URL}/reviews?${query.toString()}`;
+  return fetchWithAuth(url, { cache: "no-store" });
+}
+
+// Cập nhật trạng thái đánh giá (admin)
+export async function updateReviewStatus(
+  id: string,
+  status: "approved" | "spam"
+): Promise<{
+  success: boolean;
+  message: string;
+  data?: Review;
+}> {
+  return fetchWithAuth(`${API_BASE_URL}/reviews/${id}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+}

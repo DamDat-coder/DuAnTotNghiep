@@ -82,7 +82,7 @@ export default function SearchResults({
             <div className="flex gap-2">
               <div className="w-1/3 shrink-0">
                 <Image
-                  src={imageSrc}
+                  src={product.images[0]}
                   alt={product.name || "Sản phẩm"}
                   width={120}
                   height={120}

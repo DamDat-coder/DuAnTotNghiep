@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
-import { VNPay, ProductCode, VnpLocale, HashAlgorithm } from "vnpay";
+import { VNPay, ProductCode, VnpLocale } from "vnpay";
 import moment from "moment";
 import type { ReturnQueryFromVNPay } from "vnpay";
 import Payment, { IPayment } from "../models/payment.model";
+import OrderModel from "../models/order.model";
+import ProductModel from "../models/product.model";
 import { Types } from "mongoose";
 import axios from "axios";
 import crypto from "crypto";
-import ProductModel from "../models/product.model";
-import OrderModel from "../models/order.model";
 import { ZALO_PAY, vnpay } from "../config/payment.config";
 
 // Tạo URL thanh toán VNPay
 export const createVNPayPayment = async (req: Request, res: Response) => {
   try {
-    const { orderId, totalPrice, userId, orderInfo } = req.body;
+    const { orderId, totalPrice, userId, orderInfo, shipping } = req.body;
 
     if (!orderId || !totalPrice || !userId || !orderInfo) {
       return res
@@ -28,15 +28,17 @@ export const createVNPayPayment = async (req: Request, res: Response) => {
       transaction_code: orderId,
       transaction_data: {},
       paid_at: undefined,
-      order_info: orderInfo,
+      order_info: {
+        ...orderInfo,
+        shipping: shipping ?? 0,
+      },
     };
 
-    // Lưu bản ghi thanh toán ban đầu (trạng thái pending)
     const payment = await Payment.create(paymentData);
 
     const paymentUrl = await vnpay.buildPaymentUrl({
       vnp_Amount: totalPrice,
-      vnp_IpAddr: req.ip || '127.0.0.1',
+      vnp_IpAddr: req.ip || "127.0.0.1",
       vnp_TxnRef: orderId,
       vnp_OrderInfo: `Thanh toán đơn hàng ${orderId}|userId:${userId}`,
       vnp_OrderType: ProductCode.Other,
@@ -66,46 +68,68 @@ export const checkVNPayReturn = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
     }
 
-    const {
-      vnp_TxnRef,
-      vnp_ResponseCode,
-      vnp_Amount,
-      vnp_TransactionNo,
-      vnp_BankCode,
-      vnp_PayDate,
-      vnp_OrderInfo,
-    } = queryParams;
+    const { vnp_TxnRef, vnp_ResponseCode, vnp_PayDate } = queryParams;
 
-    // Lấy lại bản ghi payment đã tạo từ createVNPayPayment
-    const existingPayment = await Payment.findOne({
-      transaction_code: vnp_TxnRef,
-    });
-
-    if (!existingPayment) {
+    const payment = await Payment.findOne({ transaction_code: vnp_TxnRef });
+    if (!payment) {
       return res
         .status(404)
         .json({ message: "Không tìm thấy giao dịch để cập nhật!" });
     }
 
-    // Cập nhật trạng thái giao dịch
-    existingPayment.status = vnp_ResponseCode === "00" ? "success" : "failed";
-    existingPayment.transaction_data = queryParams;
-    existingPayment.paid_at = vnp_PayDate
+    payment.status = vnp_ResponseCode === "00" ? "success" : "failed";
+    payment.transaction_data = queryParams;
+    payment.paid_at = vnp_PayDate
       ? moment(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
       : new Date();
+    await payment.save();
 
-    await existingPayment.save();
-
-    // Redirect về frontend tuỳ theo kết quả thanh toán
     if (vnp_ResponseCode === "00") {
-      return res.redirect(
-        `http://localhost:3300/payment/success?orderId=${vnp_TxnRef}`
-      );
-    } else {
-      return res.redirect(
-        `http://localhost:3300/payment/fail?orderId=${vnp_TxnRef}`
-      );
+      const orderInfo = payment.order_info;
+
+      for (const item of orderInfo.items) {
+        const product = await ProductModel.findById(item.productId);
+        if (!product) continue;
+
+        const variant = product.variants.find(
+          (v: any) => v.color === item.color && v.size === item.size
+        );
+        if (!variant) continue;
+
+        variant.stock = Math.max(variant.stock - item.quantity, 0);
+        product.salesCount += item.quantity;
+        await product.save();
+      }
+
+      await OrderModel.create({
+        userId: payment.userId,
+        couponId: orderInfo.couponId || null,
+        address_id: orderInfo.address_id,
+        shippingAddress: orderInfo.shippingAddress,
+        totalPrice: payment.amount,
+        shipping: orderInfo.shipping || 0,
+        status: "pending",
+        paymentMethod: "vnpay",
+        paymentStatus: "paid",
+        note: orderInfo.note || "",
+        items: orderInfo.items.map((i: any) => ({
+          productId: i.productId,
+          name: i.name,
+          image: i.image,
+          color: i.color,
+          size: i.size,
+          quantity: i.quantity,
+          price: i.price ?? 0,
+        })),
+      });
     }
+
+    const redirectBase = "http://localhost:3300/payment";
+    return res.redirect(
+      vnp_ResponseCode === "00"
+        ? `${redirectBase}/success?orderId=${vnp_TxnRef}`
+        : `${redirectBase}/fail?orderId=${vnp_TxnRef}`
+    );
   } catch (error) {
     return res.status(500).json({ message: "Xử lý callback thất bại!", error });
   }
@@ -114,7 +138,7 @@ export const checkVNPayReturn = async (req: Request, res: Response) => {
 // Tạo URL thanh toán ZaloPay
 export const createZaloPayPayment = async (req: Request, res: Response) => {
   try {
-    const { totalPrice, userId, orderInfo } = req.body;
+    const { totalPrice, userId, orderInfo, shipping } = req.body;
 
     if (!totalPrice || !userId || !orderInfo) {
       return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
@@ -128,10 +152,15 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       status: "pending",
       transaction_code: orderId,
       transaction_data: {},
-      order_info: orderInfo,
+      order_info: {
+        ...orderInfo,
+        shipping: shipping ?? 0,
+      },
     });
 
-    const embed_data = {};
+    const embed_data = {
+      redirecturl: `http://localhost:3000/api/payment/check-payment-zalopay`,
+    };
 
     const order: Record<string, any> = {
       app_id: ZALO_PAY.app_id,
@@ -160,7 +189,6 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       .createHmac("sha256", ZALO_PAY.key1)
       .update(dataString)
       .digest("hex");
-
     const params = new URLSearchParams();
     Object.entries(order).forEach(([key, value]) => {
       params.append(key, value);
@@ -193,7 +221,6 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
 export const checkZaloPayReturn = async (req: Request, res: Response) => {
   try {
     const {
-
       app_id,
       app_trans_id,
       app_time,
@@ -229,14 +256,14 @@ export const checkZaloPayReturn = async (req: Request, res: Response) => {
     if (mac !== expectedMac) {
       return res
         .status(400)
-        .json({ return_code: -1, return_message: "mac not valid" });
+        .json({ return_code: -1, return_message: "Chữ ký không hợp lệ!" });
     }
 
     const payment = await Payment.findOne({ transaction_code: app_trans_id });
     if (!payment) {
       return res
         .status(404)
-        .json({ return_code: -1, return_message: "payment not found" });
+        .json({ return_code: -1, return_message: "Không tìm thấy giao dịch!" });
     }
 
     const isSuccess = status === 1;
@@ -268,29 +295,59 @@ export const checkZaloPayReturn = async (req: Request, res: Response) => {
         address_id: orderInfo.address_id,
         shippingAddress: orderInfo.shippingAddress,
         totalPrice: payment.amount,
+        shipping: orderInfo.shipping || 0,
         status: "pending",
         paymentMethod: "zalopay",
         paymentStatus: "paid",
         note: orderInfo.note || "",
         items: orderInfo.items.map((i: any) => ({
-          product: i.productId,
+          productId: i.productId,
+          name: i.name,
+          image: i.image,
           color: i.color,
           size: i.size,
           quantity: i.quantity,
-          price: i.price ?? 0, 
+          price: i.price ?? 0,
         })),
       });
     }
 
-    const frontendRedirectBase = "http://localhost:3300/payment";
+    const redirectBase = "http://localhost:3300/payment";
     const redirectUrl = isSuccess
-      ? `${frontendRedirectBase}/success?orderId=${app_trans_id}`
-      : `${frontendRedirectBase}/fail?orderId=${app_trans_id}`;
+      ? `${redirectBase}/success?orderId=${app_trans_id}`
+      : `${redirectBase}/fail?orderId=${app_trans_id}`;
 
     return res.redirect(redirectUrl);
   } catch (error) {
     return res
       .status(500)
-      .json({ return_code: -1, return_message: "internal error" });
+      .json({ return_code: -1, return_message: "Xử lý callback thất bại!" });
+  }
+};
+export const createCodPayment = async (req: Request, res: Response) => {
+  try {
+    const { orderId, totalPrice, userId, orderInfo } = req.body;
+
+    if (!userId || !totalPrice || !orderInfo) {
+      return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
+    }
+
+    const payment = await Payment.create({
+      userId: new Types.ObjectId(userId), // 👈 đảm bảo đúng kiểu
+      amount: totalPrice,
+      status: "success",
+      transaction_code: orderId,
+      transaction_data: {}, // 👈 thêm field này để thống nhất schema
+      order_info: orderInfo,
+      paid_at: new Date(),
+    });
+
+    return res.status(200).json({
+      paymentId: payment._id,
+      message: "Tạo thanh toán COD thành công",
+    });
+  } catch (error) {
+    console.error("Lỗi tạo COD payment:", error);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };

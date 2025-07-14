@@ -63,7 +63,6 @@ export default function RootLayout({
                     {!isAdminRoute && <Footer />}
                   </CategoriesProvider>
                 </ActiveTabProvider>
-                {!isAdminRoute && <Footer />}
               </LookupProvider>
             </MenuProvider>
           </AuthProvider>

@@ -35,3 +35,11 @@ export interface NewsPayload {
   published_at?: Date;
   meta_description: string;
 }
+
+export interface NewsProduct {
+  id: string;
+  img: string;
+  newsCategory: string;
+  name: string;
+  benefit?: string;
+}

@@ -25,15 +25,31 @@ const sendResetPasswordEmail = (to, resetLink) => __awaiter(void 0, void 0, void
         },
     });
     const mailOptions = {
-        from: `"Shop4Real" <${process.env.EMAIL_USER}>`,
+        from: `"Style For You" <${process.env.EMAIL_USER}>`,
         to,
-        subject: "Khôi phục mật khẩu - Shop4Real",
+        subject: "Khôi phục mật khẩu - Style For You",
         html: `
-      <h3>Yêu cầu khôi phục mật khẩu</h3>
-      <p>Click vào liên kết bên dưới để đặt lại mật khẩu:</p>
-      <a href="${resetLink}">${resetLink}</a>
-      <p>Liên kết này có hiệu lực trong 15 phút.</p>
-    `,
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+    <h2 style="text-align: center; color: #111827;">Style For You</h2>
+    <h3 style="text-align: center; color: #111827;">Đặt lại mật khẩu</h3>
+    <p style="font-size: 16px; color: #374151;">Xin chào,</p>
+    <p style="font-size: 16px; color: #374151;">
+      Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu cho tài khoản Style For You.
+    </p>
+    <p style="font-size: 16px; color: #374151;">
+      Vui lòng nhấn vào nút bên dưới để đặt lại mật khẩu của bạn:
+    </p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${resetLink}" style="background-color: #111827; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block;">
+        Đặt lại mật khẩu
+      </a>
+    </div>
+    <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;" />
+    <p style="font-size: 13px; color: #9ca3af; text-align: center;">
+      Liên kết đặt lại mật khẩu có hiệu lực trong 15 phút. Nếu bạn không yêu cầu, hãy bỏ qua email này.
+    </p>
+  </div>
+`,
     };
     yield transporter.sendMail(mailOptions);
 });

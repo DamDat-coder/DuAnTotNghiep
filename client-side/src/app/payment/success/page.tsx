@@ -18,13 +18,15 @@ export default function PaymentSuccess() {
     const userId = localStorage.getItem("pendingUserId");
 
     const createOrderAfterPayment = async () => {
+      console.log("paymentId "+ paymentId + "userId " + userId);
+      
       if (!paymentId) {
         toast.error("Không tìm thấy paymentId.");
         router.push("/cart");
         return;
       }
 
-      if (!user || !user.id || user.id !== userId) {
+      if (!user || !user.id || user.id != userId) {
         toast.error("Vui lòng đăng nhập để tiếp tục.");
         return;
       }

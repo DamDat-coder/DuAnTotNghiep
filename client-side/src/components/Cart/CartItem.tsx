@@ -19,7 +19,7 @@ interface CartItemProps {
   item: ICartItem;
   onQuantityChange: (id: string, change: number) => void;
   onToggleLike: () => void;
-  onRemove: () => void;
+  onRemove: (id: string, size: string, color: string) => void;
   onSelect?: (selected: boolean) => void;
 }
 
@@ -30,15 +30,13 @@ export default function CartItem({
   onRemove,
   onSelect,
 }: CartItemProps) {
-
-  // Lấy tên màu từ colorMap, mặc định là item.color nếu không tìm thấy
   const displayColor = colorMap[item.color] || item.color || "Không xác định";
 
   return (
     <>
+      {/* Mobile */}
       <div className="block tablet:hidden laptop:hidden desktop:hidden">
         <div className="flex items-center gap-2 py-0 px-2">
-          {/* Checkbox */}
           <input
             type="checkbox"
             checked={item.selected ?? false}
@@ -51,7 +49,7 @@ export default function CartItem({
             alt={item.image}
             width={110}
             height={110}
-            className="w-[6.9rem] h-[6.9rem] object-cover rounded desktop:w-[150px] desktop:h-[150px]"
+            className="w-[6.9rem] h-[6.9rem] object-cover rounded"
           />
 
           <div className="flex-1 flex flex-col gap-2">
@@ -60,10 +58,7 @@ export default function CartItem({
                 {item.name}
               </h3>
               <div className="text-[1rem] font-bold text-red-500">
-                {(item.price * (1 - item.discountPercent / 100)).toLocaleString(
-                  "vi-VN"
-                )}
-                ₫
+                {(item.price * (1 - item.discountPercent / 100)).toLocaleString("vi-VN")}₫
               </div>
             </div>
             <div className="text-sm text-[#374151]">
@@ -99,7 +94,7 @@ export default function CartItem({
                   />
                 </button>
                 <button
-                  onClick={onRemove}
+                  onClick={() => onRemove(item.id, item.size, item.color)}
                   className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
                 >
                   <Trash2 size={20} stroke="black" />
@@ -109,9 +104,10 @@ export default function CartItem({
           </div>
         </div>
       </div>
+
+      {/* Tablet + Desktop */}
       <div className="hidden tablet:block laptop:block desktop:block">
         <div className="flex items-center gap-4 py-0 px-2">
-          {/* Checkbox */}
           <input
             type="checkbox"
             checked={item.selected ?? false}
@@ -133,10 +129,7 @@ export default function CartItem({
                 {item.name}
               </h3>
               <div className="text-[1rem] font-bold text-red-500">
-                {(item.price * (1 - item.discountPercent / 100)).toLocaleString(
-                  "vi-VN"
-                )}
-                ₫
+                {(item.price * (1 - item.discountPercent / 100)).toLocaleString("vi-VN")}₫
               </div>
             </div>
             <div className="text-sm text-[#374151]">
@@ -172,7 +165,7 @@ export default function CartItem({
                   />
                 </button>
                 <button
-                  onClick={onRemove}
+                  onClick={() => onRemove(item.id, item.size, item.color)}
                   className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
                 >
                   <Trash2 size={20} stroke="black" />

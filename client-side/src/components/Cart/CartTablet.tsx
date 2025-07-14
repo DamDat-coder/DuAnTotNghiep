@@ -1,4 +1,3 @@
-// src/components/Cart/CartTablet.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -11,7 +10,7 @@ interface CartTabletProps {
   totalPrice: number;
   onQuantityChange: (id: string, size: string, change: number) => void;
   onToggleLike: (id: string, size: string) => void;
-  onRemove: (id: string, size: string) => void;
+  onRemove: (id: string, size: string, color: string) => void;
 }
 
 export default function CartTablet({
@@ -33,7 +32,6 @@ export default function CartTablet({
     });
   };
 
-  // Tính số sản phẩm và tổng tiền chỉ cho các mục được chọn
   const selectedItems = cartItems.filter((item) => item.selected);
   const selectedItemsCount = selectedItems.length;
   const selectedTotalPrice = selectedItems.reduce(
@@ -50,7 +48,7 @@ export default function CartTablet({
             item={item}
             onQuantityChange={(id, change) => onQuantityChange(id, item.size, change)}
             onToggleLike={() => onToggleLike(item.id, item.size)}
-            onRemove={() => onRemove(item.id, item.size)}
+            onRemove={() => onRemove(item.id, item.size, item.color)}
             onSelect={(selected) => handleSelectItem(item.id, item.size, selected)}
           />
         ))}

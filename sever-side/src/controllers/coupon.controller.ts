@@ -122,6 +122,7 @@ export const createCoupon = async (req: Request, res: Response) => {
         startDate
       ).toLocaleDateString("vi-VN")}.`,
       type: "coupon",
+      link: `/coupons`,
       isRead: false,
     });
 

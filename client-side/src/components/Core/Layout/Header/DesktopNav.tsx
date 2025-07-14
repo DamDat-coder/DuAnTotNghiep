@@ -69,71 +69,80 @@ export default function DesktopNav() {
     );
   }
 
-  return (
-    <div className="hidden laptop:flex desktop:flex items-center gap-5">
-      {rootCategories.length === 0 ? (
-        <p className="text-gray-500">Không có danh mục</p>
-      ) : (
-        rootCategories.map((cat) => {
-          const isArticleCategory =
-            cat._id === "684d0f12543e02998d9df097" || cat.name === "Bài viết";
-          const href = isArticleCategory
-            ? "/posts"
-            : `/products?id_cate=${cat._id}`;
-          const isActive = isArticleCategory
-            ? pathname === "/posts"
-            : pathname === "/products" &&
-              searchParams.get("id_cate") === cat._id;
+return (
+  <div className="hidden laptop:flex desktop:flex items-center gap-5">
+    {rootCategories.length === 0 ? (
+      <p className="text-gray-500">Không có danh mục</p>
+    ) : (
+      rootCategories.map((cat) => {
+        const isArticleCategory =
+          cat._id === "684d0f12543e02998d9df097" || cat.name === "Bài viết";
+        const href = isArticleCategory
+          ? "/posts"
+          : `/products?id_cate=${cat._id}`;
+        const isActive = isArticleCategory
+          ? pathname === "/posts"
+          : pathname === "/products" &&
+            searchParams.get("id_cate") === cat._id;
 
-          return (
-            <div key={cat._id} className="relative">
-              <Link
-                href={href}
-                className={`px-5 py-5 text-lg ${
-                  isActive ? "font-bold" : "font-medium text-gray-800"
-                } rounded transition-colors`}
-                aria-expanded={hoveredCategory === cat._id}
-                aria-haspopup="true"
-                onMouseEnter={() => handleMouseEnter(cat._id)}
-              >
-                {cat.name}
-              </Link>
-              {!isArticleCategory && cat.children?.length > 0 && (
-                <AnimatePresence>
-                  {hoveredCategory === cat._id && (
-                    <motion.div
-                      variants={dropdownVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 40,
-                      }}
-                      className="fixed top-16 left-0 right-0 w-screen bg-white shadow-lg z-[40]"
-                      onMouseLeave={handleMouseLeave}
-                    >
-                      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-3 gap-4">
-                        {cat.children.map((child) => (
-                          <Link
-                            key={child._id}
-                            href={`/products?id_cate=${child._id}`}
-                            className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors text-center"
-                            onClick={() => setHoveredCategory(null)}
-                          >
-                            {child.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-            </div>
-          );
-        })
-      )}
-    </div>
-  );
+        return (
+          <div key={cat._id} className="relative">
+            <Link
+              href={href}
+              className={`px-5 py-5 text-lg ${
+                isActive ? "font-bold" : "font-medium text-gray-800"
+              } rounded transition-colors`}
+              aria-expanded={hoveredCategory === cat._id}
+              aria-haspopup="true"
+              onMouseEnter={() => handleMouseEnter(cat._id)}
+            >
+              {cat.name}
+            </Link>
+            {!isArticleCategory && cat.children?.length > 0 && (
+              <AnimatePresence>
+                {hoveredCategory === cat._id && (
+                  <motion.div
+                    variants={dropdownVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 40,
+                    }}
+                    className="fixed top-16 left-0 right-0 w-screen bg-white shadow-lg z-[40]"
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-3 gap-4">
+                      {cat.children.map((child) => (
+                        <Link
+                          key={child._id}
+                          href={`/products?id_cate=${child._id}`}
+                          className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors text-center"
+                          onClick={() => setHoveredCategory(null)}
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+          </div>
+        );
+      })
+    )}
+        <Link
+      href="/coupons"
+      className={`px-5 py-5 text-lg ${
+        pathname === "/coupons" ? "font-bold" : "font-medium text-gray-800"
+      } rounded transition-colors`}
+    >
+      Giảm giá
+    </Link>
+  </div>
+);
+
 }

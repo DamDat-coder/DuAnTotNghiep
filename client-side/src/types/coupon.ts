@@ -11,7 +11,7 @@ export interface Coupon {
   maxDiscountAmount: number | null;
   startDate: string;
   endDate: string;
-  usageLimit: number | null;
+  usageLimit: number;
   usedCount: number;
   is_active: boolean;
   applicableCategories: ICategoryNews[];

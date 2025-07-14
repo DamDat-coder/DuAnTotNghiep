@@ -9,6 +9,7 @@ import {
 } from "@/services/notificationApi";
 import { INotification } from "@/types/notification";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "lucide-react";
 
 export default function Notification() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,8 +25,12 @@ export default function Notification() {
     async function loadNotifications() {
       try {
         const response = await fetchNotifications();
-        setNotifications(response.data);
-        setHasUnread(response.data.some((n) => !n.is_read));
+        const notificationsWithLink = response.data.map((n: any) => ({
+          ...n,
+          link: n.link ?? "#",
+        }));
+        setNotifications(notificationsWithLink);
+        setHasUnread(notificationsWithLink.some((n: any) => !n.is_read));
       } catch (error: any) {
         // ✅ Nếu lỗi từ token (403), đừng hiện toast
         if (
@@ -180,24 +185,27 @@ export default function Notification() {
                 };
 
                 return (
-                  <li
-                    key={notification._id}
-                    onClick={handleSingleClick}
-                    className={`flex gap-2 px-4 py-3 cursor-pointer ${
-                      !notification.is_read ? "bg-[#ECF8FF]" : ""
-                    }`}
-                  >
-                    <Image src={iconSrc} alt="icon" width={20} height={20} />
-                    <div className="">
-                      <p className="font-bold text-sm">{notification.title}</p>
-                      <p className="text-sm text-gray-600">
-                        {notification.message}
-                        <span className="ml-1 text-[13px] text-gray-400">
-                          {formatTimeAgo(notification.createdAt)}
-                        </span>
-                      </p>
-                    </div>
-                  </li>
+                  <a key={notification._id} href={notification.link}>
+                    <li
+                      onClick={handleSingleClick}
+                      className={`flex gap-2 px-4 py-3 cursor-pointer ${
+                        !notification.is_read ? "bg-[#ECF8FF]" : ""
+                      }`}
+                    >
+                      <Image src={iconSrc} alt="icon" width={20} height={20} />
+                      <div className="">
+                        <p className="font-bold text-sm">
+                          {notification.title}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {notification.message}
+                          <span className="ml-1 text-[13px] text-gray-400">
+                            {formatTimeAgo(notification.createdAt)}
+                          </span>
+                        </p>
+                      </div>
+                    </li>
+                  </a>
                 );
               })
             )}

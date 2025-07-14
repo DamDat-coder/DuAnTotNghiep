@@ -99,7 +99,6 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       return;
     }
 
-    // Tạo cartItem
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -110,12 +109,19 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       size: selectedSize,
       color: selectedColor,
       liked: false,
-      selected: false,
+      selected: true, // Đặt selected: true
     };
 
-    // Thêm vào giỏ hàng qua CartContext
     dispatch({ type: "add", item: cartItem });
-    toast.error("Bạn đã thêm vào giỏ hàng thành công!");
+    const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
+    const currentSelectedIds = JSON.parse(
+      localStorage.getItem("cartSelectedIds") || "[]"
+    );
+    localStorage.setItem(
+      "cartSelectedIds",
+      JSON.stringify([...currentSelectedIds, selectedId])
+    );
+    toast.success("Bạn đã thêm vào giỏ hàng thành công!");
     onClose();
   };
 
@@ -345,7 +351,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                       </button>
                     </div>
                     {selectedVariant && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-red-500 mt-1">
                         Còn {maxQuantity} sản phẩm
                       </p>
                     )}

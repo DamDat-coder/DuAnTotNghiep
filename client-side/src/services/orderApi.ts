@@ -12,7 +12,7 @@ export async function initiatePayment(
 
     switch (paymentInfo.orderInfo.paymentMethod) {
       case "cod":
-        endpoint = "/payment/cod";
+        endpoint = "/payment/create-cod-payment";
         break;
       case "vnpay":
         endpoint = "/payment/create-vnpay-payment";

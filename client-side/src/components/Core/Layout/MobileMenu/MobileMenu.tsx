@@ -9,7 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import LoginPopup from "../Popups/LoginPopup";
 import RegisterPopup from "../Popups/RegisterPopup";
 import { useCategories } from "@/contexts/CategoriesContext";
-
+import ForgotPasswordPopup from "../Popups/ForgotPasswordPopup";
+import ResetPasswordPopup from "../Popups/ResetPasswordPopup";
 interface MobileMenuProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -23,6 +24,10 @@ interface NavItem {
 
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetToken, setResetToken] = useState(""); // chỉ cần nếu bạn dùng Reset qua popup (ví dụ từ email redirect)
+
   const {
     user,
     openLoginWithData,
@@ -198,8 +203,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
             setIsLoginOpen(false);
             setIsRegisterOpen(true);
           }}
+          onOpenForgotPassword={() => {
+            setIsLoginOpen(false);
+            setIsForgotOpen(true);
+          }}
           initialFormData={registerFormData}
         />
+
         <RegisterPopup
           isOpen={isRegisterOpen}
           onClose={() => setIsRegisterOpen(false)}
@@ -369,6 +379,10 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
         onOpenRegister={() => {
           setIsLoginOpen(false);
           setIsRegisterOpen(true);
+        }}
+        onOpenForgotPassword={() => {
+          setIsLoginOpen(false);
+          setIsForgotOpen(true);
         }}
         initialFormData={registerFormData}
       />

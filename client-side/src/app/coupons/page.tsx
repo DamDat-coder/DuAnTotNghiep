@@ -41,7 +41,7 @@ export default function CouponsPage() {
   return (
     <Container>
       <h1 className="py-16 text-2xl font-bold pb-6">Danh sách mã giảm giá</h1>
-      <div className="flex gap-6">
+      <div className="flex gap-6 pb-16">
         {/* DANH SÁCH MÃ */}
         <div className="w-[60%]">
           {loading ? (
@@ -55,10 +55,12 @@ export default function CouponsPage() {
                   key={coupon._id}
                   className="flex flex-col gap-4 rounded-lg p-4 shadow-custom-order transition-all border"
                 >
-                  <h2 className="text-xl font-semibold">{coupon.code}</h2>
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {coupon.description || "Không có mô tả"}
-                  </p>
+                  <div>
+                    <h2 className="text-xl font-semibold">{coupon.code}</h2>
+                    <p className="text-gray-600 text-sm line-clamp-2">
+                      {coupon.description || "Không có mô tả"}
+                    </p>
+                  </div>
                   <div className="flex flex-col gap-3">
                     <p className="text-green-600 font-medium">
                       {coupon.discountType === "percent"
@@ -92,15 +94,17 @@ export default function CouponsPage() {
           {detailLoading ? (
             <p className="text-gray-500">Đang tải chi tiết...</p>
           ) : selectedCoupon ? (
-            <div className="p-4 rounded-lg bg-white">
-              <h2 className="text-xl font-bold mb-2">{selectedCoupon.code}</h2>
-              <p className="text-gray-700 mb-3">
-                {selectedCoupon.description || "Không có mô tả"}
-              </p>
+            <div className="p-4 rounded-lg bg-white flex flex-col gap-6">
+              <div>
+                <h2 className="text-xl font-bold">{selectedCoupon.code}</h2>
+                <p className="text-gray-600 text-sm line-clamp-2">
+                  {selectedCoupon.description || "Không có mô tả"}
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 gap-2 text-sm text-gray-800">
+              <div className="grid grid-cols-1 gap-3 text-sm text-gray-800">
                 <p>
-                  <span className="font-medium">Loại giảm:</span>{" "}
+                  <span>Loại giảm:</span>{" "}
                   {selectedCoupon.discountType === "percent"
                     ? `Giảm ${selectedCoupon.discountValue}%`
                     : `Giảm ${selectedCoupon.discountValue.toLocaleString(
@@ -108,29 +112,31 @@ export default function CouponsPage() {
                       )}đ`}
                 </p>
                 <p>
-                  <span className="font-medium">Đơn tối thiểu:</span>{" "}
+                  <span>Đơn tối thiểu:</span>{" "}
                   {selectedCoupon.minOrderAmount
                     ? `${selectedCoupon.minOrderAmount.toLocaleString(
                         "vi-VN"
                       )}đ`
                     : "Không yêu cầu"}
                 </p>
-                <p>
-                  <span className="font-medium">Giảm tối đa:</span>{" "}
+                <p className="text-green-600 ">
+                  <span>Giảm tối đa:</span>{" "}
                   {selectedCoupon.maxDiscountAmount
                     ? `${selectedCoupon.maxDiscountAmount.toLocaleString(
                         "vi-VN"
                       )}đ`
                     : "Không giới hạn"}
                 </p>
-                <p>
-                  <span className="font-medium">Lượt dùng:</span>{" "}
+                <p className="text-red-500">
+                  <span>Còn:</span>{" "}
                   {selectedCoupon.usageLimit
-                    ? `${selectedCoupon.usedCount}/${selectedCoupon.usageLimit}`
+                    ? `${
+                        selectedCoupon.usageLimit - selectedCoupon.usedCount
+                      }/${selectedCoupon.usageLimit}`
                     : "Không giới hạn"}
                 </p>
                 <p>
-                  <span className="font-medium">Hiệu lực:</span>{" "}
+                  <span>Hiệu lực:</span>{" "}
                   {new Date(selectedCoupon.startDate).toLocaleDateString(
                     "vi-VN"
                   )}{" "}
@@ -138,14 +144,14 @@ export default function CouponsPage() {
                   {new Date(selectedCoupon.endDate).toLocaleDateString("vi-VN")}
                 </p>
                 <p>
-                  <span className="font-medium">Trạng thái:</span>{" "}
+                  <span>Trạng thái:</span>{" "}
                   {selectedCoupon.is_active ? "Đang hoạt động" : "Đã tắt"}
                 </p>
               </div>
 
               <Link
-                href={`/products?coupon=${selectedCoupon._id}`}
-                className="mt-4 inline-block text-center w-full border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition"
+                href={`/products?coupon=${selectedCoupon.code}`}
+                className="inline-block text-center w-full border border-black border-solid py-2 text-sm rounded hover:bg-gray-100 transition"
               >
                 Xem sản phẩm áp dụng
               </Link>

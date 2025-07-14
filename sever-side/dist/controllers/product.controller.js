@@ -305,6 +305,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop4Real, khám phá ngay!`,
                     type: "product",
                     isRead: false,
+                    link: `/products/${savedProduct._id}`,
                 }));
                 yield notification_model_1.default.insertMany(notifications);
                 console.log("Thông báo đã gửi đến người dùng.");

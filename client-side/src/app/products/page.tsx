@@ -11,7 +11,7 @@ import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
 import { IProduct } from "@/types/product";
 import { SortOption } from "@/types/filter";
-import { fetchCouponById } from "@/services/couponApi";
+import { fetchCouponByCode, fetchCouponById } from "@/services/couponApi";
 import { Toaster } from "react-hot-toast";
 
 interface News {
@@ -55,7 +55,7 @@ export default function ProductsPage() {
 
         if (couponId) {
           try {
-            const coupon = await fetchCouponById(couponId);
+            const coupon = await fetchCouponByCode(couponId);
             if (coupon.applicableProducts.length > 0) {
               couponFilteredProductIds = (coupon.applicableProducts || []).map(
                 (p: any) => (typeof p === "string" ? p : p._id || p.toString())

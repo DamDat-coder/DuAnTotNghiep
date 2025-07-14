@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
+import { useSearchParams } from "next/navigation";
 
 interface BuyNowPopupProps {
   product: IProduct;
@@ -28,6 +29,10 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   );
   const [quantity, setQuantity] = useState(1);
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  const couponId = searchParams.get("coupon");
+  const [applyCoupon, setApplyCoupon] = useState(!!couponId);
 
   // Ngăn scroll khi popup hoặc bảng kích thước mở
   useEffect(() => {
@@ -116,7 +121,9 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       liked: false,
       selected: true,
     };
-
+    if (applyCoupon && couponId) {
+      localStorage.setItem("pendingCouponCode", couponId);
+    }
     // Thêm vào giỏ hàng
     dispatch({ type: "add", item: cartItem });
     const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
@@ -352,7 +359,23 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                     </button>
                   </div>
                 </div>
-
+                {couponId && (
+                  <div className="mt-2 flex items-center gap-2 cursor-pointer">
+                    <input
+                      id="applyCoupon"
+                      type="checkbox"
+                      checked={applyCoupon}
+                      onChange={() => setApplyCoupon(!applyCoupon)}
+                      className="accent-black cursor-pointer w-[2%] h-full"
+                    />
+                    <label
+                      htmlFor="applyCoupon"
+                      className="text-sm cursor-pointer"
+                    >
+                      Áp dụng mã giảm giá hiện tại
+                    </label>
+                  </div>
+                )}
                 {/* Nút xác nhận */}
                 <button
                   onClick={handleConfirm}

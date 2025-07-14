@@ -351,7 +351,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                       </button>
                     </div>
                     {selectedVariant && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-red-500 mt-1">
                         Còn {maxQuantity} sản phẩm
                       </p>
                     )}

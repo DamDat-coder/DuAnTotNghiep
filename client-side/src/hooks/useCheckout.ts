@@ -12,6 +12,7 @@ import {
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
+import { useMemo } from "react";
 
 // Hàm sinh orderId 7 ký tự
 const generateOrderId = () => {
@@ -33,10 +34,15 @@ export const useCheckout = () => {
   const orderItems: ICartItem[] = items.filter((item) => item.selected);
 
   // Tính toán giá
-  const subtotal = orderItems.reduce(
-    (sum, item) =>
-      sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-    0
+
+  const subtotal = useMemo(
+    () =>
+      orderItems.reduce(
+        (sum, item) =>
+          sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+        0
+      ),
+    [orderItems]
   );
   const [discountCode, setDiscountCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -166,7 +172,43 @@ export const useCheckout = () => {
     }
   }, [user]);
 
-  // Cập nhật total khi subtotal, discount, hoặc shippingFee thay đổi
+  useEffect(() => {
+    const savedCouponCode = localStorage.getItem("pendingCouponCode");
+    if (!savedCouponCode) return;
+
+    // ✅ Đợi `items` có dữ liệu
+    if (items.length === 0 || subtotal <= 0) {
+      console.log("⛔ Chưa đủ điều kiện áp dụng coupon", { items, subtotal });
+      return;
+    }
+
+    const applyCoupon = async () => {
+      try {
+        const response = await validateCoupon(savedCouponCode, subtotal);
+        if (response.success && response.data) {
+          const { discountValue, discountType } = response.data;
+          const discountAmount =
+            discountType === "percent"
+              ? subtotal * (discountValue / 100)
+              : discountValue;
+
+          setDiscount(discountAmount);
+          setDiscountCode(response.data.code);
+          toast.success("Đã áp dụng mã giảm giá!");
+        } else {
+          toast.error(response.message || "Mã giảm giá không hợp lệ!");
+        }
+      } catch (error) {
+        console.error("Không thể áp dụng mã giảm giá:", error);
+        toast.error("Có lỗi khi áp dụng mã giảm giá!");
+      } finally {
+        localStorage.removeItem("pendingCouponCode");
+      }
+    };
+
+    applyCoupon();
+  }, [subtotal, items.length]);
+
   useEffect(() => {
     setTotal(subtotal - discount + shippingFee);
   }, [subtotal, discount, shippingFee]);
@@ -345,7 +387,6 @@ export const useCheckout = () => {
 
       // Kiểm tra và lấy couponId
       const couponId = await handleApplyDiscount();
-
       // Chuẩn bị dữ liệu thanh toán
       const paymentInfo = {
         orderId: generateOrderId(),

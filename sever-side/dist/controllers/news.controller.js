@@ -80,6 +80,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                     message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
                     type: "news",
                     isRead: false,
+                    link: `/posts/${savedNews._id}`,
                 }));
                 yield notification_model_1.default.insertMany(notifications);
                 console.log("Đã gửi thông báo tin tức mới cho người dùng.");

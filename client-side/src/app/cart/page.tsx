@@ -10,40 +10,33 @@ import { fetchProducts } from "@/services/productApi";
 import CartTablet from "@/components/Cart/CartTablet";
 import { Toaster } from "react-hot-toast";
 
-const getLowestPriceVariant = (product: IProduct) => {
-  if (!product.variants || product.variants.length === 0) {
-    return { price: 0, discountPercent: 0, discountedPrice: 0 };
-  }
-  return product.variants.reduce(
-    (min, variant) =>
-      variant.discountedPrice && variant.discountedPrice < min.discountedPrice
-        ? variant
-        : min,
-    product.variants[0]
-  );
-};
-
 export default function Cart() {
   const cart = useCart();
   const dispatch = useCartDispatch();
   const [suggestedProducts, setSuggestedProducts] = useState<IProduct[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Đồng bộ selectAll với trạng thái các mục
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Đồng bộ checkbox "Chọn tất cả"
   useEffect(() => {
     setSelectAll(
       cart.items.length > 0 && cart.items.every((item) => item.selected)
     );
   }, [cart.items]);
 
-  // Tính tổng tiền chỉ cho các mục được chọn
+  // Tổng tiền các sản phẩm được chọn (selected: true)
   const totalPrice = useMemo(
     () =>
       cart.items
         .filter((item) => item.selected)
         .reduce(
           (sum, item) =>
-            sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+            sum +
+            item.price * (1 - item.discountPercent / 100) * item.quantity,
           0
         ),
     [cart.items]
@@ -60,19 +53,11 @@ export default function Cart() {
     });
   };
 
-  // Fetch suggested products on mount
-  useEffect(() => {
-    async function getSuggestedProducts() {
-      try {
-        const response = await fetchProducts({ is_active: true });
-        setSuggestedProducts(response.data || []);
-      } catch (error) {
-        console.error("Failed to fetch suggested products:", error);
-        setSuggestedProducts([]);
-      }
-    }
-    getSuggestedProducts();
-  }, []);
+  // Lấy sản phẩm chưa được chọn
+  const unselectedItems = useMemo(
+    () => cart.items.filter((item) => !item.selected),
+    [cart.items]
+  );
 
   const handleQuantityChange = (id: string, size: string, change: number) => {
     const item = cart.items.find((i) => i.id === id && i.size === size);
@@ -93,11 +78,23 @@ export default function Cart() {
     });
   };
 
-  const removeItem = (id: string, size: string) => {
-    const item = cart.items.find((i) => i.id === id && i.size === size);
-    if (!item) return;
-    dispatch({ type: "remove", item });
+  const removeItem = (id: string, size: string, color: string) => {
+    dispatch({ type: "remove", id, size, color });
   };
+
+  // Gợi ý sản phẩm
+  useEffect(() => {
+    async function getSuggestedProducts() {
+      try {
+        const response = await fetchProducts({ is_active: true });
+        setSuggestedProducts(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch suggested products:", error);
+        setSuggestedProducts([]);
+      }
+    }
+    getSuggestedProducts();
+  }, []);
 
   return (
     <div className="py-8">
@@ -114,26 +111,27 @@ export default function Cart() {
             />
             Chọn tất cả
           </div>
-          {cart.items.length === 0 ? (
+
+          {!isClient ? null : unselectedItems.length === 0 ? (
             <p className="text-center text-gray-500 mt-4">Giỏ hàng trống.</p>
           ) : (
             <>
               <CartMobile
-                cartItems={cart.items}
+                cartItems={unselectedItems}
                 totalPrice={totalPrice}
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
               />
               <CartTablet
-                cartItems={cart.items}
+                cartItems={unselectedItems}
                 totalPrice={totalPrice}
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
               />
               <CartDesktop
-                cartItems={cart.items}
+                cartItems={unselectedItems}
                 totalPrice={totalPrice}
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}

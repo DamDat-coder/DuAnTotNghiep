@@ -83,6 +83,7 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
           message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
           type: "news",
           isRead: false,
+          link: `/posts/${savedNews._id}`,
         }));
         await NotificationModel.insertMany(notifications);
         console.log("Đã gửi thông báo tin tức mới cho người dùng.");

@@ -123,6 +123,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: `Đơn hàng #${order._id} đã được xác nhận. Cảm ơn bạn đã mua sắm tại Shop4Real!`,
             type: "order",
             isRead: false,
+            link: `/profile?tab=order/${order._id}`,
         });
         // Gửi thông báo cho tất cả admin
         const admins = yield user_model_1.default.find({ role: "admin" }).select("_id").lean();
@@ -240,6 +241,7 @@ const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
             type: "order",
             isRead: false,
+            link: `/profile?tab=order/${order._id}`,
         });
         res.status(200).json({
             success: true,

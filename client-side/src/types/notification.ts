@@ -6,6 +6,7 @@ export interface INotification {
   is_read: boolean;
   createdAt: string;
   icon?: string;
+  link:string
 }
 
 export interface Notification {

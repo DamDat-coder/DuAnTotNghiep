@@ -11,7 +11,7 @@ interface CartDesktopProps {
   totalPrice: number;
   onQuantityChange: (id: string, size: string, change: number) => void;
   onToggleLike: (id: string, size: string) => void;
-  onRemove: (id: string, size: string) => void;
+  onRemove: (id: string, size: string, color: string) => void;
 }
 
 export default function CartDesktop({
@@ -33,28 +33,6 @@ export default function CartDesktop({
     });
   };
 
-  const checkSelect = () => {
-    // Kiểm tra có sản phẩm được chọn không
-    if (selectedItemsCount === 0) {
-      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
-      return;
-    }
-
-    // Kiểm tra đăng nhập
-    const accessToken =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken")
-        : null;
-    if (!accessToken) {
-      toast.error("Bạn vui lòng đăng nhập trước khi thanh toán!");
-      return;
-    }
-
-    // Chuyển hướng đến checkout
-    router.push("/checkout");
-  };
-
-  // Tính số sản phẩm và tổng tiền chỉ cho các mục được chọn
   const selectedItems = cartItems.filter((item) => item.selected);
   const selectedItemsCount = selectedItems.length;
   const selectedTotalPrice = selectedItems.reduce(
@@ -68,6 +46,24 @@ export default function CartDesktop({
     0
   );
 
+  const checkSelect = () => {
+    if (selectedItemsCount === 0) {
+      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      return;
+    }
+
+    const accessToken = typeof window !== "undefined"
+      ? localStorage.getItem("accessToken")
+      : null;
+
+    if (!accessToken) {
+      toast.error("Bạn vui lòng đăng nhập trước khi thanh toán!");
+      return;
+    }
+
+    router.push("/checkout");
+  };
+
   return (
     <div className="hidden desktop:flex desktop:gap-6 laptop:flex laptop:gap-6 mt-4">
       <div className="w-[70%]">
@@ -80,7 +76,7 @@ export default function CartDesktop({
                 onQuantityChange(id, item.size, change)
               }
               onToggleLike={() => onToggleLike(item.id, item.size)}
-              onRemove={() => onRemove(item.id, item.size)}
+              onRemove={() => onRemove(item.id, item.size, item.color)}
               onSelect={(selected) =>
                 handleSelectItem(item.id, item.size, selected)
               }
@@ -126,7 +122,6 @@ export default function CartDesktop({
           onClick={checkSelect}
           className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800 mt-4"
           disabled={selectedItemsCount === 0}
-          aria-label="Thanh toán các sản phẩm đã chọn"
         >
           Thanh toán
         </button>

@@ -116,9 +116,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             transaction_data: {},
             order_info: orderInfo,
         });
-        const embed_data = {
-            redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
-        };
+        const embed_data = {};
         const order = {
             app_id: payment_config_1.ZALO_PAY.app_id,
             app_trans_id: orderId,

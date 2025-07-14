@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useReducer } from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
 import { ICartItem } from "@/types/cart";
 
 interface CartState {
@@ -16,13 +16,16 @@ interface CartAction {
     | "toggleSelect"
     | "toggleSelectAll"
     | "clear"
-    | "resetSelected";
+    | "resetSelected"
+    | "restoreSelection";
+
   item?: ICartItem;
   id?: string;
   size?: string;
   color?: string;
   quantity?: number;
   selectAll?: boolean;
+  selectedIds?: string[];
 }
 
 interface CartContextType {
@@ -119,14 +122,35 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         ...state,
         items: state.items.map((item) => ({ ...item, selected: false })),
       };
-
+    case "restoreSelection":
+      return {
+        ...state,
+        items: state.items.map((item) => ({
+          ...item,
+          selected: action.selectedIds?.includes(item.id) ?? false,
+        })),
+      };
     default:
       return state;
   }
 };
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  const [state, dispatch] = useReducer(cartReducer, { items: [] });
+  const [state, dispatch] = useReducer(cartReducer, { items: [] }, () => {
+    // Khôi phục giỏ hàng từ localStorage khi khởi tạo
+    if (typeof window !== "undefined") {
+      const savedCart = localStorage.getItem("cartItems");
+      return savedCart ? { items: JSON.parse(savedCart) } : { items: [] };
+    }
+    return { items: [] };
+  });
+
+  // Lưu giỏ hàng vào localStorage mỗi khi state thay đổi
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cartItems", JSON.stringify(state.items));
+    }
+  }, [state.items]);
 
   return (
     <CartContext.Provider value={{ items: state.items, dispatch }}>
@@ -134,7 +158,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     </CartContext.Provider>
   );
 };
-
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {

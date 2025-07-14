@@ -131,9 +131,7 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       order_info: orderInfo,
     });
 
-    const embed_data = {
-      redirecturl: `http://localhost:3300/payment/success?orderId=${orderId}`,
-    };
+    const embed_data = {};
 
     const order: Record<string, any> = {
       app_id: ZALO_PAY.app_id,

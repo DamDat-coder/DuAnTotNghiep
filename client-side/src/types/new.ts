@@ -33,3 +33,11 @@ export interface NewsPayload {
   news_image?: string[];
   published_at?: Date;
 }
+
+export interface NewsProduct {
+  id: string;
+  img: string;
+  newsCategory: string;
+  name: string;
+  benefit?: string;
+}

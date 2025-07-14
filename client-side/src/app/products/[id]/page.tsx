@@ -5,7 +5,7 @@ import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductImageSwiper from "@/components/Detail/ProductImageSwiper";
 import ProductActions from "@/components/Detail/ProductActions";
 import ProductDetailsSection from "@/components/Detail/ProductDetailsSection";
-import ProductSection from "@/components/Home/ProductSection";
+import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { Star } from "lucide-react";
 import DesktopImageGalleryWrapper from "@/components/Detail/DesktopImageGalleryWrapper";
 import { Toaster } from "react-hot-toast";

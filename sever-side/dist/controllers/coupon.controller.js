@@ -102,6 +102,7 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             title: "Mã giảm giá mới vừa được xuất bản!",
             message: `Mã "${code}" hiện đã có hiệu lực từ ngày ${new Date(startDate).toLocaleDateString("vi-VN")}.`,
             type: "coupon",
+            link: `/coupons`,
             isRead: false,
         });
         res.status(201).json({ message: "Tạo mã giảm giá thành công", data: newCoupon });

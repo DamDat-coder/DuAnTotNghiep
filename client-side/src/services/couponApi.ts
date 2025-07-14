@@ -131,7 +131,12 @@ export async function validateCoupon(
 ): Promise<{
   success: boolean;
   message?: string;
-  data?: { id: string; discountValue: number; discountType: string };
+  data?: {
+    id: string;
+    discountValue: number;
+    discountType: string;
+    code: string;
+  };
 }> {
   try {
     const url = `${API_BASE_URL}/coupons?search=${encodeURIComponent(
@@ -175,6 +180,7 @@ export async function validateCoupon(
         id: coupon._id,
         discountValue: coupon.discountValue,
         discountType: coupon.discountType,
+        code: coupon.code,
       },
     };
   } catch (error: any) {
@@ -241,5 +247,45 @@ export async function fetchCouponById(id: string): Promise<Coupon> {
   } catch (error) {
     console.error("Error fetching coupon by ID:", error);
     throw error;
+  }
+}
+
+export async function fetchCouponByCode(code: string): Promise<Coupon> {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append("search", code);
+    const url = `${API_BASE_URL}/coupons?${queryParams.toString()}`;
+    console.log("Fetching coupon by code:", url); // Debug URL
+
+    const res = await fetchWithAuth<{ data: Coupon[] }>(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+
+    if (!res.data || !Array.isArray(res.data)) {
+      console.error("Invalid response structure:", res);
+      throw new Error("Dữ liệu trả về không đúng định dạng.");
+    }
+
+    const coupon = res.data.find(
+      (c) => c.code.toLowerCase() === code.toLowerCase()
+    );
+
+    console.log("Coupon API response:", coupon);
+    if (!coupon) {
+      throw new Error("Không tìm thấy mã giảm giá.");
+    }
+
+    return coupon;
+  } catch (error: any) {
+    console.error("Lỗi khi tìm mã giảm giá theo code:", {
+      message: error.message,
+      stack: error.stack,
+      code,
+    });
+    throw new Error(
+      `Lỗi khi tìm mã giảm giá: ${error.message || "Unknown error"}`
+    );
   }
 }

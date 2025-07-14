@@ -113,6 +113,7 @@ export const createCoupon = async (req: Request, res: Response) => {
       title: "Mã giảm giá mới vừa được xuất bản!",
       message: `Mã "${code}" hiện đã có hiệu lực từ ngày ${new Date(startDate).toLocaleDateString("vi-VN")}.`,
       type: "coupon",
+      link: `/coupons`,
       isRead: false,
     });
 

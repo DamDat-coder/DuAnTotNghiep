@@ -101,10 +101,7 @@ export default function FavoriteTab() {
                 price * (1 - discountPercent / 100)
               );
 
-              const productImage =
-                product.images && product.images.length > 0
-                  ? `/product/img/${product.images[0]}`
-                  : "/placeholder.jpg";
+              const productImage = product.images[0];
               const productName = product.name || "Sản phẩm không tên";
               const categoryName =
                 product.category?.name || "Danh mục không xác định";

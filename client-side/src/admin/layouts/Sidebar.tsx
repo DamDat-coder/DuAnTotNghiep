@@ -50,8 +50,8 @@ const sidebarItems: SidebarItem[] = [
     iconActive: "/admin/sidebar/sale_active.svg",
   },
   {
-    label: "Bình luận",
-    href: "/admin/comments",
+    label: "Đánh giá",
+    href: "/admin/reviews",
     icon: "/admin/sidebar/comment.svg",
     iconActive: "/admin/sidebar/comment_active.svg",
   },

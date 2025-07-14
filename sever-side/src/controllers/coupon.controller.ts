@@ -1,17 +1,18 @@
-import { Request, Response } from 'express';
+import { Request, Response } from "express";
 import Coupon from "../models/coupon.model";
 import NotificationModel from "../models/notification.model";
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 // Lấy tất cả coupon
 export const getAllCoupons = async (req: Request, res: Response) => {
   try {
-    const {
-      isActive,
-      search,
-      page = "1",
-      limit = "10"
-    } = req.query;
+    const { isActive, search, page = "1", limit = "10" } = req.query;
+
+    await Coupon.updateMany(
+      { is_active: true, expiry: { $lt: new Date() } },
+      { $set: { is_active: false } }
+    );
+
     const filter: any = {};
 
     if (isActive !== undefined) {
@@ -54,16 +55,16 @@ export const getAllCoupons = async (req: Request, res: Response) => {
 export const getCouponById = async (req: Request, res: Response) => {
   try {
     const coupon = await Coupon.findById(req.params.id)
-      .populate('applicableCategories', 'name')
-      .populate('applicableProducts', 'name');
+      .populate("applicableCategories", "name")
+      .populate("applicableProducts", "name");
 
     if (!coupon) {
-      return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' });
+      return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
     }
 
     res.status(200).json(coupon);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+    res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
@@ -87,7 +88,7 @@ export const createCoupon = async (req: Request, res: Response) => {
 
     const existing = await Coupon.findOne({ code });
     if (existing) {
-      return res.status(400).json({ message: 'Mã giảm giá đã tồn tại' });
+      return res.status(400).json({ message: "Mã giảm giá đã tồn tại" });
     }
 
     const newCoupon = new Coupon({
@@ -102,8 +103,14 @@ export const createCoupon = async (req: Request, res: Response) => {
       usageLimit: usageLimit ?? null,
       usedCount: 0,
       is_active: is_active ?? true,
-      applicableCategories: applicableCategories?.map((id: string) => new mongoose.Types.ObjectId(id)) ?? [],
-      applicableProducts: applicableProducts?.map((id: string) => new mongoose.Types.ObjectId(id)) ?? [],
+      applicableCategories:
+        applicableCategories?.map(
+          (id: string) => new mongoose.Types.ObjectId(id)
+        ) ?? [],
+      applicableProducts:
+        applicableProducts?.map(
+          (id: string) => new mongoose.Types.ObjectId(id)
+        ) ?? [],
     });
 
     await newCoupon.save();
@@ -111,13 +118,17 @@ export const createCoupon = async (req: Request, res: Response) => {
     await NotificationModel.create({
       userId: null,
       title: "Mã giảm giá mới vừa được xuất bản!",
-      message: `Mã "${code}" hiện đã có hiệu lực từ ngày ${new Date(startDate).toLocaleDateString("vi-VN")}.`,
+      message: `Mã "${code}" hiện đã có hiệu lực từ ngày ${new Date(
+        startDate
+      ).toLocaleDateString("vi-VN")}.`,
       type: "coupon",
       link: `/coupons`,
       isRead: false,
     });
 
-    res.status(201).json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
+    res
+      .status(201)
+      .json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
   } catch (error) {
     console.error("Error creating coupon:", error);
     res.status(500).json({ message: "Lỗi server", error });
@@ -144,7 +155,7 @@ export const updateCoupon = async (req: Request, res: Response) => {
 
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) {
-      return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' });
+      return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
     }
 
     coupon.code = code ?? coupon.code;
@@ -158,27 +169,41 @@ export const updateCoupon = async (req: Request, res: Response) => {
     coupon.usageLimit = usageLimit ?? coupon.usageLimit;
     coupon.is_active = is_active ?? coupon.is_active;
     coupon.applicableCategories =
-      applicableCategories?.map((id: string) => new mongoose.Types.ObjectId(id)) ?? coupon.applicableCategories;
+      applicableCategories?.map(
+        (id: string) => new mongoose.Types.ObjectId(id)
+      ) ?? coupon.applicableCategories;
     coupon.applicableProducts =
-      applicableProducts?.map((id: string) => new mongoose.Types.ObjectId(id)) ?? coupon.applicableProducts;
+      applicableProducts?.map(
+        (id: string) => new mongoose.Types.ObjectId(id)
+      ) ?? coupon.applicableProducts;
 
     await coupon.save();
-    res.status(200).json({ message: 'Cập nhật thành công', data: coupon });
+    res.status(200).json({ message: "Cập nhật thành công", data: coupon });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+    res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
-// Xoá coupon
-export const deleteCoupon = async (req: Request, res: Response) => {
+// Ẩn coupon
+export const hideCoupon = async (req: Request, res: Response) => {
   try {
-    const deleted = await Coupon.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: 'Không tìm thấy mã giảm giá để xoá' });
+    const coupon = await Coupon.findById(req.params.id);
+
+    if (!coupon) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy mã giảm giá để ẩn" });
     }
 
-    res.status(200).json({ message: 'Xoá mã giảm giá thành công' });
+    if (!coupon.is_active) {
+      return res.status(400).json({ message: "Mã giảm giá đã bị ẩn trước đó" });
+    }
+
+    coupon.is_active = false;
+    await coupon.save();
+
+    res.status(200).json({ message: "Đã ẩn mã giảm giá thành công" });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+    res.status(500).json({ message: "Lỗi server", error });
   }
 };

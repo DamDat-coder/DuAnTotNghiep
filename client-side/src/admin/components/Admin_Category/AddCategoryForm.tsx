@@ -14,6 +14,16 @@ interface AddCategoryFormProps {
   onClose?: () => void;
 }
 
+// Hàm lọc loại bỏ "Bài Viết" (cả children nếu có)
+function filterOutBaiViet(nodes: Category[]): Category[] {
+  return nodes
+    .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
+    .map((cat) => ({
+      ...cat,
+      children: cat.children ? filterOutBaiViet(cat.children) : [],
+    }));
+}
+
 export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -39,7 +49,8 @@ export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
               children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
             }));
         }
-        setAllCategories(normalizeCats(cats));
+        // Normalize + lọc "Bài Viết"
+        setAllCategories(filterOutBaiViet(normalizeCats(cats)));
       } catch (err) {
         setError("Không thể tải danh mục cha.");
       } finally {
@@ -103,12 +114,11 @@ export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
     );
   }
 
+  // Giao diện như EditCategoryForm
   return (
-    <div>
-      <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b rounded-t-2xl">
-        <h2 className="text-[20px] font-bold">Thêm danh mục</h2>
-      </div>
-      <form onSubmit={handleSubmit} className="p-6 pt-4 flex flex-col gap-5">
+    <div className="w-full bg-white rounded-2xl p-8 mx-auto shadow-md">
+      <h2 className="text-[20px] font-bold mb-6">Thêm danh mục</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Tên danh mục */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-gray-700">

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ICategory } from "@/types/category";
 import { addProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
+import { toast } from "react-hot-toast"; // Thêm toast
 
 const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL"];
 const colorOptions = [
@@ -16,6 +17,32 @@ const colorOptions = [
   { value: "Nâu", label: "Nâu" },
   { value: "Hồng", label: "Hồng" },
 ];
+
+// Loại bỏ "Bài Viết" và children của nó (đệ quy)
+function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
+  return nodes
+    .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
+    .map((cat) => ({
+      ...cat,
+      children: cat.children ? filterOutBaiViet(cat.children) : [],
+    }));
+}
+
+// Hiển thị dropdown phân cấp
+function renderCategoryOptions(
+  nodes: ICategory[],
+  depth = 0,
+  path = ""
+): JSX.Element[] {
+  return nodes.flatMap((cat) => [
+    <option key={path + (cat._id || cat.id)} value={cat._id || cat.id}>
+      {"—".repeat(depth)} {cat.name}
+    </option>,
+    ...(cat.children
+      ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id || cat.id))
+      : []),
+  ]);
+}
 
 export default function AddProductForm({ onClose, onAdded }) {
   const [formData, setFormData] = useState({
@@ -41,7 +68,7 @@ export default function AddProductForm({ onClose, onAdded }) {
     const loadCategories = async () => {
       try {
         const result = await fetchCategoryTree();
-        setCategories(result);
+        setCategories(filterOutBaiViet(result));
       } catch (err) {
         setCategories([]);
       }
@@ -71,7 +98,6 @@ export default function AddProductForm({ onClose, onAdded }) {
     }
   };
 
-  // Chỉnh variant trực tiếp trong bảng
   const handleVariantTableChange = (idx: number, field: string, value: any) => {
     setFormData((prev: any) => {
       const variants = [...prev.variants];
@@ -80,7 +106,6 @@ export default function AddProductForm({ onClose, onAdded }) {
     });
   };
 
-  // Xóa variant
   const handleRemoveVariant = (idx: number) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -88,7 +113,6 @@ export default function AddProductForm({ onClose, onAdded }) {
     }));
   };
 
-  // Thay đổi trường variant mới
   const handleNewVariantChange = (field: string, value: any) => {
     setNewVariant((prev: any) => ({
       ...prev,
@@ -96,7 +120,6 @@ export default function AddProductForm({ onClose, onAdded }) {
     }));
   };
 
-  // Thêm biến thể mới vào list
   const handleAddVariant = () => {
     if (
       !newVariant.size ||
@@ -130,7 +153,6 @@ export default function AddProductForm({ onClose, onAdded }) {
     });
   };
 
-  // Hiển thị ảnh
   const renderImagesBlock = () => {
     const previews =
       formData.images && formData.images.length > 0
@@ -239,10 +261,12 @@ export default function AddProductForm({ onClose, onAdded }) {
         images: formData.images,
       });
       if (!res) throw new Error("Không thể thêm sản phẩm.");
+      toast.success("Thêm sản phẩm thành công!"); // Thông báo thành công
       if (onAdded) onAdded();
       onClose?.();
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi thêm sản phẩm.");
+      toast.error(err.message || "Có lỗi xảy ra khi thêm sản phẩm."); // Thông báo lỗi
     }
     setIsSubmitting(false);
   };
@@ -324,11 +348,7 @@ export default function AddProductForm({ onClose, onAdded }) {
               className="w-full border rounded p-3"
             >
               <option value="">Chọn danh mục</option>
-              {categories.map((cat) => (
-                <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                  {cat.name}
-                </option>
-              ))}
+              {renderCategoryOptions(categories)}
             </select>
           </div>
           {/* Bảng variant */}

@@ -15,6 +15,16 @@ function paginate<T>(array: T[], page: number, perPage: number): T[] {
   return array.slice(start, start + perPage);
 }
 
+// Hàm lọc loại bỏ "Bài Viết" ra khỏi danh sách (đệ quy)
+function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
+  return nodes
+    .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
+    .map((cat) => ({
+      ...cat,
+      children: cat.children ? filterOutBaiViet(cat.children) : [],
+    }));
+}
+
 const CategoryBody: React.FC<CategoryBodyProps> = ({
   categories,
   idToNameMap,
@@ -52,6 +62,9 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
   const toggleExpand = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+
+  // Dùng danh sách đã được lọc bỏ "Bài Viết"
+  const filteredCategories = filterOutBaiViet(categories);
 
   const renderTreeRows = (nodes: ICategory[], depth = 0, parentKey = "") =>
     nodes.map((cat) => {
@@ -131,9 +144,9 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
       );
     });
 
-  const total = categories.length;
+  const total = filteredCategories.length;
   const totalPages = Math.ceil(total / perPage);
-  const paginatedRoot = paginate(categories, page, perPage);
+  const paginatedRoot = paginate(filteredCategories, page, perPage);
 
   useEffect(() => {
     if (page > totalPages) setPage(1);

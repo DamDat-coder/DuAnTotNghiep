@@ -365,7 +365,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const productId = req.params.id;
-    const product: Partial<IProduct> = req.body;
+    const product = req.body as any;
 
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
@@ -378,7 +378,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Nếu có file mới → xoá ảnh cũ + upload mới
+    // Xử lý ảnh nếu có upload mới
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       if (existingProduct.image && existingProduct.image.length > 0) {
         for (const img of existingProduct.image) {
@@ -392,7 +392,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
           }
         }
       }
-
       const imageUrls: string[] = [];
       for (const file of req.files as Express.Multer.File[]) {
         const result = await new Promise<UploadApiResponse>((resolve, reject) => {
@@ -407,13 +406,12 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         });
         imageUrls.push(result.secure_url);
       }
-
       product.image = imageUrls;
     } else {
       product.image = existingProduct.image;
     }
 
-    // Parse lại variants nếu là string
+    // Parse lại variants nếu là string (gửi từ FormData)
     if (typeof product.variants === 'string') {
       try {
         product.variants = JSON.parse(product.variants);
@@ -423,20 +421,33 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       }
     }
 
-    // Cập nhật danh mục nếu có
-    if (product.category?._id) {
-      const category = await categoryModel.findById(product.category._id).lean();
+    // === XỬ LÝ DANH MỤC CHUẨN ===
+    let newCategory = existingProduct.category;
+    const categoryId = product.categoryId || product['category._id'];
+    if (categoryId) {
+      const category = await categoryModel.findById(categoryId).lean();
       if (!category) {
         res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
         return;
       }
-      product.category.name = category.name;
-    } else {
-      product.category = existingProduct.category;
+      newCategory = {
+        _id: category._id,
+        name: category.name,
+      };
     }
+    // Xoá trường thừa liên quan category để tránh lỗi conflict
+    delete product.category;
+    delete product.categoryId;
+    delete product['category._id'];
+
+    // Build object update chuẩn
+    const updateData: any = {
+      ...product,
+      category: newCategory,
+    };
 
     const updatedProduct = await productModel
-      .findByIdAndUpdate(productId, { $set: product }, { new: true, runValidators: true })
+      .findByIdAndUpdate(productId, { $set: updateData }, { new: true, runValidators: true })
       .lean();
 
     if (!updatedProduct) {
@@ -448,7 +459,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       ...updatedProduct,
       category: {
         _id: updatedProduct.category._id,
-name: updatedProduct.category.name,
+        name: updatedProduct.category.name,
       },
     };
 
@@ -458,25 +469,25 @@ name: updatedProduct.category.name,
       data: result,
     });
 
-    // Gửi thông báo đến người dùng (sản phẩm cập nhật lại)
-    setImmediate(() => {
-      (async () => {
-        try {
-          const users = await UserModel.find({}).select("_id").lean();
-          const notifications = users.map((user) => ({
-            userId: user._id,
-            title: "Sản phẩm vừa được cập nhật!",
-            message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
-            type: "product",
-            isRead: false,
-          }));
-          await NotificationModel.insertMany(notifications);
-          console.log("Thông báo cập nhật sản phẩm đã gửi.");
-        } catch (error) {
-          console.error("❌ Gửi thông báo thất bại:", error);
-        }
-      })();
-    });
+    // Gửi thông báo cho user
+    // setImmediate(() => {
+    //   (async () => {
+    //     try {
+    //       const users = await UserModel.find({}).select("_id").lean();
+    //       const notifications = users.map((user) => ({
+    //         userId: user._id,
+    //         title: "Sản phẩm vừa được cập nhật!",
+    //         message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
+    //         type: "product",
+    //         isRead: false,
+    //       }));
+    //       await NotificationModel.insertMany(notifications);
+    //       console.log("Thông báo cập nhật sản phẩm đã gửi.");
+    //     } catch (error) {
+    //       console.error("❌ Gửi thông báo thất bại:", error);
+    //     }
+    //   })();
+    // });
 
   } catch (error: any) {
     console.error('Lỗi khi cập nhật sản phẩm:', error);

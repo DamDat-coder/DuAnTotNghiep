@@ -280,3 +280,24 @@ export const getNewsDetail = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+// Lấy tất cả tin tức (không phân trang, không lọc)
+export const getAllNews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const news = await newsModel
+      .find({})
+      .sort({ createdAt: -1 })
+      .populate("user_id", "name email")
+      .populate("category_id", "name");
+
+    res.status(200).json({
+      status: "success",
+      data: news,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: "error",
+      message: error.message || "Lỗi server khi lấy danh sách tin tức",
+    });
+  }
+};

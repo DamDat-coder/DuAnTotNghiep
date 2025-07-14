@@ -75,7 +75,7 @@ export default function CategoryTableWrapper({
   }, [totalPage]);
 
   return (
-    <div className="space-y-4 mt-6 relative">
+    <div className="mt-6 relative">
       <CategoryControlBar
         onSearchChange={setSearch}
         onAddCategory={() => setShowAddPopup(true)}
@@ -133,19 +133,19 @@ export default function CategoryTableWrapper({
           </tbody>
         </table>
       </div>
-      {showAddPopup && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4">
-          <div className="bg-white rounded-2xl shadow-lg max-w-xl w-full relative animate-fadeIn">
-            <button
-              onClick={() => setShowAddPopup(false)}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-            <AddCategoryForm onClose={() => setShowAddPopup(false)} />
+        {showAddPopup && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-xl p-6 max-w-xl w-full relative shadow-lg animate-fadeIn">
+              <button
+                onClick={() => setShowAddPopup(false)}
+                className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-2xl"
+              >
+                &times;
+              </button>
+              <AddCategoryForm onClose={() => setShowAddPopup(false)} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

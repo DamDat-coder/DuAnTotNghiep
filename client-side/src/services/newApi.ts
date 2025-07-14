@@ -20,7 +20,30 @@ interface ApiResponse<T> {
   pagination?: PaginationInfo;
 }
 
-// Hàm lấy danh sách tin tức (không cần token)
+// ✅ Hàm lấy tất cả tin tức (không phân trang, không token)
+export const getAllNews = async (): Promise<ApiResponse<News[]>> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/news/all`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    const result = await res.json();
+
+    if (!result.data || !Array.isArray(result.data)) {
+      throw new Error(result.message || "Không thể lấy danh sách tin tức");
+    }
+
+    return result;
+  } catch (error: any) {
+    throw new Error(`Lỗi khi lấy danh sách tất cả tin tức: ${error.message}`);
+  }
+};
+
+// Hàm lấy danh sách tin tức (có phân trang, tìm kiếm...)
 export const getNewsList = async (
   page: number = 1,
   limit: number = 10,
@@ -33,13 +56,10 @@ export const getNewsList = async (
       page: page.toString(),
       limit: limit.toString(),
       ...(category_id && { category_id }),
-      ...(isPublished !== undefined
-        ? { isPublished: isPublished.toString() }
-        : {}),
+      ...(isPublished !== undefined ? { isPublished: isPublished.toString() } : {}),
       ...(search ? { search } : {}),
     });
 
-    // Debug: log URL
     const url = `${API_BASE_URL}/news?${params}`;
     console.log("URL gọi API:", url);
 
@@ -62,7 +82,7 @@ export const getNewsList = async (
   }
 };
 
-// Hàm lấy chi tiết tin tức (không cần token)
+// Hàm lấy chi tiết tin tức
 export const getNewsDetail = async (id: string): Promise<News> => {
   try {
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
@@ -85,12 +105,11 @@ export const getNewsDetail = async (id: string): Promise<News> => {
   }
 };
 
+// Tạo tin tức
 export const createNews = async (payload: NewsPayload): Promise<News> => {
   try {
     if (!isBrowser()) {
-      throw new Error(
-        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
-      );
+      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
     }
 
     const token = localStorage.getItem("accessToken");
@@ -136,26 +155,23 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
       throw new Error(result.message || "Không thể tạo tin tức");
     }
 
-    // Ánh xạ _id thành id nếu backend trả về _id
     return {
       ...result.data,
-      id: result.data._id || result.data.id, // Sử dụng _id nếu id không tồn tại
+      id: result.data._id || result.data.id,
     };
   } catch (error: any) {
     throw new Error(`Lỗi khi tạo tin tức: ${error.message}`);
   }
 };
 
-// Hàm cập nhật tin tức (cần token)
+// Cập nhật tin tức
 export const updateNews = async (
   id: string,
   payload: Partial<NewsPayload>
 ): Promise<News> => {
   try {
     if (!isBrowser()) {
-      throw new Error(
-        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
-      );
+      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
     }
 
     const token = localStorage.getItem("accessToken");
@@ -167,18 +183,14 @@ export const updateNews = async (
     if (payload.title) formData.append("title", payload.title);
     if (payload.content) formData.append("content", payload.content);
     if (payload.slug) formData.append("slug", payload.slug);
-    if (payload.category_id)
-      formData.append("category_id", payload.category_id._id);
+    if (payload.category_id) formData.append("category_id", payload.category_id._id);
     if (payload.tags) formData.append("tags", payload.tags.join(","));
     if (payload.is_published !== undefined) {
       formData.append("is_published", payload.is_published ? "true" : "false");
     }
     if (payload.thumbnail) {
-      formData.append("thumbnail", payload.thumbnail); // Gửi URL
-      console.log("Debug: Thumbnail URL appended", payload.thumbnail);
+      formData.append("thumbnail", payload.thumbnail);
     }
-
-    console.log("Debug: FormData being sent:", Object.fromEntries(formData));
 
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
       `${API_BASE_URL}/news/${id}`,
@@ -186,13 +198,10 @@ export const updateNews = async (
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
-          // Không thêm Content-Type để fetch tự xử lý multipart/form-data
         },
         body: formData,
       }
     );
-
-    console.log("Debug: API Response:", result); // Thêm log phản hồi từ API
 
     if (!result.data) {
       throw new Error(result.message || "Không thể cập nhật tin tức");
@@ -200,18 +209,15 @@ export const updateNews = async (
 
     return result.data;
   } catch (error: any) {
-    console.error("Debug: Error updating news:", error);
     throw new Error(`Lỗi khi cập nhật tin tức: ${error.message}`);
   }
 };
 
-// Hàm xóa tin tức (cần token và quyền admin)
+// Xóa tin tức
 export const deleteNews = async (id: string): Promise<void> => {
   try {
     if (!isBrowser()) {
-      throw new Error(
-        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
-      );
+      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
     }
 
     const token = localStorage.getItem("accessToken");

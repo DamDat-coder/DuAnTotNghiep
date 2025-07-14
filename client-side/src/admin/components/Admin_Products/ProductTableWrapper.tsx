@@ -5,6 +5,7 @@ import ProductBody from "./ProductBody";
 import Image from "next/image";
 import { Pagination } from "../ui/Panigation";
 import { lockProduct, deleteProduct } from "@/services/productApi";
+import { toast } from "react-hot-toast";
 
 export default function ProductTableWrapper({
   products,
@@ -12,7 +13,6 @@ export default function ProductTableWrapper({
   onEditProduct,
   onDeleteProduct,
 }) {
-  // Sử dụng đúng is_active, KHÔNG dùng active nữa!
   const [localProducts, setLocalProducts] = useState(
     Array.isArray(products) ? products : []
   );
@@ -26,7 +26,6 @@ export default function ProductTableWrapper({
     setLocalProducts(Array.isArray(products) ? products : []);
   }, [products]);
 
-  // Filter + search
   const filtered = localProducts.filter((p) => {
     const matchName = p.name?.toLowerCase().includes(search.toLowerCase());
     const matchFilter =
@@ -41,36 +40,50 @@ export default function ProductTableWrapper({
   const totalPage = Math.ceil(filtered.length / pageSize);
   const pageData = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // XỬ LÝ XOÁ SẢN PHẨM
+  // Xử lý xóa sản phẩm
   const handleDeleteProduct = async (id) => {
     try {
       await deleteProduct(id);
       setLocalProducts((prev) => prev.filter((p) => (p.id || p._id) !== id));
       if (onDeleteProduct) onDeleteProduct(id);
-      // Có thể toast ở đây nếu muốn
+      toast.success("Đã xóa sản phẩm!");
     } catch (error) {
-      // Có thể toast lỗi ở đây nếu muốn
+      toast.error(error.message || "Lỗi khi xóa sản phẩm!");
     }
   };
 
-  // XỬ LÝ SỬA SẢN PHẨM
+  // Xử lý sửa sản phẩm
   const handleEditProduct = (prod) => {
     if (onEditProduct) onEditProduct(prod);
-    // Hoặc mở modal form edit tại đây nếu cần
   };
 
-  // XỬ LÝ BẬT/TẮT TRẠNG THÁI
+  // Xử lý bật/tắt trạng thái (từ ProductBody gọi sang)
   const handleToggleStatus = async (id, currentActive) => {
+    // Optimistic update
+    setLocalProducts((prev) =>
+      prev.map((p) =>
+        (p.id || p._id) === id ? { ...p, is_active: !currentActive } : p
+      )
+    );
     try {
       await lockProduct(id, !currentActive);
+      if (!currentActive) {
+        toast.success("Sản phẩm đã được mở khóa và hiển thị!");
+      } else {
+        toast.success("Đã khóa sản phẩm thành công!");
+      }
+    } catch (error) {
+      // Revert nếu fail
       setLocalProducts((prev) =>
         prev.map((p) =>
-          (p.id || p._id) === id ? { ...p, is_active: !currentActive } : p
+          (p.id || p._id) === id ? { ...p, is_active: currentActive } : p
         )
       );
-      // Có thể toast ở đây nếu muốn
-    } catch (error) {
-      // Có thể toast lỗi ở đây nếu muốn
+      toast.error(
+        !currentActive
+          ? "Lỗi khi mở khóa sản phẩm!"
+          : "Lỗi khi khóa sản phẩm!"
+      );
     }
   };
 

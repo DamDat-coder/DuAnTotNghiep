@@ -25,6 +25,8 @@ export interface IUser extends Document {
   refreshToken?: string | null;
   wishlist: Types.ObjectId[];
   googleId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const addressSchema = new Schema<IAddress>(

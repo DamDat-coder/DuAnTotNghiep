@@ -1,5 +1,6 @@
 import { PaymentInfo } from "@/types/payment";
 import { API_BASE_URL, fetchWithAuth } from "./api";
+import { IOrder } from "@/types/order";
 // Initiate payment
 // Khởi tạo thanh toán
 export async function initiatePayment(
@@ -166,4 +167,56 @@ export async function fetchOrdersUser(
     console.error("Error fetching my orders:", error);
     throw error;
   }
+}
+
+// Lấy 5 sản phẩm bán chạy nhất
+export function getBestSellingProductsFromOrders(
+  orders: IOrder[],
+  time: "week" | "month" = "week",
+  limit = 5
+) {
+  const now = new Date();
+
+  const filteredOrders = orders.filter(order => {
+    if (!order.createdAt) return false;
+    const createdAt = new Date(order.createdAt);
+    const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    return time === "week" ? diffDays <= 7 : diffDays <= 30;
+  });
+
+  const productMap = new Map<string, {
+    id: string;
+    name: string;
+    image: string;
+    color: string;
+    size: string;
+    price: number;
+    sold: number;
+  }>();
+
+  filteredOrders.forEach(order => {
+    order.items.forEach(item => {
+      const key = `${item.productId}-${item.color}-${item.size}`; // nếu cần phân biệt theo biến thể
+
+      if (!productMap.has(key)) {
+        productMap.set(key, {
+          id: item.productId,
+          name: item.name,
+          image: item.image,
+          color: item.color,
+          size: item.size,
+          price: item.price,
+          sold: item.quantity,
+        });
+      } else {
+        const existing = productMap.get(key)!;
+        existing.sold += item.quantity;
+        productMap.set(key, existing);
+      }
+    });
+  });
+
+  const sorted = Array.from(productMap.values()).sort((a, b) => b.sold - a.sold);
+
+  return sorted.slice(0, limit);
 }

@@ -66,7 +66,7 @@ export default function OrderTableWrapper({
   }
 
   return (
-    <div className="space-y-4 mt-6">
+    <div className="mt-6">
       <OrderControlBar
         onFilterChange={setFilter}
         onSearchChange={setSearch}

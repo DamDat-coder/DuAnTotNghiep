@@ -38,6 +38,16 @@ function findNodeById(nodes: Category[], id: string): Category | null {
   return null;
 }
 
+// Hàm lọc loại bỏ các node có tên "Bài Viết" (và children của nó)
+function filterOutBaiViet(nodes: Category[]): Category[] {
+  return nodes
+    .filter(cat => cat.name?.trim().toLowerCase() !== "bài viết")
+    .map(cat => ({
+      ...cat,
+      children: cat.children ? filterOutBaiViet(cat.children) : [],
+    }));
+}
+
 export default function EditCategoryForm({
   category: initialCategory,
   onClose,
@@ -73,7 +83,8 @@ export default function EditCategoryForm({
               children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
             }));
         }
-        const normalized = normalizeCats(cats);
+        // Normalize + lọc "Bài Viết"
+        const normalized = filterOutBaiViet(normalizeCats(cats));
         setAllCategories(normalized);
 
         // Tìm node hiện tại và lấy all id con/cháu
@@ -116,7 +127,7 @@ export default function EditCategoryForm({
     }
   };
 
-  // renderOptions mới, exclude các id bị cấm (chính nó & all con/cháu)
+  // renderOptions mới, exclude các id bị cấm (chính nó & all con/cháu & các node đã là "Bài Viết")
   const renderOptions = (
     nodes: Category[],
     depth = 0,

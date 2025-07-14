@@ -6,6 +6,7 @@ import { IProduct } from "@/types/product";
 import { ICategory } from "@/types/category";
 import { editProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
+import { toast } from "react-hot-toast";
 
 interface EditProductFormProps {
   product: IProduct;
@@ -24,17 +25,37 @@ const colorOptions = [
   { value: "Hồng", label: "Hồng" },
 ];
 
+function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
+  return nodes
+    .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
+    .map((cat) => ({
+      ...cat,
+      children: cat.children ? filterOutBaiViet(cat.children) : [],
+    }));
+}
+
+function renderCategoryOptions(
+  nodes: ICategory[],
+  depth = 0,
+  path = ""
+): JSX.Element[] {
+  return nodes.flatMap((cat) => [
+    <option key={path + (cat._id || cat.id)} value={cat._id || cat.id}>
+      {"—".repeat(depth)} {cat.name}
+    </option>,
+    ...(cat.children ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id || cat.id)) : []),
+  ]);
+}
+
 export default function EditProductForm({
   product,
   productId,
   onClose,
 }: EditProductFormProps) {
-  // Đảm bảo images là url cloudinary (string[]) nếu chưa upload mới
   const [formData, setFormData] = useState<any>({
     ...product,
     name: product?.name || "",
     description: product?.description || "",
-    // categoryId chỉ để hiển thị/select, khi submit sẽ dùng để build object category chuẩn cho BE
     categoryId: product?.category?._id || "",
     variants: product?.variants
       ? product.variants.map((v: any) => ({ ...v }))
@@ -58,7 +79,7 @@ export default function EditProductForm({
     const loadCategories = async () => {
       try {
         const result = await fetchCategoryTree();
-        setCategories(result);
+        setCategories(filterOutBaiViet(result));
       } catch (err) {
         setCategories([]);
       }
@@ -66,13 +87,11 @@ export default function EditProductForm({
     loadCategories();
   }, []);
 
-  // File input ref
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleImageUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Xử lý thay đổi input (kể cả upload ảnh mới)
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -90,7 +109,6 @@ export default function EditProductForm({
     }
   };
 
-  // Variant cũ (edit)
   const handleVariantChange = (idx: number, field: string, value: any) => {
     setFormData((prev: any) => {
       const variants = [...prev.variants];
@@ -99,7 +117,6 @@ export default function EditProductForm({
     });
   };
 
-  // Xoá variant
   const handleRemoveVariant = (idx: number) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -107,7 +124,6 @@ export default function EditProductForm({
     }));
   };
 
-  // Variant mới (UI)
   const handleNewVariantChange = (field: string, value: any) => {
     setNewVariant((prev: any) => ({
       ...prev,
@@ -115,7 +131,6 @@ export default function EditProductForm({
     }));
   };
 
-  // Thêm variant mới vào danh sách
   const handleAddVariant = () => {
     if (
       !newVariant.size ||
@@ -149,7 +164,6 @@ export default function EditProductForm({
     });
   };
 
-  // --- RENDER BLOCK ẢNH ---
   const renderImagesBlock = () => {
     const previews =
       formData.images && formData.images.length > 0
@@ -228,12 +242,12 @@ export default function EditProductForm({
     );
   };
 
-  // --- HANDLE SUBMIT ---
+  // PHẦN HANDLE SUBMIT QUAN TRỌNG!
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validate
+    // Validate như cũ...
     if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
     if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
     if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
@@ -247,7 +261,6 @@ export default function EditProductForm({
         return setError("Phần trăm giảm giá phải từ 0 đến 100.");
     }
     if (formData.images && formData.images.length > 0 && typeof formData.images[0] !== "string") {
-      // Chỉ kiểm tra file nếu là File[]
       const validTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let img of formData.images) {
         if (!validTypes.includes(img.type)) return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
@@ -257,12 +270,11 @@ export default function EditProductForm({
 
     setIsSubmitting(true);
     try {
-      // Chỉ gửi "category" chuẩn BE, không gửi categoryId, không gửi category cũ!
       const submitData = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
-        category: { _id: formData.categoryId }, // CHỈ GỬI ĐÚNG FIELD NÀY
+        categoryId: formData.categoryId, // <-- CHỈ gửi trường này
         variants: formData.variants.map((v: any) => ({
           price: Number(v.price),
           color: v.color,
@@ -275,9 +287,11 @@ export default function EditProductForm({
 
       const res = await editProduct(productId, submitData);
       if (!res) throw new Error("Không thể cập nhật sản phẩm.");
+      toast.success("Cập nhật sản phẩm thành công!");
       onClose();
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
+      toast.error(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
     }
     setIsSubmitting(false);
   };
@@ -363,11 +377,7 @@ export default function EditProductForm({
             className="w-full border rounded p-3"
           >
             <option value="">Chọn danh mục</option>
-            {categories.map((cat) => (
-              <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                {cat.name}
-              </option>
-            ))}
+            {renderCategoryOptions(categories)}
           </select>
         </div>
         {/* Biến thể sản phẩm */}

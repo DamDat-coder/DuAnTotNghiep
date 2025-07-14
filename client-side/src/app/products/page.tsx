@@ -11,29 +11,18 @@ import ProductGrid from "@/components/Products/ProductGrid";
 import NewsSection from "@/components/Products/NewsSection";
 import { IProduct } from "@/types/product";
 import { SortOption } from "@/types/filter";
-import { fetchCouponByCode, fetchCouponById } from "@/services/couponApi";
+import { fetchCouponByCode } from "@/services/couponApi";
 import { Toaster } from "react-hot-toast";
-
-interface News {
-  id: string;
-  img: string;
-  newsCategory: string;
-  name: string;
-  benefit?: string;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-}
+import { NewsProduct } from "@/types/new";
+import { CategoryProduct } from "@/types/category";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [products, setProducts] = useState<IProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
-  const [newsItems, setNewsItems] = useState<News[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [newsItems, setNewsItems] = useState<NewsProduct[]>([]);
+  const [categories, setCategories] = useState<CategoryProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,7 +111,7 @@ export default function ProductsPage() {
               }))
               .map((cat) => JSON.stringify(cat))
           )
-        ).map((cat) => JSON.parse(cat) as Category);
+        ).map((cat) => JSON.parse(cat) as CategoryProduct);
 
         uniqueCategories.sort((a, b) => a._id.localeCompare(b._id));
         setCategories(uniqueCategories);

@@ -36,3 +36,8 @@ export interface ICategoryNews {
   _id: string;
   name: string;
 }
+
+export interface CategoryProduct {
+  _id: string;
+  name: string;
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Container from "@/components/Core/Container";
 import { CartMobile, CartDesktop } from "@/components/Cart";
-import ProductSection from "@/components/Home/ProductSection";
+import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
 import { fetchProducts } from "@/services/productApi";

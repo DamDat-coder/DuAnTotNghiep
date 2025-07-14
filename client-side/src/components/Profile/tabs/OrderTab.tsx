@@ -6,12 +6,12 @@ import CancelOrderModal from "../modals/CancelOrderModal";
 import { IOrder } from "@/types/order";
 import { fetchOrdersUser } from "@/services/orderApi";
 import { fetchUser } from "@/services/userApi";
+import { useCancelOrder } from "@/hooks/useCancelOrder";
 
 interface OrderTabProps {
   setActiveTab: (tab: string) => void;
   setSelectedOrder: (order: IOrder) => void;
 }
-
 
 export default function Orders({
   setActiveTab,
@@ -22,8 +22,15 @@ export default function Orders({
   const [selectedStatus, setSelectedStatus] = useState<
     "all" | IOrder["status"]
   >("all");
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+
+  const {
+    showCancelModal,
+    orderToCancel,
+    isCancelling,
+    handleCancelOrder,
+    openCancelModal,
+    closeCancelModal,
+  } = useCancelOrder(orders, setOrders);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -36,6 +43,7 @@ export default function Orders({
         const response = await fetchOrdersUser(user.id);
         if (response?.data) {
           setOrders(response.data);
+          console.log("Fetched orders:", response.data);
         } else {
           setOrders([]);
         }
@@ -94,8 +102,8 @@ export default function Orders({
         );
       default:
         return (
-          <span className={`${baseStyle} bg-gray-300 text-black`}>
-            Không xác định
+          <span className={`${baseStyle} bg-[#FDECEA] text-[#D93025]`}>
+            Đã hủy
           </span>
         );
     }
@@ -119,7 +127,6 @@ export default function Orders({
       <Toaster position="top-right" />
       <h1 className="text-xl font-semibold mb-6">ĐƠN HÀNG</h1>
 
-      {/* Tabs */}
       <div className="flex gap-6 border-b border-[#E0E0E0]">
         {statusTabs.map((tab) => (
           <button
@@ -130,7 +137,9 @@ export default function Orders({
                   ? "font-bold border-b-2 border-black"
                   : "font-normal hover:text-gray-800"
               }`}
-            onClick={() => setSelectedStatus(tab.value as typeof selectedStatus)}
+            onClick={() =>
+              setSelectedStatus(tab.value as typeof selectedStatus)
+            }
           >
             {tab.label}
           </button>
@@ -145,7 +154,7 @@ export default function Orders({
           {filteredOrders.map((order) => (
             <div
               key={order._id}
-              className="w-[894px] bg-white rounded-[8px] shadow-custom-order p-6"
+              className="w-full bg-white rounded-[8px] shadow-custom-order p-6"
             >
               <div className="flex justify-between items-start mb-[16px]">
                 <p className="font-bold text-sm text-black">
@@ -182,16 +191,15 @@ export default function Orders({
                 >
                   Xem chi tiết
                 </button>
-                {(order.status === "pending" ||
-                  order.status === "confirmed") && (
+                {(order.status === "pending") && (
                   <button
-                    onClick={() => {
-                      setOrderToCancel(order._id);
-                      setShowCancelModal(true);
-                    }}
+                    onClick={() => openCancelModal(order._id)}
                     className="w-[82px] h-[42px] bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600"
+                    disabled={isCancelling}
                   >
-                    Hủy
+                    {isCancelling && orderToCancel === order._id
+                      ? "Đang hủy..."
+                      : "Hủy"}
                   </button>
                 )}
               </div>
@@ -203,15 +211,8 @@ export default function Orders({
       {showCancelModal && orderToCancel && (
         <CancelOrderModal
           orderId={orderToCancel}
-          onClose={() => {
-            setShowCancelModal(false);
-            setOrderToCancel(null);
-          }}
-          onConfirm={() => {
-            setShowCancelModal(false);
-            setOrderToCancel(null);
-            toast.success("Đã gửi yêu cầu hủy đơn hàng.");
-          }}
+          onClose={closeCancelModal}
+          onConfirm={() => handleCancelOrder(orderToCancel)}
         />
       )}
     </div>

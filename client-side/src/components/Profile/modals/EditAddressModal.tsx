@@ -1,35 +1,74 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useAddressData } from "@/hooks/useAddressData";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { addAddress } from "@/services/userApi";
+import { updateAddress } from "@/services/userApi";
 import { Address } from "@/types/auth";
 
 interface Props {
+  address: Address;
   onClose: () => void;
-  onAdd: (newAddress: Address) => void;
+  onEdit: (updatedAddress: Address) => void;
 }
 
-export default function AddAddressModal({ onClose, onAdd }: Props) {
+export default function EditAddressModal({ address, onClose, onEdit }: Props) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    street: "",
-    province: "",
-    district: "",
-    ward: "",
-    isDefaultAddress: false,
+    street: address.street,
+    province: address.province,
+    district: address.district,
+    ward: address.ward,
+    isDefaultAddress: address.is_default,
   });
   const {
     provinces,
     districts,
     wards,
+    provinceCode,
+    districtCode,
+    wardCode,
     setProvinceCode,
     setDistrictCode,
     setWardCode,
+    isLoadingProvinces,
+    isLoadingDistricts,
+    isLoadingWards,
   } = useAddressData();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Khởi tạo provinceCode, districtCode, wardCode dựa trên địa chỉ
+  useEffect(() => {
+    if (!isLoadingProvinces && provinces.length > 0) {
+      const selectedProvince = provinces.find(
+        (p) => p.name === address.province
+      );
+      if (selectedProvince) {
+        setProvinceCode(selectedProvince.code);
+      }
+    }
+  }, [provinces, isLoadingProvinces, setProvinceCode, address.province]);
+
+  useEffect(() => {
+    if (!isLoadingDistricts && districts.length > 0) {
+      const selectedDistrict = districts.find(
+        (d) => d.name === address.district
+      );
+      if (selectedDistrict) {
+        setDistrictCode(selectedDistrict.code);
+      }
+    }
+  }, [districts, isLoadingDistricts, setDistrictCode, address.district]);
+
+  useEffect(() => {
+    if (!isLoadingWards && wards.length > 0) {
+      const selectedWard = wards.find((w) => w.name === address.ward);
+      if (selectedWard) {
+        setWardCode(selectedWard.code);
+      }
+    }
+  }, [wards, isLoadingWards, setWardCode, address.ward]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -60,7 +99,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user?.id) {
-      toast.error("Vui lòng đăng nhập để thêm địa chỉ.");
+      toast.error("Vui lòng đăng nhập để chỉnh sửa địa chỉ.");
       return;
     }
 
@@ -92,11 +131,11 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
     };
 
     try {
-      const result = await addAddress(user.id, addressData);
+      const result = await updateAddress(user.id, address._id, addressData);
       if (result) {
-        toast.success("Thêm địa chỉ thành công!");
-        onAdd({
-          _id: result.id || new Date().toISOString(), // Sử dụng _id từ API hoặc tạo tạm
+        toast.success("Chỉnh sửa địa chỉ thành công!");
+        onEdit({
+          _id: address._id,
           street: addressData.street,
           ward: addressData.ward,
           district: addressData.district,
@@ -105,10 +144,10 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
         });
         onClose();
       } else {
-        toast.error("Thêm địa chỉ thất bại. Vui lòng thử lại.");
+        toast.error("Chỉnh sửa địa chỉ thất bại. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      toast.error(error.message || "Có lỗi xảy ra khi thêm địa chỉ.");
+      toast.error(error.message || "Có lỗi xảy ra khi chỉnh sửa địa chỉ.");
     } finally {
       setIsSubmitting(false);
     }
@@ -117,12 +156,22 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
   const isFormValid =
     formData.street && formData.province && formData.district && formData.ward;
 
+  if (isLoadingProvinces || isLoadingDistricts || isLoadingWards) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
+        <div className="bg-white w-[536px] rounded-lg shadow-lg p-[48px] relative">
+          <div>Đang tải dữ liệu địa chỉ...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
       <div className="bg-white w-[536px] rounded-lg shadow-lg p-[48px] relative">
         <div className="flex justify-between items-center mb-[24px]">
           <h2 className="text-[24px] font-bold text-black leading-[36px]">
-            Thêm địa chỉ
+            Chỉnh sửa địa chỉ
           </h2>
           <button
             onClick={onClose}
@@ -242,7 +291,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
                 : "bg-black hover:bg-opacity-90"
             }`}
           >
-            {isSubmitting ? "Đang lưu..." : "Thêm địa chỉ"}
+            {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </form>
       </div>

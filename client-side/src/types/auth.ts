@@ -14,7 +14,6 @@ export interface IUser {
   name: string;
   phone: string | null;
   role: "user" | "admin";
-
   is_active: boolean;
   addresses?: Address[];
   wishlist?: IProduct[];
@@ -79,11 +78,21 @@ export interface UpdateUserData {
   addresses?: IUser["addresses"];
 }
 
+export interface ResetPasswordData {
+  oldPassword: string;
+  password: string;
+  confirmPassword?: string;
+}
+
 export interface ForgotPasswordResponse {
   success: boolean;
   message: string;
 }
 
+export interface UserReview {
+  _id: string;
+  name: string;
+}
 export interface ResetPasswordResponse {
   success: boolean;
   message: string;

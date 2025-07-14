@@ -20,11 +20,12 @@ export interface Coupon {
   updatedAt: string;
 }
 export interface CouponResponse {
-  data: Coupon[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  _id: string;
+  code: string;
+  usageLimit: number | null;
+  usedCount: number;
+  description: string;
+  startDate: string;
+  endDate: string;
+  is_active: boolean;
 }

@@ -122,11 +122,7 @@ export default function ProductGrid({
       <div className="w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">
           <Image
-            src={
-              product.images[0]
-                ? `/product/img/${product.images[0]}`
-                : "/placeholder.jpg"
-            }
+            src={product.images[0]}
             alt={product.name || "Sản phẩm"}
             width={363}
             height={363}

@@ -11,6 +11,7 @@ interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenRegister: () => void;
+  onOpenForgotPassword: () => void;
   initialFormData?: {
     name: string;
     email: string;
@@ -24,6 +25,7 @@ export default function LoginPopup({
   onClose,
   onOpenRegister,
   initialFormData,
+  onOpenForgotPassword,
 }: LoginPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -262,9 +264,13 @@ export default function LoginPopup({
                   />
                   Duy trì đăng nhập
                 </label>
-                <a href="#" className="text-black hover:underline">
+                <button
+                  type="button"
+                  onClick={onOpenForgotPassword}
+                  className="text-black hover:underline"
+                >
                   Quên mật khẩu?
-                </a>
+                </button>
               </div>
             </div>
 

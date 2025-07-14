@@ -14,7 +14,6 @@ export interface IUser {
   name: string;
   phone: string | null;
   role: "user" | "admin";
-
   is_active: boolean;
   addresses?: Address[];
   wishlist?: IProduct[];
@@ -50,6 +49,15 @@ export type AuthContextType = {
   addWishlist: (productId: string) => void;
   removeWishlist: (productId: string) => void;
   wishlist: IProduct[];
+  refreshUser: () => Promise<void>;
+  setRegisterFormData: React.Dispatch<
+    React.SetStateAction<{
+      name: string;
+      email: string;
+      password: string;
+      confirmPassword: string;
+    } | null>
+  >;
 };
 
 export interface UserData {
@@ -68,4 +76,26 @@ export interface UpdateUserData {
   phone?: string;
   role?: string;
   addresses?: IUser["addresses"];
+}
+
+export interface ResetPasswordData {
+  oldPassword: string;
+  password: string;
+  confirmPassword?: string;
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface UserReview {
+  _id: string;
+  name: string;
+}
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+  user: IUser;
+  accessToken: string;
 }

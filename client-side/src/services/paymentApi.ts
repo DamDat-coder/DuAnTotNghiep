@@ -72,7 +72,7 @@ export const createZaloPayPayment = async (
       );
     }
 
-    const data = await response.json(); // { paymentUrl, paymentId }
+    const data = await response.json();
     return data;
   } catch (error: any) {
     console.error("Lỗi khi gọi API ZaloPay:", error);

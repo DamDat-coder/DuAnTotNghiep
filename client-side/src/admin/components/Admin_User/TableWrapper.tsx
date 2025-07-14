@@ -9,6 +9,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   users: IUser[];
+  filter: string;
+  search: string;
+  setFilter: React.Dispatch<React.SetStateAction<string>>;
+  setSearch: React.Dispatch<React.SetStateAction<string>>;
+  onUpdate: React.Dispatch<React.SetStateAction<IUser[]>>;
   children?: (filtered: IUser[]) => React.ReactNode; // Made children optional
 }
 
@@ -35,13 +40,14 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
           10,
           filter === "all" ? undefined : filter
         );
-        console.log("fetchAllUsersAdmin response:", data);
+        // console.log("fetchAllUsersAdmin response:", data);
         if (data && Array.isArray(data.users)) {
           setUsers(data.users);
         } else {
           console.error("No valid users data received");
           setUsers([]);
         }
+        console.log("Fetched users:", data.users);
       } catch (error) {
         console.error("Failed to fetch users:", error);
         setUsers([]);
@@ -105,6 +111,19 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
     );
   }
 
+  useEffect(() => {
+    const handler = (event: MouseEvent) => {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
+        setActionDropdownId(null);
+      }
+    };
+    window.addEventListener("mousedown", handler);
+    return () => window.removeEventListener("mousedown", handler);
+  }, []);
+
   const onStatusChange = async (userId: string, isActive: boolean) => {
     const targetUser = users.find((u) => u.id === userId);
     if (user?.role === "admin" && !isActive && targetUser?.role === "admin") {
@@ -127,7 +146,7 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
                 Hủy
               </button>
               <button
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
                 onClick={async () => {
                   toast.dismiss(t.id);
                   await performStatusChange(userId, isActive);

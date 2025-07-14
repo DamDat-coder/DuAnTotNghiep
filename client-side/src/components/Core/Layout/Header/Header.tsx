@@ -20,7 +20,8 @@ import Link from "next/link";
 import NotificationIcon from "./Notification";
 import { debounce } from "lodash";
 import { useActiveTab } from "@/contexts/ActiveTabContext";
-
+import ForgotPasswordPopup from "../Popups/ForgotPasswordPopup";
+import ResetPasswordPopup from "../Popups/ResetPasswordPopup";
 interface HeaderProps {
   title: string;
   setActiveTab: (tab: string) => void;
@@ -41,7 +42,10 @@ export default function Header({ title }: HeaderProps) {
   const inputRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const lookupButtonRef = useRef<HTMLButtonElement>(null);
-  const { setActiveTab } = useActiveTab(); // Get setActiveTab from context
+  const { setActiveTab } = useActiveTab();
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetToken, setResetToken] = useState("");
 
   const handleFavoriteClick = () => {
     setActiveTab("Yêu thích"); // Update active tab to "Yêu thích"
@@ -63,9 +67,9 @@ export default function Header({ title }: HeaderProps) {
     if (isLookupOpen && defaultSuggestions.length === 0) {
       const loadDefaultSuggestions = async () => {
         try {
-          const response = await fetchProducts({ sort: "best-seller" });
-          const suggestions = response.products
-            .map((product) => product.name)
+          const response = await fetchProducts({});
+          const suggestions = response.data
+            .map((product: any) => product.name)
             .slice(0, 5);
           setDefaultSuggestions(suggestions);
         } catch (error) {
@@ -158,7 +162,7 @@ export default function Header({ title }: HeaderProps) {
                 height={40}
                 className="h-auto w-auto"
                 draggable={false}
-                loading="lazy"
+                priority
               />
             </Link>
             <div className="flex-1 flex justify-center mr-[6.9375rem]">
@@ -344,7 +348,12 @@ export default function Header({ title }: HeaderProps) {
           setIsRegisterOpen(true);
         }}
         initialFormData={registerFormData}
+        onOpenForgotPassword={() => {
+          setIsLoginOpen(false);
+          setIsForgotOpen(true);
+        }}
       />
+
       <RegisterPopup
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
@@ -352,6 +361,20 @@ export default function Header({ title }: HeaderProps) {
           setIsRegisterOpen(false);
           setIsLoginOpen(true);
         }}
+      />
+      <ForgotPasswordPopup
+        isOpen={isForgotOpen}
+        onClose={() => setIsForgotOpen(false)}
+        onOpenLogin={() => {
+          setIsForgotOpen(false);
+          setIsLoginOpen(true);
+        }}
+      />
+
+      <ResetPasswordPopup
+        isOpen={isResetOpen}
+        onClose={() => setIsResetOpen(false)}
+        token={resetToken}
       />
     </>
   );

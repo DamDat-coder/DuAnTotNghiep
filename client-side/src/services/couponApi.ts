@@ -1,61 +1,48 @@
 import { Coupon, CouponResponse } from "@/types/coupon";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 
-export async function fetchCoupons(params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
-}): Promise<CouponResponse> {
+export async function fetchCoupons(
+  page?: number,
+  limit?: number,
+  search?: string,
+  is_active?: boolean,
+  code?: string
+): Promise<{
+  coupons: Coupon[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
   try {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append("page", params.page.toString());
-    if (params.limit) queryParams.append("limit", params.limit.toString());
-    if (params.search) queryParams.append("search", params.search);
-    if (params.isActive !== undefined)
-      queryParams.append("isActive", params.isActive.toString());
-
-    const url = `${API_BASE_URL}/coupons?${queryParams.toString()}`;
-    console.log("Fetching coupons from URL:", url); // Debug URL
-
-    const res = await fetchWithAuth<CouponResponse>(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
+    const queryParams = new URLSearchParams({
+      page: (page ?? 1).toString(),
+      limit: (limit ?? 10).toString(),
+      ...(search && { search }),
+      ...(code && { code }),
+      ...(typeof is_active !== "undefined" && {
+        is_active: is_active.toString(),
+      }),
     });
 
-    console.log("API Response:", res); // Debug API response
-
-    // Handle array response
-    if (Array.isArray(res)) {
-      return {
-        data: res,
-        pagination: {
-          total: res.length,
-          page: params.page || 1,
-          limit: params.limit || 10,
-          totalPages: Math.ceil(res.length / (params.limit || 10)),
-        },
-      };
-    }
-
-    // Handle object response
-    if (!res.data || !Array.isArray(res.data) || !res.pagination) {
-      console.error("Invalid response structure:", res);
-      throw new Error("Dữ liệu trả về không đúng định dạng");
-    }
-
-    return res;
-  } catch (error: any) {
-    console.error("Lỗi khi lấy danh sách mã giảm giá:", {
-      message: error.message,
-      stack: error.stack,
-      params,
-    });
-    throw new Error(
-      `Lỗi khi lấy danh sách mã giảm giá: ${error.message || "Unknown error"}`
+    const res = await fetchWithAuth<any>(
+      `${API_BASE_URL}/coupons?${queryParams.toString()}`,
+      {
+        cache: "no-store",
+      }
     );
+    // console.log("API raw response:", res);
+    return {
+      coupons: res.coupons || res.data || [],
+      total: res.total || res.pagination?.total || 0,
+      totalPages: res.totalPages || res.pagination?.totalPages || 0,
+      currentPage: res.currentPage || res.pagination?.page || (page ?? 1),
+    };
+  } catch (error: any) {
+    console.error("Lỗi khi lấy danh sách mã khuyến mãi:", error);
+    return { coupons: [], total: 0, totalPages: 0, currentPage: page ?? 1 };
   }
 }
+
 export async function createCoupon(coupon: Partial<Coupon>): Promise<Coupon> {
   try {
     const res = await fetchWithAuth<Coupon>(`${API_BASE_URL}/coupons`, {
@@ -63,32 +50,10 @@ export async function createCoupon(coupon: Partial<Coupon>): Promise<Coupon> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(coupon),
     });
-
-    console.log("Mã giảm giá đã được tạo thành công:", res);
     return res;
   } catch (error) {
-    console.error("Lỗi khi tạo mã giảm giá:", error);
+    console.error("Error creating coupon:", error);
     throw error;
-  }
-}
-
-// ✅ Cập nhật trạng thái ẩn/hiện mã giảm giá
-export async function updateCouponStatus(
-  id: string,
-  active: boolean
-): Promise<void> {
-  try {
-    await fetchWithAuth<{ message: string }>(
-      `${API_BASE_URL}/coupons/${id}/status`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active }),
-      }
-    );
-  } catch (error: any) {
-    console.error("Lỗi khi cập nhật trạng thái mã giảm giá:", error);
-    throw new Error(error.message || "Cập nhật trạng thái thất bại");
   }
 }
 
@@ -112,15 +77,29 @@ export async function updateCoupon(
 }
 
 // ✅ Xoá mã giảm giá
-export async function deleteCoupon(id: string): Promise<void> {
+export async function hideCoupon(id: string): Promise<void> {
   try {
     await fetchWithAuth<{ message: string }>(`${API_BASE_URL}/coupons/${id}`, {
-      method: "DELETE",
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: false }),
     });
   } catch (error: any) {
-    console.error(`Lỗi khi xoá coupon với ID ${id}:`, error);
-    throw new Error(error.message || "Xoá mã giảm giá thất bại");
+    console.error(`Lỗi khi ẩn coupon với ID ${id}:`, error);
+    throw new Error(error.message || "Ẩn mã giảm giá thất bại");
+  }
+}
+
+export async function enableCoupon(id: string): Promise<void> {
+  try {
+    await fetchWithAuth<{ message: string }>(`${API_BASE_URL}/coupons/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: true }),
+    });
+  } catch (error: any) {
+    console.error(`Lỗi khi mở khóa coupon với ID ${id}:`, error);
+    throw new Error(error.message || "Mở khóa mã giảm giá thất bại");
   }
 }
 
@@ -131,21 +110,27 @@ export async function validateCoupon(
 ): Promise<{
   success: boolean;
   message?: string;
-  data?: { id: string; discountValue: number; discountType: string };
+  data?: {
+    id: string;
+    discountValue: number;
+    discountType: string;
+    code: string;
+  };
 }> {
   try {
-    const response = await fetchWithAuth<Coupon[]>(`${API_BASE_URL}/coupons`, {
+    const url = `${API_BASE_URL}/coupons?search=${encodeURIComponent(
+      code
+    )}&isActive=true&limit=1`;
+    const response = await fetchWithAuth<{ data: Coupon[] }>(url, {
       cache: "no-store",
     });
 
-    const coupon = response.find((c) => c.code === code);
+    const coupon = response.data?.find(
+      (c) => c.code.toLowerCase() === code.toLowerCase()
+    );
+
     if (!coupon) {
       return { success: false, message: "Mã giảm giá không hợp lệ." };
-    }
-
-    // Kiểm tra điều kiện áp dụng mã giảm giá
-    if (!coupon.is_active) {
-      return { success: false, message: "Mã giảm giá không còn hoạt động." };
     }
 
     const now = new Date();
@@ -174,6 +159,7 @@ export async function validateCoupon(
         id: coupon._id,
         discountValue: coupon.discountValue,
         discountType: coupon.discountType,
+        code: coupon.code,
       },
     };
   } catch (error: any) {
@@ -186,11 +172,40 @@ export async function validateCoupon(
 }
 
 // Lấy tất cả mã giảm giá
-export async function fetchAllCoupons(): Promise<Coupon[]> {
+export async function fetchAllCoupons(
+  isActive?: boolean,
+  search?: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<{
+  data: Coupon[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}> {
   try {
-    const response = await fetchWithAuth<Coupon[]>(`${API_BASE_URL}/coupons`, {
+    const queryParams = new URLSearchParams();
+    if (isActive !== undefined)
+      queryParams.append("isActive", String(isActive));
+    if (search) queryParams.append("search", search);
+    queryParams.append("page", String(page));
+    queryParams.append("limit", String(limit));
+
+    const response = await fetchWithAuth<{
+      data: Coupon[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>(`${API_BASE_URL}/coupons?${queryParams.toString()}`, {
       cache: "no-store",
     });
+
     return response;
   } catch (error) {
     console.error("Error fetching coupons:", error);
@@ -211,5 +226,45 @@ export async function fetchCouponById(id: string): Promise<Coupon> {
   } catch (error) {
     console.error("Error fetching coupon by ID:", error);
     throw error;
+  }
+}
+
+export async function fetchCouponByCode(code: string): Promise<Coupon> {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append("search", code);
+    const url = `${API_BASE_URL}/coupons?${queryParams.toString()}`;
+    console.log("Fetching coupon by code:", url); // Debug URL
+
+    const res = await fetchWithAuth<{ data: Coupon[] }>(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+
+    if (!res.data || !Array.isArray(res.data)) {
+      console.error("Invalid response structure:", res);
+      throw new Error("Dữ liệu trả về không đúng định dạng.");
+    }
+
+    const coupon = res.data.find(
+      (c) => c.code.toLowerCase() === code.toLowerCase()
+    );
+
+    console.log("Coupon API response:", coupon);
+    if (!coupon) {
+      throw new Error("Không tìm thấy mã giảm giá.");
+    }
+
+    return coupon;
+  } catch (error: any) {
+    console.error("Lỗi khi tìm mã giảm giá theo code:", {
+      message: error.message,
+      stack: error.stack,
+      code,
+    });
+    throw new Error(
+      `Lỗi khi tìm mã giảm giá: ${error.message || "Unknown error"}`
+    );
   }
 }

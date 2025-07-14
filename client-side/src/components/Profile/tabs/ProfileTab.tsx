@@ -41,7 +41,7 @@ export default function ProfileTab() {
       setPhone(user.phone || "");
       const defaultAddress = user.addresses?.find((addr) => addr.is_default);
 
-      console.log(defaultAddress);
+      // console.log(defaultAddress);
 
       if (defaultAddress) {
         setStreet(defaultAddress.street);
@@ -50,7 +50,7 @@ export default function ProfileTab() {
         setProvince(defaultAddress.province);
         setIsDefaultAddress(defaultAddress.is_default);
       }
-      console.log("Địa chỉ của người dùng:", user.addresses);
+      // console.log("Địa chỉ của người dùng:", user.addresses);
     }
   }, [user]);
 
@@ -162,13 +162,14 @@ export default function ProfileTab() {
                 className="text-black underline hover:text-gray-700 text-sm"
                 onClick={() => setShowPhoneModal(true)}
               >
-                {phone ? "Sửa" : "Thêm"}
+                {phone ? "Đổi số điện thoại" : "Thêm số điện thoại"}
               </button>
             </div>
           </div>
 
           {showPhoneModal && (
             <PhoneVerifyModal
+              userId={user?.id || ""}
               onClose={() => setShowPhoneModal(false)}
               initialPhone={phone}
               onVerified={(newPhone) => {

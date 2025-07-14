@@ -126,6 +126,7 @@ export const createOrder = async (req: Request, res: Response) => {
       message: `Đơn hàng #${order._id} đã được xác nhận. Cảm ơn bạn đã mua sắm tại Shop4Real!`,
       type: "order",
       isRead: false,
+      link: `/profile?tab=order/${order._id}`,
     });
 
     // Gửi thông báo cho tất cả admin
@@ -263,6 +264,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
       type: "order",
       isRead: false,
+      link: `/profile?tab=order/${order._id}`,
     });
 
     res.status(200).json({

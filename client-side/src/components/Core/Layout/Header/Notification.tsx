@@ -8,26 +8,49 @@ import {
   markAllNotificationsAsRead,
 } from "@/services/notificationApi";
 import { INotification } from "@/types/notification";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "lucide-react";
 
 export default function Notification() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   // Lấy thông báo khi mount
   useEffect(() => {
+    if (!user) return; // ✅ Chưa đăng nhập => không gọi API
+
     async function loadNotifications() {
       try {
         const response = await fetchNotifications();
-        setNotifications(response.data);
-        setHasUnread(response.data.some((n) => !n.is_read));
-      } catch (error) {
+        const notificationsWithLink = response.data.map((n: any) => ({
+          ...n,
+          link: n.link ?? "#",
+        }));
+        setNotifications(notificationsWithLink);
+        setHasUnread(notificationsWithLink.some((n: any) => !n.is_read));
+      } catch (error: any) {
+        // ✅ Nếu lỗi từ token (403), đừng hiện toast
+        if (
+          error?.status === 403 ||
+          error?.message?.includes("Token không hợp lệ")
+        ) {
+          console.warn(
+            "Token không hợp lệ hoặc hết hạn, bỏ qua loadNotifications"
+          );
+          return;
+        }
+
+        // ✅ Các lỗi khác mới hiện toast
+        console.error("Lỗi khi tải thông báo:", error);
         toast.error("Không thể tải thông báo");
       }
     }
+
     loadNotifications();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     setHasUnread(notifications.some((n) => !n.is_read));
@@ -93,7 +116,7 @@ export default function Notification() {
       </button>
 
       {isOpen && (
-        <div className="absolute font-description right-0 mt-2 w-[320px] bg-white shadow-xl rounded-lg z-50 overflow-y-scroll scroll-hidden">
+        <div className="absolute font-description right-0 mt-2 w-[320px] h-[18.75rem] overflow-y-scroll bg-white shadow-xl z-50 scroll-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <span className="font-semibold text-sm text-black">Thông báo</span>
             <button
@@ -120,8 +143,10 @@ export default function Notification() {
 
           <ul className="divide-y">
             {notifications.length === 0 ? (
-              <li className="px-4 py-3 text-center text-gray-500">
-                Không có thông báo
+              <li className="px-4 py-3 text-center text-gray-500 text-sm">
+                {!user
+                  ? "Vui lòng đăng nhập để nhận thông báo"
+                  : "Không có thông báo"}
               </li>
             ) : (
               notifications.map((notification) => {
@@ -160,24 +185,27 @@ export default function Notification() {
                 };
 
                 return (
-                  <li
-                    key={notification._id}
-                    onClick={handleSingleClick}
-                    className={`flex gap-2 px-4 py-3 ${
-                      !notification.is_read ? "bg-[#ECF8FF]" : ""
-                    }`}
-                  >
-                    <Image src={iconSrc} alt="icon" width={20} height={20} />
-                    <div className="">
-                      <p className="font-bold text-sm">{notification.title}</p>
-                      <p className="text-sm text-gray-600">
-                        {notification.message}
-                        <span className="ml-1 text-[13px] text-gray-400">
-                          {formatTimeAgo(notification.createdAt)}
-                        </span>
-                      </p>
-                    </div>
-                  </li>
+                  <a key={notification._id} href={notification.link}>
+                    <li
+                      onClick={handleSingleClick}
+                      className={`flex gap-2 px-4 py-3 cursor-pointer ${
+                        !notification.is_read ? "bg-[#ECF8FF]" : ""
+                      }`}
+                    >
+                      <Image src={iconSrc} alt="icon" width={20} height={20} />
+                      <div className="">
+                        <p className="font-bold text-sm">
+                          {notification.title}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {notification.message}
+                          <span className="ml-1 text-[13px] text-gray-400">
+                            {formatTimeAgo(notification.createdAt)}
+                          </span>
+                        </p>
+                      </div>
+                    </li>
+                  </a>
                 );
               })
             )}

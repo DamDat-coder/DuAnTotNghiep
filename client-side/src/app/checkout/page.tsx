@@ -13,6 +13,7 @@ import { Toaster } from "react-hot-toast";
 
 export default function Checkout() {
   const {
+    isLoading,
     orderItems,
     subtotal,
     discountCode,
@@ -37,7 +38,23 @@ export default function Checkout() {
     setIsAddressPopupOpen,
     handleSelectAddress,
   } = useCheckout();
-
+  if (isLoading) {
+    return (
+      <div className="py-8">
+        <Container>
+          <div className="sk-chase">
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+            <div className="sk-chase-dot"></div>
+          </div>
+          <div className="text-center p-3">Đang tải</div>
+        </Container>
+      </div>
+    );
+  }
   return (
     <div className="py-8">
       <Container>
@@ -74,6 +91,7 @@ export default function Checkout() {
                   selectedAddress={selectedAddress}
                   setIsAddressPopupOpen={setIsAddressPopupOpen}
                   addresses={addresses}
+                  isLoading={isLoading}
                 />
                 <ShippingMethod
                   shippingMethod={shippingMethod}
@@ -118,6 +136,7 @@ export default function Checkout() {
                     selectedAddress={selectedAddress}
                     setIsAddressPopupOpen={setIsAddressPopupOpen}
                     addresses={addresses}
+                    isLoading={isLoading}
                   />
                   <ShippingMethod
                     shippingMethod={shippingMethod}
@@ -169,6 +188,7 @@ export default function Checkout() {
               selectedAddress={selectedAddress}
               onSelect={handleSelectAddress}
               onClose={() => setIsAddressPopupOpen(false)}
+              isLoading={isLoading}
             />
           )}
         </div>

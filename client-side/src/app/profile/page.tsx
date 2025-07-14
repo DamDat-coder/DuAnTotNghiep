@@ -12,6 +12,9 @@ import OrderTab from "@/components/Profile/tabs/OrderTab";
 import OrderDetail from "@/components/Profile/tabs/OrderDetail";
 import { useEffect, useState } from "react";
 import { useActiveTab } from "@/contexts/ActiveTabContext";
+import { fetchUserById } from "@/services/userApi";
+import { Address } from "@/types/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const tabMap: Record<string, string> = {
   profile: "Hồ sơ",
@@ -49,7 +52,13 @@ export default function ProfilePage() {
       case "Hồ sơ":
         return <ProfileTab />;
       case "Địa chỉ":
-        return <AddressTab />;
+        return (
+          <AddressTab
+            selectedAddress={null}
+            onSelect={() => {}}
+            onClose={() => {}}
+          />
+        );
       case "Yêu thích":
         return <FavoriteTab />;
       case "Đơn hàng":

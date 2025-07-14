@@ -1,28 +1,45 @@
-import FeaturedSection from "@/components/Home/FeaturedSection";
-import ProductSection from "@/components/Home/ProductSection";
-import MemberBenefitsBanner from "@/components/Home/MemberBenefitsBanner";
+import FeaturedSection from "@/components/Home/FeatureSection/FeaturedSection";
+import ProductSection from "@/components/Home/ProductSection/ProductSection";
+import MemberBenefitsBanner from "@/components/Home/MemberBenefits/MemberBenefitsBanner";
 import Container from "@/components/Core/Container";
-import Banner from "@/components/Home/Banner";
+import Banner from "@/components/Home/Banner/Banner";
 import { fetchProducts } from "@/services/productApi";
 import { fetchFeaturedSection } from "@/services/featuredSectionApi";
 import { fetchMemberBenefits } from "@/services/memberBenefitApi";
+import { Toaster } from "react-hot-toast";
 import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
 
-async function getHomeData() {
+// Quy định kiểu dữ liệu
+type Product = IProduct;
+type FeaturedSectionType = IFeaturedProducts;
+type Benefit = IMemberBenefit;
+
+type HomeData = {
+  products: Product[];
+  featuredSection: FeaturedSectionType[];
+  benefits: Benefit[];
+  error: string | null;
+};
+
+// Lấy dữ liệu
+async function getHomeData(): Promise<HomeData> {
   try {
     const [productsData, featuredSection, benefits] = await Promise.all([
       fetchProducts({ sort_by: "newest" }),
       fetchFeaturedSection(),
       fetchMemberBenefits(),
     ]);
+
     return {
-      products: productsData.data || [],
+      products: Array.isArray(productsData?.data) ? productsData.data : [],
       featuredSection: featuredSection || [],
       benefits: benefits || [],
       error: null,
     };
   } catch (err) {
-    console.error("Lỗi khi tải dữ liệu trang chủ:", err);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Lỗi khi tải dữ liệu trang chủ:", err);
+    }
     return {
       products: [],
       featuredSection: [],
@@ -32,6 +49,7 @@ async function getHomeData() {
   }
 }
 
+// PAGE COMPONENT
 export default async function Home() {
   const { products, featuredSection, benefits, error } = await getHomeData();
 
@@ -44,7 +62,7 @@ export default async function Home() {
             <button
               onClick={() => window.location.reload()}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              aria-label="Thử lại"
+              aria-label="Thử lại tải dữ liệu"
             >
               Thử lại
             </button>
@@ -60,7 +78,9 @@ export default async function Home() {
       role="main"
       aria-label="Trang chủ"
     >
-      {/* Banner đầu */}
+      <Toaster position="top-right" />
+
+      {/* Banner chính */}
       <Banner
         status="Vừa ra mắt"
         name="Áo khoác Gopcore Basic"
@@ -71,12 +91,16 @@ export default async function Home() {
       />
 
       <Container className="flex flex-col gap-[3.375rem] w-full">
-        {/* Nội dung chính */}
+        {/* Khu vực nổi bật */}
         <FeaturedSection featuredSection={featuredSection} />
+
+        {/* Sản phẩm mới */}
         <ProductSection products={products} />
+
+        {/* Quyền lợi thành viên */}
         <MemberBenefitsBanner benefits={benefits} />
 
-        {/* Banner cuối */}
+        {/* Banner phụ (desktop) */}
         <div className="hidden laptop:flex desktop:flex w-full flex-col flex-grow gap-[3.375rem]">
           <Banner
             title="Đừng Bỏ Lỡ"
@@ -89,6 +113,8 @@ export default async function Home() {
           />
         </div>
       </Container>
+
+      {/* Banner phụ (mobile) */}
       <div className="flex flex-col tablet:flex laptop:hidden desktop:hidden">
         <Banner
           title="Đừng Bỏ Lỡ"

@@ -14,22 +14,28 @@ export default function PaymentSuccess() {
   const dispatch = useCartDispatch(); // Di chuyển useCartDispatch ra cấp cao nhất
 
   useEffect(() => {
-    const paymentId = localStorage.getItem("pendingPaymentId"); // Lấy paymentId từ localStorage
+    const paymentId = localStorage.getItem("pendingPaymentId");
     const userId = localStorage.getItem("pendingUserId");
 
     const createOrderAfterPayment = async () => {
+      console.log("paymentId "+ paymentId + "userId " + userId);
+      
       if (!paymentId) {
         toast.error("Không tìm thấy paymentId.");
         router.push("/cart");
         return;
       }
 
-      if (!user || !user.id || user.id !== userId) {
+      if (!user || !user.id || user.id != userId) {
         toast.error("Vui lòng đăng nhập để tiếp tục.");
         return;
       }
 
       try {
+        // Gọi API createOrder với paymentId (7 ký tự) và userId
+        const orderResponse = await createOrder(paymentId, user.id);
+        console.log("Order created:", orderResponse); // Debug
+
         // Xóa thông tin pending từ localStorage
         localStorage.removeItem("pendingPaymentId");
         localStorage.removeItem("pendingUserId");

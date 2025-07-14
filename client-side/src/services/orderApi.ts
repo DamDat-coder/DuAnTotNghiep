@@ -1,5 +1,6 @@
 import { PaymentInfo } from "@/types/payment";
 import { API_BASE_URL, fetchWithAuth } from "./api";
+import { IOrder } from "@/types/order";
 // Initiate payment
 // Khởi tạo thanh toán
 export async function initiatePayment(
@@ -11,7 +12,7 @@ export async function initiatePayment(
 
     switch (paymentInfo.orderInfo.paymentMethod) {
       case "cod":
-        endpoint = "/payment/cod";
+        endpoint = "/payment/create-cod-payment";
         break;
       case "vnpay":
         endpoint = "/payment/create-vnpay-payment";
@@ -55,6 +56,7 @@ export async function createOrder(
         body: JSON.stringify({ paymentId, userId }),
       }
     );
+    console.log("Order API response:", res);
     return res;
   } catch (error: any) {
     console.error("Error creating order:", error);
@@ -140,12 +142,18 @@ export async function fetchMyOrders(userId: string): Promise<{ data: any[] }> {
 }
 
 // 7. Hủy đơn hàng (người dùng)
-export async function cancelOrder(orderId: string): Promise<void> {
+export async function cancelOrder(orderId: string): Promise<IOrder> {
   try {
-    await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/cancel`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/orders/${orderId}/cancel`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response as IOrder;
   } catch (error) {
     console.error("Error canceling order:", error);
     throw error;

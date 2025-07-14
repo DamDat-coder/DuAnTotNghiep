@@ -5,9 +5,10 @@ import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductImageSwiper from "@/components/Detail/ProductImageSwiper";
 import ProductActions from "@/components/Detail/ProductActions";
 import ProductDetailsSection from "@/components/Detail/ProductDetailsSection";
-import ProductSection from "@/components/Home/ProductSection";
+import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { Star } from "lucide-react";
 import DesktopImageGalleryWrapper from "@/components/Detail/DesktopImageGalleryWrapper";
+import { Toaster } from "react-hot-toast";
 
 interface ProductDetailProps {
   params: { id: string };
@@ -51,6 +52,7 @@ export default async function ProductDetail({ params }: ProductDetailProps) {
   return (
     <div className="min-h-screen pb-14">
       <Container>
+        <Toaster position="top-right" />
         <Breadcrumb />
 
         <div className="mt-4 flex flex-col tablet:flex-row tablet:gap-6 desktop:flex-row desktop:gap-6 laptop:flex-row laptop:gap-6 px-4">

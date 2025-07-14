@@ -79,27 +79,26 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         ? localStorage.getItem("accessToken")
         : null;
     if (!accessToken) {
-      alert("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
+      toast.error("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
       return;
     }
     if (!selectedColor) {
-      alert("Vui lòng chọn màu sắc!");
+      toast.error("Vui lòng chọn màu sắc!");
       return;
     }
     if (!selectedSize) {
-      alert("Vui lòng chọn kích thước!");
+      toast.error("Vui lòng chọn kích thước!");
       return;
     }
     if (quantity < 1) {
-      alert("Số lượng phải lớn hơn 0!");
+      toast.error("Số lượng phải lớn hơn 0!");
       return;
     }
     if (!selectedVariant || selectedVariant.stock < quantity) {
-      alert("Sản phẩm không đủ hàng!");
+      toast.error("Sản phẩm không đủ hàng!");
       return;
     }
 
-    // Tạo cartItem
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -110,12 +109,19 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       size: selectedSize,
       color: selectedColor,
       liked: false,
-      selected: false,
+      selected: true, // Đặt selected: true
     };
 
-    // Thêm vào giỏ hàng qua CartContext
     dispatch({ type: "add", item: cartItem });
-    alert("Bạn đã thêm vào giỏ hàng thành công!")
+    const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
+    const currentSelectedIds = JSON.parse(
+      localStorage.getItem("cartSelectedIds") || "[]"
+    );
+    localStorage.setItem(
+      "cartSelectedIds",
+      JSON.stringify([...currentSelectedIds, selectedId])
+    );
+    toast.success("Bạn đã thêm vào giỏ hàng thành công!");
     onClose();
   };
 
@@ -168,13 +174,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
 
                 {/* Hình ảnh sản phẩm */}
                 <Image
-                  src={`/product/img/${
-                    Array.isArray(product.images) && product.images.length > 0
-                      ? typeof product.images[0] === "string"
-                        ? product.images[0]
-                        : ""
-                      : ""
-                  }`}
+                  src={product.images[0]}
                   alt={product.name || "Sản phẩm"}
                   width={200}
                   height={200}
@@ -351,7 +351,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                       </button>
                     </div>
                     {selectedVariant && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-red-500 mt-1">
                         Còn {maxQuantity} sản phẩm
                       </p>
                     )}

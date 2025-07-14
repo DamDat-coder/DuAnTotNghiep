@@ -14,57 +14,43 @@ export default function DesktopImageGallery({
   productName,
 }: DesktopImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(images[0] || "");
-  const [isClickZoom, setIsClickZoom] = useState(false); // Zoom bằng click
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [showTooltip, setShowTooltip] = useState(true); // Tooltip hiển thị
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
   const imageRef = useRef<HTMLDivElement>(null);
 
-  // Tự động ẩn tooltip sau 3 giây hoặc khi zoom
-  useEffect(() => {
-    if (showTooltip && isClickZoom) {
-      setShowTooltip(false);
-    } else if (showTooltip) {
-      const timer = setTimeout(() => setShowTooltip(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showTooltip, isClickZoom]);
-
-  const handleImageClick = (image: string) => {
+  const handleThumbnailClick = (image: string) => {
     setSelectedImage(image);
-    setShowTooltip(true); // Hiển thị tooltip khi đổi ảnh
-    setIsClickZoom(false); // Tắt zoom khi đổi ảnh
+    setIsZoomed(false); // Reset zoom khi đổi ảnh
   };
 
   const handleMainImageClick = () => {
-    setIsClickZoom((prev) => !prev); // Toggle zoom bằng click
-    setShowTooltip(false); // Ẩn tooltip khi click
+    setIsZoomed((prev) => !prev);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imageRef.current || !isClickZoom) return;
-
+    if (!imageRef.current || !isZoomed) return;
     const rect = imageRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100; // Phần trăm X
-    const y = ((e.clientY - rect.top) / rect.height) * 100; // Phần trăm Y
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
     setMousePosition({ x, y });
   };
 
   return (
     <div className="flex gap-4">
-      {/* Thumbnail column on the left */}
+      {/* Thumbnail column */}
       <div className="flex flex-col gap-2 w-auto max-w-[120px]">
-        {images.map((image, index) => (
+        {images.map((img, index) => (
           <motion.div
             key={index}
             className={`cursor-pointer border-2 rounded-md overflow-hidden ${
-              selectedImage === image ? "border-blue-500" : "border-transparent"
+              selectedImage === img ? "border-blue-500" : "border-transparent"
             }`}
-            onClick={() => handleImageClick(image)}
+            onClick={() => handleThumbnailClick(img)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <Image
-              src={`/product/img/${image}`}
+              src={img}
               alt={`${productName} - Thumbnail ${index + 1}`}
               width={100}
               height={75}
@@ -74,7 +60,7 @@ export default function DesktopImageGallery({
         ))}
       </div>
 
-      {/* Main active image on the right */}
+      {/* Main Image */}
       <div className="flex-1 relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -83,22 +69,23 @@ export default function DesktopImageGallery({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="rounded-md overflow-hidden relative"
             ref={imageRef}
+            className="overflow-hidden rounded-md relative"
             onClick={handleMainImageClick}
             onMouseMove={handleMouseMove}
-            style={{ cursor: "zoom-in" }}
+            style={{
+              cursor: isZoomed ? "zoom-out" : "zoom-in",
+            }}
           >
             <Image
-              src={`/product/img/${selectedImage}`}
-              alt={`${productName} - Active Image`}
+              src={selectedImage}
+              alt={`${productName} - Active`}
               width={600}
               height={450}
-              draggable="false"
-              className={`w-full h-auto object-cover transition-transform duration-0 ${
-                isClickZoom ? "scale-150" : "scale-100"
-              }`}
+              draggable={false}
+              className="w-full h-auto object-cover transition-transform duration-200 ease-out"
               style={{
+                transform: isZoomed ? "scale(2)" : "scale(1)",
                 transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
               }}
             />

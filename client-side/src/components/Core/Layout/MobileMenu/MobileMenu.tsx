@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { fetchCategoryTree } from "@/services/categoryApi";
 import { ICategory } from "@/types/category";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginPopup from "../Popups/LoginPopup";
 import RegisterPopup from "../Popups/RegisterPopup";
-
+import { useCategories } from "@/contexts/CategoriesContext";
+import ForgotPasswordPopup from "../Popups/ForgotPasswordPopup";
+import ResetPasswordPopup from "../Popups/ResetPasswordPopup";
 interface MobileMenuProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -22,9 +23,11 @@ interface NavItem {
 }
 
 export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
-  const [categories, setCategories] = useState<ICategory[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetToken, setResetToken] = useState(""); // chỉ cần nếu bạn dùng Reset qua popup (ví dụ từ email redirect)
+
   const {
     user,
     openLoginWithData,
@@ -35,39 +38,20 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
-  // Khóa cuộn nền khi menu mở
+  const { tree, error } = useCategories();
+  const categories = tree.filter(
+    (cat) =>
+      cat.parentId === null &&
+      cat._id !== "684d0f12543e02998d9df097" &&
+      cat.name !== "Bài viết"
+  );
+
   useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
+    if (isOpen) document.body.classList.add("overflow-hidden");
+    else document.body.classList.remove("overflow-hidden");
+    return () => document.body.classList.remove("overflow-hidden");
   }, [isOpen]);
 
-  // Lấy danh mục từ API
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const categoryTree = await fetchCategoryTree();
-        const filteredCategories = categoryTree.filter(
-          (cat) =>
-            cat.parentId === null &&
-            cat._id !== "684d0f12543e02998d9df097" &&
-            cat.name !== "Bài viết"
-        );
-        setCategories(filteredCategories);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi khi tải danh mục");
-        console.error("Error loading categories:", err);
-      }
-    }
-    loadCategories();
-  }, []);
-
-  // Tạo navItems với mục tĩnh và động
   const navItems: NavItem[] = [
     { href: "/about", label: "Về chúng tôi" },
     ...categories.map((cat) => ({
@@ -110,9 +94,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
             </div>
             <div className="flex flex-col p-4">
               <div className="flex flex-col gap-4">
-                {error && (
-                  <p className="text-lg text-red-500">Lỗi: {error}</p>
-                )}
+                {error && <p className="text-lg text-red-500">Lỗi: {error}</p>}
                 {navItems.length === 0 ? (
                   <p className="text-lg text-gray-500">
                     Không có mục nào để hiển thị.
@@ -154,26 +136,28 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                         )}
                       </div>
                       <AnimatePresence>
-                        {item.children && item.children.length > 0 && expandedCategory === item.href && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="ml-4 mt-2 flex flex-col gap-2"
-                          >
-                            {item.children.map((child) => (
-                              <Link
-                                key={child._id}
-                                href={`/products?id_cate=${child._id}`}
-                                className="text-base font-medium text-gray-600 hover:underline"
-                                onClick={() => setIsOpen(false)}
-                              >
-                                {child.name}
-                              </Link>
-                            ))}
-                          </motion.div>
-                        )}
+                        {item.children &&
+                          item.children.length > 0 &&
+                          expandedCategory === item.href && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="ml-4 mt-2 flex flex-col gap-2"
+                            >
+                              {item.children.map((child) => (
+                                <Link
+                                  key={child._id}
+                                  href={`/products?id_cate=${child._id}`}
+                                  className="text-base font-medium text-gray-600 hover:underline"
+                                  onClick={() => setIsOpen(false)}
+                                >
+                                  {child.name}
+                                </Link>
+                              ))}
+                            </motion.div>
+                          )}
                       </AnimatePresence>
                     </div>
                   ))
@@ -219,8 +203,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
             setIsLoginOpen(false);
             setIsRegisterOpen(true);
           }}
+          onOpenForgotPassword={() => {
+            setIsLoginOpen(false);
+            setIsForgotOpen(true);
+          }}
           initialFormData={registerFormData}
         />
+
         <RegisterPopup
           isOpen={isRegisterOpen}
           onClose={() => setIsRegisterOpen(false)}
@@ -271,9 +260,7 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
           </div>
           <div className="flex flex-col">
             <div className="flex flex-col gap-4">
-              {error && (
-                <p className="text-lg text-red-500">Lỗi: {error}</p>
-              )}
+              {error && <p className="text-lg text-red-500">Lỗi: {error}</p>}
               {navItems.length === 0 ? (
                 <p className="text-lg text-gray-500">
                   Không có mục nào để hiển thị.
@@ -315,26 +302,28 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
                       )}
                     </div>
                     <AnimatePresence>
-                      {item.children && item.children.length > 0 && expandedCategory === item.href && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="ml-4 mt-2 flex flex-col gap-2"
-                        >
-                          {item.children.map((child) => (
-                            <Link
-                              key={child._id}
-                              href={`/products?id_cate=${child._id}`}
-                              className="text-base font-medium text-gray-600 hover:underline"
-                              onClick={() => setIsOpen(false)}
-                            >
-                              {child.name}
-                            </Link>
-                          ))}
-                        </motion.div>
-                      )}
+                      {item.children &&
+                        item.children.length > 0 &&
+                        expandedCategory === item.href && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="ml-4 mt-2 flex flex-col gap-2"
+                          >
+                            {item.children.map((child) => (
+                              <Link
+                                key={child._id}
+                                href={`/products?id_cate=${child._id}`}
+                                className="text-base font-medium text-gray-600 hover:underline"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                {child.name}
+                              </Link>
+                            ))}
+                          </motion.div>
+                        )}
                     </AnimatePresence>
                   </div>
                 ))
@@ -390,6 +379,10 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
         onOpenRegister={() => {
           setIsLoginOpen(false);
           setIsRegisterOpen(true);
+        }}
+        onOpenForgotPassword={() => {
+          setIsLoginOpen(false);
+          setIsForgotOpen(true);
         }}
         initialFormData={registerFormData}
       />

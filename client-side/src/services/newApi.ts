@@ -1,6 +1,6 @@
 import { API_BASE_URL, fetchWithAuth } from "./api";
-import { News, NewsPayload } from "@/types/new";
 import { isBrowser } from "../utils";
+import { News, NewsPayload } from "@/types/new";
 
 interface PaginationInfo {
   total?: number;
@@ -39,14 +39,13 @@ export const getNewsList = async (
       ...(search ? { search } : {}),
     });
 
-    // Debug: log URL
     const url = `${API_BASE_URL}/news?${params}`;
     console.log("URL gọi API:", url);
 
-    const result = await fetchWithAuth(url, {
+    const result = (await fetchWithAuth(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-    }) as ApiResponse<any>;
+    })) as ApiResponse<any>;
 
     if (!result.data || !Array.isArray(result.data)) {
       throw new Error(result.message || "Không thể lấy danh sách tin tức");
@@ -85,6 +84,7 @@ export const getNewsDetail = async (id: string): Promise<News> => {
   }
 };
 
+// Hàm tạo tin tức (cần token)
 export const createNews = async (payload: NewsPayload): Promise<News> => {
   try {
     if (!isBrowser()) {
@@ -110,16 +110,24 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
       formData.append("is_published", payload.is_published ? "true" : "false");
     }
     if (payload.thumbnail) {
-      formData.append("thumbnail", payload.thumbnail);
-    }
-    if (payload.news_image && payload.news_image.length > 0) {
-      payload.news_image.forEach((img, index) =>
-        formData.append(`news_image[${index}]`, img)
-      );
+      formData.append("images", payload.thumbnail); // field name phải là "images"
     }
     if (payload.published_at) {
       formData.append("published_at", payload.published_at.toISOString());
     }
+    if (payload.meta_description) {
+      console.log(
+        "Adding meta_description to FormData:",
+        payload.meta_description
+      );
+      formData.append("meta_description", payload.meta_description);
+    } else {
+      console.warn("meta_description is empty or undefined");
+      formData.append("meta_description", ""); // Gửi giá trị rỗng nếu không có meta_description
+    }
+
+    // Debug: Log FormData entries
+    console.log("FormData entries:", Object.fromEntries(formData));
 
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
       `${API_BASE_URL}/news`,
@@ -136,12 +144,14 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
       throw new Error(result.message || "Không thể tạo tin tức");
     }
 
-    // Ánh xạ _id thành id nếu backend trả về _id
+    console.log("API response:", result); // Debug: Log phản hồi từ API
+
     return {
       ...result.data,
-      id: result.data._id || result.data.id, // Sử dụng _id nếu id không tồn tại
+      id: result.data._id || result.data.id,
     };
   } catch (error: any) {
+    console.error("Debug: Error in createNews:", error);
     throw new Error(`Lỗi khi tạo tin tức: ${error.message}`);
   }
 };
@@ -167,18 +177,35 @@ export const updateNews = async (
     if (payload.title) formData.append("title", payload.title);
     if (payload.content) formData.append("content", payload.content);
     if (payload.slug) formData.append("slug", payload.slug);
-    if (payload.category_id)
-      formData.append("category_id", payload.category_id._id);
+    if (payload.category_id) {
+      const categoryId = payload.category_id._id || payload.category_id;
+      formData.append(
+        "category_id",
+        typeof categoryId === "string" ? categoryId : ""
+      );
+    }
     if (payload.tags) formData.append("tags", payload.tags.join(","));
     if (payload.is_published !== undefined) {
       formData.append("is_published", payload.is_published ? "true" : "false");
     }
     if (payload.thumbnail) {
-      formData.append("thumbnail", payload.thumbnail); // Gửi URL
-      console.log("Debug: Thumbnail URL appended", payload.thumbnail);
+      formData.append("thumbnail", payload.thumbnail); // Sử dụng "thumbnail" thay vì "images"
+    }
+    if (payload.meta_description && payload.meta_description.trim()) {
+      console.log(
+        "Adding meta_description to FormData:",
+        payload.meta_description
+      );
+      formData.append("meta_description", payload.meta_description);
     }
 
-    console.log("Debug: FormData being sent:", Object.fromEntries(formData));
+    // Debug: Log FormData entries
+    const formDataEntries: { [key: string]: string | File } = {};
+    for (const [key, value] of formData.entries()) {
+      formDataEntries[key] =
+        value instanceof File ? value.name : value.toString();
+    }
+    console.log("FormData entries:", formDataEntries);
 
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
       `${API_BASE_URL}/news/${id}`,
@@ -186,17 +213,18 @@ export const updateNews = async (
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
-          // Không thêm Content-Type để fetch tự xử lý multipart/form-data
         },
         body: formData,
       }
     );
 
-    console.log("Debug: API Response:", result); // Thêm log phản hồi từ API
-
     if (!result.data) {
-      throw new Error(result.message || "Không thể cập nhật tin tức");
+      throw new Error(
+        result.message || "Không thể cập nhật tin tức, không có dữ liệu trả về"
+      );
     }
+
+    console.log("API response:", result); // Debug: Log phản hồi từ API
 
     return result.data;
   } catch (error: any) {

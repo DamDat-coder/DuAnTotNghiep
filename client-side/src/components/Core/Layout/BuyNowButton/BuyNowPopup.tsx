@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
+import { useSearchParams } from "next/navigation";
 
 interface BuyNowPopupProps {
   product: IProduct;
@@ -29,6 +30,10 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   const [quantity, setQuantity] = useState(1);
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
+  const searchParams = useSearchParams();
+  const couponId = searchParams.get("coupon");
+  const [applyCoupon, setApplyCoupon] = useState(!!couponId);
+
   // Ngăn scroll khi popup hoặc bảng kích thước mở
   useEffect(() => {
     if (isOpen || isSizeChartOpen) {
@@ -42,12 +47,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   }, [isOpen, isSizeChartOpen]);
 
   // Lấy danh sách kích thước và màu sắc từ variants
-  const sizes = Array.from(
-    new Set(product.variants.map((v) => v.size))
-  ).map((size) => ({
-    value: size,
-    inStock: product.variants.some((v) => v.size === size && v.stock > 0),
-  }));
+  const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
+    (size) => ({
+      value: size,
+      inStock: product.variants.some((v) => v.size === size && v.stock > 0),
+    })
+  );
 
   const colors = Array.from(new Set(product.variants.map((v) => v.color)));
 
@@ -76,9 +81,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
   // Xử lý xác nhận mua ngay
   const handleConfirm = () => {
-    const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const accessToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
     if (!accessToken) {
-      alert("Bạn vui lòng đăng nhập trước khi mua hàng!");
+      toast.error("Bạn vui lòng đăng nhập trước khi mua hàng!");
       return;
     }
     if (!selectedColor) {
@@ -98,6 +106,8 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       return;
     }
 
+    dispatch({ type: "resetSelected" });
+
     // Tạo cartItem
     const cartItem = {
       id: product.id,
@@ -111,26 +121,18 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       liked: false,
       selected: true,
     };
-
+    if (applyCoupon && couponId) {
+      localStorage.setItem("pendingCouponCode", couponId);
+    }
     // Thêm vào giỏ hàng
     dispatch({ type: "add", item: cartItem });
+    const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
+    localStorage.setItem("cartSelectedIds", JSON.stringify([selectedId]));
+
     toast.success("Đã thêm vào giỏ hàng!");
 
-    // Tạo query params
-    const query = new URLSearchParams({
-      productId: product.id,
-      name: product.name || "",
-      size: selectedSize,
-      color: selectedColor,
-      quantity: quantity.toString(),
-      price: selectedVariant.discountedPrice.toString(),
-      discountPercent: selectedVariant.discountPercent.toString(),
-      buyNow: "true",
-      image: product.images[0] || "",
-    }).toString();
-
     // Chuyển hướng đến checkout
-    router.push(`/checkout?${query}`);
+    router.push("/checkout");
     onClose();
   };
 
@@ -182,13 +184,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
               {/* Hình ảnh sản phẩm */}
               <Image
-                src={`/product/img/${
-                  Array.isArray(product.images) && product.images.length > 0
-                    ? typeof product.images[0] === "string"
-                      ? product.images[0]
-                      : ""
-                    : ""
-                }`}
+                src={product.images[0]}
                 alt={product.name || "Sản phẩm"}
                 width={200}
                 height={200}
@@ -203,7 +199,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-red-500 font-bold text-lg">
-                      {(selectedVariant?.discountedPrice || product.variants[0]?.discountedPrice || 0).toLocaleString("vi-VN")}₫
+                      {(
+                        selectedVariant?.discountedPrice ||
+                        product.variants[0]?.discountedPrice ||
+                        0
+                      ).toLocaleString("vi-VN")}
+                      ₫
                     </p>
                     {selectedVariant && selectedVariant.discountPercent > 0 && (
                       <p className="text-sm text-[#374151] line-through">
@@ -358,7 +359,23 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                     </button>
                   </div>
                 </div>
-
+                {couponId && (
+                  <div className="mt-2 flex items-center gap-2 cursor-pointer">
+                    <input
+                      id="applyCoupon"
+                      type="checkbox"
+                      checked={applyCoupon}
+                      onChange={() => setApplyCoupon(!applyCoupon)}
+                      className="accent-black cursor-pointer w-[2%] h-full"
+                    />
+                    <label
+                      htmlFor="applyCoupon"
+                      className="text-sm cursor-pointer"
+                    >
+                      Áp dụng mã giảm giá hiện tại
+                    </label>
+                  </div>
+                )}
                 {/* Nút xác nhận */}
                 <button
                   onClick={handleConfirm}
@@ -380,7 +397,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999]"
             onClick={handleCloseSizeChart}
           >
             <motion.div

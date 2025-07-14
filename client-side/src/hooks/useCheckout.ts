@@ -12,6 +12,7 @@ import {
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
+import { useMemo } from "react";
 
 // Hàm sinh orderId 7 ký tự
 const generateOrderId = () => {
@@ -24,19 +25,24 @@ const generateOrderId = () => {
 };
 
 export const useCheckout = () => {
-  const { user } = useAuth() as { user: IUser | null };
+  const { user, refreshUser } = useAuth();
   const { items } = useCart();
   const dispatch = useCartDispatch();
   const router = useRouter();
-
+  const [isLoading, setIsLoading] = useState(true);
   // Lấy các sản phẩm được chọn từ giỏ hàng
   const orderItems: ICartItem[] = items.filter((item) => item.selected);
 
   // Tính toán giá
-  const subtotal = orderItems.reduce(
-    (sum, item) =>
-      sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-    0
+
+  const subtotal = useMemo(
+    () =>
+      orderItems.reduce(
+        (sum, item) =>
+          sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+        0
+      ),
+    [orderItems]
   );
   const [discountCode, setDiscountCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -74,49 +80,135 @@ export const useCheckout = () => {
 
   // Đồng bộ formData với user và chọn địa chỉ hiển thị
   useEffect(() => {
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        fullName: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-      }));
+    console.log("DEBUG useCheckout useEffect - Start", {
+      userExists: !!user,
+      user: user
+        ? {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            addresses: user.addresses,
+          }
+        : null,
+    });
 
-      // Lấy danh sách địa chỉ từ user.addresses
-      if (user.addresses) {
-        setAddresses(user.addresses);
-        const defaultAddr =
-          user.addresses.find((addr) => addr.is_default) || null;
-        setDefaultAddress(defaultAddr);
+    if (user && user.addresses) {
+      console.log("DEBUG useCheckout - User and addresses exist", {
+        addresses: user.addresses,
+        addressesCount: user.addresses.length,
+      });
 
-        // Logic chọn địa chỉ hiển thị
-        let addressToSelect: Address | null = null;
-        if (user.addresses.length === 1) {
-          // Nếu chỉ có 1 địa chỉ, chọn địa chỉ đó
-          addressToSelect = user.addresses[0];
-        } else if (defaultAddr) {
-          // Nếu có địa chỉ mặc định, chọn địa chỉ mặc định
-          addressToSelect = defaultAddr;
-        } else if (user.addresses.length > 1) {
-          // Nếu không có địa chỉ mặc định nhưng có nhiều địa chỉ, chọn địa chỉ đầu tiên
-          addressToSelect = user.addresses[0];
-        }
+      // 1. Điền thông tin cá nhân vào form
+      setFormData((prev) => {
+        const newFormData = {
+          ...prev,
+          fullName: user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+        };
+        console.log("DEBUG useCheckout - Updated formData", newFormData);
+        return newFormData;
+      });
+      console.log(user);
 
-        setSelectedAddress(addressToSelect);
-        if (addressToSelect) {
-          setFormData((prev) => ({
+      // 2. Xử lý danh sách địa chỉ
+      setAddresses(user.addresses);
+      console.log("DEBUG useCheckout - Set addresses", user.addresses);
+
+      const defaultAddr =
+        user.addresses.find((addr) => addr.is_default) || null;
+      console.log("DEBUG useCheckout - Default address", defaultAddr);
+      setDefaultAddress(defaultAddr);
+
+      // 3. Xác định địa chỉ được chọn ban đầu
+      let addressToSelect: Address | null = null;
+      if (user.addresses.length === 1) {
+        addressToSelect = user.addresses[0];
+      } else if (defaultAddr) {
+        addressToSelect = defaultAddr;
+      } else if (user.addresses.length > 1) {
+        addressToSelect = user.addresses[0];
+      }
+      console.log("DEBUG useCheckout - Selected address", addressToSelect);
+      setSelectedAddress(addressToSelect);
+
+      // 4. Cập nhật địa chỉ được chọn + đồng bộ lại form
+      if (addressToSelect) {
+        setFormData((prev) => {
+          const updatedFormData = {
             ...prev,
             province: addressToSelect.province,
             district: addressToSelect.district,
             ward: addressToSelect.ward,
             address: addressToSelect.street,
-          }));
-        }
+          };
+          console.log(
+            "DEBUG useCheckout - Updated formData with address",
+            updatedFormData
+          );
+          return updatedFormData;
+        });
       }
+
+      // 5. Chỉ đặt isLoading = false khi tất cả dữ liệu đã sẵn sàng
+      console.log(
+        "DEBUG useCheckout - Setting isLoading to false (with addresses)"
+      );
+      setIsLoading(false);
+    } else if (user && !user.addresses) {
+      console.log("DEBUG useCheckout - User exists but no addresses", { user });
+      // Nếu user tồn tại nhưng không có địa chỉ
+      setAddresses([]);
+      setDefaultAddress(null);
+      setSelectedAddress(null);
+      console.log(
+        "DEBUG useCheckout - Setting isLoading to false (no addresses)"
+      );
+      setIsLoading(false);
+    } else {
+      console.log("DEBUG useCheckout - No user, setting isLoading to false");
+      setIsLoading(false);
     }
   }, [user]);
 
-  // Cập nhật total khi subtotal, discount, hoặc shippingFee thay đổi
+  useEffect(() => {
+    const savedCouponCode = localStorage.getItem("pendingCouponCode");
+    if (!savedCouponCode) return;
+
+    // ✅ Đợi `items` có dữ liệu
+    if (items.length === 0 || subtotal <= 0) {
+      console.log("⛔ Chưa đủ điều kiện áp dụng coupon", { items, subtotal });
+      return;
+    }
+
+    const applyCoupon = async () => {
+      try {
+        const response = await validateCoupon(savedCouponCode, subtotal);
+        if (response.success && response.data) {
+          const { discountValue, discountType } = response.data;
+          const discountAmount =
+            discountType === "percent"
+              ? subtotal * (discountValue / 100)
+              : discountValue;
+
+          setDiscount(discountAmount);
+          setDiscountCode(response.data.code);
+          toast.success("Đã áp dụng mã giảm giá!");
+        } else {
+          toast.error(response.message || "Mã giảm giá không hợp lệ!");
+        }
+      } catch (error) {
+        console.error("Không thể áp dụng mã giảm giá:", error);
+        toast.error("Có lỗi khi áp dụng mã giảm giá!");
+      } finally {
+        localStorage.removeItem("pendingCouponCode");
+      }
+    };
+
+    applyCoupon();
+  }, [subtotal, items.length]);
+
   useEffect(() => {
     setTotal(subtotal - discount + shippingFee);
   }, [subtotal, discount, shippingFee]);
@@ -183,9 +275,10 @@ export const useCheckout = () => {
     }
   };
 
-  // Xử lý chọn địa chỉ từ popup
   const handleSelectAddress = async (address: Address) => {
     setSelectedAddress(address);
+    setIsAddressPopupOpen(false);
+
     setFormData((prev) => ({
       ...prev,
       province: address.province,
@@ -193,8 +286,12 @@ export const useCheckout = () => {
       ward: address.ward,
       address: address.street,
     }));
-    setIsAddressPopupOpen(false);
-    toast.success("Đã chọn địa chỉ giao hàng!");
+
+    // Cập nhật lại user.addresses
+    if (user && user.id) {
+      await refreshUser();
+      console.log("DEBUG useCheckout - Refreshed user after selecting address");
+    }
   };
 
   // Xử lý submit form
@@ -267,10 +364,29 @@ export const useCheckout = () => {
         addressId = newAddress._id;
         setAddresses((prev) => [...prev, newAddress]);
       }
+      if (
+        selectedAddress &&
+        formData.address === selectedAddress.street &&
+        formData.ward === selectedAddress.ward &&
+        formData.district === selectedAddress.district &&
+        formData.province === selectedAddress.province
+      ) {
+        addressId = selectedAddress._id;
+      } else {
+        const newAddress = await addAddressWhenCheckout(user.id, {
+          street: formData.address,
+          ward: formData.ward,
+          district: formData.district,
+          province: formData.province,
+          is_default: addresses.length === 0,
+        });
+        addressId = newAddress._id;
+        setAddresses((prev) => [...prev, newAddress]);
+        await refreshUser(); // Cập nhật user sau khi thêm địa chỉ
+      }
 
       // Kiểm tra và lấy couponId
       const couponId = await handleApplyDiscount();
-
       // Chuẩn bị dữ liệu thanh toán
       const paymentInfo = {
         orderId: generateOrderId(),
@@ -295,11 +411,9 @@ export const useCheckout = () => {
         },
       };
 
-      // Gọi API thanh toán
       const paymentResponse = await initiatePayment(paymentInfo);
-
-      if (!paymentResponse.paymentUrl) {
-        // Với COD (hoặc bất kỳ phương thức nào không cần redirect)
+      if (paymentInfo.orderInfo.paymentMethod === "cod") {
+        // 🧠 Flow COD: có paymentId ngay, nên gọi tiếp createOrder
         const orderResponse = await createOrder(
           paymentResponse.paymentId,
           user.id
@@ -308,10 +422,13 @@ export const useCheckout = () => {
         toast.success("Đơn hàng đã được xác nhận!");
         router.push("/profile?tab=orders");
       } else {
-        // Với các cổng thanh toán online (vnpay, momo, zalopay)
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
-        window.location.href = paymentResponse.paymentUrl;
+        if (paymentResponse.paymentUrl) {
+          window.location.href = paymentResponse.paymentUrl;
+        } else {
+          toast.error("Không tìm thấy đường dẫn thanh toán!");
+        }
       }
     } catch (error: any) {
       console.error("Lỗi khi tạo đơn hàng:", error);
@@ -320,6 +437,7 @@ export const useCheckout = () => {
   };
 
   return {
+    isLoading,
     orderItems,
     subtotal,
     discountCode,

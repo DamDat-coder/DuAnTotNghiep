@@ -9,7 +9,6 @@ import { IProduct } from "@/types/product";
 import AddToCartButton from "../Cart/AddToCartButton";
 import AddToCartPopup from "../Cart/AddToCartPopup"; // Import mới
 import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
-import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductSectionProps {
@@ -108,15 +107,11 @@ export default function ProductSection({
   const renderProductCard = (product: IProduct) => {
     const { price, discountPercent } = getLowestPriceVariant(product.variants);
     const discountPrice = Math.round(price * (1 - discountPercent / 100));
-    const imageSrc = product.images[0]
-      ? `/product/img/${product.images[0]}`
-      : "/placeholder-image.jpg";
-
     return (
       <div className="w-full flex flex-col bg-white relative">
         <div className="product w-full h-auto font-description">
           <Image
-            src={imageSrc}
+            src={product.images[0]}
             alt={product.name || "Sản phẩm"}
             width={200}
             height={200}
@@ -128,7 +123,9 @@ export default function ProductSection({
               -{discountPercent}%
             </div>
           )}
-          <AddToCartButton onClick={(e: React.MouseEvent) => handleAddToCart(product, e)} />
+          <AddToCartButton
+            onClick={(e: React.MouseEvent) => handleAddToCart(product, e)}
+          />
           <div className="content flex flex-col py-4 gap-3">
             <div>
               <div className="name text-base tablet:text-lg laptop:text-lg desktop:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3rem] tablet:h-[3.5rem] laptop:h-[3.5rem] desktop:h-[3.5rem]">
@@ -181,135 +178,135 @@ export default function ProductSection({
   }
 
   return (
-      <div role="region" aria-label="Danh sách sản phẩm mới nhất">
-        <h1 className="text-[1.5rem] pb-6 font-heading font-bold">
-          Mới Nhất & Tốt Nhất
-        </h1>
+    <div role="region" aria-label="Danh sách sản phẩm mới nhất">
+      <h1 className="text-[1.5rem] pb-6 font-heading font-bold">
+        Mới Nhất & Tốt Nhất
+      </h1>
 
-        {isClient ? (
-          <>
-            {/* Mobile */}
-            <div className="block tablet:hidden">
-              <Swiper
-                spaceBetween={10}
-                slidesPerView={1.5}
-                loop={false}
-                grabCursor={true}
-                className="select-none"
-                role="list"
-              >
-                {displayedProducts.map((product, index) => (
-                  <SwiperSlide
-                    key={product.id || `product-${index}`}
-                    className="!w-[16.8125rem]"
-                    role="listitem"
-                  >
-                    {renderProductCard(product)}
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-
-            {/* Tablet */}
-            <div className="hidden tablet:block laptop:hidden">
-              <Swiper
-                spaceBetween={20}
-                slidesPerView={tabletSlidesPerView}
-                loop={false}
-                grabCursor={true}
-                className="select-none"
-                role="list"
-              >
-                {displayedProducts.map((product, index) => (
-                  <SwiperSlide
-                    key={product.id || `product-${index}`}
-                    role="listitem"
-                  >
-                    {renderProductCard(product)}
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-
-            {/* Laptop */}
-            <div className="hidden laptop:block desktop:hidden">
-              <Swiper
-                spaceBetween={20}
-                slidesPerView={laptopSlidesPerView}
-                loop={false}
-                grabCursor={true}
-                className="select-none"
-                role="list"
-              >
-                {displayedProducts.map((product, index) => (
-                  <SwiperSlide
-                    key={product.id || `product-${index}`}
-                    role="listitem"
-                  >
-                    {renderProductCard(product)}
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-
-            {/* Desktop */}
-            <div className="hidden desktop:block">
-              <Swiper
-                spaceBetween={20}
-                slidesPerView={desktopSlidesPerView}
-                loop={false}
-                grabCursor={true}
-                className="select-none"
-                role="list"
-              >
-                {displayedProducts.map((product, index) => (
-                  <SwiperSlide
-                    key={product.id || `product-${index}`}
-                    role="listitem"
-                  >
-                    {renderProductCard(product)}
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-          </>
-        ) : (
-          <div className="grid grid-cols-1 tablet:grid-cols-2 laptop:grid-cols-3 desktop:grid-cols-4 gap-4">
-            {displayedProducts.map((product, index) => (
-              <div key={product.id || `product-${index}`} role="listitem">
-                {renderProductCard(product)}
-              </div>
-            ))}
+      {isClient ? (
+        <>
+          {/* Mobile */}
+          <div className="block tablet:hidden">
+            <Swiper
+              spaceBetween={10}
+              slidesPerView={1.5}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+              role="list"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide
+                  key={product.id || `product-${index}`}
+                  className="!w-[16.8125rem]"
+                  role="listitem"
+                >
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
-        )}
 
-        {showLoadMore && hasMore && (
-          <div ref={observerRef} className="h-10" aria-hidden="true" />
-        )}
-        {loading && (
-          <div className="text-center text-gray-500">Đang tải thêm...</div>
-        )}
+          {/* Tablet */}
+          <div className="hidden tablet:block laptop:hidden">
+            <Swiper
+              spaceBetween={20}
+              slidesPerView={tabletSlidesPerView}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+              role="list"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide
+                  key={product.id || `product-${index}`}
+                  role="listitem"
+                >
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
 
-        {selectedProduct && (
-          <>
-            <BuyNowPopup
-              product={selectedProduct}
-              isOpen={isBuyNowPopupOpen}
-              onClose={() => {
-                setIsBuyNowPopupOpen(false);
-                setSelectedProduct(null);
-              }}
-            />
-            <AddToCartPopup
-              product={selectedProduct}
-              isOpen={isAddToCartPopupOpen}
-              onClose={() => {
-                setIsAddToCartPopupOpen(false);
-                setSelectedProduct(null);
-              }}
-            />
-          </>
-        )}
-      </div>
+          {/* Laptop */}
+          <div className="hidden laptop:block desktop:hidden">
+            <Swiper
+              spaceBetween={20}
+              slidesPerView={laptopSlidesPerView}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+              role="list"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide
+                  key={product.id || `product-${index}`}
+                  role="listitem"
+                >
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+
+          {/* Desktop */}
+          <div className="hidden desktop:block">
+            <Swiper
+              spaceBetween={20}
+              slidesPerView={desktopSlidesPerView}
+              loop={false}
+              grabCursor={true}
+              className="select-none"
+              role="list"
+            >
+              {displayedProducts.map((product, index) => (
+                <SwiperSlide
+                  key={product.id || `product-${index}`}
+                  role="listitem"
+                >
+                  {renderProductCard(product)}
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </>
+      ) : (
+        <div className="grid grid-cols-1 tablet:grid-cols-2 laptop:grid-cols-3 desktop:grid-cols-4 gap-4">
+          {displayedProducts.map((product, index) => (
+            <div key={product.id || `product-${index}`} role="listitem">
+              {renderProductCard(product)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showLoadMore && hasMore && (
+        <div ref={observerRef} className="h-10" aria-hidden="true" />
+      )}
+      {loading && (
+        <div className="text-center text-gray-500">Đang tải thêm...</div>
+      )}
+
+      {selectedProduct && (
+        <>
+          <BuyNowPopup
+            product={selectedProduct}
+            isOpen={isBuyNowPopupOpen}
+            onClose={() => {
+              setIsBuyNowPopupOpen(false);
+              setSelectedProduct(null);
+            }}
+          />
+          <AddToCartPopup
+            product={selectedProduct}
+            isOpen={isAddToCartPopupOpen}
+            onClose={() => {
+              setIsAddToCartPopupOpen(false);
+              setSelectedProduct(null);
+            }}
+          />
+        </>
+      )}
+    </div>
   );
 }

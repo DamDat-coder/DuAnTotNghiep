@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import bcrypt from "bcryptjs"; 
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import UserModel from "../models/user.model";
@@ -171,10 +171,17 @@ export const loginUser = async (
 
     const { email, password } = req.body;
     const user = await UserModel.findOne({ email });
-    if (!user) return res.status(400).json({ success: false, message: "Email không tồn tại." });
+    if (!user)
+      return res
+        .status(400)
+        .json({ success: false, message: "Email không tồn tại." });
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ success: false, message: "Mật khẩu sai." });
-    if (!user.is_active) return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
+    if (!isMatch)
+      return res.status(401).json({ success: false, message: "Mật khẩu sai." });
+    if (!user.is_active)
+      return res
+        .status(403)
+        .json({ success: false, message: "Tài khoản đã bị khóa." });
     const accessToken = generateAccessToken(user._id.toString(), user.role);
     const refreshToken = generateRefreshToken(user._id.toString());
 
@@ -194,7 +201,6 @@ export const loginUser = async (
         },
       },
     });
-
   } catch (err) {
     next(err);
   }
@@ -493,13 +499,11 @@ export const updateAddress = async (
     address.is_default = is_default ?? address.is_default;
 
     await user.save();
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Cập nhật địa chỉ thành công.",
-        data: user.addresses,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật địa chỉ thành công.",
+      data: user.addresses,
+    });
   } catch (err) {
     next(err);
   }
@@ -527,13 +531,11 @@ export const deleteAddress = async (
     address.deleteOne();
     await user.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Xoá địa chỉ thành công.",
-        data: user.addresses,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Xoá địa chỉ thành công.",
+      data: user.addresses,
+    });
   } catch (err) {
     next(err);
   }
@@ -562,13 +564,11 @@ export const setDefaultAddress = async (
     address.is_default = true;
 
     await user.save();
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Cập nhật mặc định thành công.",
-        data: user.addresses,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật mặc định thành công.",
+      data: user.addresses,
+    });
   } catch (err) {
     next(err);
   }
@@ -594,24 +594,20 @@ export const addToWishlist = async (
         .json({ success: false, message: "Thiếu productId." });
 
     if (user.wishlist.includes(productId)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Sản phẩm đã tồn tại trong danh sách yêu thích.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Sản phẩm đã tồn tại trong danh sách yêu thích.",
+      });
     }
 
     user.wishlist.push(productId);
     await user.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Đã thêm vào danh sách yêu thích.",
-        data: user.wishlist,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Đã thêm vào danh sách yêu thích.",
+      data: user.wishlist,
+    });
   } catch (err) {
     next(err);
   }
@@ -634,13 +630,11 @@ export const removeFromWishlist = async (
     user.wishlist = user.wishlist.filter((id) => id.toString() !== productId);
     await user.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Đã xoá khỏi danh sách yêu thích.",
-        data: user.wishlist,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Đã xoá khỏi danh sách yêu thích.",
+      data: user.wishlist,
+    });
   } catch (err) {
     next(err);
   }
@@ -670,18 +664,23 @@ export const getWishlist = async (
 };
 
 // Gửi email quên mật khẩu
-export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { email } = req.body;
     const user = await UserModel.findOne({ email });
     if (!user)
-      return res.status(404).json({ success: false, message: "Không tìm thấy email." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy email." });
 
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + 15 * 60 * 1000; // 15 phút
 
-resetTokens.set(token, { email, expiresAt, userId: user._id.toString() });
-
+    resetTokens.set(token, { email, expiresAt, userId: user._id.toString() });
 
     const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
     await sendResetPasswordEmail(email, resetLink);
@@ -699,17 +698,26 @@ export const resetPassword = async (req: Request, res: Response) => {
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({ success: false, message: "Mật khẩu không được để trống" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Mật khẩu không được để trống" });
     }
 
     const tokenData = resetTokens.get(token);
     if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
-      return res.status(400).json({ success: false, message: "Token không hợp lệ hoặc đã hết hạn." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Token không hợp lệ hoặc đã hết hạn.",
+        });
     }
 
     const user = await UserModel.findById(tokenData.userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
     }
 
     user.password = await bcrypt.hash(password, 10);
@@ -717,8 +725,54 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     resetTokens.delete(token);
 
-    return res.status(200).json({ success: true, message: "Mật khẩu đã được đặt lại thành công." });
+    return res
+      .status(200)
+      .json({ success: true, message: "Mật khẩu đã được đặt lại thành công." });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Đã xảy ra lỗi." });
+  }
+};
+
+export const updatePassword = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.",
+      });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Mật khẩu hiện tại không chính xác.",
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật mật khẩu thành công.",
+    });
+  } catch (err) {
+    next(err);
   }
 };

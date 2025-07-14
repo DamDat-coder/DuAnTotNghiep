@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { Address } from "@/types/auth";
@@ -14,9 +14,10 @@ interface ShippingFormProps {
   errors: CheckoutErrors;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectChange: (name: string, option: any) => void;
-  selectedAddress: Address | null; // Sửa từ defaultAddress thành selectedAddress
+  selectedAddress: Address | null;
   setIsAddressPopupOpen: (isOpen: boolean) => void;
   addresses: Address[];
+  isLoading: boolean; // <-- dùng từ prop, không khai báo lại
 }
 
 export default function ShippingForm({
@@ -27,6 +28,7 @@ export default function ShippingForm({
   selectedAddress,
   setIsAddressPopupOpen,
   addresses,
+  isLoading,
 }: ShippingFormProps) {
   const {
     provinces,
@@ -39,24 +41,38 @@ export default function ShippingForm({
     setWardCode,
   } = useAddressData();
 
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Đồng bộ provinceCode, districtCode với formData
+  // Đồng bộ code khi user đã có selectedAddress (địa chỉ được chọn từ popup)
   useEffect(() => {
-    setIsLoading(true);
-    if (provinces.length > 0) {
+    if (selectedAddress) {
+      const provinceObj = provinces.find(
+        (p) => p.name === selectedAddress.province
+      );
+      const districtObj = districts.find(
+        (d) => d.name === selectedAddress.district
+      );
+      const wardObj = wards.find((w) => w.name === selectedAddress.ward);
+
+      if (provinceObj) setProvinceCode(provinceObj.code);
+      if (districtObj) setDistrictCode(districtObj.code);
+      if (wardObj) setWardCode(wardObj.code);
+    }
+  }, [selectedAddress, provinces, districts, wards]);
+
+  // Đồng bộ provinceCode khi formData thay đổi (ví dụ khi nhập tay)
+  useEffect(() => {
+    if (formData.province && provinces.length > 0) {
       const selectedProvince = provinces.find(
         (p) => p.name === formData.province
       );
       if (selectedProvince && selectedProvince.code !== provinceCode) {
         setProvinceCode(selectedProvince.code);
       }
-      setIsLoading(false);
     }
-  }, [provinces, formData.province, provinceCode, setProvinceCode]);
+  }, [formData.province, provinces]);
 
+  // Đồng bộ districtCode
   useEffect(() => {
-    if (districts.length > 0) {
+    if (formData.district && districts.length > 0) {
       const selectedDistrict = districts.find(
         (d) => d.name === formData.district
       );
@@ -64,32 +80,28 @@ export default function ShippingForm({
         setDistrictCode(selectedDistrict.code);
       }
     }
-  }, [districts, formData.district, districtCode, setDistrictCode]);
+  }, [formData.district, districts]);
 
+  // Custom select change để reset logic form và cập nhật code
   const customHandleSelectChange = (name: string, option: any) => {
+    const value = option ? option.value : "";
+
+    // Cập nhật form
     handleSelectChange(name, option);
+
+    // Reset các trường phụ thuộc
     if (name === "province") {
-      setProvinceCode(
-        option
-          ? provinces.find((p) => p.name === option.value)?.code || null
-          : null
-      );
+      setProvinceCode(provinces.find((p) => p.name === value)?.code || null);
       setDistrictCode(null);
       setWardCode(null);
       handleSelectChange("district", null);
       handleSelectChange("ward", null);
     } else if (name === "district") {
-      setDistrictCode(
-        option
-          ? districts.find((d) => d.name === option.value)?.code || null
-          : null
-      );
+      setDistrictCode(districts.find((d) => d.name === value)?.code || null);
       setWardCode(null);
       handleSelectChange("ward", null);
     } else if (name === "ward") {
-      setWardCode(
-        option ? wards.find((w) => w.name === option.value)?.code || null : null
-      );
+      setWardCode(wards.find((w) => w.name === value)?.code || null);
     }
   };
 
@@ -98,13 +110,17 @@ export default function ShippingForm({
       <h2 className="text-[18px] font-medium mb-4 desktop:text-[2rem] desktop:font-bold laptop:text-[2rem] laptop:font-bold">
         THÔNG TIN GIAO HÀNG
       </h2>
+
+      {/* Địa chỉ đã chọn */}
       <div className="mb-4 bg-gray-100 hover:bg-gray-200">
         <div
           onClick={() => setIsAddressPopupOpen(true)}
           className="flex flex-col items-start py-[0.875rem] pl-3 pr-8 gap-2 cursor-pointer"
         >
           <p className="font-bold">Địa chỉ giao hàng</p>
-          {selectedAddress ? (
+          {isLoading ? (
+            <span className="text-gray-500">Đang tải địa chỉ...</span>
+          ) : selectedAddress ? (
             <span className="text-slate-500">
               {selectedAddress.street}, {selectedAddress.ward},{" "}
               {selectedAddress.district}, {selectedAddress.province}, Việt Nam
@@ -117,7 +133,10 @@ export default function ShippingForm({
           )}
         </div>
       </div>
+
+      {/* Form thông tin */}
       <div className="grid grid-cols-1 desktop:grid-cols-2 laptop:grid-cols-2 gap-4">
+        {/* Họ tên */}
         <div className="desktop:col-span-2 laptop:col-span-2">
           <label className="text-[1rem] font-medium">
             Họ và tên<span className="text-red-600">*</span>
@@ -134,6 +153,8 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
           )}
         </div>
+
+        {/* Email */}
         <div>
           <label className="text-[1rem] font-medium">
             Email<span className="text-red-600">*</span>
@@ -150,6 +171,8 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.email}</p>
           )}
         </div>
+
+        {/* Phone */}
         <div>
           <label className="text-[1rem] font-medium">
             Số điện thoại<span className="text-red-600">*</span>
@@ -166,6 +189,8 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
           )}
         </div>
+
+        {/* Tỉnh */}
         <div>
           <label className="text-[1rem] font-medium">
             Tỉnh thành<span className="text-red-600">*</span>
@@ -173,16 +198,20 @@ export default function ShippingForm({
           <Select
             name="province"
             value={
-              formData.province
+              formData.province && !isLoading && provinces.length > 0
                 ? { value: formData.province, label: formData.province }
                 : null
             }
             onChange={(option) => customHandleSelectChange("province", option)}
-            options={provinces.map((province) => ({
-              value: province.name,
-              label: province.name,
+            options={provinces.map((p) => ({
+              value: p.name,
+              label: p.name,
             }))}
-            placeholder={isLoading ? "Đang tải..." : "Chọn tỉnh thành"}
+            placeholder={
+              isLoading || provinces.length === 0
+                ? "Đang tải..."
+                : "Chọn tỉnh thành"
+            }
             className="mt-2"
             classNamePrefix="react-select"
             isClearable
@@ -197,6 +226,8 @@ export default function ShippingForm({
             </p>
           )}
         </div>
+
+        {/* Quận huyện */}
         <div>
           <label className="text-[1rem] font-medium">
             Quận huyện<span className="text-red-600">*</span>
@@ -209,9 +240,9 @@ export default function ShippingForm({
                 : null
             }
             onChange={(option) => customHandleSelectChange("district", option)}
-            options={districts.map((district) => ({
-              value: district.name,
-              label: district.name,
+            options={districts.map((d) => ({
+              value: d.name,
+              label: d.name,
             }))}
             placeholder="Chọn quận huyện"
             className="mt-2"
@@ -223,6 +254,8 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.district}</p>
           )}
         </div>
+
+        {/* Phường xã */}
         <div>
           <label className="text-[1rem] font-medium">
             Phường xã<span className="text-red-600">*</span>
@@ -235,9 +268,9 @@ export default function ShippingForm({
                 : null
             }
             onChange={(option) => customHandleSelectChange("ward", option)}
-            options={wards.map((ward) => ({
-              value: ward.name,
-              label: ward.name,
+            options={wards.map((w) => ({
+              value: w.name,
+              label: w.name,
             }))}
             placeholder="Chọn phường xã"
             className="mt-2"
@@ -249,6 +282,8 @@ export default function ShippingForm({
             <p className="text-red-500 text-sm mt-1">{errors.ward}</p>
           )}
         </div>
+
+        {/* Địa chỉ chi tiết */}
         <div>
           <label className="text-[1rem] font-medium">
             Địa chỉ<span className="text-red-600">*</span>
@@ -258,7 +293,7 @@ export default function ShippingForm({
             name="address"
             value={formData.address}
             onChange={handleInputChange}
-            placeholder="Nhập địa chỉ"
+            placeholder="Nhập địa chỉ cụ thể (số nhà, tên đường...)"
             className="w-full mt-2 py-[0.875rem] pl-3 border border-gray-300 rounded-md focus:outline-none"
           />
           {errors.address && (

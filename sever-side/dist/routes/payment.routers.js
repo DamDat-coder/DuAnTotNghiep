@@ -5,9 +5,11 @@ const payment_controller_1 = require("../controllers/payment.controller");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 // VNPay
-router.post('/create-vnpay-payment', auth_middleware_1.verifyToken, payment_controller_1.createVNPayPayment);
-router.get('/check-payment-vnpay', payment_controller_1.checkVNPayReturn);
+router.post("/create-vnpay-payment", auth_middleware_1.verifyToken, payment_controller_1.createVNPayPayment);
+router.get("/check-payment-vnpay", payment_controller_1.checkVNPayReturn);
 // ZaloPay
 router.post("/create-payment-zalopay", payment_controller_1.createZaloPayPayment);
-router.get("/zalopay-callback", payment_controller_1.checkZaloPayReturn);
+router.get("/check-payment-zalopay", payment_controller_1.checkZaloPayReturn);
+// Cod
+router.post("/create-cod-payment", auth_middleware_1.verifyToken, payment_controller_1.createCodPayment);
 exports.default = router;

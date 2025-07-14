@@ -343,6 +343,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
           message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop4Real, khám phá ngay!`,
           type: "product",
           isRead: false,
+          link: `/products/${savedProduct._id}`,
         }));
         await NotificationModel.insertMany(notifications);
         console.log("Thông báo đã gửi đến người dùng.");

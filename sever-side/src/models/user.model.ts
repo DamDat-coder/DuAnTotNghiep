@@ -19,7 +19,7 @@ export interface IUser extends Document {
   password: string;
   name: string;
   addresses: Types.DocumentArray<IAddress>;
-  phone: number | null;
+  phone: string | null; // Sửa từ number -> string
   role: "user" | "admin";
   is_active: boolean;
   refreshToken?: string | null;
@@ -49,7 +49,7 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true, trim: true },
     addresses: [addressSchema],
     phone: {
-      type: Number,
+      type: String, // Sửa từ Number -> String
       default: null,
       unique: true,
       sparse: true,

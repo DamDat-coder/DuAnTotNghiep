@@ -1,9 +1,16 @@
-import { Address, IUser, UpdateUserData, UserData } from "../types/auth";
+import {
+  Address,
+  IUser,
+  ResetPasswordData,
+  ResetPasswordResponse,
+  UpdateUserData,
+  UserData,
+} from "../types/auth";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 import { isBrowser } from "../utils";
 import { fetchProductById } from "./productApi";
 import { IProduct } from "@/types/product";
-
+import { ForgotPasswordResponse } from "@/types/auth";
 interface AddAddressResponse {
   message: string;
   data: Address[];
@@ -273,6 +280,7 @@ export async function toggleUserStatus(userId: string, is_active: boolean) {
   }
 }
 
+// Thêm địa chỉ mới cho user
 export async function addAddress(
   userId: string,
   addressData: any
@@ -284,20 +292,17 @@ export async function addAddress(
       return null;
     }
 
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/addresses`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(addressData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Cập nhật địa chỉ thất bại.");
-    }
+    const data = await fetchWithAuth<{ data: IUser }>(
+      `${API_BASE_URL}/users/${userId}/addresses`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(addressData),
+      }
+    );
 
     return data.data;
   } catch (error: any) {
@@ -306,7 +311,7 @@ export async function addAddress(
   }
 }
 
-// Function to update an address for a user
+// Cập nhật địa chỉ cho user
 export async function updateAddress(
   userId: string,
   addressId: string,
@@ -319,7 +324,7 @@ export async function updateAddress(
       return null;
     }
 
-    const response = await fetch(
+    const data = await fetchWithAuth<{ data: IUser }>(
       `${API_BASE_URL}/users/${userId}/addresses/${addressId}`,
       {
         method: "PUT",
@@ -331,12 +336,6 @@ export async function updateAddress(
       }
     );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Cập nhật địa chỉ thất bại.");
-    }
-
     return data.data;
   } catch (error: any) {
     console.error("Cập nhật địa chỉ thất bại:", error.message);
@@ -344,7 +343,7 @@ export async function updateAddress(
   }
 }
 
-// Function to delete an address for a user
+// Xoá địa chỉ cho user
 export async function deleteAddress(
   userId: string,
   addressId: string
@@ -356,7 +355,7 @@ export async function deleteAddress(
       return null;
     }
 
-    const response = await fetch(
+    const data = await fetchWithAuth<{ data: IUser }>(
       `${API_BASE_URL}/users/${userId}/addresses/${addressId}`,
       {
         method: "DELETE",
@@ -367,54 +366,12 @@ export async function deleteAddress(
       }
     );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Xoá địa chỉ thất bại.");
-    }
-
     return data.data;
   } catch (error: any) {
     console.error("Xoá địa chỉ thất bại:", error.message);
     return null;
   }
 }
-
-// // Function to set a specific address as default
-// export async function setDefaultAddress(
-//   userId: string,
-//   addressId: string
-// ): Promise<IUser | null> {
-//   try {
-//     const token = localStorage.getItem("accessToken");
-//     if (!token) {
-//       console.error("Không có token. Vui lòng đăng nhập lại.");
-//       return null;
-//     }
-
-//     const response = await fetch(
-//       `${API_BASE_URL}/users/${userId}/addresses/${addressId}/default`,
-//       {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`,
-//         },
-//       }
-//     );
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       throw new Error(data.message || "Cập nhật địa chỉ mặc định thất bại.");
-//     }
-
-//     return data.data;
-//   } catch (error: any) {
-//     console.error("Cập nhật địa chỉ mặc định thất bại:", error.message);
-//     return null;
-//   }
-// }
 
 export const addProductToWishlistApi = async (
   userId: string,
@@ -617,7 +574,7 @@ export async function fetchAllUsersAdmin(
   page: number = 1, // Thêm tham số page
   limit: number = 10, // Thêm tham số limit
   role?: string, // Thêm tham số role (tùy chọn)
-  is_active?: boolean 
+  is_active?: boolean
 ): Promise<{
   users: IUser[] | null;
   total: number;
@@ -656,6 +613,7 @@ export async function fetchAllUsersAdmin(
       avatar: userData.avatar || null,
       role: userData.role,
       is_active: userData.is_active,
+      active: userData.is_active,
       addresses: userData.addresses || [],
     }));
 
@@ -670,3 +628,134 @@ export async function fetchAllUsersAdmin(
     return { users: null, total: 0, totalPages: 0, currentPage: page };
   }
 }
+
+
+export async function fetchUserById(userId: string): Promise<IUser | null> {
+  try {
+    const response = await fetchWithAuth<any>(
+      `${API_BASE_URL}/users/${userId}`,
+      { cache: "no-store" }
+    );
+    console.log("API response:", response);
+
+    // Sửa đoạn này để lấy đúng user object từ response.data
+    const userData = response.data || response.user || response;
+    if (!userData || !userData._id) {
+      console.error("Invalid user data:", response);
+      return null;
+    }
+    return {
+      id: userData._id,
+      email: userData.email || "",
+      name: userData.name || "",
+      phone: userData.phone || null,
+      role: userData.role || "user",
+      is_active: userData.is_active ?? true,
+      active: userData.is_active ?? true,
+      addresses: Array.isArray(userData.addresses)
+        ? userData.addresses.map((addr: any) => ({
+            _id: addr._id,
+            street: addr.street || "",
+            ward: addr.ward || "",
+            district: addr.district || "",
+            province: addr.province || "",
+            is_default: addr.is_default ?? false,
+          }))
+        : [],
+    };
+  } catch (error: any) {
+    console.error(`Error fetching user by ID ${userId}:`, error.message);
+    return null;
+  }
+}
+
+export async function updatePassword(
+  data: ResetPasswordData
+): Promise<ResetPasswordResponse> {
+  const token = localStorage.getItem("accessToken");
+  const res = await fetch(`${API_BASE_URL}/users/update-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      currentPassword: data.oldPassword,
+      newPassword: data.password,
+    }),
+  });
+
+  const result = await res.json();
+
+  // Trả về lỗi đúng từ backend cho FE xử lý
+  if (!res.ok) {
+    throw new Error(result.message || "Đổi mật khẩu thất bại.");
+  }
+
+  return result;
+}
+
+// Gửi OTP qua SMS
+export async function sendOtp(phone: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/users/send-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gửi OTP thất bại");
+  return data;
+}
+
+// Xác minh OTP
+export async function verifyOtp(phone: string, otp: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/users/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, otp }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Xác minh OTP thất bại");
+  return data;
+}
+
+export const forgotPassword = async (
+  email: string
+): Promise<ForgotPasswordResponse> => {
+  const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Có lỗi xảy ra khi gửi yêu cầu khôi phục mật khẩu."
+    );
+  }
+
+  return data;
+};
+
+export const resetPassword = async (
+  token: string,
+  password: string
+): Promise<ResetPasswordResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/users/reset-password/${token}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Có lỗi xảy ra khi đặt lại mật khẩu.");
+  }
+
+  return data;
+};
+

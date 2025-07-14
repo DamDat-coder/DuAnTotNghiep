@@ -19,18 +19,12 @@ import {
   getWishlist,
   forgotPassword,
   resetPassword,
+  updatePassword,
 } from "../controllers/user.controller";
 
+import { sendSmsOTP, verifySmsOTP } from "../controllers/user.phone.controller";
 
-import {
-  sendSmsOTP,
-  verifySmsOTP,
-} from "../controllers/user.phone.controller";
-
-import {
-  verifyToken,
-  verifyAdmin,
-} from "../middlewares/auth.middleware";
+import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
 import { validateRequest } from "../middlewares/validateRequest";
 
@@ -39,22 +33,27 @@ const router = Router();
 // Xác thực và quản lý người dùng
 router.get("/me", verifyToken, getCurrentUser);
 router.post("/register", validateRequest, registerUser);
-router.post("/login",  validateRequest, loginUser);
+router.post("/login", validateRequest, loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/google-login", validateRequest, googleLogin);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+router.post("/update-password", verifyToken, validateRequest, updatePassword);
 
 // OTP qua SMS
-router.post("/send-otp",  validateRequest, sendSmsOTP);
+router.post("/send-otp", validateRequest, sendSmsOTP);
 router.post("/verify-otp", validateRequest, verifySmsOTP);
 
 // Địa chỉ
 router.post("/:id/addresses", verifyToken, addAddress);
 router.put("/:id/addresses/:addressId", verifyToken, updateAddress);
 router.delete("/:id/addresses/:addressId", verifyToken, deleteAddress);
-router.patch("/:id/addresses/:addressId/default", verifyToken, setDefaultAddress);
+router.patch(
+  "/:id/addresses/:addressId/default",
+  verifyToken,
+  setDefaultAddress
+);
 
 // Danh sách yêu thích
 router.post("/:id/wishlist", verifyToken, addToWishlist);

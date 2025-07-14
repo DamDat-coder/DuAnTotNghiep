@@ -52,47 +52,45 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
     setIsSubmitting(true);
     setError(null);
 
+    // Transform form data to match Coupon schema
+    const couponData: Partial<Coupon> = {
+      code: form.code,
+      description: form.description,
+      discountType: form.type === "%" ? "percentage" : "fixed",
+      discountValue: parseFloat(form.value) || 0,
+      minOrderAmount: form.minOrder ? parseFloat(form.minOrder) : undefined,
+      maxDiscountAmount: form.maxDiscount
+        ? parseFloat(form.maxDiscount)
+        : undefined,
+      startDate: form.startDate
+        ? new Date(form.startDate).toISOString()
+        : undefined,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
+      is_active: form.is_active,
+      applicableCategories: form.category
+        ? categories.filter((cat) => cat._id === form.category)
+        : [],
+      applicableProducts: [], 
+    };
+
     try {
-      const selectedCategory = categories.find(
-        (cat) => cat._id === form.category
-      );
-
-      if (form.category && !selectedCategory) {
-        setError("Danh mục không hợp lệ.");
-        return;
-      }
-
-      const payload: Partial<Coupon> = {
-        code: form.code,
-        description: form.description,
-        discountType: form.type === "%" ? "percentage" : "fixed",
-        discountValue: Number(form.value),
-        minOrderAmount: form.minOrder ? Number(form.minOrder) : null,
-        maxDiscountAmount: form.maxDiscount ? Number(form.maxDiscount) : null,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        usageLimit: form.usage ? Number(form.usage) : null,
-        is_active: form.is_active,
-        usedCount: 0,
-        applicableCategories: selectedCategory ? [selectedCategory] : [],
-        applicableProducts: [],
-      };
-
-      const result = await createCoupon(payload);
-      console.log("Kết quả tạo mã giảm giá:", result);
-      toast.success("Tạo mã giảm giá thành công!");
-      onClose();
-      // Reload trang để hiển thị coupon mới
-      window.location.reload();
-    } catch (err: any) {
-      console.error("Lỗi khi tạo mã giảm giá:", err);
-      setError(err.message || "Đã xảy ra lỗi khi tạo mã giảm giá.");
-      toast.error("Đã xảy ra lỗi khi tạo mã giảm giá.");
+      console.log("Coupon data being sent:", couponData);
+      const createdCoupon = await createCoupon(couponData);
+      toast.success("Mã giảm giá được tạo thành công!");
+      onClose(); // Close modal on success
+    } catch (error: any) {
+      const errorMessage =
+        error.message ||
+        "Không thể tạo mã giảm giá. Vui lòng kiểm tra dữ liệu.";
+      console.error("Lỗi khi tạo mã giảm giá:", error);
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +110,12 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
   }, []);
 
   const isFormValid =
-    form.code && form.value && form.startDate && form.endDate && form.usage && form.description;
+    form.code &&
+    form.value &&
+    form.startDate &&
+    form.endDate &&
+    form.usage &&
+    form.description;
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -135,7 +138,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
           </div>
         </div>
         <div className="w-full h-px bg-[#E7E7E7]" />
-        
+
         {/* Error display */}
         {error && (
           <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
@@ -362,14 +365,9 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
             {/* Submit */}
             <button
               type="submit"
-              disabled={!isFormValid || isSubmitting}
-              className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold mt-4 ${
-                !isFormValid || isSubmitting
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:opacity-90"
-              }`}
+              className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
             >
-              {isSubmitting ? "Đang tạo..." : "Thêm mã giảm giá"}
+              Tạo mã giảm giá
             </button>
           </form>
         </div>

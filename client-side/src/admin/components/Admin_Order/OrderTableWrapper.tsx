@@ -1,29 +1,40 @@
 import { useState, useMemo } from "react";
-import OrderControlBar from "./OrderControlBar";
-import { Order } from "@/types/order";
+import { IOrder } from "@/types/order";
 import { Pagination } from "../ui/Panigation";
+import OrderControlBar from "./OrderControlBar";
 import OrderBody from "./OrderBody";
+import EditOrderForm from "./OrderEditForm";
 
 export default function OrderTableWrapper({
   orders,
+  setOrders,
   STATUS,
 }: {
-  orders: Order[];
+  orders: IOrder[];
+  setOrders: React.Dispatch<React.SetStateAction<IOrder[]>>;
   STATUS: any[];
 }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [editOrderId, setEditOrderId] = useState<string | null>(null);
+
   const PAGE_SIZE = 10;
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const name = order.user?.name || "";
-      const email = order.user?.email || "";
-      const products = order.products?.map((p) => p.productId?.name).join(", ") || "";
+      const name = order.user?.name || order.userId?.name || "";
+      const email = order.user?.email || order.userId?.email || "";
+      let products = "";
+      if (Array.isArray(order.items) && order.items.length > 0) {
+        products = order.items.map((item: any) => item.name).join(", ");
+      }
       const matchStatus = filter === "all" || order.status === filter;
       const matchSearch =
-        (order.id || "").toLowerCase().includes(search.toLowerCase()) ||
+        (order._id?.$oid || order._id || order.id || "")
+          .toString()
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
         name.toLowerCase().includes(search.toLowerCase()) ||
         email.toLowerCase().includes(search.toLowerCase()) ||
         products.toLowerCase().includes(search.toLowerCase());
@@ -31,22 +42,35 @@ export default function OrderTableWrapper({
     });
   }, [orders, filter, search]);
 
-  const totalPage = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
-  const pageData = filteredOrders.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+  const totalPage = Math.ceil(filteredOrders.length / PAGE_SIZE);
+  const pageData = useMemo(
+    () =>
+      filteredOrders.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+      ),
+    [filteredOrders, currentPage]
   );
 
-  function handlePageChange(page: number) {
+  function handleChangePage(page: number) {
     setCurrentPage(page);
   }
 
+  function handleEdit(order: IOrder) {
+    const orderId = order._id?.$oid || order._id || order.id;
+    setEditOrderId(orderId);
+  }
+
+  function handleCloseEditForm() {
+    setEditOrderId(null);
+  }
+
   return (
-    <div className="space-y-4 mt-6">
+    <div className="mt-6">
       <OrderControlBar
         onFilterChange={setFilter}
         onSearchChange={setSearch}
-        STATUS={STATUS} // Truyền từ props của OrderTableWrapper
+        STATUS={STATUS}
       />
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
         <table className="min-w-full text-sm text-left">
@@ -61,30 +85,32 @@ export default function OrderTableWrapper({
             </tr>
           </thead>
           <tbody>
-            <OrderBody orders={pageData} STATUS={STATUS} />
-            {totalPage > 1 && (
-              <>
-                <tr>
-                  <td colSpan={7} className="py-2">
-                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={7} className="pt-4 pb-2">
-                    <div className="flex justify-center">
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPage={totalPage}
-                        onPageChange={setCurrentPage}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              </>
-            )}
+            <OrderBody
+              orders={pageData}
+              setOrders={setOrders}
+              STATUS={STATUS}
+              onEdit={handleEdit}
+            />
           </tbody>
         </table>
+        {totalPage > 1 && (
+          <div className="flex justify-center mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPage={totalPage}
+              onPageChange={handleChangePage}
+            />
+          </div>
+        )}
       </div>
+      {editOrderId && (
+        <EditOrderForm
+          orderId={editOrderId}
+          onClose={handleCloseEditForm}
+          setOrders={setOrders}
+          STATUS={STATUS}
+        />
+      )}
     </div>
   );
 }

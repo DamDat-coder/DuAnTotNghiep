@@ -75,8 +75,8 @@ export default function AdminHeader({
     <header className="bg-[#F8FAFC] pt-8">
       <div className="flex justify-between items-start w-full max-w-full">
         <div>
-          <h1 className="text-[32px] font-bold leading-tight">{pageTitle}</h1>
-          <p className="text-sm text-gray-500 mt-1">{pageSubtitle}</p>
+          <h1 className="text-[32px] font-bold leading-tight ml-6">{pageTitle}</h1>
+          <p className="text-sm text-gray-500 mt-1 ml-6">{pageSubtitle}</p>
         </div>
 
         <div className="w-[333px] h-[77px] flex items-center bg-black text-white rounded-[32px] px-4">

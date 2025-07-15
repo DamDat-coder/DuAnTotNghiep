@@ -52,9 +52,10 @@ export default function CartDesktop({
       return;
     }
 
-    const accessToken = typeof window !== "undefined"
-      ? localStorage.getItem("accessToken")
-      : null;
+    const accessToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
 
     if (!accessToken) {
       toast.error("Bạn vui lòng đăng nhập trước khi thanh toán!");

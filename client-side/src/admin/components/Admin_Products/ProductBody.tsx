@@ -10,14 +10,12 @@ export default function ProductBody({
   onDelete,
   onToggleStatus,
 }) {
-  const [switchStates, setSwitchStates] = useState(() =>
-    products.reduce((acc, p) => ({ ...acc, [p._id || p.id]: p.is_active ?? true }), {})
-  );
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
-  // --- XỬ LÝ XÓA ---
+  // Xử lý xóa
   const handleDelete = async (id: string) => {
-    if (confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
+    if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
       try {
         await deleteProduct(id);
         if (onDelete) onDelete(id);
@@ -28,26 +26,26 @@ export default function ProductBody({
     }
   };
 
-  // --- XỬ LÝ SỬA ---
+  // Sửa
   const handleEdit = (product: any) => {
     if (onEdit) onEdit(product);
   };
 
-  // --- XỬ LÝ BẬT/TẮT ---
-  const handleToggleStatus = async (id: string) => {
-    try {
-      if (onToggleStatus) onToggleStatus(id, switchStates[id]);
-      setSwitchStates((prev) => ({
-        ...prev,
-        [id]: !prev[id],
-      }));
-      toast.success("Cập nhật trạng thái thành công!");
-    } catch (error: any) {
-      toast.error(error.message || "Lỗi cập nhật trạng thái!");
-    }
+  // Bật/Tắt trạng thái: Luôn hỏi xác nhận!
+  const handleToggleClick = (id: string) => {
+    setConfirmId(id);
   };
 
-  // Đóng popup khi click ra ngoài
+  // Xác nhận Có
+  const handleConfirm = (id: string, currentActive: boolean) => {
+    setConfirmId(null);
+    onToggleStatus?.(id, currentActive);
+  };
+
+  // Không
+  const handleCancel = () => setConfirmId(null);
+
+  // Đóng dropdown khi click ra ngoài
   const popupRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -73,6 +71,7 @@ export default function ProductBody({
     <>
       {products.map(product => {
         const productId = product.id || product._id;
+        const isActive = product.is_active ?? true;
         return (
           <tr
             key={productId}
@@ -83,7 +82,13 @@ export default function ProductBody({
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg overflow-hidden bg-[#f3f3f3] flex items-center justify-center">
                   <Image
-                    src={product.images && product.images[0] ? `/product/img/${product.images[0]}` : "/no-image.png"}
+                    src={
+                      product.images && product.images[0]
+                        ? (product.images[0].startsWith("http")
+                            ? product.images[0]
+                            : `/product/img/${product.images[0]}`)
+                        : "/no-image.png"
+                    }
                     width={40}
                     height={40}
                     alt={product.name || "No image"}
@@ -119,17 +124,43 @@ export default function ProductBody({
             <td className="px-4 py-4 min-w-[100px] align-middle">
               <button
                 className={`w-10 h-6 rounded-full transition relative ${
-                  (product.is_active ?? true) ? "bg-[#2563EB]" : "bg-gray-300"
+                  isActive ? "bg-[#2563EB]" : "bg-gray-300"
                 }`}
-                onClick={() => handleToggleStatus(productId)}
+                onClick={() => handleToggleClick(productId)}
                 tabIndex={-1}
               >
                 <span
                   className={`absolute left-0 top-0 transition-all duration-200 w-6 h-6 bg-white rounded-full shadow ${
-                    (product.is_active ?? true) ? "translate-x-4" : "translate-x-0"
+                    isActive ? "translate-x-4" : "translate-x-0"
                   }`}
                 />
               </button>
+              {/* Popup xác nhận (bật/tắt đều hỏi) */}
+              {confirmId === productId && (
+                <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[1000]">
+                  <div className="bg-white rounded-xl p-6 w-[320px] shadow-xl flex flex-col items-center gap-4">
+                    <div className="text-lg font-semibold text-center">
+                      {isActive
+                        ? "Bạn có chắc muốn khóa sản phẩm này?"
+                        : "Bạn có chắc muốn mở khóa và hiển thị sản phẩm này?"}
+                    </div>
+                    <div className="flex gap-3 mt-2">
+                      <button
+                        className="px-4 py-2 rounded bg-[#2563EB] text-white font-semibold hover:bg-[#174bb7]"
+                        onClick={() => handleConfirm(productId, isActive)}
+                      >
+                        Có
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded bg-gray-200 text-black font-semibold hover:bg-gray-300"
+                        onClick={handleCancel}
+                      >
+                        Không
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </td>
             {/* Ba chấm - Dropdown action */}
             <th className="w-[64px] px-4 py-0 rounded-tr-[12px] rounded-br-[12px] align-middle relative">

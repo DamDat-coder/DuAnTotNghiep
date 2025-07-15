@@ -19,7 +19,7 @@ export default function CategoryControlBar({ onSearchChange, onAddCategory }: Pr
     <div className="flex items-center justify-between w-full mb-6">
       {/* Search Box */}
       <div className="relative w-[350px] h-12">
-        <input
+        {/* <input
           type="text"
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
@@ -32,7 +32,7 @@ export default function CategoryControlBar({ onSearchChange, onAddCategory }: Pr
           height={20}
           alt="search"
           className="absolute top-1/2 left-3 transform -translate-y-1/2"
-        />
+        /> */}
         {search && (
           <button
             onClick={() => handleSearch("")}

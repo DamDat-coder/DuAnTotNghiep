@@ -5,7 +5,8 @@ import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { ICategory } from "@/types/category";
 import { editProduct } from "@/services/productApi";
-import { fetchCategories } from "@/services/categoryApi";
+import { fetchCategoryTree } from "@/services/categoryApi";
+import { toast } from "react-hot-toast";
 
 interface EditProductFormProps {
   product: IProduct;
@@ -13,14 +14,38 @@ interface EditProductFormProps {
   onClose: () => void;
 }
 
-const sizeOptions = ["S", "M", "L", "XL", "2XL"];
+const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL"];
 const colorOptions = [
   { value: "Đen", label: "Đen" },
   { value: "Trắng", label: "Trắng" },
   { value: "Xám", label: "Xám" },
   { value: "Đỏ", label: "Đỏ" },
+  { value: "Xanh da trời", label: "Xanh da trời" },
+  { value: "Nâu", label: "Nâu" },
   { value: "Hồng", label: "Hồng" },
 ];
+
+function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
+  return nodes
+    .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
+    .map((cat) => ({
+      ...cat,
+      children: cat.children ? filterOutBaiViet(cat.children) : [],
+    }));
+}
+
+function renderCategoryOptions(
+  nodes: ICategory[],
+  depth = 0,
+  path = ""
+): JSX.Element[] {
+  return nodes.flatMap((cat) => [
+    <option key={path + (cat._id || cat.id)} value={cat._id || cat.id}>
+      {"—".repeat(depth)} {cat.name}
+    </option>,
+    ...(cat.children ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id || cat.id)) : []),
+  ]);
+}
 
 export default function EditProductForm({
   product,
@@ -35,13 +60,13 @@ export default function EditProductForm({
     variants: product?.variants
       ? product.variants.map((v: any) => ({ ...v }))
       : [],
-    images: [],
+    images: product?.image || product?.images || [],
   });
+
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Biến thể tạm cho biến thể mới (chỉ phục vụ UI, không ảnh hưởng variants cũ)
   const [newVariant, setNewVariant] = useState<any>({
     size: "",
     color: "",
@@ -50,12 +75,11 @@ export default function EditProductForm({
     stock: "",
   });
 
-  // Lấy danh mục
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const result = await fetchCategories();
-        setCategories(result);
+        const result = await fetchCategoryTree();
+        setCategories(filterOutBaiViet(result));
       } catch (err) {
         setCategories([]);
       }
@@ -63,13 +87,11 @@ export default function EditProductForm({
     loadCategories();
   }, []);
 
-  // Xử lý upload hình ảnh
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleImageUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Thay đổi dữ liệu input form (trừ biến thể)
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -87,7 +109,6 @@ export default function EditProductForm({
     }
   };
 
-  // Thay đổi biến thể cũ
   const handleVariantChange = (idx: number, field: string, value: any) => {
     setFormData((prev: any) => {
       const variants = [...prev.variants];
@@ -96,7 +117,6 @@ export default function EditProductForm({
     });
   };
 
-  // Xóa biến thể cũ
   const handleRemoveVariant = (idx: number) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -104,7 +124,6 @@ export default function EditProductForm({
     }));
   };
 
-  // Thay đổi biến thể mới
   const handleNewVariantChange = (field: string, value: any) => {
     setNewVariant((prev: any) => ({
       ...prev,
@@ -112,9 +131,7 @@ export default function EditProductForm({
     }));
   };
 
-  // Thêm biến thể mới vào danh sách
   const handleAddVariant = () => {
-    // Check rỗng
     if (
       !newVariant.size ||
       !newVariant.color ||
@@ -147,45 +164,45 @@ export default function EditProductForm({
     });
   };
 
-  // Hiển thị preview + upload
   const renderImagesBlock = () => {
     const previews =
       formData.images && formData.images.length > 0
-        ? (formData.images as File[]).map((file: File, i: number) => (
-            <div
-              key={i}
-              className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
-            >
-              <Image
-                src={URL.createObjectURL(file)}
-                alt={file.name}
-                width={130}
-                height={131}
-                className="object-cover w-full h-full"
-                unoptimized
-              />
-            </div>
-          ))
-        : product?.images?.map((img: string, i: number) => (
-            <div
-              key={i}
-              className="w-[130px] h-[131px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
-            >
-              <Image
-                src={`/product/img/${img}`}
-                alt={product.name || ""}
-                width={130}
-                height={131}
-                className="object-cover w-full h-full"
-                onError={(e: any) => {
-                  e.target.src = "/no-image.png";
-                }}
-                unoptimized
-              />
-            </div>
-          )) || [];
+        ? formData.images.map((img: any, i: number) =>
+            typeof img === "string" ? (
+              <div
+                key={i}
+                className="w-[130px] h-[131px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
+              >
+                <Image
+                  src={img}
+                  alt={formData.name || ""}
+                  width={130}
+                  height={131}
+                  className="object-cover w-full h-full"
+                  onError={(e: any) => {
+                    e.target.src = "/no-image.png";
+                  }}
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div
+                key={i}
+                className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
+              >
+                <Image
+                  src={URL.createObjectURL(img)}
+                  alt={img.name}
+                  width={130}
+                  height={131}
+                  className="object-cover w-full h-full"
+                  unoptimized
+                />
+              </div>
+            )
+          )
+        : [];
 
-    // Nếu số ảnh > 3 thì show 3 ảnh + 1 box "+N"
     const previewsToShow =
       previews.length > 3
         ? [
@@ -199,7 +216,6 @@ export default function EditProductForm({
           ]
         : previews;
 
-    // Nút upload ảnh
     return (
       <div className="flex gap-4 mt-2 flex-wrap">
         {previewsToShow}
@@ -226,12 +242,12 @@ export default function EditProductForm({
     );
   };
 
-  // Gửi form
+  // PHẦN HANDLE SUBMIT QUAN TRỌNG!
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validate dữ liệu
+    // Validate như cũ...
     if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
     if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
     if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
@@ -244,7 +260,7 @@ export default function EditProductForm({
       if (v.discountPercent && (v.discountPercent < 0 || v.discountPercent > 100))
         return setError("Phần trăm giảm giá phải từ 0 đến 100.");
     }
-    if (formData.images && formData.images.length > 0) {
+    if (formData.images && formData.images.length > 0 && typeof formData.images[0] !== "string") {
       const validTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let img of formData.images) {
         if (!validTypes.includes(img.type)) return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
@@ -254,11 +270,11 @@ export default function EditProductForm({
 
     setIsSubmitting(true);
     try {
-      const res = await editProduct(productId, {
+      const submitData = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
-        categoryId: formData.categoryId,
+        categoryId: formData.categoryId, // <-- CHỈ gửi trường này
         variants: formData.variants.map((v: any) => ({
           price: Number(v.price),
           color: v.color,
@@ -266,13 +282,16 @@ export default function EditProductForm({
           stock: Number(v.stock),
           discountPercent: Number(v.discountPercent) || 0,
         })),
-        images: formData.images, // File[] hoặc []
-      });
+        images: formData.images,
+      };
+
+      const res = await editProduct(productId, submitData);
       if (!res) throw new Error("Không thể cập nhật sản phẩm.");
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật sản phẩm thành công!");
       onClose();
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
+      toast.error(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
     }
     setIsSubmitting(false);
   };
@@ -310,198 +329,218 @@ export default function EditProductForm({
             Image format .jpg .jpeg .png and minimum size 300 × 300px
           </p>
           {renderImagesBlock()}
-          {formData.images && formData.images.length > 0 && (
+          {formData.images && formData.images.length > 0 && typeof formData.images[0] !== "string" && (
             <p className="mt-1 text-sm text-gray-500">
               Đã chọn: {(formData.images as File[]).map((f) => f.name).join(", ")}
             </p>
           )}
         </div>
         {/* Tên sản phẩm */}
-          <div>
-            <label className="block font-semibold mb-2">
-              Tên sản phẩm <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full border rounded p-3"
-              placeholder="Nhập tên sản phẩm"
-            />
+        <div>
+          <label className="block font-semibold mb-2">
+            Tên sản phẩm <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full border rounded p-3"
+            placeholder="Nhập tên sản phẩm"
+          />
+        </div>
+        {/* Mô tả */}
+        <div className="w-[564px] max-w-full">
+          <label className="block font-semibold mb-2">
+            Mô tả sản phẩm <span className="text-red-500">*</span>
+          </label>
+          <p className="mb-2 text-sm text-gray-500">
+            Bao gồm tối thiểu 260 ký tự để giúp người mua dễ hiểu và tìm thấy sản phẩm của bạn hơn
+          </p>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className="w-full border rounded p-3 min-h-[120px]"
+            placeholder="Nhập mô tả..."
+          />
+        </div>
+        {/* Danh mục */}
+        <div>
+          <label className="block font-semibold mb-2">
+            Danh mục <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="categoryId"
+            value={formData.categoryId}
+            onChange={handleChange}
+            className="w-full border rounded p-3"
+          >
+            <option value="">Chọn danh mục</option>
+            {renderCategoryOptions(categories)}
+          </select>
+        </div>
+        {/* Biến thể sản phẩm */}
+        <div>
+          <label className="block font-semibold mb-2 text-lg">Biến thể</label>
+          <div className="overflow-x-auto mt-2">
+            <table className="min-w-full border text-sm bg-white">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-2 border text-center min-w-[90px]">Size</th>
+                  <th className="p-2 border text-center min-w-[90px]">Màu sắc</th>
+                  <th className="p-2 border text-center min-w-[100px]">Giá</th>
+                  <th className="p-2 border text-center min-w-[65px] w-[80px]">Giảm giá (%)</th>
+                  <th className="p-2 border text-center min-w-[65px] w-[80px]">Tồn kho</th>
+                  <th className="p-2 border text-center min-w-[60px]">Xóa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formData.variants.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center text-gray-400 py-2">
+                      Chưa có biến thể nào
+                    </td>
+                  </tr>
+                ) : (
+                  formData.variants.map((variant: any, idx: number) => (
+                    <tr key={idx}>
+                      <td className="p-2 border">
+                        <select
+                          className="border rounded-lg p-2 w-full text-sm"
+                          value={variant.size}
+                          onChange={e => handleVariantChange(idx, "size", e.target.value)}
+                        >
+                          {sizeOptions.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-2 border">
+                        <select
+                          className="border rounded-lg p-2 w-full text-sm"
+                          value={variant.color}
+                          onChange={e => handleVariantChange(idx, "color", e.target.value)}
+                        >
+                          {colorOptions.map(c => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-2 border">
+                        <input
+                          type="number"
+                          min={0}
+                          className="border rounded-lg p-2 w-full text-sm"
+                          value={variant.price}
+                          onChange={e => handleVariantChange(idx, "price", e.target.value)}
+                          placeholder="Giá"
+                        />
+                      </td>
+                      <td className="p-2 border w-[80px]">
+                        <input
+                          type="number"
+                          min={0}
+                          className="border rounded-lg p-2 w-full text-sm"
+                          value={variant.discountPercent || ""}
+                          onChange={e => handleVariantChange(idx, "discountPercent", e.target.value)}
+                          placeholder="Giảm"
+                        />
+                      </td>
+                      <td className="p-2 border w-[80px]">
+                        <input
+                          type="number"
+                          min={0}
+                          className="border rounded-lg p-2 w-full text-sm"
+                          value={variant.stock}
+                          onChange={e => handleVariantChange(idx, "stock", e.target.value)}
+                          placeholder="Kho"
+                        />
+                      </td>
+                      <td className="p-2 border text-center">
+                        <button
+                          type="button"
+                          className="text-red-500 hover:underline"
+                          onClick={() => handleRemoveVariant(idx)}
+                          title="Xóa biến thể"
+                        >
+                          Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-          {/* Mô tả */}
-          <div className="w-[564px] max-w-full">
-            <label className="block font-semibold mb-2">
-              Mô tả sản phẩm <span className="text-red-500">*</span>
-            </label>
-            <p className="mb-2 text-sm text-gray-500">
-              Bao gồm tối thiểu 260 ký tự để giúp người mua dễ hiểu và tìm thấy sản phẩm của bạn hơn
-            </p>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full border rounded p-3 min-h-[120px]"
-              placeholder="Nhập mô tả..."
-            />
-          </div>
-          {/* Danh mục */}
-          <div>
-            <label className="block font-semibold mb-2">
-              Danh mục <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="categoryId"
-              value={formData.categoryId}
-              onChange={handleChange}
-              className="w-full border rounded p-3"
-            >
-              <option value="">Chọn danh mục</option>
-              {categories.map((cat) => (
-                <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Biến thể sản phẩm */}
-          <div>
-            <label className="block font-semibold mb-2">Biến thể</label>
-            {/* Danh sách biến thể cũ */}
-            <div className="flex flex-col gap-2 max-w-[564px] w-full">
-              {formData.variants.map((variant: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex flex-row flex-wrap gap-2 items-center rounded-lg border border-gray-100 bg-[#FAFAFB] px-2 py-2"
-                  style={{ width: "100%", maxWidth: 564 }}
+          {/* Thêm mới biến thể */}
+          <div className="rounded-lg border border-gray-200 p-4 bg-white w-full max-w-[564px] mt-2 mx-auto">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div>
+                <label className="font-semibold block mb-1 text-sm">Sizes</label>
+                <div className="flex gap-2">
+                  {sizeOptions.map(size => (
+                    <button
+                      key={size}
+                      type="button"
+                      className={
+                        "w-10 h-10 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all duration-100 " +
+                        (newVariant.size === size
+                          ? "bg-black text-white border-black shadow"
+                          : "bg-white border-gray-200 text-black hover:bg-gray-100")
+                      }
+                      onClick={() => handleNewVariantChange("size", size)}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="font-semibold block mb-1 text-sm">Màu sắc</label>
+                <select
+                  className="border rounded-lg p-2 w-full text-sm"
+                  value={newVariant.color}
+                  onChange={e => handleNewVariantChange("color", e.target.value)}
                 >
-                  <select
-                    className="border rounded-lg p-2 w-[85px] text-sm"
-                    value={variant.size}
-                    onChange={e => handleVariantChange(idx, "size", e.target.value)}
-                  >
-                    <option value="">Size</option>
-                    {sizeOptions.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  <select
-                    className="border rounded-lg p-2 w-[100px] text-sm"
-                    value={variant.color}
-                    onChange={e => handleVariantChange(idx, "color", e.target.value)}
-                  >
-                    <option value="">Màu sắc</option>
-                    {colorOptions.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-[90px] text-sm"
-                    value={variant.price}
-                    onChange={e => handleVariantChange(idx, "price", e.target.value)}
-                    placeholder="Giá"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-[65px] text-sm"
-                    value={variant.discountPercent || ""}
-                    onChange={e => handleVariantChange(idx, "discountPercent", e.target.value)}
-                    placeholder="Giảm"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-[90px] text-sm"
-                    value={variant.stock}
-                    onChange={e => handleVariantChange(idx, "stock", e.target.value)}
-                    placeholder="Kho"
-                  />
-                  <button
-                    type="button"
-                    className="text-red-500 font-semibold hover:underline ml-1"
-                    onClick={() => handleRemoveVariant(idx)}
-                    disabled={formData.variants.length <= 1}
-                    title="Xóa biến thể"
-                    style={{ fontSize: 13 }}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              ))}
-            </div>
-            {/* Biến thể mới */}
-            <div className="rounded-lg border border-gray-200 p-4 bg-white w-full max-w-[564px] mt-2">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                <div>
-                  <label className="font-semibold block mb-1 text-sm">Sizes</label>
-                  <div className="flex gap-2">
-                    {sizeOptions.map(size => (
-                      <button
-                        key={size}
-                        type="button"
-                        className={
-                          "w-10 h-10 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all duration-100 " +
-                          (newVariant.size === size
-                            ? "bg-black text-white border-black shadow"
-                            : "bg-white border-gray-200 text-black hover:bg-gray-100")
-                        }
-                        onClick={() => handleNewVariantChange("size", size)}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1 text-sm">Màu sắc</label>
-                  <select
-                    className="border rounded-lg p-2 w-full text-sm"
-                    value={newVariant.color}
-                    onChange={e => handleNewVariantChange("color", e.target.value)}
-                  >
-                    <option value="">Chọn màu sắc</option>
-                    {colorOptions.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1 text-sm">Giá</label>
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-full text-sm"
-                    value={newVariant.price}
-                    onChange={e => handleNewVariantChange("price", e.target.value)}
-                    placeholder="Giá (đ)"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1 text-sm">Giảm giá (%)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-full text-sm"
-                    value={newVariant.discountPercent || ""}
-                    onChange={e => handleNewVariantChange("discountPercent", e.target.value)}
-                    placeholder="Giảm (%)"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="font-semibold block mb-1 text-sm">Tồn kho</label>
-                  <input
-                    type="number"
-                    min={0}
-                    className="border rounded-lg p-2 w-full text-sm"
-                    value={newVariant.stock}
-                    onChange={e => handleNewVariantChange("stock", e.target.value)}
-                    placeholder="Số lượng sản phẩm"
-                  />
-                </div>
+                  <option value="">Chọn màu sắc</option>
+                  {colorOptions.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold block mb-1 text-sm">Giá</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="border rounded-lg p-2 w-full text-sm"
+                  value={newVariant.price}
+                  onChange={e => handleNewVariantChange("price", e.target.value)}
+                  placeholder="Giá (đ)"
+                />
+              </div>
+              <div>
+                <label className="font-semibold block mb-1 text-sm">Giảm giá (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="border rounded-lg p-2 w-full text-sm"
+                  value={newVariant.discountPercent || ""}
+                  onChange={e => handleNewVariantChange("discountPercent", e.target.value)}
+                  placeholder="Giảm (%)"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="font-semibold block mb-1 text-sm">Số lượng nhập kho</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="border rounded-lg p-2 w-full text-sm"
+                  value={newVariant.stock}
+                  onChange={e => handleNewVariantChange("stock", e.target.value)}
+                  placeholder="Số lượng sản phẩm"
+                />
               </div>
             </div>
             <button
@@ -513,6 +552,7 @@ export default function EditProductForm({
               Thêm biến thể
             </button>
           </div>
+        </div>
         {/* Thông báo lỗi */}
         {error && <div className="text-red-500 text-center">{error}</div>}
         {/* Nút cập nhật */}

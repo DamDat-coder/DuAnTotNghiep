@@ -20,7 +20,30 @@ interface ApiResponse<T> {
   pagination?: PaginationInfo;
 }
 
-// Hàm lấy danh sách tin tức (không cần token)
+// ✅ Hàm lấy tất cả tin tức (không phân trang, không token)
+export const getAllNews = async (): Promise<ApiResponse<News[]>> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/news/all`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    const result = await res.json();
+
+    if (!result.data || !Array.isArray(result.data)) {
+      throw new Error(result.message || "Không thể lấy danh sách tin tức");
+    }
+
+    return result;
+  } catch (error: any) {
+    throw new Error(`Lỗi khi lấy danh sách tất cả tin tức: ${error.message}`);
+  }
+};
+
+// Hàm lấy danh sách tin tức (có phân trang, tìm kiếm...)
 export const getNewsList = async (
   page: number = 1,
   limit: number = 10,
@@ -33,9 +56,7 @@ export const getNewsList = async (
       page: page.toString(),
       limit: limit.toString(),
       ...(category_id && { category_id }),
-      ...(isPublished !== undefined
-        ? { isPublished: isPublished.toString() }
-        : {}),
+      ...(isPublished !== undefined ? { isPublished: isPublished.toString() } : {}),
       ...(search ? { search } : {}),
     });
 
@@ -61,7 +82,7 @@ export const getNewsList = async (
   }
 };
 
-// Hàm lấy chi tiết tin tức (không cần token)
+// Hàm lấy chi tiết tin tức
 export const getNewsDetail = async (id: string): Promise<News> => {
   try {
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
@@ -88,9 +109,7 @@ export const getNewsDetail = async (id: string): Promise<News> => {
 export const createNews = async (payload: NewsPayload): Promise<News> => {
   try {
     if (!isBrowser()) {
-      throw new Error(
-        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
-      );
+      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
     }
 
     const token = localStorage.getItem("accessToken");
@@ -156,16 +175,14 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
   }
 };
 
-// Hàm cập nhật tin tức (cần token)
+// Cập nhật tin tức
 export const updateNews = async (
   id: string,
   payload: Partial<NewsPayload>
 ): Promise<News> => {
   try {
     if (!isBrowser()) {
-      throw new Error(
-        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
-      );
+      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
     }
 
     const token = localStorage.getItem("accessToken");
@@ -228,18 +245,15 @@ export const updateNews = async (
 
     return result.data;
   } catch (error: any) {
-    console.error("Debug: Error updating news:", error);
     throw new Error(`Lỗi khi cập nhật tin tức: ${error.message}`);
   }
 };
 
-// Hàm xóa tin tức (cần token và quyền admin)
+// Xóa tin tức
 export const deleteNews = async (id: string): Promise<void> => {
   try {
     if (!isBrowser()) {
-      throw new Error(
-        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
-      );
+      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
     }
 
     const token = localStorage.getItem("accessToken");

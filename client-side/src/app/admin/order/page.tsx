@@ -1,24 +1,21 @@
+// page.tsx
 "use client";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import OrderTableWrapper from "@/admin/components/Admin_Order/OrderTableWrapper";
-import OrderBody from "@/admin/components/Admin_Order/OrderBody";
 import { fetchAllOrders } from "@/services/orderApi";
 import { Toaster } from "react-hot-toast";
-import { Order } from "@/types/order";
 
-// Khai báo STATUS đầy đủ
 const STATUS = [
-  { key: "pending", label: "Chưa giải quyết", color: "bg-[#FFF7DB] text-[#FFA800]" },
-  { key: "processing", label: "Đang xử lý", color: "bg-[#E8F2FD] text-[#2998FF]" },
-  { key: "confirming", label: "Chờ xác nhận", color: "bg-[#FFF7DB] text-[#FFA800]" },
-  { key: "delivering", label: "Đang giao", color: "bg-[#DBF7E8] text-[#39C24F]" },
-  { key: "success", label: "Hoàn thành", color: "bg-[#DBF7E8] text-[#449E3C]" },
-  { key: "cancelled", label: "Đã huỷ", color: "bg-[#FFE1E1] text-[#F75555]" }
+  { key: "pending", label: "Chờ xác nhận", color: "bg-yellow-100 text-yellow-500" },
+  { key: "confirmed", label: "Đã xác nhận", color: "bg-blue-100 text-blue-500" },
+  { key: "shipping", label: "Đang giao", color: "bg-green-100 text-green-600" },
+  { key: "delivered", label: "Hoàn thành", color: "bg-emerald-100 text-emerald-500" },
+  { key: "cancelled", label: "Đã huỷ", color: "bg-red-100 text-red-500" }
 ];
 
 export default function OrderPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,27 +23,7 @@ export default function OrderPage() {
       setLoading(true);
       try {
         const response = await fetchAllOrders({ page: 1, limit: 100 });
-        const mappedOrders: Order[] = response.data.map((order: any) => ({
-          id: order._id || "Không xác định",
-          user: {
-            name: order.userId?.name || "Không xác định",
-            email: order.userId?.email || "Không xác định"
-          },
-          total: order.totalPrice ?? null,
-          date: order.date || order.createdAt?.slice(0, 10) || "Không xác định",
-          products: Array.isArray(order.products)
-            ? order.products.map((p: any) => ({
-                productId: {
-                  name: p.productId?.name || "Không xác định",
-                  price: p.productId?.price ?? null,
-                  image: p.productId?.image ?? []
-                },
-                quantity: p.quantity ?? null,
-              }))
-            : [],
-          status: order.status || "pending"
-        }));
-        setOrders(mappedOrders);
+        setOrders(response.data);
       } catch (e) {
         setOrders([]);
       }
@@ -64,18 +41,7 @@ export default function OrderPage() {
         ) : orders.length === 0 ? (
           <div className="text-center py-8 text-gray-400">Không có đơn hàng nào</div>
         ) : (
-          <OrderTableWrapper orders={orders} STATUS={STATUS}>
-            {(filteredOrders, pageData, paginProps) => (
-              <>
-                <OrderBody orders={pageData} STATUS={STATUS} />
-                {paginProps.totalPage > 1 && (
-                  <div className="flex justify-center mt-8">
-                    <paginProps.Pagination />
-                  </div>
-                )}
-              </>
-            )}
-          </OrderTableWrapper>
+          <OrderTableWrapper orders={orders} setOrders={setOrders} STATUS={STATUS} />
         )}
       </div>
     </AdminLayout>

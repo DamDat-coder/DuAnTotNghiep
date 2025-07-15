@@ -62,7 +62,6 @@ export default function RootLayout({
                     </CartProvider>
                   </CategoriesProvider>
                 </ActiveTabProvider>
-                {!isAdminRoute && <Footer />}
               </LookupProvider>
             </MenuProvider>
           </AuthProvider>

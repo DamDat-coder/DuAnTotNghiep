@@ -1,31 +1,170 @@
 "use client";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-
-const data = [
-  { month: "Tháng 1", revenue: 20000000 },
-  { month: "Tháng 2", revenue: 40567000 },
-  { month: "Tháng 3", revenue: 18000000 },
-  { month: "Tháng 4", revenue: 36000000 },
-  { month: "Tháng 5", revenue: 29000000 },
-  { month: "Tháng 6", revenue: 26000000 },
-];
+import { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from "recharts";
+import { fetchAllOrders } from "@/services/orderApi";
 
 export default function RevenueChart() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [selectedMonth, setSelectedMonth] = useState(0);
+  const currentYear = new Date().getFullYear();
+
+  useEffect(() => {
+    fetchAllOrders({ limit: 9999 })
+      .then(res => {
+        const orders = res.data || [];
+
+        // Lọc theo năm hiện tại + tháng đã chọn
+        const filteredOrders = orders.filter(order => {
+          if (!order.createdAt) return false;
+          const date = new Date(order.createdAt);
+          return (
+            order.status === "delivered" &&
+            date.getFullYear() === currentYear &&
+            (selectedMonth === 0 || date.getMonth() + 1 === selectedMonth)
+          );
+        });
+
+        let result: any[] = [];
+
+        if (selectedMonth === 0) {
+          // Dữ liệu theo tháng trong năm
+          const monthMap = new Map<number, { count: number; revenue: number }>();
+          for (let i = 1; i <= 12; i++) {
+            monthMap.set(i, { count: 0, revenue: 0 });
+          }
+
+          filteredOrders.forEach(order => {
+            const date = new Date(order.createdAt);
+            const month = date.getMonth() + 1;
+            const revenue = order.total || order.totalPrice || 0;
+            const entry = monthMap.get(month)!;
+            entry.count += 1;
+            entry.revenue += revenue;
+          });
+
+          result = Array.from(monthMap.entries()).map(([month, { count, revenue }]) => ({
+            label: `Tháng ${month}`,
+            orders: count,
+            revenue,
+          }));
+        } else {
+          // Dữ liệu theo từng ngày trong tháng
+          const dayInMonth = new Date(currentYear, selectedMonth, 0).getDate();
+          const dayMap = new Map<number, { count: number; revenue: number }>();
+          for (let i = 1; i <= dayInMonth; i++) {
+            dayMap.set(i, { count: 0, revenue: 0 });
+          }
+
+          filteredOrders.forEach(order => {
+            const date = new Date(order.createdAt);
+            const day = date.getDate();
+            const revenue = order.total || order.totalPrice || 0;
+            const entry = dayMap.get(day)!;
+            entry.count += 1;
+            entry.revenue += revenue;
+          });
+
+          result = Array.from(dayMap.entries()).map(([day, { count, revenue }]) => ({
+            label: `${day}/${selectedMonth}`,
+            orders: count,
+            revenue,
+          }));
+        }
+
+        setData(result);
+        setTotalOrders(result.reduce((sum, item) => sum + item.orders, 0));
+        setTotalRevenue(result.reduce((sum, item) => sum + item.revenue, 0));
+      })
+      .finally(() => setLoading(false));
+  }, [selectedMonth]);
+
   return (
     <div className="bg-white w-[743px] h-[284px] rounded-xl p-6">
       <div className="flex justify-between items-center mb-2">
         <div>
-          <div className="text-sm text-gray-500 font-medium">Tổng doanh thu</div>
-          <div className="text-[22px] font-extrabold mb-1">120.234.000đ <span className="text-green-500 text-base font-semibold">+35%</span></div>
+          <div className="text-sm text-gray-500 font-medium">Tổng đơn hàng & Doanh thu</div>
+          <div className="text-[22px] font-extrabold mb-1">
+            {totalOrders.toLocaleString()} đơn ·{" "}
+            {totalRevenue.toLocaleString("vi-VN")}VNĐ
+          </div>
         </div>
-        <button className="bg-gray-100 rounded-lg px-3 py-1 text-sm text-gray-700">Trong năm ▼</button>
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          className="bg-gray-100 rounded-lg px-3 py-1 text-sm text-gray-700"
+        >
+          <option value={0}>Trong năm</option>
+          {[...Array(12)].map((_, i) => (
+            <option key={i + 1} value={i + 1}>
+              Tháng {i + 1}
+            </option>
+          ))}
+        </select>
       </div>
+
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data}>
-          <XAxis dataKey="month" tickLine={false} />
-          <YAxis domain={[10000000, 50000000]} tickFormatter={val => `${val/1e6}tr`} tickLine={false} />
-          <Tooltip formatter={val => `${val.toLocaleString()}đ`} />
-          <Line type="monotone" dataKey="revenue" stroke="#4F8CFF" strokeWidth={3} dot={false} />
+          <XAxis
+            dataKey="label"
+            tickLine={false}
+            ticks={
+              selectedMonth === 0
+                ? undefined
+                : data.filter((_, index) => index % 3 === 0).map(item => item.label)
+            }
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            yAxisId="left"
+            tickLine={false}
+            allowDecimals={false}
+            domain={[0, 'auto']}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tickFormatter={(val) => `${Math.round(val / 1e6)} tr`}
+            tickLine={false}
+            domain={[0, 'auto']}
+          />
+          <Tooltip
+            formatter={(val, name) => {
+              if (name === "Doanh thu") {
+                return [`${val.toLocaleString("vi-VN")}`, "Doanh thu"];
+              }
+              return [`${val} đơn`, "Số đơn"];
+            }}
+          />
+          <Legend />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="orders"
+            name="Số đơn"
+            stroke="#4F8CFF"
+            strokeWidth={3}
+            dot={false}
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="revenue"
+            name="Doanh thu"
+            stroke="#22C55E"
+            strokeWidth={3}
+            dot={false}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

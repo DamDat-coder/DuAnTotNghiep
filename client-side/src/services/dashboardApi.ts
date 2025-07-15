@@ -119,15 +119,17 @@ export async function fetchBestSellers() {
  */
 export async function fetchCustomerChart() {
   return [
-    { day: "08/07", value: 2 },
-    { day: "09/07", value: 4 },
-    { day: "10/07", value: 1 },
-    { day: "11/07", value: 3 },
-    { day: "12/07", value: 5 },
-    { day: "13/07", value: 0 },
-    { day: "14/07", value: 6 },
+    { day: "08/07", value: 2 }, // Thứ 2
+    { day: "09/07", value: 4 }, // Thứ 3
+    { day: "10/07", value: 1 }, // Thứ 4
+    { day: "11/07", value: 3 }, // Thứ 5
+    { day: "12/07", value: 5 }, // Thứ 6
+    { day: "13/07", value: 0 }, // Thứ 7
+    { day: "14/07", value: 6 }, // Chủ nhật
   ];
 }
+
+
 
 /**
  * Giao dịch gần nhất

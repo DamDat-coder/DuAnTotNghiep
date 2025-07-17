@@ -51,7 +51,16 @@ export default function Header({ title }: HeaderProps) {
     setActiveTab("Yêu thích"); // Update active tab to "Yêu thích"
     window.history.pushState({}, "", "/profile?tab=favorite"); // Update URL
   };
+  const [scrolled, setScrolled] = useState(false);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 64);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -145,7 +154,9 @@ export default function Header({ title }: HeaderProps) {
   return (
     <>
       <nav
-        className="bg-white text-black relative"
+        className={`${
+          scrolled ? "fixed top-0" : "text-black relative"
+        } left-0 right-0 bg-white z-[40] transition`}
         aria-label="Main navigation"
       >
         <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">

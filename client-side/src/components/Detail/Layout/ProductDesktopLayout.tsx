@@ -3,7 +3,7 @@ import ProductSection from "../../Home/ProductSection/ProductSection";
 import DesktopImageGalleryWrapper from "../ImageGallery/DesktopImageGalleryWrapper";
 import ProductActions from "../ProductAction/ProductActions";
 import ProductDetailsSection from "../DetailSection/ProductDetailsSection";
-import ProductMainInfo from "./ProductMainInfo";
+import ProductMainInfo from "../ProductAction/ProductMainInfo";
 
 export default function ProductDesktopLayout({
   product,

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { IProduct } from "@/types/product";
-import AddToCartButton from "../../Cart/AddToCartButton";
+import AddToCartButton from "../../Cart/AddToCart/AddToCartButton";
 
 interface ProductCardProps {
   product: IProduct;

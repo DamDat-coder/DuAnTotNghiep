@@ -1,7 +1,7 @@
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
-import ProductDesktopLayout from "@/components/Detail/DetailLayout/ProductDesktopLayout";
-import ProductMobileLayout from "@/components/Detail/DetailLayout/ProductMobileLayout";
+import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
+import ProductMobileLayout from "@/components/Detail/Layout/ProductMobileLayout";
 import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 

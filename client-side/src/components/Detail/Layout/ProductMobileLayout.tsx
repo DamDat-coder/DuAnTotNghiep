@@ -3,7 +3,7 @@ import ProductSection from "../../Home/ProductSection/ProductSection";
 import ProductActions from "../ProductAction/ProductActions";
 import ProductDetailsSection from "../DetailSection/ProductDetailsSection";
 import ProductImageSwiper from "../ImageGallery/ProductImageSwiper";
-import ProductMainInfo from "./ProductMainInfo";
+import ProductMainInfo from "../ProductAction/ProductMainInfo";
 
 export default function ProductMobileLayout({
   product,

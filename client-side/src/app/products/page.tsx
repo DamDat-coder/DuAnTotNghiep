@@ -222,7 +222,7 @@ export default function ProductsPage() {
             currentFilters={currentFilters}
           />
         </div>
-        <NewsSection newsItems={newsItems} />
+        <NewsSection />
       </Container>
     </div>
   );

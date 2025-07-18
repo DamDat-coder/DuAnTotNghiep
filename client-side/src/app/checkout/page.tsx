@@ -2,13 +2,13 @@
 
 import { useCheckout } from "@/hooks/useCheckout";
 import Container from "@/components/Core/Container";
-import OrderItems from "@/components/Checkout/OrderItems";
-import DiscountCode from "@/components/Checkout/DiscountCode";
-import OrderSummary from "@/components/Checkout/OrderSummary";
-import ShippingForm from "@/components/Checkout/ShippingForm";
-import ShippingMethod from "@/components/Checkout/ShippingMethod";
-import PaymentMethod from "@/components/Checkout/PaymentMethod";
-import AddressPopup from "@/components/Checkout/AddressPopup";
+import OrderItems from "@/components/Checkout/Infomation/OrderItems";
+import DiscountCode from "@/components/Checkout/Price/DiscountCode";
+import OrderSummary from "@/components/Checkout/Price/OrderSummary";
+import ShippingForm from "@/components/Checkout/Infomation/ShippingForm";
+import ShippingMethod from "@/components/Checkout/Infomation/ShippingMethod";
+import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
+import AddressPopup from "@/components/Checkout/Address/AddressPopup";
 import { Toaster } from "react-hot-toast";
 
 export default function Checkout() {

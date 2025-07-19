@@ -26,14 +26,20 @@ export default function ProductTableWrapper({
     setLocalProducts(Array.isArray(products) ? products : []);
   }, [products]);
 
+  // Hàm tính tổng tồn kho của các variants
+  const calcTotalStock = (variants = []) =>
+    Array.isArray(variants) ? variants.reduce((s, v) => s + (v.stock || 0), 0) : 0;
+
+  // Lọc sản phẩm theo search và filter
   const filtered = localProducts.filter((p) => {
     const matchName = p.name?.toLowerCase().includes(search.toLowerCase());
-    const matchFilter =
-      filter === "all"
-        ? true
-        : filter === "active"
-        ? p.is_active
-        : !p.is_active;
+
+    let matchFilter = true;
+    if (filter === "active") matchFilter = p.is_active;
+    else if (filter === "inactive") matchFilter = !p.is_active;
+    else if (filter === "low_stock") matchFilter = calcTotalStock(p.variants) <= 30;
+    // "all" thì giữ nguyên
+
     return matchName && matchFilter;
   });
 

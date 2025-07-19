@@ -91,9 +91,7 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
     const {
       name,        
       is_active,
-      limit,
       sort,
-      page,
     } = req.query;
 
     const query: Record<string, any> = {};
@@ -112,10 +110,6 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
         });
       }
     }
-
-    const pageNum = Math.max(parseInt(page as string) || 1, 1);
-    const limitNum = Math.max(parseInt(limit as string) || 10, 1);
-    const skip = (pageNum - 1) * limitNum;
 
     const sortMap: Record<string, any> = {
       "newest": { _id: -1 },
@@ -143,8 +137,6 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
         .select("name slug category image variants salesCount is_active")
         .populate("category", "name")
         .sort(sortOption)
-        .skip(skip)
-        .limit(limitNum)
         .lean(),
       productModel.countDocuments(query),
     ]);
@@ -167,9 +159,6 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
       status: "success",
       data: result,
       total,
-      page: pageNum,
-      limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
     });
   } catch (error: any) {
     console.error("Lỗi khi lấy sản phẩm:", error);
@@ -179,6 +168,7 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
     });
   }
 };
+
 
 // Lấy sản phẩm theo ID
 export const getProductById = async (req: Request, res: Response): Promise<void> => {

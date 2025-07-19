@@ -12,15 +12,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.updateCategory = exports.getCategoryById = exports.getCategoryTree = exports.createCategory = void 0;
+exports.toggleActiveCategory = exports.deleteCategory = exports.updateCategory = exports.getCategoryById = exports.getCategoryTree = exports.createCategory = void 0;
 const category_model_1 = __importDefault(require("../models/category.model"));
 const slugify_1 = __importDefault(require("slugify"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 const mongoose_1 = require("mongoose");
+const mongoose_2 = __importDefault(require("mongoose"));
 // Tạo danh mục mới
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, parentId } = req.body;
+        const { name, parentId, is_active, description } = req.body;
         if (!name)
             return res.status(400).json({ success: false, message: "Tên danh mục là bắt buộc." });
         const slug = (0, slugify_1.default)(name, { lower: true });
@@ -44,8 +45,10 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const newCategory = yield category_model_1.default.create({
             name,
             slug,
+            description: description || "", // thêm mô tả
             parentId: parentId || null,
             image: imageUrl,
+            is_active: typeof is_active === "boolean" ? is_active : true,
         });
         res.status(201).json({ success: true, message: "Tạo danh mục thành công.", data: newCategory });
     }
@@ -95,7 +98,7 @@ exports.getCategoryById = getCategoryById;
 const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { name, parentId } = req.body;
+        const { name, parentId, is_active, description } = req.body;
         const updateData = {};
         if (name) {
             updateData.name = name;
@@ -104,6 +107,12 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (typeof parentId !== "undefined") {
             updateData.parentId =
                 parentId === "" || parentId === null ? null : new mongoose_1.Types.ObjectId(parentId);
+        }
+        if (typeof is_active !== "undefined") {
+            updateData.is_active = is_active;
+        }
+        if (typeof description !== "undefined") { // thêm mô tả
+            updateData.description = description;
         }
         const file = req.file;
         if (file) {
@@ -157,3 +166,33 @@ const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.deleteCategory = deleteCategory;
+// Trong category.controller.ts
+const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const categoryId = req.params.id;
+        const { is_active } = req.body;
+        if (!mongoose_2.default.Types.ObjectId.isValid(categoryId)) {
+            res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+            return;
+        }
+        if (typeof is_active !== 'boolean') {
+            res.status(400).json({ status: 'error', message: 'Trạng thái is_active phải là boolean' });
+            return;
+        }
+        const updatedCategory = yield category_model_1.default.findByIdAndUpdate(categoryId, { is_active }, { new: true, runValidators: true }).lean();
+        if (!updatedCategory) {
+            res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+            return;
+        }
+        res.status(200).json({
+            status: 'success',
+            message: `Danh mục đã được ${is_active ? 'mở khóa' : 'khóa'} thành công`,
+            data: updatedCategory,
+        });
+    }
+    catch (error) {
+        console.error('Lỗi khi khóa/mở khóa danh mục:', error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+exports.toggleActiveCategory = toggleActiveCategory;

@@ -2,10 +2,12 @@ export interface ICategory {
   _id: string;
   name: string;
   slug: string;
+  description: string;
   parentId: string | null;
   image: string | null;
-  created_at: string;
-  updated_at: string;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
   children: ICategory[];
 }
 export interface CategoryResponse {
@@ -28,7 +30,8 @@ export interface SingleCategoryResponse {
 export interface CategoryInput {
   name: string;
   description?: string;
-  parentid?: string | null;
+  parentId?: string | null;
+  is_active?: boolean;
 }
 
 //News

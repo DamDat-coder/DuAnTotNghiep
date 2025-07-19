@@ -93,7 +93,7 @@ exports.getAllProducts = getAllProducts;
 // Lấy tất cả sản phẩm cho admin
 const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, is_active, limit, sort, page, } = req.query;
+        const { name, is_active, sort, } = req.query;
         const query = {};
         if (name) {
             query.slug = new RegExp(name, "i");
@@ -110,9 +110,6 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
                 });
             }
         }
-        const pageNum = Math.max(parseInt(page) || 1, 1);
-        const limitNum = Math.max(parseInt(limit) || 10, 1);
-        const skip = (pageNum - 1) * limitNum;
         const sortMap = {
             "newest": { _id: -1 },
             "best-seller": { salesCount: -1 },
@@ -136,8 +133,6 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
                 .select("name slug category image variants salesCount is_active")
                 .populate("category", "name")
                 .sort(sortOption)
-                .skip(skip)
-                .limit(limitNum)
                 .lean(),
             product_model_1.default.countDocuments(query),
         ]);
@@ -157,9 +152,6 @@ const getAllProductsAdmin = (req, res) => __awaiter(void 0, void 0, void 0, func
             status: "success",
             data: result,
             total,
-            page: pageNum,
-            limit: limitNum,
-            totalPages: Math.ceil(total / limitNum),
         });
     }
     catch (error) {

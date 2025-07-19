@@ -12,12 +12,14 @@ interface CategoryTableWrapperProps {
   categories: ICategory[];
   onAddCategory?: () => void;
   onEditCategory?: (cat: ICategory) => void;
+  reloadCategories?: () => void; // <-- truyền xuống từ cha
 }
 
 export default function CategoryTableWrapper({
   categories = [],
   onEditCategory,
   onAddCategory,
+  reloadCategories, // <-- truyền xuống từ cha
 }: CategoryTableWrapperProps) {
   const [search, setSearch] = useState("");
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -72,7 +74,7 @@ export default function CategoryTableWrapper({
 
   useEffect(() => {
     if (currentPage > totalPage) setCurrentPage(1);
-  }, [totalPage]);
+  }, [totalPage, currentPage]);
 
   return (
     <div className="mt-6 relative">
@@ -93,7 +95,10 @@ export default function CategoryTableWrapper({
               <th className="px-4 py-0 h-[64px] align-middle">
                 Danh mục cha
               </th>
-              <th className="px-4 py-0 rounded-tr-[12px] rounded-br-[12px] text-right h-[64px] align-middle">
+              <th className="px-4 py-0 h-[64px] align-middle">
+                Trạng thái
+              </th>
+              <th className="pl-4 py-0 rounded-tr-[12px] rounded-br-[12px] h-[64px] align-middle text-right">
                 <Image
                   src="/admin_user/dots.svg"
                   width={24}
@@ -109,16 +114,17 @@ export default function CategoryTableWrapper({
               idToNameMap={idToNameMap}
               onEdit={onEditCategory}
               getCategoryById={findCategoryById}
+              onChanged={reloadCategories}
             />
             {totalPage > 1 && (
               <>
                 <tr>
-                  <td colSpan={4} className="py-2">
+                  <td colSpan={5} className="py-2">
                     <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={4} className="pt-4 pb-2">
+                  <td colSpan={5} className="pt-4 pb-2">
                     <div className="flex justify-center">
                       <Pagination
                         currentPage={currentPage}
@@ -133,19 +139,22 @@ export default function CategoryTableWrapper({
           </tbody>
         </table>
       </div>
-        {showAddPopup && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-xl p-6 max-w-xl w-full relative shadow-lg animate-fadeIn">
-              <button
-                onClick={() => setShowAddPopup(false)}
-                className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-2xl"
-              >
-                &times;
-              </button>
-              <AddCategoryForm onClose={() => setShowAddPopup(false)} />
-            </div>
+      {showAddPopup && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-xl w-full relative shadow-lg animate-fadeIn">
+            <button
+              onClick={() => setShowAddPopup(false)}
+              className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-2xl"
+            >
+              &times;
+            </button>
+            <AddCategoryForm
+              onClose={() => setShowAddPopup(false)}
+              onSuccess={reloadCategories}
+            />
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

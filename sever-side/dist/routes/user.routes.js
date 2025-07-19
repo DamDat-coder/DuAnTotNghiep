@@ -15,6 +15,7 @@ router.post("/refresh-token", user_controller_1.refreshAccessToken);
 router.post("/google-login", validateRequest_1.validateRequest, user_controller_1.googleLogin);
 router.post("/forgot-password", user_controller_1.forgotPassword);
 router.post("/reset-password/:token", user_controller_1.resetPassword);
+router.post("/update-password", auth_middleware_1.verifyToken, validateRequest_1.validateRequest, user_controller_1.updatePassword);
 // OTP qua SMS
 router.post("/send-otp", validateRequest_1.validateRequest, user_phone_controller_1.sendSmsOTP);
 router.post("/verify-otp", validateRequest_1.validateRequest, user_phone_controller_1.verifySmsOTP);

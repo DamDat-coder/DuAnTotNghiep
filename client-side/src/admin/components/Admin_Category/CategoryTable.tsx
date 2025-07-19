@@ -4,20 +4,25 @@ import { useState, useEffect } from "react";
 import CategoryTableWrapper from "./CategoryTableWrapper";
 import EditCategoryForm from "./EditCategoryForm";
 import { ICategory } from "@/types/category";
+import { fetchCategoryTree } from "@/services/categoryApi";
 
 interface CategoryTableProps {
   initialCategories: ICategory[];
   onAddCategory?: () => void;
 }
 
-// Hàm normalize category từ bất kỳ API (bạn có thể viết ra riêng nếu muốn dùng ở nhiều nơi)
+// Hàm chuẩn hóa category từ API
 function normalizeCategory(cat: any): ICategory {
   return {
-    _id: cat._id || cat.id,
-    id: String (cat._id || cat.id), // Đảm bảo id là chuỗi
+    _id: String(cat._id || cat.id),
+    id: String(cat._id || cat.id),
     name: cat.name,
     description: cat.description ?? "",
     parentId: cat.parentId ?? cat.parentid ?? null,
+    is_active:
+      typeof cat.is_active === "string"
+        ? cat.is_active === "true"
+        : !!cat.is_active,
     children: Array.isArray(cat.children)
       ? cat.children.map(normalizeCategory)
       : [],
@@ -30,6 +35,12 @@ export default function CategoryTable({
 }: CategoryTableProps) {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [editCategory, setEditCategory] = useState<ICategory | null>(null);
+
+  // Reload từ backend (nếu muốn gọi lại sau khi sửa, thêm,...)
+  const reloadCategories = async () => {
+    const data = await fetchCategoryTree();
+    setCategories(data.map(normalizeCategory));
+  };
 
   useEffect(() => {
     // CHUẨN HÓA dữ liệu về đúng _id, parentId, children...
@@ -50,6 +61,7 @@ export default function CategoryTable({
         categories={categories}
         onAddCategory={onAddCategory}
         onEditCategory={handleEditCategory}
+        reloadCategories={reloadCategories}
       />
       {editCategory && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -63,6 +75,7 @@ export default function CategoryTable({
             <EditCategoryForm
               category={editCategory}
               onClose={() => setEditCategory(null)}
+              onSuccess={reloadCategories}
             />
           </div>
         </div>

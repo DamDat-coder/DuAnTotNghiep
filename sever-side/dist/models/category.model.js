@@ -57,6 +57,17 @@ const categorySchema = new mongoose_1.Schema({
         trim: true,
         default: null,
     },
+    description: {
+        type: String,
+        required: false,
+        trim: true,
+        default: "",
+    },
+    is_active: {
+        type: Boolean,
+        required: true,
+        default: true,
+    },
 }, {
     timestamps: true,
 });

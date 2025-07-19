@@ -106,7 +106,7 @@ export default function ProductBody({
             </td>
             {/* Tồn kho */}
             <td className="px-4 py-4 min-w-[70px] align-middle">
-              <span className={calcTotalStock(product.variants) <= 10 ? "text-pink-500 font-semibold" : ""}>
+              <span className={calcTotalStock(product.variants) <= 30 ? "text-pink-500 font-semibold" : ""}>
                 {calcTotalStock(product.variants)}
               </span>
             </td>
@@ -195,7 +195,7 @@ export default function ProductBody({
                     >
                       Sửa
                     </button>
-                    <button
+                    {/* <button
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
                       onClick={() => {
                         setActionDropdownId(null);
@@ -203,7 +203,7 @@ export default function ProductBody({
                       }}
                     >
                       Xoá
-                    </button>
+                    </button> */}
                   </div>
                 )}
               </div>

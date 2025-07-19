@@ -4,20 +4,21 @@ import { useState, useEffect } from "react";
 import CategoryTableWrapper from "./CategoryTableWrapper";
 import EditCategoryForm from "./EditCategoryForm";
 import { ICategory } from "@/types/category";
+import { fetchCategoryTree } from "@/services/categoryApi";
 
 interface CategoryTableProps {
   initialCategories: ICategory[];
   onAddCategory?: () => void;
 }
 
-// Hàm normalize category từ bất kỳ API (bạn có thể viết ra riêng nếu muốn dùng ở nhiều nơi)
+// Chuẩn hóa category từ API
 function normalizeCategory(cat: any): ICategory {
   return {
-    _id: cat._id || cat.id,
-    id: String (cat._id || cat.id), // Đảm bảo id là chuỗi
+    _id: String(cat._id),
     name: cat.name,
     description: cat.description ?? "",
     parentId: cat.parentId ?? cat.parentid ?? null,
+    is_active: typeof cat.is_active === "string" ? cat.is_active === "true" : !!cat.is_active,
     children: Array.isArray(cat.children)
       ? cat.children.map(normalizeCategory)
       : [],
@@ -29,10 +30,15 @@ export default function CategoryTable({
   onAddCategory,
 }: CategoryTableProps) {
   const [categories, setCategories] = useState<ICategory[]>([]);
-  const [editCategory, setEditCategory] = useState<ICategory | null>(null);
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+
+  // Hàm reload danh mục từ BE
+  const reloadCategories = async () => {
+    const data = await fetchCategoryTree();
+    setCategories(data.map(normalizeCategory));
+  };
 
   useEffect(() => {
-    // CHUẨN HÓA dữ liệu về đúng _id, parentId, children...
     if (Array.isArray(initialCategories)) {
       setCategories(initialCategories.map(normalizeCategory));
     } else {
@@ -40,8 +46,16 @@ export default function CategoryTable({
     }
   }, [initialCategories]);
 
-  const handleEditCategory = (cat: ICategory) => {
-    setEditCategory(cat);
+  // Lấy object mới nhất mỗi lần show popup sửa bằng _id
+  const categoryToEdit = editCategoryId
+    ? categories.find(
+        c => c._id === editCategoryId
+      )
+    : null;
+
+  const handleCloseEdit = () => {
+    setEditCategoryId(null);
+    reloadCategories();
   };
 
   return (
@@ -49,20 +63,22 @@ export default function CategoryTable({
       <CategoryTableWrapper
         categories={categories}
         onAddCategory={onAddCategory}
-        onEditCategory={handleEditCategory}
+        onEditCategory={cat => setEditCategoryId(cat._id)}
+        reloadCategories={reloadCategories}
       />
-      {editCategory && (
+      {editCategoryId && categoryToEdit && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 max-w-xl w-full relative shadow-lg animate-fadeIn">
             <button
-              onClick={() => setEditCategory(null)}
+              onClick={handleCloseEdit}
               className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-2xl"
             >
               &times;
             </button>
             <EditCategoryForm
-              category={editCategory}
-              onClose={() => setEditCategory(null)}
+              category={categoryToEdit}
+              onClose={handleCloseEdit}
+              onSuccess={reloadCategories}
             />
           </div>
         </div>

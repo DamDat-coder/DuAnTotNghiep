@@ -12,19 +12,21 @@ interface CategoryTableWrapperProps {
   categories: ICategory[];
   onAddCategory?: () => void;
   onEditCategory?: (cat: ICategory) => void;
+  reloadCategories?: () => void; // <-- truyền xuống từ cha
 }
 
 export default function CategoryTableWrapper({
   categories = [],
   onEditCategory,
   onAddCategory,
+  reloadCategories, // <-- truyền xuống từ cha
 }: CategoryTableWrapperProps) {
   const [search, setSearch] = useState("");
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  // Tìm các node root phù hợp search
+  // Không cần fetch lại tree ở đây, lấy trực tiếp từ props categories (do cha quản lý)
   const filteredRootNodes = useMemo(
     () =>
       categories.filter((cat) =>
@@ -35,14 +37,12 @@ export default function CategoryTableWrapper({
 
   const totalRoot = filteredRootNodes.length;
   const totalPage = Math.ceil(totalRoot / PAGE_SIZE);
-
-  // Vẫn truyền đủ children và parentId cho node con
   const paginatedTree = filteredRootNodes.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
-  // Build map: _id -> name cho toàn bộ cây
+  // Map id->name cho toàn bộ cây
   const idToNameMap = useMemo(() => {
     const map: Record<string, string> = {};
     function traverse(nodes: ICategory[]) {
@@ -55,7 +55,6 @@ export default function CategoryTableWrapper({
     return map;
   }, [categories]);
 
-  // Hàm lấy category theo id trong toàn bộ cây
   const findCategoryById = async (id: string): Promise<ICategory | null> => {
     function find(nodes: ICategory[]): ICategory | null {
       for (const cat of nodes) {
@@ -93,7 +92,10 @@ export default function CategoryTableWrapper({
               <th className="px-4 py-0 h-[64px] align-middle">
                 Danh mục cha
               </th>
-              <th className="px-4 py-0 rounded-tr-[12px] rounded-br-[12px] text-right h-[64px] align-middle">
+              <th className="px-4 py-0 h-[64px] align-middle">
+                Trạng thái
+              </th>
+              <th className="pl-4 py-0 rounded-tr-[12px] rounded-br-[12px] h-[64px] align-middle">
                 <Image
                   src="/admin_user/dots.svg"
                   width={24}
@@ -109,6 +111,7 @@ export default function CategoryTableWrapper({
               idToNameMap={idToNameMap}
               onEdit={onEditCategory}
               getCategoryById={findCategoryById}
+              onChanged={reloadCategories}
             />
             {totalPage > 1 && (
               <>
@@ -133,19 +136,22 @@ export default function CategoryTableWrapper({
           </tbody>
         </table>
       </div>
-        {showAddPopup && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-xl p-6 max-w-xl w-full relative shadow-lg animate-fadeIn">
-              <button
-                onClick={() => setShowAddPopup(false)}
-                className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-2xl"
-              >
-                &times;
-              </button>
-              <AddCategoryForm onClose={() => setShowAddPopup(false)} />
-            </div>
+      {showAddPopup && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-xl w-full relative shadow-lg animate-fadeIn">
+            <button
+              onClick={() => setShowAddPopup(false)}
+              className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-2xl"
+            >
+              &times;
+            </button>
+            <AddCategoryForm
+              onClose={() => setShowAddPopup(false)}
+              onSuccess={reloadCategories}
+            />
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

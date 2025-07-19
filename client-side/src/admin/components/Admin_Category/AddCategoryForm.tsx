@@ -12,6 +12,7 @@ interface Category {
 
 interface AddCategoryFormProps {
   onClose?: () => void;
+  onSuccess?: () => void; // <-- Thêm prop này!
 }
 
 // Hàm lọc loại bỏ "Bài Viết" (cả children nếu có)
@@ -24,7 +25,7 @@ function filterOutBaiViet(nodes: Category[]): Category[] {
     }));
 }
 
-export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
+export default function AddCategoryForm({ onClose, onSuccess }: AddCategoryFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -49,7 +50,6 @@ export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
               children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
             }));
         }
-        // Normalize + lọc "Bài Viết"
         setAllCategories(filterOutBaiViet(normalizeCats(cats)));
       } catch (err) {
         setError("Không thể tải danh mục cha.");
@@ -79,9 +79,12 @@ export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
         parentId: formData.parentId === "" ? null : formData.parentId,
       });
       alert("Thêm danh mục thành công!");
+      onSuccess?.();
       if (onClose) onClose();
-    } catch (err) {
-      alert("Đã xảy ra lỗi khi thêm danh mục.");
+    } catch (err: any) {
+      // Hiển thị rõ message backend trả về nếu có
+      const msg = err?.response?.data?.message || err?.message || "Đã xảy ra lỗi khi thêm danh mục.";
+      alert(msg);
     }
   };
 
@@ -114,7 +117,6 @@ export default function AddCategoryForm({ onClose }: AddCategoryFormProps) {
     );
   }
 
-  // Giao diện như EditCategoryForm
   return (
     <div className="w-full bg-white rounded-2xl p-8 mx-auto shadow-md">
       <h2 className="text-[20px] font-bold mb-6">Thêm danh mục</h2>

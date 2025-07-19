@@ -3,7 +3,7 @@ import { useEffect, useState, ChangeEvent } from "react";
 import { fetchCategoryTree, updateCategory } from "@/services/categoryApi";
 
 interface Category {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   parentId?: string | null;
@@ -13,23 +13,24 @@ interface Category {
 interface EditCategoryFormProps {
   category: Category;
   onClose?: () => void;
+  onSuccess?: () => void;
 }
 
-// Hàm lấy tất cả id con/cháu (dùng để loại khỏi dropdown)
+// Hàm lấy tất cả _id con/cháu (dùng để loại khỏi dropdown)
 function getAllChildIds(node: Category): string[] {
   if (!node.children || node.children.length === 0) return [];
   let ids: string[] = [];
   node.children.forEach(child => {
-    ids.push(child.id);
+    ids.push(child._id);
     ids = ids.concat(getAllChildIds(child));
   });
   return ids;
 }
 
-// Hàm tìm node theo id trong cây
+// Hàm tìm node theo _id trong cây
 function findNodeById(nodes: Category[], id: string): Category | null {
   for (const node of nodes) {
-    if (node.id === id) return node;
+    if (node._id === id) return node;
     if (node.children) {
       const found = findNodeById(node.children, id);
       if (found) return found;
@@ -48,12 +49,26 @@ function filterOutBaiViet(nodes: Category[]): Category[] {
     }));
 }
 
+// Chuẩn hóa dữ liệu về type Category chuẩn
+function normalizeCats(arr: any[]): Category[] {
+  return arr
+    .filter(cat => !!(cat._id))
+    .map(cat => ({
+      _id: String(cat._id),
+      name: cat.name,
+      description: cat.description || "",
+      parentId: cat.parentId ? String(cat.parentId) : "",
+      children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
+    }));
+}
+
 export default function EditCategoryForm({
   category: initialCategory,
   onClose,
+  onSuccess,
 }: EditCategoryFormProps) {
-  const [formData, setFormData] = useState<Category>({
-    id: String(initialCategory.id),
+  const [formData, setFormData] = useState({
+    _id: String(initialCategory._id),
     name: initialCategory.name,
     description: initialCategory.description,
     parentId: initialCategory.parentId ? String(initialCategory.parentId) : "",
@@ -63,36 +78,22 @@ export default function EditCategoryForm({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Lưu danh sách tất cả các id con/cháu của chính nó để exclude khỏi dropdown
+  // Lưu danh sách tất cả các _id con/cháu của chính nó để exclude khỏi dropdown
   const [excludedIds, setExcludedIds] = useState<string[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
         const cats = await fetchCategoryTree();
-
-        // Chuẩn hóa id và parentId thành string, children đệ quy
-        function normalizeCats(arr: any[]): Category[] {
-          return arr
-            .filter(cat => !!(cat.id || cat._id))
-            .map(cat => ({
-              id: String(cat.id || cat._id),
-              name: cat.name,
-              description: cat.description || "",
-              parentId: cat.parentId ? String(cat.parentId) : "",
-              children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
-            }));
-        }
-        // Normalize + lọc "Bài Viết"
         const normalized = filterOutBaiViet(normalizeCats(cats));
         setAllCategories(normalized);
 
-        // Tìm node hiện tại và lấy all id con/cháu
-        const currentNode = findNodeById(normalized, String(initialCategory.id));
+        // Tìm node hiện tại và lấy all _id con/cháu
+        const currentNode = findNodeById(normalized, String(initialCategory._id));
         if (currentNode) {
-          setExcludedIds([currentNode.id, ...getAllChildIds(currentNode)]);
+          setExcludedIds([currentNode._id, ...getAllChildIds(currentNode)]);
         } else {
-          setExcludedIds([String(initialCategory.id)]);
+          setExcludedIds([String(initialCategory._id)]);
         }
       } catch (err) {
         setError("Không thể tải danh mục cha.");
@@ -101,7 +102,7 @@ export default function EditCategoryForm({
       }
     };
     load();
-  }, [initialCategory.id]);
+  }, [initialCategory._id]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -116,28 +117,29 @@ export default function EditCategoryForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateCategory(formData.id, {
+      await updateCategory(formData._id, {
         ...formData,
         parentId: formData.parentId === "" ? null : formData.parentId,
       });
       alert("Cập nhật danh mục thành công!");
+      onSuccess?.();
       if (onClose) onClose();
     } catch (err: any) {
       alert(err?.response?.data?.message || err?.message || "Đã xảy ra lỗi khi cập nhật.");
     }
   };
 
-  // renderOptions mới, exclude các id bị cấm (chính nó & all con/cháu & các node đã là "Bài Viết")
+  // renderOptions mới, exclude các _id bị cấm (chính nó & all con/cháu & các node đã là "Bài Viết")
   const renderOptions = (
     nodes: Category[],
     depth = 0,
     path = ""
   ): JSX.Element[] => {
     return nodes.flatMap((cat) => {
-      if (!cat.id || excludedIds.includes(cat.id)) return [];
-      const optionKey = `${path}-${cat.id}`;
+      if (!cat._id || excludedIds.includes(cat._id)) return [];
+      const optionKey = `${path}-${cat._id}`;
       return [
-        <option key={optionKey} value={cat.id}>
+        <option key={optionKey} value={cat._id}>
           {"—".repeat(depth)} {cat.name}
         </option>,
         ...(cat.children && cat.children.length > 0

@@ -52,7 +52,7 @@ function filterOutBaiViet(nodes: Category[]): Category[] {
 // Chuẩn hóa dữ liệu về type Category chuẩn
 function normalizeCats(arr: any[]): Category[] {
   return arr
-    .filter(cat => !!(cat._id))
+    .filter(cat => !!cat._id)
     .map(cat => ({
       _id: String(cat._id),
       name: cat.name,

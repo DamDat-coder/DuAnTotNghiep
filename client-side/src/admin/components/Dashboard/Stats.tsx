@@ -23,7 +23,6 @@ export default function Stats() {
   useEffect(() => {
     fetchStats()
       .then((data) => {
-        console.log("Stats trả về:", data);
         setStats(data || []);
       })
       .finally(() => setLoading(false));
@@ -55,7 +54,11 @@ export default function Stats() {
           <div className="flex items-baseline gap-2">
             <div className="text-2xl font-extrabold">{s.value}</div>
             <span
-              className={`text-sm ${typeof s.change === "string" && s.change.startsWith("-") ? "text-red-500" : "text-green-500"}`}
+              className={`text-sm ${
+                typeof s.change === "string" && s.change.startsWith("-")
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
             >
               {s.change}
             </span>

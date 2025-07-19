@@ -3,7 +3,7 @@ import { fetchAllOrders } from "./orderApi";
 import { fetchAllUsersAdmin } from "./userApi";
 import { IOrder } from "@/types/order";
 
-// ----------- INTERFACE -----------
+// ----------- INTERFACE USER THỐNG KÊ -----------
 interface IUser {
   id: string;
   email: string;
@@ -12,52 +12,50 @@ interface IUser {
   avatar?: string | null;
   role: string;
   is_active: boolean;
-  addresses: any[]; // luôn là mảng!
+  addresses: any[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-// ----------- HÀM LẤY USERS TUẦN NÀY -----------
+// ----------- LẤY USERS MỚI TRONG TUẦN -----------
 export async function fetchNewUsersThisWeek(): Promise<IUser[]> {
   const res = await fetchAllUsersAdmin("", 1, 9999);
-  // Luôn ép addresses thành mảng, tránh lỗi type
   const users: IUser[] = (res.users || []).map(u => ({
     ...u,
     addresses: u.addresses ?? [],
   }));
 
-  // Tính ngày bắt đầu tuần (Thứ 2)
+  // Xác định thứ 2 đầu tuần và cuối tuần (CN)
   const now = new Date();
   const day = now.getDay();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   startOfWeek.setHours(0, 0, 0, 0);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
 
   // Lọc user mới trong tuần
   return users.filter(u => {
     if (!u.createdAt) return false;
     const created = new Date(u.createdAt);
-    return created >= startOfWeek && created <= now;
+    return created >= startOfWeek && created <= endOfWeek;
   });
 }
 
-// ----------- HÀM TÍNH THỐNG KÊ -----------
+// ----------- HÀM THỐNG KÊ DASHBOARD -----------
 export async function fetchStats() {
   const now = new Date();
   const day = now.getDay();
-
-  // Lấy thứ 2 đầu tuần
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   startOfWeek.setHours(0, 0, 0, 0);
-
-  // Chủ nhật cuối tuần
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
 
   try {
-    // Lấy user mới tuần này
+    // Users mới tuần này
     const usersThisWeek = await fetchNewUsersThisWeek();
 
     // Đơn hàng tuần này
@@ -85,7 +83,7 @@ export async function fetchStats() {
       {
         label: "Khách hàng mới",
         value: usersThisWeek.length,
-        change: "", // có thể tính % tăng giảm nếu cần
+        change: "", // Tùy bạn, có thể làm tăng giảm %
       },
       {
         label: "Đơn hàng",
@@ -109,27 +107,22 @@ export async function fetchStats() {
   }
 }
 
-// ----------- CHART KHÁCH HÀNG MỚI (THEO NGÀY) -----------
+// ----------- BIỂU ĐỒ KHÁCH HÀNG MỚI TRONG TUẦN -----------
 export async function fetchCustomerChart() {
   const users = await fetchNewUsersThisWeek();
-
-  // Lấy thứ 2 đầu tuần hiện tại
   const now = new Date();
   const day = now.getDay();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   startOfWeek.setHours(0, 0, 0, 0);
-
   const weekdayLabels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-
-  // Tạo mảng 7 ngày, mỗi ngày gán label thứ và đếm số user
   const daysOfWeek = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
     return d;
   });
 
-  const chartData = daysOfWeek.map((d, i) => {
+  return daysOfWeek.map((d, i) => {
     const value = users.filter((u) => {
       if (!u.createdAt) return false;
       const created = new Date(u.createdAt);
@@ -139,14 +132,11 @@ export async function fetchCustomerChart() {
         created.getFullYear() === d.getFullYear()
       );
     }).length;
-    return { label: weekdayLabels[i], value }; // label là thứ!
+    return { label: weekdayLabels[i], value };
   });
-
-  return chartData;
 }
 
-// ----------- DOANH THU, SẢN PHẨM BÁN CHẠY, GIAO DỊCH ... Giữ nguyên như cũ -----------
-
+// ----------- BIỂU ĐỒ DOANH THU THEO THÁNG -----------
 export async function fetchRevenueChart() {
   const ordersRes = await fetchAllOrders({ limit: 9999 });
   const allOrders: IOrder[] = ordersRes.data || [];
@@ -168,6 +158,7 @@ export async function fetchRevenueChart() {
     }));
 }
 
+// ----------- TOP 5 SẢN PHẨM BÁN CHẠY -----------
 export async function fetchBestSellers() {
   const res = await fetchProducts({ sort_by: "best_selling", is_active: true });
   return (res.data || [])
@@ -185,15 +176,14 @@ export async function fetchBestSellers() {
     }));
 }
 
+// ----------- GIAO DỊCH GẦN NHẤT -----------
 export async function fetchTransactionHistory() {
   const ordersRes = await fetchAllOrders({ limit: 5 });
   const allOrders: IOrder[] = ordersRes.data || [];
-
   allOrders.sort(
     (a, b) =>
       new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime()
   );
-
   return allOrders.slice(0, 5).map((order) => ({
     id: order._id,
     date: order.createdAt,

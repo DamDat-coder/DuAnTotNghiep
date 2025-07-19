@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import ProductTableWrapper from "./ProductTableWrapper";
 import EditProductForm from "./EditProductForm";
 import AddProductForm from "./AddProductForm";
-import { fetchProductById, fetchProductsAdmin } from "@/services/productApi"; // <--- Đã đổi
+import { fetchProductById, fetchProductsAdmin } from "@/services/productApi";
 
 export default function ProductsTable({ initialProducts, addButton }) {
   const [products, setProducts] = useState(initialProducts || []);
@@ -16,10 +16,12 @@ export default function ProductsTable({ initialProducts, addButton }) {
     loading: false,
   });
 
+  // Khi vào trang, tự động load danh sách sản phẩm
   useEffect(() => {
     reloadProducts();
   }, []);
 
+  // Xử lý khi bấm Sửa
   const handleEditProduct = async (prod) => {
     setEditPopup({ visible: true, productId: prod.id || prod._id, productData: null, loading: true });
     const data = await fetchProductById(prod.id || prod._id);

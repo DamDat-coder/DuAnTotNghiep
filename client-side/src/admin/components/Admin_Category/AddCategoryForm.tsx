@@ -12,7 +12,7 @@ interface Category {
 
 interface AddCategoryFormProps {
   onClose?: () => void;
-  onSuccess?: () => void; // <-- Thêm prop này!
+  onSuccess?: () => void;
 }
 
 // Hàm lọc loại bỏ "Bài Viết" (cả children nếu có)
@@ -82,12 +82,12 @@ export default function AddCategoryForm({ onClose, onSuccess }: AddCategoryFormP
       onSuccess?.();
       if (onClose) onClose();
     } catch (err: any) {
-      // Hiển thị rõ message backend trả về nếu có
       const msg = err?.response?.data?.message || err?.message || "Đã xảy ra lỗi khi thêm danh mục.";
       alert(msg);
     }
   };
 
+  // Đệ quy render option cha-con
   const renderOptions = (
     nodes: Category[],
     depth = 0,

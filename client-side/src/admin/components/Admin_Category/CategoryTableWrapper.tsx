@@ -26,7 +26,7 @@ export default function CategoryTableWrapper({
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  // Không cần fetch lại tree ở đây, lấy trực tiếp từ props categories (do cha quản lý)
+  // Tìm các node root phù hợp search
   const filteredRootNodes = useMemo(
     () =>
       categories.filter((cat) =>
@@ -37,12 +37,14 @@ export default function CategoryTableWrapper({
 
   const totalRoot = filteredRootNodes.length;
   const totalPage = Math.ceil(totalRoot / PAGE_SIZE);
+
+  // Vẫn truyền đủ children và parentId cho node con
   const paginatedTree = filteredRootNodes.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
-  // Map id->name cho toàn bộ cây
+  // Build map: _id -> name cho toàn bộ cây
   const idToNameMap = useMemo(() => {
     const map: Record<string, string> = {};
     function traverse(nodes: ICategory[]) {
@@ -55,6 +57,7 @@ export default function CategoryTableWrapper({
     return map;
   }, [categories]);
 
+  // Hàm lấy category theo id trong toàn bộ cây
   const findCategoryById = async (id: string): Promise<ICategory | null> => {
     function find(nodes: ICategory[]): ICategory | null {
       for (const cat of nodes) {
@@ -71,7 +74,7 @@ export default function CategoryTableWrapper({
 
   useEffect(() => {
     if (currentPage > totalPage) setCurrentPage(1);
-  }, [totalPage]);
+  }, [totalPage, currentPage]);
 
   return (
     <div className="mt-6 relative">
@@ -95,7 +98,7 @@ export default function CategoryTableWrapper({
               <th className="px-4 py-0 h-[64px] align-middle">
                 Trạng thái
               </th>
-              <th className="pl-4 py-0 rounded-tr-[12px] rounded-br-[12px] h-[64px] align-middle">
+              <th className="pl-4 py-0 rounded-tr-[12px] rounded-br-[12px] h-[64px] align-middle text-right">
                 <Image
                   src="/admin_user/dots.svg"
                   width={24}
@@ -116,12 +119,12 @@ export default function CategoryTableWrapper({
             {totalPage > 1 && (
               <>
                 <tr>
-                  <td colSpan={4} className="py-2">
+                  <td colSpan={5} className="py-2">
                     <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={4} className="pt-4 pb-2">
+                  <td colSpan={5} className="pt-4 pb-2">
                     <div className="flex justify-center">
                       <Pagination
                         currentPage={currentPage}

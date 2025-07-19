@@ -10,7 +10,7 @@ export default function NewsPage() {
   const [newsList, setNewsList] = useState<News[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredList, setFilteredList] = useState<News[]>([]);
+  const [searchResults, setSearchResults] = useState<News[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
 
@@ -18,7 +18,7 @@ export default function NewsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Breadcrumb
+  // Breadcrumb (laptop)
   const breadcrumb = (
     <div className="mb-4 mt-2 flex justify-center laptop:justify-start">
       <span className="text-xs text-gray-400">
@@ -35,67 +35,57 @@ export default function NewsPage() {
     setCurrentPage(pageParam > 0 ? pageParam : 1);
   }, [searchParams]);
 
-  // Lấy danh sách bài viết & tags (chỉ lấy 20 tag ngẫu nhiên)
+  // Lấy danh sách bài viết & tags (unique)
   useEffect(() => {
     getAllNews().then((res) => {
       if (res.status === 'success') {
         setNewsList(res.data);
 
-        // Random 20 tag duy nhất
+        // Tag: unique, random tối đa 20 tag
         const allTags = res.data.flatMap((news: News) => news.tags || []);
         const uniqueTags = Array.from(new Set(allTags));
         const shuffled = uniqueTags.sort(() => 0.5 - Math.random());
         setTags(shuffled.slice(0, 20));
 
-        filterPosts(res.data, searchTerm, searchParams.get('tag'));
+        // Lọc luôn nếu url có tag
+        const tagParam = searchParams.get('tag');
+        if (tagParam) {
+          setSearchTerm(tagParam);
+          const filtered = res.data.filter(news =>
+            (news.tags || []).some(t =>
+              t.toLowerCase() === tagParam.toLowerCase()
+            )
+          );
+          setSearchResults(filtered);
+        } else {
+          setSearchResults(res.data);
+        }
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // eslint-disable-next-line
+  }, [searchParams]);
 
+  // Tự động filter khi searchTerm thay đổi (nếu không có tag trên url)
   useEffect(() => {
-    filterPosts(newsList, searchTerm, searchParams.get('tag'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, searchParams, newsList]);
-
-  const filterPosts = (list: News[], term: string, tagParam: string | null) => {
-    let arr = list.slice(1); // Bỏ featured post
-    if (tagParam) {
-      arr = arr.filter(news =>
-        (news.tags || []).some(t => t.toLowerCase() === tagParam.toLowerCase())
+    const tagParam = searchParams.get('tag');
+    if (tagParam) return;
+    if (!searchTerm.trim()) {
+      setSearchResults(newsList);
+      return;
+    }
+    const keyword = searchTerm.toLowerCase();
+    const filtered = newsList.filter(news => {
+      const matchTitle = news.title?.toLowerCase().includes(keyword);
+      const matchSlug = news.slug?.toLowerCase().includes(keyword);
+      const matchTags = (news.tags || []).some(tag =>
+        tag.toLowerCase().includes(keyword)
       );
-    } else if (term && term.trim()) {
-      const keyword = term.toLowerCase();
-      arr = arr.filter(news => {
-        const matchTitle = news.title?.toLowerCase().includes(keyword);
-        const matchSlug = news.slug?.toLowerCase().includes(keyword);
-        const matchTags = (news.tags || []).some(tag =>
-          tag.toLowerCase().includes(keyword)
-        );
-        return matchTitle || matchSlug || matchTags;
-      });
-    }
-    setFilteredList(arr);
-  };
+      return matchTitle || matchSlug || matchTags;
+    });
+    setSearchResults(filtered);
+  }, [searchTerm, newsList, searchParams]);
 
-  const handleTagClick = (tag: string) => {
-    setSearchTerm(tag);
-    router.push(`/posts?tag=${encodeURIComponent(tag)}&page=1`);
-  };
-
-  // Nút tìm kiếm (dùng chung cho cả 2 thanh search)
-  const handleSearchClick = () => {
-    const value = searchTerm.trim();
-    if (!value) {
-      router.push('/posts');
-    } else {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('page', '1');
-      params.set('search', value);
-      router.push(`/posts?${params.toString()}`);
-    }
-  };
-
+  // Xem gần đây
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -107,19 +97,42 @@ export default function NewsPage() {
     }
   }, []);
 
-  const featuredPost = newsList[0];
-  const totalPages = Math.max(1, Math.ceil(filteredList.length / postsPerPage));
-  const paginatedResults = filteredList.slice(
+  // Hàm chọn tag
+  const handleTagClick = (tag: string) => {
+    setSearchTerm(tag);
+    router.push(`/posts?tag=${encodeURIComponent(tag)}&page=1`);
+  };
+
+  // Nút tìm kiếm
+  const handleSearchClick = () => {
+    const value = searchTerm.trim();
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', '1');
+    if (!value) {
+      router.push('/posts');
+    } else {
+      params.set('search', value);
+      router.push(`/posts?${params.toString()}`);
+    }
+  };
+
+  // Featured post
+  const featuredPost = searchResults[0];
+  // Nếu có featured post, các bài còn lại
+  const otherPosts = featuredPost ? searchResults.slice(1) : [];
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(otherPosts.length / postsPerPage));
+  const paginatedResults = otherPosts.slice(
     (currentPage - 1) * postsPerPage,
     currentPage * postsPerPage
   );
 
+  // Responsive: mobile và desktop đều chuẩn
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="max-w-[1320px] mx-auto px-2 laptop:px-6">
-        <div className="max-w-[350px] mx-auto laptop:max-w-none">
-          {breadcrumb}
-        </div>
+        <div className="max-w-[350px] mx-auto laptop:max-w-none">{breadcrumb}</div>
         {/* Search input mobile only */}
         <div className="laptop:hidden mt-2 mb-4 max-w-[350px] mx-auto">
           <input
@@ -228,8 +241,7 @@ export default function NewsPage() {
                 </div>
               </div>
             )}
-
-            {/* Lưới các bài còn lại - 1 cột mobile, nhiều cột laptop */}
+            {/* Lưới các bài còn lại */}
             <div className="grid grid-cols-1 tablet:grid-cols-2 laptop:grid-cols-3 gap-6 justify-items-center laptop:justify-items-stretch">
               {/* Featured post đầu tiên: render luôn ở mobile (ẩn trên laptop) */}
               {featuredPost && (
@@ -250,7 +262,7 @@ export default function NewsPage() {
                       {featuredPost.title}
                     </h3>
                     <p className="text-xs text-gray-500 text-center">
-                      Chất liệu | {new Date(featuredPost.published_at || featuredPost.createdAt).toLocaleDateString()}
+                      {new Date(featuredPost.published_at || featuredPost.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </Link>
@@ -270,7 +282,7 @@ export default function NewsPage() {
                       {news.title}
                     </h3>
                     <p className="text-xs text-gray-500 text-center">
-                      Chất liệu | {new Date(news.published_at || news.createdAt).toLocaleDateString()}
+                      {new Date(news.published_at || news.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </Link>
@@ -279,7 +291,6 @@ export default function NewsPage() {
                 <p className="col-span-1 laptop:col-span-3 text-center py-6 text-gray-500">Không tìm thấy bài viết nào.</p>
               )}
             </div>
-
             {/* Pagination */}
             <div className="flex gap-2 justify-center my-10 max-w-[350px] mx-auto">
               {Array.from({ length: totalPages }, (_, idx) => (

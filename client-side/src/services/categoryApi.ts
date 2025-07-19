@@ -26,7 +26,7 @@ export function flattenCategories(categories: ICategory[]): ICategory[] {
   const flat: ICategory[] = [];
   function flatten(category: ICategory) {
     flat.push(category);
-    category.children.forEach(flatten);
+    if (category.children) category.children.forEach(flatten);
   }
   categories.forEach(flatten);
   return flat;
@@ -39,6 +39,7 @@ export async function addCategory(input: CategoryInput): Promise<ICategory> {
       name: input.name,
       description: input.description ?? "",
       parentId: input.parentId === "" ? null : input.parentId ?? null,
+      // Nếu FE gửi is_active, sẽ dùng; không thì default true (chuẩn hóa FE gửi gì sẽ truyền như vậy)
       is_active: typeof input.is_active === "boolean" ? input.is_active : true,
     };
 

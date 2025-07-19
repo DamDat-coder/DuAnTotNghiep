@@ -60,7 +60,6 @@ export default function RootLayout({
                         {!isAdminRoute && <ChatBotBox />}
                       </WishlistProvider>
                     </CartProvider>
-                    {!isAdminRoute && <Footer />}
                   </CategoriesProvider>
                 </ActiveTabProvider>
               </LookupProvider>

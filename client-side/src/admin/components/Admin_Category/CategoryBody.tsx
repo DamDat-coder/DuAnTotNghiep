@@ -10,14 +10,16 @@ interface CategoryBodyProps {
   onEdit?: (cat: ICategory) => void;
   getCategoryById: (id: string) => Promise<ICategory | null>;
   perPage?: number;
-  onChanged?: () => void; // <<-- THÊM DÒNG NÀY
+  onChanged?: () => void; // <-- GIỮ LẠI
 }
 
+// Hàm phân trang
 function paginate<T>(array: T[], page: number, perPage: number): T[] {
   const start = (page - 1) * perPage;
   return array.slice(start, start + perPage);
 }
 
+// Hàm lọc loại bỏ "Bài Viết"
 function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
   return nodes
     .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
@@ -33,7 +35,7 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
   onEdit,
   getCategoryById,
   perPage = 10,
-  onChanged, // <<-- NHẬN PROP
+  onChanged,
 }) => {
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -85,7 +87,7 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
     try {
       await toggleCategoryActive(id, !currentActive);
       toast.success(!currentActive ? "Đã mở khóa danh mục!" : "Đã khóa danh mục!");
-      onChanged?.(); // <<-- GỌI RELOAD DỮ LIỆU SAU KHI PATCH THÀNH CÔNG
+      onChanged?.(); // Reload lại danh sách nếu muốn
     } catch (err) {
       // Revert nếu lỗi
       setLocalCategories((prev) =>
@@ -97,6 +99,7 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
     }
   };
 
+  // Dùng danh sách đã được lọc bỏ "Bài Viết"
   const filteredCategories = filterOutBaiViet(localCategories);
 
   const renderTreeRows = (nodes: ICategory[], depth = 0, parentKey = "") =>

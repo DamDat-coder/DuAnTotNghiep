@@ -26,9 +26,11 @@ export default function ProductTableWrapper({
     setLocalProducts(Array.isArray(products) ? products : []);
   }, [products]);
 
+  // Hàm tính tổng tồn kho của các variants
   const calcTotalStock = (variants = []) =>
-  Array.isArray(variants) ? variants.reduce((s, v) => s + (v.stock || 0), 0) : 0;
+    Array.isArray(variants) ? variants.reduce((s, v) => s + (v.stock || 0), 0) : 0;
 
+  // Lọc sản phẩm theo search và filter
   const filtered = localProducts.filter((p) => {
     const matchName = p.name?.toLowerCase().includes(search.toLowerCase());
 

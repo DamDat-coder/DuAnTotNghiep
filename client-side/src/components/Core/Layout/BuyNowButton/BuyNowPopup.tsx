@@ -127,7 +127,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     // Thêm vào giỏ hàng
     dispatch({ type: "add", item: cartItem });
     const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
-    localStorage.setItem("cartSelectedIds", JSON.stringify([selectedId]));
 
     toast.success("Đã thêm vào giỏ hàng!");
 

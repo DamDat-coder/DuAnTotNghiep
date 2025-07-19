@@ -24,6 +24,7 @@ export default function RevenueChart() {
       .then(res => {
         const orders = res.data || [];
 
+        // Lọc theo năm hiện tại + tháng đã chọn
         const filteredOrders = orders.filter(order => {
           if (!order.createdAt) return false;
           const date = new Date(order.createdAt);
@@ -37,6 +38,7 @@ export default function RevenueChart() {
         let result: any[] = [];
 
         if (selectedMonth === 0) {
+          // Dữ liệu theo tháng trong năm
           const monthMap = new Map<number, { count: number; revenue: number }>();
           for (let i = 1; i <= 12; i++) {
             monthMap.set(i, { count: 0, revenue: 0 });
@@ -57,6 +59,7 @@ export default function RevenueChart() {
             revenue,
           }));
         } else {
+          // Dữ liệu theo từng ngày trong tháng
           const dayInMonth = new Date(currentYear, selectedMonth, 0).getDate();
           const dayMap = new Map<number, { count: number; revenue: number }>();
           for (let i = 1; i <= dayInMonth; i++) {
@@ -137,7 +140,7 @@ export default function RevenueChart() {
             tickFormatter={(val) => `${Math.round(val / 1e6)} tr`}
             tickLine={false}
             domain={[0, 'auto']}
-            tickCount={4}
+            // tickCount={4} // Không cần cũng được
           />
           <Tooltip
             formatter={(val, name) => {

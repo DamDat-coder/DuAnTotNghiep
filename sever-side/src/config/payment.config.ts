@@ -1,7 +1,7 @@
 import { VNPay, HashAlgorithm } from "vnpay";
 
 export const ZALO_PAY = {
-  app_id: Number(process.env.ZALOPAY_APP_ID),
+  appId: Number(process.env.ZALOPAY_APP_ID),
   key1: process.env.ZALOPAY_KEY1!,
   key2: process.env.ZALOPAY_KEY2!,
   endpoint: process.env.ZALOPAY_ENDPOINT!,

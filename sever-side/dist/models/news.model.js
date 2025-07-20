@@ -40,9 +40,13 @@ const newsSchema = new mongoose_1.Schema({
     slug: { type: String, required: true, unique: true },
     thumbnail: { type: String, default: null },
     user_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
-    category_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "categories", required: true },
+    category_id: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "categories",
+        required: true,
+    },
     tags: [{ type: String }],
-    news_image: [{ type: String }],
+    meta_description: { type: String },
     is_published: { type: Boolean, default: false },
     published_at: { type: Date, default: null },
 }, {

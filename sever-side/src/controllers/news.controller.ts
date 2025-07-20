@@ -313,7 +313,7 @@ export const getNewsDetail = async (
   }
 };
 
-// Lấy tất cả tin tức (không phân trang, không lọc)
+// Lấy tất cả tin tức
 export const getAllNews = async (req: Request, res: Response): Promise<void> => {
   try {
     const news = await newsModel

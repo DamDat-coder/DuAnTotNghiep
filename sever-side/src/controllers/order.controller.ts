@@ -123,7 +123,7 @@ export const createOrder = async (req: Request, res: Response) => {
     await NotificationModel.create({
       userId,
       title: "Đơn hàng của bạn đã được tạo thành công!",
-      message: `Đơn hàng #${order._id} đã được xác nhận. Cảm ơn bạn đã mua sắm tại Shop4Real!`,
+      message: `Đơn hàng #${order._id} đã được xác nhận. Cảm ơn bạn đã mua sắm tại Style For You!`,
       type: "order",
       isRead: false,
       link: `/profile?tab=order/${order._id}`,

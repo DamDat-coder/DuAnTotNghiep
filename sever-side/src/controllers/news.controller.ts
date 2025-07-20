@@ -82,7 +82,7 @@ export const createNews = async (
         const users = await UserModel.find({}).select("_id").lean();
         const notifications = users.map((user: { _id: string }) => ({
           userId: user._id,
-          title: "Tin tức mới từ Shop4Real!",
+          title: "Tin tức mới từ Style For You!",
           message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
           type: "news",
           isRead: false,

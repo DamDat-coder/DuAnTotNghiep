@@ -76,7 +76,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 const users = yield user_model_1.default.find({}).select("_id").lean();
                 const notifications = users.map((user) => ({
                     userId: user._id,
-                    title: "Tin tức mới từ Shop4Real!",
+                    title: "Tin tức mới từ Style For You!",
                     message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
                     type: "news",
                     isRead: false,

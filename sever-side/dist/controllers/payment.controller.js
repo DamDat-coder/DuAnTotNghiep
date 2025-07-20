@@ -157,7 +157,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             amount: Math.floor(totalPrice),
             item: JSON.stringify([]),
             embed_data: JSON.stringify(embed_data),
-            description: `Thanh toán Shop4Real #${orderId}`,
+            description: `Thanh toán Style For You #${orderId}`,
             callback_url: payment_config_1.ZALO_PAY.callbackUrl,
             bank_code: "zalopayapp",
         };

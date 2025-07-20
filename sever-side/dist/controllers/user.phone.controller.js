@@ -23,8 +23,8 @@ const sendSmsOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         console.log(`📩 Gửi OTP ${otp} đến số: ${phone}`);
         yield vonage_1.vonage.sms.send({
             to: phone,
-            from: process.env.VONAGE_FROM || "Shop4Real",
-            text: `Mã OTP Shop4Real của bạn là: ${otp}`,
+            from: process.env.VONAGE_FROM || "Style For You",
+            text: `Mã OTP Style For You của bạn là: ${otp}`,
         });
         return res.json({ success: true, message: "Đã gửi OTP qua SMS." });
     }

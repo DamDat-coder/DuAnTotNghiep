@@ -1,121 +1,143 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchProducts } from "@/services/productApi";
 import { fetchMemberBenefits } from "@/services/memberBenefitApi";
+import { fetchCouponByCode } from "@/services/couponApi";
+
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
-import CategorySwiper from "@/components/Products/CategorySwiper";
-import ProductGrid from "@/components/Products/ProductGrid";
-import NewsSection from "@/components/Products/NewsSection";
+import CategorySwiper from "@/components/Products/CategorySwiper/CategorySwiper";
+import ProductGrid from "@/components/Products/ProductGrid/ProductGrid";
+import NewsSection from "@/components/Products/NewsSection/NewsSection";
+import { Toaster } from "react-hot-toast";
+
 import { IProduct } from "@/types/product";
 import { SortOption } from "@/types/filter";
-import { fetchCouponByCode } from "@/services/couponApi";
-import { Toaster } from "react-hot-toast";
 import { NewsProduct } from "@/types/new";
 import { CategoryProduct } from "@/types/category";
+
+// Các giá trị sort hợp lệ
+const VALID_SORT_OPTIONS: SortOption[] = [
+  "newest",
+  "oldest",
+  "price_asc",
+  "price_desc",
+  "best_selling",
+];
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const [products, setProducts] = useState<IProduct[]>([]);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [newsItems, setNewsItems] = useState<NewsProduct[]>([]);
   const [categories, setCategories] = useState<CategoryProduct[]>([]);
+  const [newsItems, setNewsItems] = useState<NewsProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const validSortOptions: SortOption[] = [
-          "newest",
-          "oldest",
-          "price_asc",
-          "price_desc",
-          "best_selling",
-        ];
-        const sort_by = searchParams.get("sort_by");
-        const couponId = searchParams.get("coupon");
-        let couponFilteredProductIds: string[] = [];
-        let couponFilteredCategoryIds: string[] = [];
+  // Đọc và parse query string từ URL
+  const filters = useMemo(() => {
+    const getParam = (key: string) => searchParams.get(key) || undefined;
+    return {
+      id_cate: getParam("id_cate"),
+      color: getParam("color"),
+      size: getParam("size"),
+      minPrice: getParam("minPrice")
+        ? Number(searchParams.get("minPrice"))
+        : undefined,
+      maxPrice: getParam("maxPrice")
+        ? Number(searchParams.get("maxPrice"))
+        : undefined,
+      sort_by: VALID_SORT_OPTIONS.includes(getParam("sort_by") as SortOption)
+        ? (getParam("sort_by") as SortOption)
+        : undefined,
+      coupon: getParam("coupon"),
+    };
+  }, [searchParams]);
 
-        if (couponId) {
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        let couponProductIds: string[] = [];
+        let couponCategoryIds: string[] = [];
+
+        // Nếu có mã coupon thì fetch và lấy danh sách product/category tương ứng
+        if (filters.coupon) {
           try {
-            const coupon = await fetchCouponByCode(couponId);
-            if (coupon.applicableProducts.length > 0) {
-              couponFilteredProductIds = (coupon.applicableProducts || []).map(
-                (p: any) => (typeof p === "string" ? p : p._id || p.toString())
-              );
-            } else if (coupon.applicableCategories.length > 0) {
-              couponFilteredCategoryIds = coupon.applicableCategories.map((c) =>
-                typeof c === "string" ? c : c._id
-              );
-            }
-          } catch (err) {
-            console.error("Không thể lọc theo coupon:", err);
+            const coupon = await fetchCouponByCode(filters.coupon);
+
+            // Lấy danh sách id sản phẩm áp dụng được coupon
+            couponProductIds = (coupon.applicableProducts || []).map((p: any) =>
+              typeof p === "string" ? p : p._id || p.toString()
+            );
+
+            // Lấy danh sách id danh mục áp dụng được coupon
+            couponCategoryIds = (coupon.applicableCategories || []).map(
+              (c: any) => (typeof c === "string" ? c : c._id)
+            );
+          } catch {
+            // Trường hợp mã giảm giá sai/hết hạn
             setError("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
+            setLoading(false);
             return;
           }
         }
-        const query = {
-          id_cate: searchParams.get("id_cate") || undefined,
-          color: searchParams.get("color") || undefined,
-          size: searchParams.get("size") || undefined,
-          minPrice: searchParams.get("minPrice")
-            ? Number(searchParams.get("minPrice"))
-            : undefined,
-          maxPrice: searchParams.get("maxPrice")
-            ? Number(searchParams.get("maxPrice"))
-            : undefined,
-          sort_by:
-            sort_by && validSortOptions.includes(sort_by as SortOption)
-              ? (sort_by as SortOption)
-              : undefined,
-          is_active: true,
-        };
 
+        // Gọi song song cả API sản phẩm & quyền lợi thành viên
         const [productsData, memberBenefits] = await Promise.all([
-          fetchProducts(query),
+          fetchProducts({
+            id_cate: filters.id_cate,
+            color: filters.color,
+            size: filters.size,
+            minPrice: filters.minPrice,
+            maxPrice: filters.maxPrice,
+            sort_by: filters.sort_by,
+            is_active: true,
+          }),
           fetchMemberBenefits(),
         ]);
 
         let filteredProducts = productsData.data;
 
-        if (couponFilteredProductIds.length > 0) {
+        // Nếu coupon có lọc theo sản phẩm
+        if (couponProductIds.length > 0) {
           filteredProducts = filteredProducts.filter((p) =>
-            couponFilteredProductIds.includes(p.id)
+            couponProductIds.includes(p.id)
           );
-        } else if (couponFilteredCategoryIds.length > 0) {
+        }
+        // Nếu coupon có lọc theo danh mục
+        else if (couponCategoryIds.length > 0) {
           filteredProducts = filteredProducts.filter(
-            (p) =>
-              p.categoryId !== null &&
-              couponFilteredCategoryIds.includes(p.categoryId)
+            (p) => p.categoryId && couponCategoryIds.includes(p.categoryId)
           );
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
         setProducts(filteredProducts);
-        setTotalProducts(filteredProducts.length);
 
-        const uniqueCategories = Array.from(
+        // Lấy danh sách danh mục từ sản phẩm đang có (không trùng lặp)
+        const uniqueCategories: CategoryProduct[] = Array.from(
           new Set(
             productsData.data
-              .filter((product) => product.category?._id)
-              .map((product) => ({
-                _id: product.category._id as string,
-                name: product.category.name,
-              }))
-              .map((cat) => JSON.stringify(cat))
+              .filter((p) => p.category?._id)
+              .map((p) =>
+                JSON.stringify({
+                  _id: p.category._id,
+                  name: p.category.name,
+                })
+              )
           )
-        ).map((cat) => JSON.parse(cat) as CategoryProduct);
+        ).map((c) => JSON.parse(c));
 
+        // Sắp xếp danh mục theo tên
         uniqueCategories.sort((a, b) => a._id.localeCompare(b._id));
         setCategories(uniqueCategories);
 
+        // Map quyền lợi thành viên thành dạng news
         const news = memberBenefits.map((item, index) => ({
           ...item,
           img: item.image,
@@ -135,40 +157,30 @@ export default function ProductsPage() {
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    setProducts([]);
+    setProducts([]); // Clear sản phẩm cũ khi chuyển trang/filter
     loadData();
-  }, [searchParams]);
+  }, [filters]);
 
-  const handleApplyFilters = (filters: {
-    sort_by?: SortOption;
-    id_cate?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    color?: string;
-    size?: string;
-  }) => {
-    if (Object.keys(filters).length === 0) {
-      router.push("/products");
-      return;
-    }
-
+  // Cập nhật URL khi người dùng thay đổi bộ lọc
+  const handleApplyFilters = (newFilters: Partial<typeof filters>) => {
     const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        params.set(key, encodeURIComponent(value.toString()));
+    Object.entries(newFilters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) {
+        params.set(key, encodeURIComponent(val.toString()));
       }
     });
-
-    router.push(`/products?${params.toString()}`);
+    router.push(
+      params.toString() ? `/products?${params.toString()}` : "/products"
+    );
   };
 
+  // Loading UI
   if (loading) {
     return (
       <div className="py-8">
         <Container>
-          <Breadcrumb />
           <div className="sk-chase">
             <div className="sk-chase-dot"></div>
             <div className="sk-chase-dot"></div>
@@ -183,6 +195,7 @@ export default function ProductsPage() {
     );
   }
 
+  // Error UI
   if (error) {
     return (
       <div className="py-8">
@@ -193,29 +206,7 @@ export default function ProductsPage() {
     );
   }
 
-  const validSortOptions: SortOption[] = [
-    "newest",
-    "oldest",
-    "price_asc",
-    "price_desc",
-    "best_selling",
-  ];
-  const currentFilters = {
-    id_cate: searchParams.get("id_cate") || undefined,
-    sort_by:
-      searchParams.get("sort_by") &&
-      validSortOptions.includes(searchParams.get("sort_by") as SortOption)
-        ? (searchParams.get("sort_by") as SortOption)
-        : undefined,
-    minPrice: searchParams.get("minPrice")
-      ? Number(searchParams.get("minPrice"))
-      : undefined,
-    maxPrice: searchParams.get("maxPrice")
-      ? Number(searchParams.get("maxPrice"))
-      : undefined,
-    color: searchParams.get("color") || undefined,
-    size: searchParams.get("size") || undefined,
-  };
+  const { coupon, ...currentFilters } = filters;
 
   return (
     <div className="gap-14 pb-14 overflow-x-hidden flex flex-col">
@@ -226,12 +217,12 @@ export default function ProductsPage() {
           <CategorySwiper categories={categories} />
           <ProductGrid
             products={products}
-            totalProducts={totalProducts}
+            totalProducts={products.length}
             onApplyFilters={handleApplyFilters}
             currentFilters={currentFilters}
           />
         </div>
-        <NewsSection newsItems={newsItems} />
+        <NewsSection />
       </Container>
     </div>
   );

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { IProduct } from "@/types/product";
-import AddToCartButton from "../../Cart/AddToCartButton";
+import AddToCartButton from "../../Cart/AddToCart/AddToCartButton";
 
 interface ProductCardProps {
   product: IProduct;
@@ -42,7 +42,7 @@ export default function ProductCard({
       <AddToCartButton onClick={(e) => onAddToCart?.(product, e)} />
       <div className="content flex flex-col py-4 gap-3 font-description">
         <div>
-          <div className="name text-base font-bold text-[#374151] pb-2 two-line-clamp h-[3.5rem]">
+          <div className="name text-base font-bold text-[#374151] pb-2 two-line-clamp">
             {name}
           </div>
           <div className="category text-base text-[#374151] truncate">

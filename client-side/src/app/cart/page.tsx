@@ -7,8 +7,9 @@ import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
 import { fetchProducts } from "@/services/productApi";
-import CartTablet from "@/components/Cart/CartTablet";
+
 import { Toaster } from "react-hot-toast";
+import CartTablet from "@/components/Cart/Layout/CartTablet";
 
 export default function Cart() {
   const cart = useCart();

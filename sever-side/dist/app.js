@@ -31,6 +31,7 @@ const limiter = (0, express_rate_limit_1.default)({
 app.use(limiter);
 app.use((0, xss_clean_1.default)());
 app.use((0, hpp_1.default)());
+app.set("trust proxy", 1);
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         const allowedOrigins = ["http://localhost:3300"];

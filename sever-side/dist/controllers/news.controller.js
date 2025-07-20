@@ -269,7 +269,7 @@ const getNewsDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.getNewsDetail = getNewsDetail;
-// Lấy tất cả tin tức (không phân trang, không lọc)
+// Lấy tất cả tin tức
 const getAllNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const news = yield news_model_1.default

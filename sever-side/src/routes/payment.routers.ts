@@ -4,7 +4,6 @@ import {
   checkVNPayReturn,
   createZaloPayPayment,
   checkZaloPayReturn,
-  createCodPayment,
 } from "../controllers/payment.controller";
 import { verifyToken } from "../middlewares/auth.middleware";
 const router = Router();
@@ -14,9 +13,7 @@ router.post("/create-vnpay-payment", verifyToken, createVNPayPayment);
 router.get("/check-payment-vnpay", checkVNPayReturn);
 
 // ZaloPay
-router.post("/create-payment-zalopay", createZaloPayPayment);
-router.get("/check-payment-zalopay", checkZaloPayReturn);
+router.post("/create-zalopay-payment", verifyToken, createZaloPayPayment);
+router.post("/zalopay-callback", checkZaloPayReturn);
 
-// Cod
-router.post("/create-cod-payment", verifyToken, createCodPayment);
 export default router;

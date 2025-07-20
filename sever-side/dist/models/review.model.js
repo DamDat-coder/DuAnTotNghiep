@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const reviewSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+    orderId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Order", required: true },
     productId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
     content: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },

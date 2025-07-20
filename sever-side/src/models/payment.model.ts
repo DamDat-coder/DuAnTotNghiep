@@ -1,11 +1,20 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
+export interface ITransactionSummary {
+  amount: number;
+  bankCode?: string;
+  gatewayTransactionId?: string;
+}
+
 export interface IPayment extends Document {
   userId: Types.ObjectId;
   amount: number;
-  status: "pending" | "success" | "failed" | "paid";
+  discount_amount?: number;
+  status: 'pending' | 'canceled' |'success' | 'failed' | 'paid';
   transaction_code: string;
+  gateway: 'vnpay' | 'zalopay' ;
   transaction_data?: any;
+  transaction_summary?: ITransactionSummary;
   paid_at?: Date;
   order_info?: any;
   created_at?: Date;
@@ -16,13 +25,23 @@ const paymentSchema = new Schema<IPayment>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
+    discount_amount: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ['pending', 'success', 'failed'],
+      enum: ['pending', 'canceled', 'success', 'failed', 'paid'],
       default: 'pending',
     },
     transaction_code: { type: String, required: true, unique: true },
+    gateway: {
+      type: String,
+      enum: ['vnpay', 'zalopay'],
+      required: true,
+    },
     transaction_data: { type: Schema.Types.Mixed, default: null },
+    transaction_summary: {
+      type: Object,
+      default: {},
+    },
     paid_at: { type: Date, default: null },
     order_info: { type: Schema.Types.Mixed, default: null },
   },

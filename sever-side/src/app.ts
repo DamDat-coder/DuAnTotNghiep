@@ -27,6 +27,7 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(xss());
 app.use(hpp());
+app.set("trust proxy", 1);
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = ["http://localhost:3300"];

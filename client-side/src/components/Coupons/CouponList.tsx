@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Coupon } from "@/types/coupon";
 import { fetchCouponById } from "@/services/couponApi";
 import Link from "next/link";
+import toast from "react-hot-toast";
+import { Copy } from "lucide-react";
 
 interface Props {
   initialCoupons: Coupon[];
@@ -80,13 +82,27 @@ export default function CouponList({ initialCoupons }: Props) {
       </div>
 
       {/* CHI TIẾT MÃ */}
-      <div className="w-[30%] rounded-lg p-4 shadow-custom-order h-fit sticky top-4">
+      <div className="w-[30%] rounded-lg shadow-custom-order h-fit sticky top-4">
         {detailLoading ? (
           <p className="text-gray-500">Đang tải chi tiết...</p>
         ) : selectedCoupon ? (
-          <div className="p-4 rounded-lg bg-white flex flex-col gap-6">
+          <div className="p-8 rounded-lg bg-white flex flex-col gap-6 relative">
             <div>
-              <h2 className="text-xl font-bold">{selectedCoupon.code}</h2>
+              <h2 className="text-xl font-semibold">{selectedCoupon.code}</h2>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selectedCoupon.code);
+                  toast.success("Đã sao chép mã!");
+                }}
+                className="absolute top-3 right-3 group text-xs px-3 py-2 border rounded hover:bg-black hover:text-white flex gap-2 transition"
+              >
+                <Copy
+                  size={16}
+                  className="text-gray-500 group-hover:text-white transition"
+                />
+                Sao chép
+              </button>
+
               <p className="text-gray-600 text-sm line-clamp-2">
                 {selectedCoupon.description || "Không có mô tả"}
               </p>
@@ -142,7 +158,7 @@ export default function CouponList({ initialCoupons }: Props) {
             </Link>
           </div>
         ) : (
-          <p className="text-gray-500 text-sm italic">
+          <p className="p-4 text-gray-500 text-sm italic">
             Chọn một mã để xem chi tiết.
           </p>
         )}

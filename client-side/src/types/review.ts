@@ -3,7 +3,7 @@ import { ProductReview } from "./product";
 
 export interface IReview {
   _id: string;
-  userId: UserReview[]
+  userId: UserReview
   productId: ProductReview[]
   content: string;
   rating: number;

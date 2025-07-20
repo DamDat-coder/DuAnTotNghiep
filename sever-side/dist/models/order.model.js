@@ -52,17 +52,16 @@ const shippingAddressSchema = new mongoose_1.Schema({
 }, { _id: false });
 const orderSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
-    couponId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Coupon', default: null },
     address_id: { type: mongoose_1.Schema.Types.ObjectId, required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
+    discountAmount: { type: Number, default: 0 },
     shipping: { type: Number, default: 0 },
     paymentMethod: {
         type: String,
-        enum: ['cod', 'vnpay', 'momo', 'zalopay'],
+        enum: ['cod', 'vnpay', 'zalopay'],
         required: true,
     },
-    note: { type: String, default: '' },
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],
@@ -73,7 +72,8 @@ const orderSchema = new mongoose_1.Schema({
         ref: 'Payment',
         default: null,
     },
-    items: [orderItemSchema],
+    items: { type: [orderItemSchema], required: true },
+    orderCode: { type: String, required: true, unique: true },
 }, { timestamps: true });
 const OrderModel = mongoose_1.default.model('Order', orderSchema);
 exports.default = OrderModel;

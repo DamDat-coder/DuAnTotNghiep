@@ -20,16 +20,16 @@ export interface IShippingAddress {
 
 export interface IOrder extends Document {
   userId: Types.ObjectId;
-  couponId?: Types.ObjectId | null;
   address_id: Types.ObjectId;
   shippingAddress: IShippingAddress;
   totalPrice: number;
+  discountAmount?: number;
   shipping: number;
   status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
-  paymentMethod: 'cod' | 'vnpay' | 'momo';
+  paymentMethod: 'cod' | 'vnpay' | 'zalopay';
   paymentId?: Types.ObjectId | null;
   items: IOrderItem[];
-  note?: string;
+  orderCode: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -61,17 +61,16 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
 const orderSchema = new Schema<IOrder>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    couponId: { type: Schema.Types.ObjectId, ref: 'Coupon', default: null },
     address_id: { type: Schema.Types.ObjectId, required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
-    shipping: { type: Number, default: 0 }, 
+    discountAmount: { type: Number, default: 0 }, 
+    shipping: { type: Number, default: 0 },
     paymentMethod: {
       type: String,
-      enum: ['cod', 'vnpay', 'momo', 'zalopay'], 
+      enum: ['cod', 'vnpay', 'zalopay'],
       required: true,
     },
-    note: { type: String, default: '' }, 
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],
@@ -82,11 +81,11 @@ const orderSchema = new Schema<IOrder>(
       ref: 'Payment',
       default: null,
     },
-    items: [orderItemSchema],
+    items: { type: [orderItemSchema], required: true },
+    orderCode: { type: String, required: true, unique: true },
   },
   { timestamps: true }
 );
-
 
 const OrderModel = mongoose.model<IOrder>('Order', orderSchema);
 export default OrderModel;

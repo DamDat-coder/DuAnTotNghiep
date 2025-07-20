@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateVerifyOtp = exports.validateSendOtp = exports.validateLogin = exports.validateRegister = void 0;
+exports.validateGoogleLogin = exports.validateVerifyOtp = exports.validateSendOtp = exports.validateLogin = exports.validateRegister = void 0;
 const express_validator_1 = require("express-validator");
 exports.validateRegister = [
     (0, express_validator_1.body)("email").isEmail().withMessage("Email không hợp lệ."),

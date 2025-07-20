@@ -49,7 +49,7 @@ const userSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },
     addresses: [addressSchema],
     phone: {
-        type: Number,
+        type: String, // Sửa từ Number -> String
         default: null,
         unique: true,
         sparse: true,

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
+exports.hideCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
@@ -20,6 +20,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { isActive, search, page = "1", limit = "10" } = req.query;
+        yield coupon_model_1.default.updateMany({ is_active: true, expiry: { $lt: new Date() } }, { $set: { is_active: false } });
         const filter = {};
         if (isActive !== undefined) {
             filter.is_active = isActive === "true";
@@ -60,15 +61,15 @@ exports.getAllCoupons = getAllCoupons;
 const getCouponById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const coupon = yield coupon_model_1.default.findById(req.params.id)
-            .populate('applicableCategories', 'name')
-            .populate('applicableProducts', 'name');
+            .populate("applicableCategories", "name")
+            .populate("applicableProducts", "name");
         if (!coupon) {
-            return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' });
+            return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
         }
         res.status(200).json(coupon);
     }
     catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: "Lỗi server", error });
     }
 });
 exports.getCouponById = getCouponById;
@@ -79,7 +80,7 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
         const existing = yield coupon_model_1.default.findOne({ code });
         if (existing) {
-            return res.status(400).json({ message: 'Mã giảm giá đã tồn tại' });
+            return res.status(400).json({ message: "Mã giảm giá đã tồn tại" });
         }
         const newCoupon = new coupon_model_1.default({
             code,
@@ -105,7 +106,9 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             link: `/coupons`,
             isRead: false,
         });
-        res.status(201).json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
+        res
+            .status(201)
+            .json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
     }
     catch (error) {
         console.error("Error creating coupon:", error);
@@ -120,7 +123,7 @@ const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
         const coupon = yield coupon_model_1.default.findById(req.params.id);
         if (!coupon) {
-            return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' });
+            return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
         }
         coupon.code = code !== null && code !== void 0 ? code : coupon.code;
         coupon.description = description !== null && description !== void 0 ? description : coupon.description;
@@ -137,24 +140,31 @@ const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         coupon.applicableProducts =
             (_b = applicableProducts === null || applicableProducts === void 0 ? void 0 : applicableProducts.map((id) => new mongoose_1.default.Types.ObjectId(id))) !== null && _b !== void 0 ? _b : coupon.applicableProducts;
         yield coupon.save();
-        res.status(200).json({ message: 'Cập nhật thành công', data: coupon });
+        res.status(200).json({ message: "Cập nhật thành công", data: coupon });
     }
     catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: "Lỗi server", error });
     }
 });
 exports.updateCoupon = updateCoupon;
-// Xoá coupon
-const deleteCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// Ẩn coupon
+const hideCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const deleted = yield coupon_model_1.default.findByIdAndDelete(req.params.id);
-        if (!deleted) {
-            return res.status(404).json({ message: 'Không tìm thấy mã giảm giá để xoá' });
+        const coupon = yield coupon_model_1.default.findById(req.params.id);
+        if (!coupon) {
+            return res
+                .status(404)
+                .json({ message: "Không tìm thấy mã giảm giá để ẩn" });
         }
-        res.status(200).json({ message: 'Xoá mã giảm giá thành công' });
+        if (!coupon.is_active) {
+            return res.status(400).json({ message: "Mã giảm giá đã bị ẩn trước đó" });
+        }
+        coupon.is_active = false;
+        yield coupon.save();
+        res.status(200).json({ message: "Đã ẩn mã giảm giá thành công" });
     }
     catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: "Lỗi server", error });
     }
 });
-exports.deleteCoupon = deleteCoupon;
+exports.hideCoupon = hideCoupon;

@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetPassword = exports.forgotPassword = exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = exports.getCurrentUser = exports.googleLogin = void 0;
+exports.updatePassword = exports.resetPassword = exports.forgotPassword = exports.getWishlist = exports.removeFromWishlist = exports.addToWishlist = exports.setDefaultAddress = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.toggleUserStatus = exports.updateUserInfo = exports.getUserById = exports.getAllUsers = exports.logoutUser = exports.refreshAccessToken = exports.loginUser = exports.registerUser = exports.getCurrentUser = exports.googleLogin = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -162,12 +162,16 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
         const { email, password } = req.body;
         const user = yield user_model_1.default.findOne({ email });
         if (!user)
-            return res.status(400).json({ success: false, message: "Email không tồn tại." });
+            return res
+                .status(400)
+                .json({ success: false, message: "Email không tồn tại." });
         const isMatch = yield bcryptjs_1.default.compare(password, user.password);
         if (!isMatch)
             return res.status(401).json({ success: false, message: "Mật khẩu sai." });
         if (!user.is_active)
-            return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa." });
+            return res
+                .status(403)
+                .json({ success: false, message: "Tài khoản đã bị khóa." });
         const accessToken = (0, jwt_1.generateAccessToken)(user._id.toString(), user.role);
         const refreshToken = (0, jwt_1.generateRefreshToken)(user._id.toString());
         yield user_model_1.default.updateOne({ _id: user._id }, { refreshToken });
@@ -428,9 +432,7 @@ const updateAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         address.province = province !== null && province !== void 0 ? province : address.province;
         address.is_default = is_default !== null && is_default !== void 0 ? is_default : address.is_default;
         yield user.save();
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             success: true,
             message: "Cập nhật địa chỉ thành công.",
             data: user.addresses,
@@ -456,9 +458,7 @@ const deleteAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, func
                 .json({ success: false, message: "Không tìm thấy địa chỉ." });
         address.deleteOne();
         yield user.save();
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             success: true,
             message: "Xoá địa chỉ thành công.",
             data: user.addresses,
@@ -485,9 +485,7 @@ const setDefaultAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, 
         user.addresses.forEach((addr) => (addr.is_default = false));
         address.is_default = true;
         yield user.save();
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             success: true,
             message: "Cập nhật mặc định thành công.",
             data: user.addresses,
@@ -512,18 +510,14 @@ const addToWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0, func
                 .status(400)
                 .json({ success: false, message: "Thiếu productId." });
         if (user.wishlist.includes(productId)) {
-            return res
-                .status(400)
-                .json({
+            return res.status(400).json({
                 success: false,
                 message: "Sản phẩm đã tồn tại trong danh sách yêu thích.",
             });
         }
         user.wishlist.push(productId);
         yield user.save();
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             success: true,
             message: "Đã thêm vào danh sách yêu thích.",
             data: user.wishlist,
@@ -545,9 +539,7 @@ const removeFromWishlist = (req, res, next) => __awaiter(void 0, void 0, void 0,
         const productId = req.params.productId;
         user.wishlist = user.wishlist.filter((id) => id.toString() !== productId);
         yield user.save();
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             success: true,
             message: "Đã xoá khỏi danh sách yêu thích.",
             data: user.wishlist,
@@ -582,7 +574,9 @@ const forgotPassword = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         const { email } = req.body;
         const user = yield user_model_1.default.findOne({ email });
         if (!user)
-            return res.status(404).json({ success: false, message: "Không tìm thấy email." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy email." });
         const token = crypto_1.default.randomBytes(32).toString("hex");
         const expiresAt = Date.now() + 15 * 60 * 1000; // 15 phút
         resetTokenStore_1.resetTokens.set(token, { email, expiresAt, userId: user._id.toString() });
@@ -601,23 +595,71 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const { token } = req.params;
         const { password } = req.body;
         if (!password) {
-            return res.status(400).json({ success: false, message: "Mật khẩu không được để trống" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Mật khẩu không được để trống" });
         }
         const tokenData = resetTokenStore_1.resetTokens.get(token);
         if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
-            return res.status(400).json({ success: false, message: "Token không hợp lệ hoặc đã hết hạn." });
+            return res
+                .status(400)
+                .json({
+                success: false,
+                message: "Token không hợp lệ hoặc đã hết hạn.",
+            });
         }
         const user = yield user_model_1.default.findById(tokenData.userId);
         if (!user) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy người dùng." });
         }
         user.password = yield bcryptjs_1.default.hash(password, 10);
         yield user.save();
         resetTokenStore_1.resetTokens.delete(token);
-        return res.status(200).json({ success: true, message: "Mật khẩu đã được đặt lại thành công." });
+        return res
+            .status(200)
+            .json({ success: true, message: "Mật khẩu đã được đặt lại thành công." });
     }
     catch (error) {
         return res.status(500).json({ success: false, message: "Đã xảy ra lỗi." });
     }
 });
 exports.resetPassword = resetPassword;
+const updatePassword = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.",
+            });
+        }
+        const user = yield user_model_1.default.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy người dùng.",
+            });
+        }
+        const isMatch = yield bcryptjs_1.default.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Mật khẩu hiện tại không chính xác.",
+            });
+        }
+        user.password = yield bcryptjs_1.default.hash(newPassword, 10);
+        yield user.save();
+        res.status(200).json({
+            success: true,
+            message: "Cập nhật mật khẩu thành công.",
+        });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+exports.updatePassword = updatePassword;

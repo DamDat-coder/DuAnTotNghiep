@@ -19,7 +19,7 @@ export interface IUser extends Document {
   password: string;
   name: string;
   addresses: Types.DocumentArray<IAddress>;
-  phone: string | null; // Sửa từ number -> string
+  phone: string | null; 
   role: "user" | "admin";
   is_active: boolean;
   refreshToken?: string | null;

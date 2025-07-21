@@ -19,7 +19,7 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
         console.log("✅ MongoDB connected");
     }
     catch (error) {
-        console.error("❌ MongoDB connection error:", error);
+        console.error("MongoDB connection error:", error);
         process.exit(1);
     }
 });

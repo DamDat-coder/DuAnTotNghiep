@@ -4,61 +4,85 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuth } from "../../../../contexts/AuthContext";
+import { useAuth } from "../../../../../contexts/AuthContext";
 import GoogleLoginButton from "@/components/Auth/GoogleLoginButton";
 
-interface RegisterPopupProps {
+interface LoginPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenLogin: () => void;
+  onOpenRegister: () => void;
+  onOpenForgotPassword: () => void;
+  initialFormData?: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  } | null;
 }
 
-export default function RegisterPopup({
+export default function LoginPopup({
   isOpen,
   onClose,
-  onOpenLogin,
-}: RegisterPopupProps) {
+  onOpenRegister,
+  initialFormData,
+  onOpenForgotPassword,
+}: LoginPopupProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
     keepLoggedIn: false,
   });
-
-  const [errors, setErrors] = useState<{
-    name?: string;
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-  }>({});
-
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { login } = useAuth();
 
+  // Populate form from initialFormData
   useEffect(() => {
-    document.body.classList.toggle("overflow-hidden", isOpen);
-    return () => document.body.classList.remove("overflow-hidden");
-  }, [isOpen]);
+    if (initialFormData) {
+      setFormData({
+        email: initialFormData.email,
+        password: initialFormData.password,
+        keepLoggedIn: false,
+      });
+    }
+  }, [initialFormData]);
+
+  // Lock scroll when popup open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+
+      // Reset form when popup closes
+      if (!initialFormData) {
+        setFormData({
+          email: "",
+          password: "",
+          keepLoggedIn: false,
+        });
+        setErrors({});
+      }
+    }
+
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isOpen, initialFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "radio" ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const validateField = (name: string, value: string) => {
     const newErrors = { ...errors };
-
-    if (name === "name") {
-      newErrors.name = value.trim()
-        ? undefined
-        : "Họ và tên không được để trống.";
-    }
 
     if (name === "email") {
       if (!value.trim()) {
@@ -66,7 +90,7 @@ export default function RegisterPopup({
       } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)) {
         newErrors.email = "Email không đúng định dạng.";
       } else {
-        newErrors.email = undefined;
+        delete newErrors.email;
       }
     }
 
@@ -80,16 +104,6 @@ export default function RegisterPopup({
       }
     }
 
-    if (name === "confirmPassword") {
-      if (!value.trim()) {
-        newErrors.confirmPassword = "Vui lòng nhập lại mật khẩu.";
-      } else if (value !== formData.password) {
-        newErrors.confirmPassword = "Mật khẩu không khớp.";
-      } else {
-        newErrors.confirmPassword = undefined;
-      }
-    }
-
     setErrors(newErrors);
   };
 
@@ -97,40 +111,34 @@ export default function RegisterPopup({
     e.preventDefault();
     setLoading(true);
 
-    // Validate toàn bộ trước khi submit
-    validateField("name", formData.name);
+    // Check for errors again before submit
     validateField("email", formData.email);
     validateField("password", formData.password);
-    validateField("confirmPassword", formData.confirmPassword);
 
-    const hasErrors = Object.values(errors).some((error) => error);
-    if (hasErrors) {
+    if (errors.email || errors.password) {
       setLoading(false);
       return;
     }
 
     try {
-      const success = await register(
-        formData.name,
+      const success = await login(
         formData.email,
         formData.password,
         formData.keepLoggedIn
       );
       if (success) {
+        onClose();
         setFormData({
-          name: "",
           email: "",
           password: "",
-          confirmPassword: "",
           keepLoggedIn: false,
         });
         setErrors({});
-        onClose();
       }
     } catch (err: any) {
       setErrors((prev) => ({
         ...prev,
-        email: err.message || "Có lỗi xảy ra khi đăng ký.",
+        password: err.message || "Có lỗi xảy ra khi đăng nhập.",
       }));
     } finally {
       setLoading(false);
@@ -150,7 +158,7 @@ export default function RegisterPopup({
         onClick={onClose}
       />
       <motion.div
-        className="relative w-[636px] h-[90%] overflow-y-scroll bg-white rounded-lg scroll-hidden"
+        className="relative laptop:w-[636px] desktop:w-[636px] h-auto bg-white rounded-[8px] scroll-hidden"
         initial={{ y: "-100vh" }}
         animate={{ y: 0 }}
         exit={{ y: "-100vh" }}
@@ -158,7 +166,7 @@ export default function RegisterPopup({
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-black cursor-pointer"
+          className="absolute top-4 right-4 p-2 text-black hover:text-gray-700"
         >
           <svg className="size-6" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -169,7 +177,12 @@ export default function RegisterPopup({
           </svg>
         </button>
 
-        <div className="flex flex-col items-center gap-10 py-[3rem] px-[7.5rem]">
+        <div
+          className="flex flex-col h-[90%] items-center 
+           px-[2.5rem] py-4 gap-5
+           laptop:py-[2rem] laptop:px-[5rem] laptop:gap-8
+           desktop:py-[3rem] desktop:px-[7.5rem] desktop:gap-10"
+        >
           <Image
             src="/nav/logo.svg"
             alt="Logo"
@@ -178,8 +191,9 @@ export default function RegisterPopup({
             className="h-16 w-auto"
             draggable={false}
           />
+
           <div className="text-center">
-            <h2 className="text-[24px] font-bold">Đăng ký</h2>
+            <h2 className="text-[24px] font-bold">Đăng nhập</h2>
             <p className="text-base w-[396px] text-[#707070]">
               Trở thành thành viên để có được những sản phẩm và giá tốt nhất.
             </p>
@@ -187,49 +201,30 @@ export default function RegisterPopup({
 
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col items-center gap-10"
+            className="w-full flex flex-col items-center gap-10"
           >
             <div className="flex flex-col gap-3">
-              {/* Họ và tên */}
-              <div className="w-[396px]">
-                <label className="block text-sm font-bold">
-                  Họ và tên <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={(e) => validateField("name", e.target.value)}
-                  placeholder="Nhập họ và tên"
-                  className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                />
-                {errors.name && (
-                  <span className="text-red-500 text-sm">{errors.name}</span>
-                )}
-              </div>
-
-              {/* Email */}
               <div className="w-[396px]">
                 <label className="block text-sm font-bold">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   onBlur={(e) => validateField("email", e.target.value)}
-                  placeholder="Nhập Email"
-                  className="w-full h-[45px] border border-gray-300 rounded px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Nhập email"
+                  className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 text-sm focus:outline-none focus:ring-2 focus:ring-black"
                 />
                 {errors.email && (
-                  <span className="text-red-500 text-sm">{errors.email}</span>
+                  <span className="text-red-500 text-sm mt-1 block">
+                    {errors.email}
+                  </span>
                 )}
               </div>
 
-              {/* Mật khẩu */}
-              <div className="w-[396px] relative">
+              <div className="relative w-[396px]">
                 <label className="block text-sm font-bold">
                   Nhập mật khẩu <span className="text-red-500">*</span>
                 </label>
@@ -239,14 +234,16 @@ export default function RegisterPopup({
                   value={formData.password}
                   onChange={handleChange}
                   onBlur={(e) => validateField("password", e.target.value)}
-                  autoComplete="new-password"
                   placeholder="Nhập mật khẩu"
-                  className="w-full h-[45px] border border-gray-300 rounded px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  autoComplete="new-password"
+                  className="w-full h-[45px] border border-gray-300 rounded-[4px] px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-[50%] right-3 text-gray-400"
+                  className={`absolute ${
+                    errors.password ? "top-[40%]" : "top-[50%]"
+                  } right-3 text-gray-400`}
                 >
                   {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
@@ -257,44 +254,8 @@ export default function RegisterPopup({
                 )}
               </div>
 
-              {/* Nhập lại mật khẩu */}
-              <div className="w-[396px] relative">
-                <label className="block text-sm font-bold">
-                  Nhập lại mật khẩu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  onBlur={(e) =>
-                    validateField("confirmPassword", e.target.value)
-                  }
-                  autoComplete="new-password"
-                  placeholder="Nhập lại mật khẩu"
-                  className="w-full h-[45px] border border-gray-300 rounded px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute top-[50%] right-3 text-gray-400"
-                >
-                  {showConfirmPassword ? (
-                    <Eye size={18} />
-                  ) : (
-                    <EyeOff size={18} />
-                  )}
-                </button>
-                {errors.confirmPassword && (
-                  <span className="text-red-500 text-sm block">
-                    {errors.confirmPassword}
-                  </span>
-                )}
-              </div>
-
-              {/* Tự động đăng nhập sau khi đăng ký */}
-              <div className="w-[396px]">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <div className="flex justify-between items-center w-[396px] text-sm">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
                     type="radio"
                     name="keepLoggedIn"
@@ -308,32 +269,37 @@ export default function RegisterPopup({
                     }
                     className="w-4 h-4 rounded-full text-black border-gray-400 accent-black"
                   />
-                  Tự động đăng nhập sau khi đăng ký
+                  Duy trì đăng nhập
                 </label>
+                <button
+                  type="button"
+                  onClick={onOpenForgotPassword}
+                  className="text-black hover:underline"
+                >
+                  Quên mật khẩu?
+                </button>
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
-              {/* Submit button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-[396px] h-[49px] bg-black text-white text-base rounded font-medium hover:bg-gray-800"
+                className="w-[396px] h-[49px] bg-black text-white rounded text-base hover:bg-gray-800"
               >
-                {loading ? "Đang đăng ký..." : "Đăng ký"}
+                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
 
               <p className="text-sm text-center">
-                Đã có tài khoản?{" "}
+                Chưa có tài khoản?{" "}
                 <button
-                  type="button"
                   className="text-black font-bold hover:underline"
                   onClick={() => {
                     onClose();
-                    onOpenLogin();
+                    onOpenRegister();
                   }}
                 >
-                  Đăng nhập
+                  Đăng ký
                 </button>
               </p>
               <div className="w-full flex justify-center items-center gap-2">

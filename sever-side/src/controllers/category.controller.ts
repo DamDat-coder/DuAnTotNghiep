@@ -4,12 +4,13 @@ import slugify from "slugify";
 import cloudinary from "../config/cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import { Types } from "mongoose";
+import mongoose from 'mongoose';
 import { MulterRequest } from "../middlewares/upload.middleware"; 
 
 // Tạo danh mục mới
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { name, parentId } = req.body;
+    const { name, parentId, is_active, description } = req.body;
     if (!name) return res.status(400).json({ success: false, message: "Tên danh mục là bắt buộc." });
 
     const slug = slugify(name, { lower: true });
@@ -33,8 +34,10 @@ export const createCategory = async (req: Request, res: Response) => {
     const newCategory = await Category.create({
       name,
       slug,
+      description: description || "", // thêm mô tả
       parentId: parentId || null,
       image: imageUrl,
+      is_active: typeof is_active === "boolean" ? is_active : true,
     });
 
     res.status(201).json({ success: true, message: "Tạo danh mục thành công.", data: newCategory });
@@ -90,7 +93,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, parentId } = req.body;
+    const { name, parentId, is_active, description } = req.body;
     const updateData: any = {};
 
     if (name) {
@@ -101,6 +104,14 @@ export const updateCategory = async (req: Request, res: Response) => {
     if (typeof parentId !== "undefined") {
       updateData.parentId =
         parentId === "" || parentId === null ? null : new Types.ObjectId(parentId);
+    }
+
+    if (typeof is_active !== "undefined") {
+      updateData.is_active = is_active;
+    }
+
+    if (typeof description !== "undefined") {  // thêm mô tả
+      updateData.description = description;
     }
 
     const file = (req as MulterRequest).file;
@@ -156,5 +167,43 @@ export const deleteCategory = async (req: Request, res: Response) => {
     res.status(200).json({ success: true, message: "Xoá danh mục thành công." });
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi khi xoá danh mục." });
+  }
+};
+
+// Trong category.controller.ts
+export const toggleActiveCategory = async (req: Request, res: Response) => {
+  try {
+    const categoryId = req.params.id;
+    const { is_active } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+      return;
+    }
+
+    if (typeof is_active !== 'boolean') {
+      res.status(400).json({ status: 'error', message: 'Trạng thái is_active phải là boolean' });
+      return;
+    }
+
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      { is_active },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!updatedCategory) {
+      res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: `Danh mục đã được ${is_active ? 'mở khóa' : 'khóa'} thành công`,
+      data: updatedCategory,
+    });
+  } catch (error: any) {
+    console.error('Lỗi khi khóa/mở khóa danh mục:', error);
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };

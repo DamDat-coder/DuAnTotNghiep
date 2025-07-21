@@ -570,10 +570,10 @@ export async function setDefaultAddress(
 }
 
 export async function fetchAllUsersAdmin(
-  search: string = "", // Thêm tham số search
-  page: number = 1, // Thêm tham số page
-  limit: number = 10, // Thêm tham số limit
-  role?: string, // Thêm tham số role (tùy chọn)
+  search: string = "",
+  page: number = 1,
+  limit: number = 1000,
+  role?: string,
   is_active?: boolean
 ): Promise<{
   users: IUser[] | null;
@@ -582,22 +582,19 @@ export async function fetchAllUsersAdmin(
   currentPage: number;
 }> {
   try {
-    // Tạo query string từ các tham số
     const queryParams = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
-      ...(search && { search }), // Chỉ thêm search nếu có giá trị
-      ...(role && { role }), // Chỉ thêm role nếu có giá trị
+      ...(search && { search }),
+      ...(role && { role }),
       ...(typeof is_active !== "undefined" && {
         is_active: is_active.toString(),
-      }), // Chỉ thêm is_block nếu được cung cấp
+      }),
     });
 
     const response = await fetchWithAuth<any>(
       `${API_BASE_URL}/users?${queryParams.toString()}`,
-      {
-        cache: "no-store",
-      }
+      { cache: "no-store" }
     );
 
     if (!response || !response.data || !Array.isArray(response.data)) {
@@ -605,16 +602,18 @@ export async function fetchAllUsersAdmin(
       return { users: null, total: 0, totalPages: 0, currentPage: page };
     }
 
-    const users: IUser[] = response.data.map((userData: UserData) => ({
+    const users: IUser[] = response.data.map((userData: UserData & { createdAt?: string; updatedAt?: string }) => ({
       id: userData._id,
       email: userData.email,
       name: userData.name,
-      phone: userData.phone || null,
-      avatar: userData.avatar || null,
+      phone: userData.phone ?? null,
       role: userData.role,
       is_active: userData.is_active,
+      addresses: userData.addresses ?? [],
       active: userData.is_active,
-      addresses: userData.addresses || [],
+      avatar: (userData as any).avatar ?? undefined,
+      createdAt: (userData as any).createdAt ?? undefined,
+      updatedAt: (userData as any).updatedAt ?? undefined,
     }));
 
     return {
@@ -628,7 +627,6 @@ export async function fetchAllUsersAdmin(
     return { users: null, total: 0, totalPages: 0, currentPage: page };
   }
 }
-
 
 export async function fetchUserById(userId: string): Promise<IUser | null> {
   try {

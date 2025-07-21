@@ -199,21 +199,51 @@ const getProductById = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.getProductById = getProductById;
 // Lấy sản phẩm theo slug 
 const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
         const { slug } = req.params;
+        const isExact = req.query.exact === "true";
         if (!slug || typeof slug !== "string") {
             res.status(400).json({ status: "error", message: "Slug không hợp lệ" });
             return;
         }
         const normalizedSlug = (0, slugify_1.default)((0, string_util_1.removeVietnameseTones)(slug), { lower: true });
+        if (isExact) {
+            const product = yield product_model_1.default
+                .findOne({ slug: normalizedSlug })
+                .populate("category", "name")
+                .lean();
+            if (!product) {
+                res.status(404).json({
+                    status: "error",
+                    message: "Không tìm thấy sản phẩm trùng khớp chính xác.",
+                    matchedExactly: false,
+                });
+                return;
+            }
+            res.status(200).json({
+                status: "success",
+                data: Object.assign(Object.assign({}, product), { category: {
+                        _id: ((_a = product.category) === null || _a === void 0 ? void 0 : _a._id) || null,
+                        name: ((_b = product.category) === null || _b === void 0 ? void 0 : _b.name) || "Không rõ",
+                    } }),
+                matchedExactly: true,
+            });
+            return;
+        }
         const products = yield product_model_1.default
             .find({ slug: { $regex: normalizedSlug, $options: "i" } })
             .populate("category", "name")
             .lean();
         if (!products || products.length === 0) {
-            res.status(404).json({ status: "error", message: "Không tìm thấy sản phẩm nào" });
+            res.status(404).json({
+                status: "error",
+                message: "Không tìm thấy sản phẩm phù hợp.",
+                matchedExactly: false,
+            });
             return;
         }
+        const matchedExactly = products.some(p => p.slug === normalizedSlug);
         const result = products.map((product) => {
             var _a, _b;
             return (Object.assign(Object.assign({}, product), { category: {
@@ -221,12 +251,17 @@ const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, functio
                     name: ((_b = product.category) === null || _b === void 0 ? void 0 : _b.name) || "Không rõ",
                 } }));
         });
-        res.status(200).json({ status: "success", data: result, total: result.length });
+        res.status(200).json({
+            status: "success",
+            data: result,
+            total: result.length,
+            matchedExactly,
+        });
     }
     catch (error) {
         res.status(500).json({
             status: "error",
-            message: error.message || "Lỗi server khi lấy sản phẩm theo slug",
+            message: error.message || "Lỗi server khi tìm sản phẩm theo slug.",
         });
     }
 });
@@ -311,7 +346,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 console.log("Thông báo đã gửi đến người dùng.");
             }
             catch (notiError) {
-                console.error("❌ Gửi thông báo thất bại:", notiError);
+                console.error("Gửi thông báo thất bại:", notiError);
             }
         }));
     }
@@ -373,7 +408,6 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         else {
             product.image = existingProduct.image;
         }
-        // Parse lại variants nếu là string (gửi từ FormData)
         if (typeof product.variants === 'string') {
             try {
                 product.variants = JSON.parse(product.variants);
@@ -383,7 +417,6 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 return;
             }
         }
-        // === XỬ LÝ DANH MỤC CHUẨN ===
         let newCategory = existingProduct.category;
         const categoryId = product.categoryId || product['category._id'];
         if (categoryId) {
@@ -397,11 +430,9 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 name: category.name,
             };
         }
-        // Xoá trường thừa liên quan category để tránh lỗi conflict
         delete product.category;
         delete product.categoryId;
         delete product['category._id'];
-        // Build object update chuẩn
         const updateData = Object.assign(Object.assign({}, product), { category: newCategory });
         const updatedProduct = yield product_model_1.default
             .findByIdAndUpdate(productId, { $set: updateData }, { new: true, runValidators: true })
@@ -434,7 +465,7 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         //       await NotificationModel.insertMany(notifications);
         //       console.log("Thông báo cập nhật sản phẩm đã gửi.");
         //     } catch (error) {
-        //       console.error("❌ Gửi thông báo thất bại:", error);
+        //       console.error("Gửi thông báo thất bại:", error); 
         //     }
         //   })();
         // });

@@ -26,24 +26,22 @@ import { sendSmsOTP, verifySmsOTP } from "../controllers/user.phone.controller";
 
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
-import { validateRequest } from "../middlewares/validateRequest";
-
 const router = Router();
 
 // Xác thực và quản lý người dùng
 router.get("/me", verifyToken, getCurrentUser);
-router.post("/register", validateRequest, registerUser);
-router.post("/login", validateRequest, loginUser);
+router.post("/register", registerUser);
+router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);
-router.post("/google-login", validateRequest, googleLogin);
+router.post("/google-login", googleLogin);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
-router.post("/update-password", verifyToken, validateRequest, updatePassword);
+router.post("/update-password", verifyToken, updatePassword);
 
 // OTP qua SMS
-router.post("/send-otp", validateRequest, sendSmsOTP);
-router.post("/verify-otp", validateRequest, verifySmsOTP);
+router.post("/send-otp", sendSmsOTP);
+router.post("/verify-otp", verifySmsOTP);
 
 // Địa chỉ
 router.post("/:id/addresses", verifyToken, addAddress);

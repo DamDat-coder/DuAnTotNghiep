@@ -4,19 +4,22 @@ import newsModel, { INews } from "../models/news.model";
 import UserModel from "../models/user.model";
 import NotificationModel from "../models/notification.model";
 import { v2 as cloudinary } from "cloudinary";
-import {
-  MulterRequest,
-  normalizeFiles,
-} from "../middlewares/upload.middleware";
+import { MulterRequest, normalizeFiles } from "../middlewares/upload.middleware";
 
 // Thêm tin tức
-export const createNews = async (
-  req: MulterRequest,
-  res: Response
-): Promise<void> => {
+export const createNews = async (req: MulterRequest, res: Response): Promise<void> => {
   try {
-    const { title, content, slug, category_id, tags, meta_description } =
-      req.body;
+    const {
+      title,
+      content,
+      slug,
+      category_id,
+      tags,
+      meta_description,
+      published_at,
+      is_published,
+    } = req.body;
+
     const user_id = req.user?.userId;
 
     if (!title || !content || !slug || !category_id || !user_id) {
@@ -56,6 +59,9 @@ export const createNews = async (
       thumbnail = result;
     }
 
+    const parsedPublishedAt = published_at ? new Date(published_at) : null;
+    const shouldPublishNow = is_published === "true" || is_published === true;
+
     const newsData: Partial<INews> = {
       title,
       content,
@@ -65,7 +71,8 @@ export const createNews = async (
       tags: tags ? tags.split(",") : [],
       thumbnail,
       meta_description,
-      is_published: false,
+      is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
+      published_at: parsedPublishedAt ?? (shouldPublishNow ? new Date() : null),
     };
 
     const createdNews = new newsModel(newsData);
@@ -76,24 +83,25 @@ export const createNews = async (
       .populate("user_id", "name email")
       .populate("category_id", "name");
 
-    // Gửi thông báo
-    setImmediate(async () => {
-      try {
-        const users = await UserModel.find({}).select("_id").lean();
-        const notifications = users.map((user: { _id: string }) => ({
-          userId: user._id,
-          title: "Tin tức mới từ Shop4Real!",
-          message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
-          type: "news",
-          isRead: false,
-          link: `/posts/${savedNews._id}`,
-        }));
-        await NotificationModel.insertMany(notifications);
-        console.log("Đã gửi thông báo tin tức mới cho người dùng.");
-      } catch (notifyErr) {
-        console.error("Gửi thông báo thất bại:", notifyErr);
-      }
-    });
+    if (newsData.is_published) {
+      setImmediate(async () => {
+        try {
+          const users = await UserModel.find({}).select("_id").lean();
+          const notifications = users.map((user: { _id: string }) => ({
+            userId: user._id,
+            title: "Tin tức mới từ Shop4Real!",
+            message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
+            type: "news",
+            isRead: false,
+            link: `/posts/${savedNews._id}`,
+          }));
+          await NotificationModel.insertMany(notifications);
+          console.log("Đã gửi thông báo tin tức mới cho người dùng.");
+        } catch (notifyErr) {
+          console.error("Gửi thông báo thất bại:", notifyErr);
+        }
+      });
+    }
 
     res.status(201).json({
       status: "success",
@@ -110,10 +118,7 @@ export const createNews = async (
 };
 
 // Cập nhật tin tức
-export const updateNews = async (
-  req: MulterRequest,
-  res: Response
-): Promise<void> => {
+export const updateNews = async (req: MulterRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const {
@@ -127,21 +132,18 @@ export const updateNews = async (
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      res
-        .status(400)
-        .json({ status: "error", message: "ID tin tức không hợp lệ" });
+      res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
       return;
     }
 
     const existingNews = await newsModel.findById(id);
     if (!existingNews) {
-      res
-        .status(404)
-        .json({ status: "error", message: "Tin tức không tồn tại" });
+      res.status(404).json({ status: "error", message: "Tin tức không tồn tại" });
       return;
     }
 
-    const updates: Partial<INews> = {};
+    const updates: Partial<INews & { published_at?: Date | null }> = {};
+
     if (title) updates.title = title;
     if (content) updates.content = content;
     if (slug) updates.slug = slug;
@@ -155,7 +157,14 @@ export const updateNews = async (
     ) {
       const publishStatus = is_published === true || is_published === "true";
       updates.is_published = publishStatus;
-      updates.published_at = publishStatus ? new Date() : null;
+
+      if (!existingNews.is_published && publishStatus) {
+        updates.published_at = new Date();
+      }
+
+      if (existingNews.is_published && !publishStatus) {
+        updates.published_at = null;
+      }
     }
 
     if (category_id && mongoose.Types.ObjectId.isValid(category_id)) {
@@ -198,10 +207,7 @@ export const updateNews = async (
 };
 
 // Xoá tin tức
-export const deleteNews = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const deleteNews = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -221,10 +227,7 @@ export const deleteNews = async (
 };
 
 // Lấy danh sách tin tức
-export const getNewsList = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getNewsList = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       page = "1",
@@ -281,10 +284,7 @@ export const getNewsList = async (
 };
 
 // Lấy chi tiết tin tức
-export const getNewsDetail = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getNewsDetail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 

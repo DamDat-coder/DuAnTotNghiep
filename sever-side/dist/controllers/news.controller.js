@@ -23,7 +23,7 @@ const upload_middleware_1 = require("../middlewares/upload.middleware");
 const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const { title, content, slug, category_id, tags, meta_description } = req.body;
+        const { title, content, slug, category_id, tags, meta_description, published_at, is_published, } = req.body;
         const user_id = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
         if (!title || !content || !slug || !category_id || !user_id) {
             res.status(400).json({
@@ -53,6 +53,8 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             });
             thumbnail = result;
         }
+        const parsedPublishedAt = published_at ? new Date(published_at) : null;
+        const shouldPublishNow = is_published === "true" || is_published === true;
         const newsData = {
             title,
             content,
@@ -62,7 +64,8 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             tags: tags ? tags.split(",") : [],
             thumbnail,
             meta_description,
-            is_published: false,
+            is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
+            published_at: parsedPublishedAt !== null && parsedPublishedAt !== void 0 ? parsedPublishedAt : (shouldPublishNow ? new Date() : null),
         };
         const createdNews = new news_model_1.default(newsData);
         const savedNews = yield createdNews.save();
@@ -70,25 +73,26 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             .findById(savedNews._id)
             .populate("user_id", "name email")
             .populate("category_id", "name");
-        // Gửi thông báo
-        setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
-            try {
-                const users = yield user_model_1.default.find({}).select("_id").lean();
-                const notifications = users.map((user) => ({
-                    userId: user._id,
-                    title: "Tin tức mới từ Shop4Real!",
-                    message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
-                    type: "news",
-                    isRead: false,
-                    link: `/posts/${savedNews._id}`,
-                }));
-                yield notification_model_1.default.insertMany(notifications);
-                console.log("Đã gửi thông báo tin tức mới cho người dùng.");
-            }
-            catch (notifyErr) {
-                console.error("Gửi thông báo thất bại:", notifyErr);
-            }
-        }));
+        if (newsData.is_published) {
+            setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
+                try {
+                    const users = yield user_model_1.default.find({}).select("_id").lean();
+                    const notifications = users.map((user) => ({
+                        userId: user._id,
+                        title: "Tin tức mới từ Shop4Real!",
+                        message: `Tin tức "${savedNews.title}" vừa được đăng, xem ngay nhé!`,
+                        type: "news",
+                        isRead: false,
+                        link: `/posts/${savedNews._id}`,
+                    }));
+                    yield notification_model_1.default.insertMany(notifications);
+                    console.log("Đã gửi thông báo tin tức mới cho người dùng.");
+                }
+                catch (notifyErr) {
+                    console.error("Gửi thông báo thất bại:", notifyErr);
+                }
+            }));
+        }
         res.status(201).json({
             status: "success",
             message: "Tạo tin tức thành công",
@@ -111,16 +115,12 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const { id } = req.params;
         const { title, content, slug, category_id, tags, is_published, meta_description, } = req.body;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
-            res
-                .status(400)
-                .json({ status: "error", message: "ID tin tức không hợp lệ" });
+            res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
             return;
         }
         const existingNews = yield news_model_1.default.findById(id);
         if (!existingNews) {
-            res
-                .status(404)
-                .json({ status: "error", message: "Tin tức không tồn tại" });
+            res.status(404).json({ status: "error", message: "Tin tức không tồn tại" });
             return;
         }
         const updates = {};
@@ -139,7 +139,12 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             is_published === "false") {
             const publishStatus = is_published === true || is_published === "true";
             updates.is_published = publishStatus;
-            updates.published_at = publishStatus ? new Date() : null;
+            if (!existingNews.is_published && publishStatus) {
+                updates.published_at = new Date();
+            }
+            if (existingNews.is_published && !publishStatus) {
+                updates.published_at = null;
+            }
         }
         if (category_id && mongoose_1.default.Types.ObjectId.isValid(category_id)) {
             updates.category_id = new mongoose_1.default.Types.ObjectId(category_id);

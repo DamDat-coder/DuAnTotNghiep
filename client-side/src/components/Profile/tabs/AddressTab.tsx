@@ -4,8 +4,9 @@ import AddAddressModal from "../modals/AddAddressModal";
 import EditAddressModal from "../modals/EditAddressModal";
 import { Address } from "@/types/auth";
 import { useAuth } from "@/contexts/AuthContext";
-import { deleteAddress, updateAddress } from "@/services/userApi";
+import { deleteAddress, updateAddress, fetchUser } from "@/services/userApi";
 import toast from "react-hot-toast";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface AddressTabProps {
   selectedAddress: Address | null;
@@ -25,169 +26,138 @@ export default function AddressTab({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [confirmAddressId, setConfirmAddressId] = useState<string | null>(null);
+  const [isDefaultAddress, setIsDefaultAddress] = useState<boolean>(false);
+  const [confirmDefaultId, setConfirmDefaultId] = useState<string | null>(null);
 
   // Sync addresses with user?.addresses when user changes
   useEffect(() => {
     if (user?.addresses) {
-      // Sắp xếp địa chỉ: địa chỉ mặc định (is_default: true) lên đầu
-      const sortedAddresses = [...user.addresses].sort((a, b) => {
+      // Sắp xếp để địa chỉ mặc định lên đầu
+      const sorted = [...user.addresses].sort((a, b) => {
         if (a.is_default && !b.is_default) return -1;
         if (!a.is_default && b.is_default) return 1;
         return 0;
       });
-      setAddresses(sortedAddresses);
+      setAddresses(sorted);
+      setError(null);
+      setLoading(false);
+    } else if (user && !user.addresses) {
+      setAddresses([]);
+      setError(null);
       setLoading(false);
     } else {
-      setError("Không thể tải địa chỉ. Vui lòng thử lại sau.");
-      setLoading(false);
+      setLoading(true);
+      setError(null);
     }
   }, [user?.addresses]);
 
-  // Hàm chọn địa chỉ làm mặc định với xác nhận
+  // Khi xóa địa chỉ
+  const onDelete = (address: Address) => {
+    setConfirmAddressId(address._id);
+    setIsDefaultAddress(address.is_default);
+  };
+
+  // Khi đặt mặc định
   const handleSetDefaultAddress = (address: Address) => {
     if (!user || !user.id) {
       toast.error("Không thể xác định người dùng.");
       return;
     }
-
-    // Kiểm tra nếu địa chỉ đã là mặc định, không cho phép đặt lại
     if (address.is_default) {
       toast.error("Địa chỉ này đã là mặc định, vui lòng chọn địa chỉ khác.");
       return;
     }
-
-    toast(
-      (t) => (
-        <div className="flex flex-col items-center gap-4">
-          <span>Bạn có chắc muốn đặt địa chỉ này làm mặc định?</span>
-          <div className="flex gap-2">
-            <button
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={async () => {
-                try {
-                  const updatedAddressData = {
-                    street: address.street,
-                    ward: address.ward,
-                    district: address.district,
-                    province: address.province,
-                    is_default: true,
-                  };
-
-                  const result = await updateAddress(
-                    user.id,
-                    address._id,
-                    updatedAddressData
-                  );
-                  if (result) {
-                    // Cập nhật danh sách địa chỉ: đặt is_default cho địa chỉ được chọn, các địa chỉ khác thành false
-                    const updatedAddresses = addresses.map((addr) => ({
-                      ...addr,
-                      is_default: addr._id === address._id,
-                    }));
-                    // Sắp xếp lại để địa chỉ mặc định lên đầu
-                    const sortedAddresses = [...updatedAddresses].sort(
-                      (a, b) => {
-                        if (a.is_default && !b.is_default) return -1;
-                        if (!a.is_default && b.is_default) return 1;
-                        return 0;
-                      }
-                    );
-                    setAddresses(sortedAddresses);
-                    if (user) {
-                      setUser({
-                        ...user,
-                        id: user.id ?? "",
-                        email: user.email ?? "",
-                        name: user.name ?? "",
-                        phone: user.phone ?? "",
-                        role: user.role ?? "user",
-                        addresses: sortedAddresses,
-                      });
-                    }
-                    onSelect(address); // Gọi onSelect để cập nhật selectedAddress
-                    toast.success("Đặt địa chỉ mặc định thành công!");
-                  } else {
-                    toast.error("Đặt địa chỉ mặc định thất bại.");
-                  }
-                } catch (error) {
-                  toast.error("Lỗi khi đặt địa chỉ mặc định.");
-                  console.error("Lỗi cập nhật địa chỉ:", error);
-                }
-                toast.dismiss(t.id);
-              }}
-            >
-              Xác nhận
-            </button>
-            <button
-              className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Hủy
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+    setConfirmDefaultId(address._id);
   };
 
-  const onDelete = async (addressId: string) => {
-    toast(
-      (t) => (
-        <div className="flex flex-col items-center gap-4">
-          <span>Bạn có chắc muốn xóa địa chỉ này?</span>
-          <div className="flex gap-2">
-            <button
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              onClick={async () => {
-                try {
-                  if (!user || !user.id) {
-                    toast.error("Không thể xác định người dùng.");
-                  } else {
-                    const result = await deleteAddress(user.id, addressId);
-                    if (result) {
-                      toast.success("Xóa địa chỉ thành công!");
-                      const updatedAddresses = addresses.filter(
-                        (addr) => addr._id !== addressId
-                      );
-                      setAddresses(updatedAddresses);
-                      setUser({
-                        ...user,
-                        id: user.id!,
-                        addresses: updatedAddresses,
-                      });
-                    } else {
-                      toast.error("Xóa địa chỉ thất bại.");
-                    }
-                  }
-                } catch (error) {
-                  toast.error("Lỗi khi xóa địa chỉ.");
-                }
-                toast.dismiss(t.id);
-              }}
-            >
-              Xóa
-            </button>
-            <button
-              className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Hủy
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+  // Hàm xử lý xóa địa chỉ
+  const handleDeleteAddress = async (
+    addressId: string,
+    wasDefault: boolean
+  ) => {
+    if (!user) {
+      toast.error("Không thể xác định người dùng.");
+      return;
+    }
+    await deleteAddress(user.id, addressId);
+    // Khi xóa địa chỉ
+    let updatedAddresses = addresses.filter((addr) => addr._id !== addressId);
+    if (wasDefault && updatedAddresses.length > 0) {
+      // Đặt địa chỉ mới nhất làm mặc định
+      const newest = updatedAddresses[updatedAddresses.length - 1];
+      await updateAddress(user.id, newest._id, { ...newest, is_default: true });
+      updatedAddresses = updatedAddresses.map((addr) =>
+        addr._id === newest._id
+          ? { ...addr, is_default: true }
+          : { ...addr, is_default: false }
+      );
+    }
+    // Sắp xếp lại
+    const sortedAddresses = updatedAddresses.sort((a, b) => {
+      if (a.is_default && !b.is_default) return -1;
+      if (!a.is_default && b.is_default) return 1;
+      return 0;
+    });
+    setAddresses(sortedAddresses);
+    if (user) {
+      setUser({
+        ...user,
+        id: user.id ?? "",
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        role: user.role ?? "user",
+        addresses: sortedAddresses,
+        is_active: user.is_active ?? true, // Ensure is_active is always boolean
+        wishlist: user.wishlist ?? [],
+        active: user.active ?? true,
+        defaultAddress: user.defaultAddress ?? "",
+      });
+      toast.success("Xóa địa chỉ thành công!"); // Thêm dòng này
+    }
   };
 
+  // Hàm xử lý đặt mặc định
+  const handleSetDefault = async (addressId: string) => {
+    const address = addresses.find((a) => a._id === addressId);
+    if (!address) return;
+    const updatedAddressData = {
+      street: address.street,
+      ward: address.ward,
+      district: address.district,
+      province: address.province,
+      is_default: true,
+    };
+    if (!user) {
+      toast.error("Không thể xác định người dùng.");
+      return;
+    }
+    const result = await updateAddress(
+      user.id,
+      address._id,
+      updatedAddressData
+    );
+    if (result) {
+      const updatedAddresses = addresses.map((addr) => ({
+        ...addr,
+        is_default: addr._id === address._id,
+      }));
+      setAddresses(updatedAddresses);
+      setUser({ ...user, addresses: updatedAddresses });
+      onSelect(address);
+      toast.success("Đặt địa chỉ mặc định thành công!"); // Thêm dòng này
+    }
+  };
+
+  // Hàm xử lý chỉnh sửa địa chỉ
   const handleEditAddress = (address: Address) => {
     setEditingAddress(address);
     setShowEditAddress(true);
   };
 
   return (
-    <div className="p-4">
+    <div>
       <h1 className="text-xl font-semibold mb-4">ĐỊA CHỈ GIAO HÀNG</h1>
       <div>
         {loading ? (
@@ -224,12 +194,14 @@ export default function AddressTab({
                     {address.street}, {address.ward}, {address.district},{" "}
                     {address.province}, Việt Nam
                   </div>
-                  <button
-                    onClick={() => onDelete(address._id)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    Xóa
-                  </button>
+                  <div>
+                    <button
+                      onClick={() => onDelete(address)}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    >
+                      Xóa
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -249,31 +221,18 @@ export default function AddressTab({
       {showAddAddress && (
         <AddAddressModal
           onClose={() => setShowAddAddress(false)}
-          onAdd={(newAddress: Address) => {
-            const updatedAddresses = [...addresses, newAddress];
-            // Nếu địa chỉ mới là mặc định, đặt các địa chỉ khác thành không mặc định
-            const finalAddresses = updatedAddresses.map((addr) => ({
-              ...addr,
-              is_default: addr._id === newAddress._id && newAddress.is_default,
-            }));
-            const sortedAddresses = finalAddresses.sort((a, b) => {
-              if (a.is_default && !b.is_default) return -1;
-              if (!a.is_default && b.is_default) return 1;
-              return 0;
-            });
-            setAddresses(sortedAddresses);
-            if (user) {
-              setUser({
-                ...user,
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                phone: user.phone,
-                role: user.role, // Ensure role is always defined
-                addresses: sortedAddresses,
-              });
-            }
+          onAdd={async (newAddress: Address) => {
             setShowAddAddress(false);
+            const updatedUser = await fetchUser();
+            if (updatedUser) {
+              const sortedAddresses = [...(updatedUser.addresses ?? [])].sort((a, b) => {
+                if (a.is_default && !b.is_default) return -1;
+                if (!a.is_default && b.is_default) return 1;
+                return 0;
+              });
+              setAddresses(sortedAddresses);
+              setUser({ ...updatedUser, addresses: sortedAddresses });
+            }
           }}
         />
       )}
@@ -283,15 +242,17 @@ export default function AddressTab({
           address={editingAddress}
           onClose={() => setShowEditAddress(false)}
           onEdit={(updatedAddress: Address) => {
-            // Cập nhật danh sách địa chỉ, đảm bảo chỉ một địa chỉ mặc định
             const updatedAddresses = addresses.map((addr) => ({
               ...addr,
               ...(addr._id === updatedAddress._id ? updatedAddress : {}),
               is_default:
                 addr._id === updatedAddress._id && updatedAddress.is_default
                   ? true
-                  : false,
+                  : addr.is_default && updatedAddress.is_default
+                  ? false
+                  : addr.is_default,
             }));
+            // Sắp xếp lại
             const sortedAddresses = updatedAddresses.sort((a, b) => {
               if (a.is_default && !b.is_default) return -1;
               if (!a.is_default && b.is_default) return 1;
@@ -313,6 +274,34 @@ export default function AddressTab({
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!confirmAddressId}
+        title={
+          isDefaultAddress
+            ? "Đây là địa chỉ mặc định. Bạn có chắc muốn xóa không?"
+            : "Bạn có chắc muốn xóa địa chỉ này?"
+        }
+        description={
+          isDefaultAddress
+            ? "Nếu xóa, địa chỉ được thêm gần nhất sẽ thành mặc định."
+            : undefined
+        }
+        onConfirm={async () => {
+          await handleDeleteAddress(confirmAddressId!, isDefaultAddress);
+          setConfirmAddressId(null);
+        }}
+        onCancel={() => setConfirmAddressId(null)}
+      />
+      <ConfirmDialog
+        open={!!confirmDefaultId}
+        title="Bạn có chắc muốn đặt địa chỉ này làm mặc định?"
+        onConfirm={async () => {
+          await handleSetDefault(confirmDefaultId!);
+          setConfirmDefaultId(null);
+        }}
+        onCancel={() => setConfirmDefaultId(null)}
+      />
     </div>
   );
 }

@@ -8,6 +8,10 @@ import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { googleClient } from "../config/google";
 import { sendResetPasswordEmail } from "../utils/mailer";
 import { resetTokens } from "../utils/resetTokenStore";
+import {
+  sendAccountLockedEmail,
+  sendAccountUnlockedEmail,
+} from "../utils/mailer";
 
 // Đăng nhập bằng Google
 export const googleLogin = async (
@@ -295,7 +299,7 @@ export const getAllUsers = async (
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
-      .select("name email role phone is_active createdAt")
+      .select("name email phone role is_active createdAt")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
@@ -379,6 +383,7 @@ export const toggleUserStatus = async (
   next: NextFunction
 ) => {
   try {
+    const { id } = req.params;
     const { is_active } = req.body;
     if (typeof is_active !== "boolean") {
       return res
@@ -386,7 +391,7 @@ export const toggleUserStatus = async (
         .json({ success: false, message: "`is_active` phải là boolean." });
     }
 
-    const user = await UserModel.findById(req.params.id);
+    const user = await UserModel.findById(id);
     if (!user) {
       return res
         .status(404)
@@ -401,6 +406,12 @@ export const toggleUserStatus = async (
 
     user.is_active = is_active;
     await user.save();
+
+    if (!is_active) {
+      await sendAccountLockedEmail(user.email, user.name);
+    } else {
+      await sendAccountUnlockedEmail(user.email, user.name);
+    }
 
     const { password, ...userData } = user.toObject();
 

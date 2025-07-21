@@ -5,6 +5,7 @@ import { Coupon } from "@/types/coupon";
 import EditCouponModal from "./EditCouponModal";
 import { toast } from "react-hot-toast";
 import { fetchCoupons, hideCoupon, enableCoupon } from "@/services/couponApi";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Props {
   filter: string;
@@ -57,6 +58,8 @@ export default function TableCouponWrapper({
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
+  const [confirmCouponId, setConfirmCouponId] = useState<string | null>(null);
+  const [confirmActive, setConfirmActive] = useState<boolean>(true);
 
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -162,32 +165,9 @@ export default function TableCouponWrapper({
     }
   };
 
-  const onStatusChange = async (couponId: string, isActive: boolean) => {
-    toast(
-      (t) => (
-        <div>
-          <p>Bạn có chắc muốn {isActive ? "mở khóa" : "ẩn"} mã giảm giá này?</p>
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Hủy
-            </button>
-            <button
-              className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
-              onClick={async () => {
-                toast.dismiss(t.id);
-                await performStatusChange(couponId, isActive);
-              }}
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+  const onStatusChange = (couponId: string, isActive: boolean) => {
+    setConfirmCouponId(couponId);
+    setConfirmActive(isActive);
   };
 
   const handleEditClick = (coupon: Coupon) => {
@@ -310,6 +290,17 @@ export default function TableCouponWrapper({
           />
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmCouponId}
+        title={`Bạn có chắc muốn ${
+          confirmActive ? "mở khóa" : "ẩn"
+        } mã giảm giá này?`}
+        onConfirm={async () => {
+          await performStatusChange(confirmCouponId!, confirmActive);
+          setConfirmCouponId(null);
+        }}
+        onCancel={() => setConfirmCouponId(null)}
+      />
       {children && children(filteredCoupons)}
     </div>
   );

@@ -6,6 +6,7 @@ import { News } from "@/types/new";
 import NewControlBar from "./NewControlBar";
 import EditNewsModal from "./EditNewsModal";
 import { toast, Toaster } from "react-hot-toast";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const statusMap = {
   published: { text: "Đã xuất bản", color: "bg-[#EDF7ED] text-[#2E7D32]" },
@@ -38,6 +39,7 @@ export default function TableNewWrapper({
     Array.isArray(newsList) ? newsList : []
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [confirmNewsId, setConfirmNewsId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,56 +81,30 @@ export default function TableNewWrapper({
     loadNews();
   }, [search, filter]);
 
-  const handleDelete = async (id: string) => {
-    // Show the toast with the confirmation message
-    toast(
-      (t) => (
-        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-          <p className="text-[#0F172A] mb-4">
-            Bạn có chắc chắn muốn xóa tin tức này không?
-          </p>
-          <div className="flex justify-end gap-2">
-            <button
-              className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-              onClick={() => toast.dismiss(t.id)} // Cancel action
-            >
-              Hủy
-            </button>
-            <button
-              className="px-3 py-1 bg-[#D93025] text-white rounded hover:bg-[#B71C1C]"
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  setIsLoading(true);
-                  await deleteNews(id);
-                  setNews((prevNews) =>
-                    prevNews.filter((item) => item._id !== id)
-                  );
-                  onDelete(id);
-                  setActionDropdownId(null);
-                  toast.success("Xóa tin tức thành công!", {
-                    style: { background: "#EDF7ED", color: "#2E7D32" },
-                  });
-                } catch (err: any) {
-                  console.error("Error deleting news:", err);
-                  toast.error(
-                    `Lỗi khi xóa tin tức: ${err.message || "Không xác định"}`,
-                    {
-                      style: { background: "#FDECEA", color: "#D93025" },
-                    }
-                  );
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity } // Keep the toast visible indefinitely until user clicks confirm
-    );
+  const handleDelete = (id: string) => {
+    setConfirmNewsId(id);
+  };
+
+  const performDelete = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await deleteNews(id);
+      setNews((prevNews) => prevNews.filter((item) => item._id !== id));
+      onDelete(id);
+      setActionDropdownId(null);
+      toast.success("Xóa tin tức thành công!", {
+        style: { background: "#EDF7ED", color: "#2E7D32" },
+      });
+    } catch (err: any) {
+      toast.error(
+        `Lỗi khi xóa tin tức: ${err.message || "Không xác định"}`,
+        {
+          style: { background: "#FDECEA", color: "#D93025" },
+        }
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEdit = (news: News) => {
@@ -312,6 +288,15 @@ export default function TableNewWrapper({
           />
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmNewsId}
+        title="Bạn có chắc chắn muốn xóa tin tức này không?"
+        onConfirm={async () => {
+          await performDelete(confirmNewsId!);
+          setConfirmNewsId(null);
+        }}
+        onCancel={() => setConfirmNewsId(null)}
+      />
       {children && children(filteredNews)}
     </div>
   );

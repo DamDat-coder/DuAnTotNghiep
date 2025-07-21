@@ -1,17 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import CancelOrderModal from "../modals/CancelOrderModal";
-import { IOrder, OrderDetail } from "@/types/order";
+import { IOrder } from "@/types/order";
 import { fetchOrdersUser } from "@/services/orderApi";
 import { fetchUser } from "@/services/userApi";
 import { useCancelOrder } from "@/hooks/useCancelOrder";
 
 interface OrderTabProps {
   setActiveTab: (tab: string) => void;
-  setSelectedOrder: (order: OrderDetail) => void; // Updated to OrderDetail
+  setSelectedOrder: (order: IOrder) => void;
 }
 
 export default function Orders({
@@ -23,7 +22,6 @@ export default function Orders({
   const [selectedStatus, setSelectedStatus] = useState<
     "all" | IOrder["status"]
   >("all");
-  const router = useRouter();
 
   const {
     showCancelModal,
@@ -160,7 +158,7 @@ export default function Orders({
             >
               <div className="flex justify-between items-start mb-[16px]">
                 <p className="font-bold text-sm text-black">
-                  MÃ ĐƠN HÀNG: {order._id}
+                  MÃ ĐƠN HÀNG: {order.orderCode || order._id}
                 </p>
                 {getStatusBadge(order.status)}
               </div>
@@ -186,16 +184,14 @@ export default function Orders({
               <div className="flex gap-3 w-[225px]">
                 <button
                   onClick={() => {
-                    setSelectedOrder(order as OrderDetail); // Cast to OrderDetail
+                    setSelectedOrder(order);
                     setActiveTab("Chi tiết đơn hàng");
-                    router.push(`/profile?tab=order/${order._id}`);
                   }}
                   className="w-[127px] h-[42px] border border-black rounded text-sm hover:bg-gray-100"
                 >
                   Xem chi tiết
                 </button>
-                {(order.status === "pending") && (
-
+                {order.status === "pending" && (
                   <button
                     onClick={() => openCancelModal(order._id)}
                     className="w-[82px] h-[42px] bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600"

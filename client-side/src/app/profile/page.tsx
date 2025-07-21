@@ -18,7 +18,6 @@ import { fetchUserById } from "@/services/userApi";
 import { Address } from "@/types/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
-
 const tabMap: Record<string, string> = {
   profile: "Hồ sơ",
   address: "Địa chỉ",
@@ -52,26 +51,18 @@ export default function ProfilePage() {
               console.error("Error fetching order:", error);
               toast.error("Không thể tải chi tiết đơn hàng!");
               setSelectedOrder(null);
-              router.push("/profile?tab=order");
+              // Không chuyển tab về order ở đây!
             })
             .finally(() => {
               setIsLoadingOrder(false);
             });
-        } else {
-          setActiveTab("Đơn hàng");
-          router.push("/profile?tab=order");
         }
       } else if (tabMap[tabFromURL]) {
         setActiveTab(tabMap[tabFromURL]);
-      } else {
-        setActiveTab("Hồ sơ");
-        router.push("/profile?tab=profile");
       }
-    } else {
-      setActiveTab("Hồ sơ");
-      router.push("/profile?tab=profile");
+      // Không else về profile!
     }
-  }, [searchParams, router, setActiveTab]);
+  }, [searchParams, setActiveTab]);
 
   useEffect(() => {
     if (!isMobile && activeTab === "main") {
@@ -144,7 +135,7 @@ export default function ProfilePage() {
             onTabChange={handleTabChange}
           />
         </div>
-        <div className="w-3/4 pl-4">{renderTabContent()}</div>
+        <div className="w-3/4 pl-4 p-4">{renderTabContent()}</div>
       </div>
     );
   }

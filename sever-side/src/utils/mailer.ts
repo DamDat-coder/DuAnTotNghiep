@@ -41,3 +41,55 @@ export const sendResetPasswordEmail = async (to: string, resetLink: string) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+export const sendAccountLockedEmail = async (to: string, name: string) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Style For You" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Tài khoản của bạn đã bị khóa",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="text-align: center; color: #111827;">Style For You</h2>
+        <p>Xin chào ${name || ""},</p>
+        <p>Tài khoản của bạn đã bị khóa do vi phạm chính sách hoặc yêu cầu từ quản trị viên.</p>
+        <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ với chúng tôi.</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+export const sendAccountUnlockedEmail = async (to: string, name: string) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Style For You" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Tài khoản của bạn đã được mở khóa",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="text-align: center; color: #111827;">Style For You</h2>
+        <p>Xin chào ${name || ""},</p>
+        <p>Tài khoản của bạn đã được mở khóa và có thể sử dụng lại bình thường.</p>
+        <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ với chúng tôi.</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};

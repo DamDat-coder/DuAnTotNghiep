@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveTab } from "@/contexts/ActiveTabContext";
 import ChangePasswordModal from "@/components/Profile/modals/ChangePasswordModal";
+import { useRouter } from "next/navigation";
 
 export default function UserDropdown() {
   const { user, logout } = useAuth();
@@ -13,6 +14,7 @@ export default function UserDropdown() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { setActiveTab } = useActiveTab();
+  const router = useRouter();
   // Đóng dropdown khi nhấn ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,19 +65,22 @@ export default function UserDropdown() {
           }`}
         >
           <div className="flex flex-col py-3 px-4 gap-2">
-            <button
+            <Link
+              href="/profile?tab=profile"
               className="block px-4 py-2 text-[0.875rem] font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg text-left w-full"
               onClick={() => {
                 setActiveTab("Hồ sơ");
-                window.history.pushState({}, "", "/profile?tab=profile");
                 setIsDropdownOpen(false);
               }}
             >
               Thông tin người dùng
-            </button>
+            </Link>
             <Link
-              href="#"
-              onClick={handleOrderClick}
+              href="/profile?tab=order"
+              onClick={() => {
+                setActiveTab("Đơn hàng");
+                setIsDropdownOpen(false);
+              }}
               className="block px-4 py-2 text-[0.875rem] font-medium text-gray-700 hover:bg-gray-100"
             >
               Đơn hàng

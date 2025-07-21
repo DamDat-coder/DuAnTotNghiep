@@ -19,6 +19,7 @@ const user_model_1 = __importDefault(require("../models/user.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cloudinary_1 = require("cloudinary");
 const spam_keywords_1 = require("../config/spam-keywords");
+const mailer_1 = require("../utils/mailer");
 // Tạo đánh giá sản phẩm
 const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -50,7 +51,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 message: "Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi.",
             });
         }
-        const images = [];
+        const imageUrls = [];
         if (req.files && Array.isArray(req.files)) {
             for (const file of req.files) {
                 const result = yield new Promise((resolve, reject) => {
@@ -61,40 +62,40 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                     });
                     stream.end(file.buffer);
                 });
-                images.push(result.secure_url);
+                imageUrls.push(result.secure_url);
             }
         }
-        let isSpam = false;
-        for (const keyword of spam_keywords_1.SPAM_KEYWORDS) {
-            if (content.toLowerCase().includes(keyword.toLowerCase())) {
-                isSpam = true;
-                break;
-            }
+        const isSpam = spam_keywords_1.SPAM_KEYWORDS.some(keyword => content.toLowerCase().includes(keyword.toLowerCase()));
+        let reviewStatus = isSpam ? "spam" : "approved";
+        let spamWarningMessage = "";
+        const user = yield user_model_1.default.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
         }
-        let status = "approved";
-        let warning = "";
         if (isSpam) {
-            status = "spam";
-            const spamCount = yield review_model_1.default.countDocuments({ userId, status: "spam" });
-            const totalSpam = spamCount + 1;
-            if (totalSpam === 2) {
-                warning = "Bạn đã bị đánh dấu spam 2 lần. Nếu tiếp tục, tài khoản sẽ bị khóa.";
-            }
-            else if (totalSpam >= 3) {
+            const existingSpamCount = yield review_model_1.default.countDocuments({ userId, status: "spam" });
+            const spamCountAfterThis = existingSpamCount + 1;
+            if (spamCountAfterThis >= 3) {
                 yield user_model_1.default.findByIdAndUpdate(userId, { is_active: false });
-                warning = "Tài khoản đã bị khóa vì spam quá nhiều.";
+                yield (0, mailer_1.sendAccountBlockedEmail)(user.email, user.name || "Người dùng");
+                spamWarningMessage = "Tài khoản đã bị khóa vì có quá nhiều đánh giá spam.";
+            }
+            else {
+                yield (0, mailer_1.sendReviewWarningEmail)(user.email, user.name || "Người dùng");
+                spamWarningMessage = `Đánh giá bị đánh dấu là spam. Đây là lần thứ ${spamCountAfterThis}. Nếu tiếp tục, tài khoản sẽ bị khóa.`;
             }
         }
-        const review = yield review_model_1.default.create({
+        // Tạo đánh giá
+        const newReview = yield review_model_1.default.create({
             userId,
             productId,
             orderId,
             content,
             rating,
-            status,
-            images,
+            status: reviewStatus,
+            images: imageUrls,
         });
-        return res.status(201).json(Object.assign({ success: true, message: "Đã gửi đánh giá.", data: review }, (warning && { warning })));
+        return res.status(201).json(Object.assign({ success: true, message: "Đã gửi đánh giá.", data: newReview }, (spamWarningMessage && { warning: spamWarningMessage })));
     }
     catch (error) {
         console.error("Lỗi tạo review:", error);

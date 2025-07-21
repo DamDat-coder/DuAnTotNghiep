@@ -1,6 +1,6 @@
 "use client";
 
-import ResetPasswordPopup from "@/components/Core/Layout/Popups/ResetPasswordPopup";
+import ResetPasswordPopup from "@/components/Core/Layout/Popups/PasswordAction/ResetPasswordPopup";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 

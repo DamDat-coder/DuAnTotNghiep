@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import "../styles/font.css";
 import "./globals.css";
 import { LookupProvider } from "@/contexts/LookupContext";
-import Header from "../components/Core/Layout/Header/Header";
+import Header from "../components/Core/Layout/Header/Layout/Header";
 import Footer from "../components/Core/Layout/Footer/Footer";
 import { MenuProvider } from "@/contexts/MenuContext";
 import { AuthProvider } from "../contexts/AuthContext";
@@ -16,6 +16,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import ChatBotBox from "@/components/Chat/ChatBotBox";
 import { CategoriesProvider } from "@/contexts/CategoriesContext";
 import { Toaster } from "react-hot-toast";
+import { SuggestionsProvider } from "@/contexts/SuggestionsContext";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -44,25 +45,27 @@ export default function RootLayout({
           <AuthProvider>
             <MenuProvider>
               <LookupProvider>
-                <ActiveTabProvider>
-                  <CategoriesProvider>
-                    {!isAdminRoute && (
-                      <Header
-                        title="My App"
-                        setActiveTab={function (tab: string): void {
-                          throw new Error("Function not implemented.");
-                        }}
-                      />
-                    )}
-                    <CartProvider>
-                      <WishlistProvider>
-                        <main className={mainClassName}>{children}</main>
-                        {!isAdminRoute && <ChatBotBox />}
-                      </WishlistProvider>
-                    </CartProvider>
-                  </CategoriesProvider>
-                </ActiveTabProvider>
-                {!isAdminRoute && <Footer />}
+                <SuggestionsProvider>
+                  <ActiveTabProvider>
+                    <CategoriesProvider>
+                      {!isAdminRoute && (
+                        <Header
+                          title="My App"
+                          setActiveTab={function (tab: string): void {
+                            throw new Error("Function not implemented.");
+                          }}
+                        />
+                      )}
+                      <CartProvider>
+                        <WishlistProvider>
+                          <main className={mainClassName}>{children}</main>
+                          {!isAdminRoute && <ChatBotBox />}
+                        </WishlistProvider>
+                      </CartProvider>
+                    </CategoriesProvider>
+                  </ActiveTabProvider>
+                  {!isAdminRoute && <Footer />}
+                </SuggestionsProvider>
               </LookupProvider>
             </MenuProvider>
           </AuthProvider>

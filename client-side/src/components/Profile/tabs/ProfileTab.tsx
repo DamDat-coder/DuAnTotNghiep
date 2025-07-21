@@ -162,7 +162,7 @@ export default function ProfileTab() {
                 className="text-black underline hover:text-gray-700 text-sm"
                 onClick={() => setShowPhoneModal(true)}
               >
-                {phone ? "Đổi số điện thoại" : "Thêm số điện thoại"}
+                {phone ? "Sửa" : "Thêm"}
               </button>
             </div>
           </div>

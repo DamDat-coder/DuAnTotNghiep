@@ -274,7 +274,9 @@ export default function TableNewWrapper({
                       {actionDropdownId === news._id && (
                         <div
                           ref={(ref) => {
-                            dropdownRefs.current.set(news._id, ref);
+                            if (news._id) {
+                              dropdownRefs.current.set(news._id, ref);
+                            }
                           }}
                           className="absolute right-2 top-14 z-50 min-w-[110px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn"
                           onClick={(e) => e.stopPropagation()}
@@ -287,7 +289,7 @@ export default function TableNewWrapper({
                           </button>
                           <button
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#F75555] rounded-b-lg"
-                            onClick={() => handleDelete(news._id)}
+                            onClick={() => news._id && handleDelete(news._id)}
                           >
                             Xóa
                           </button>

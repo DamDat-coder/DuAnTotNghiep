@@ -295,7 +295,7 @@ export const getAllUsers = async (
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
-      .select("name email role is_active createdAt")
+      .select("name email role phone is_active createdAt")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
@@ -705,12 +705,10 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     const tokenData = resetTokens.get(token);
     if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Token không hợp lệ hoặc đã hết hạn.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Token không hợp lệ hoặc đã hết hạn.",
+      });
     }
 
     const user = await UserModel.findById(tokenData.userId);

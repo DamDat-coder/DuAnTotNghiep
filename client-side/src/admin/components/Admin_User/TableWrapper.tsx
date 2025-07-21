@@ -257,7 +257,9 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
                 <td className="px-5 py-4">{index + 1}</td>
                 <td className="px-5 py-4">{user.name}</td>
                 <td className="px-5 py-4">{user.email}</td>
-                <td className="px-5 py-4">{user.phone || "N/A"}</td>
+                <td className="px-5 py-4">
+                  {user.phone && user.phone.trim() !== "" ? user.phone : "N/A"}
+                </td>
                 <td className="px-5 py-4 capitalize">{user.role}</td>
                 <td className="px-5 py-4">
                   <SimpleSwitch

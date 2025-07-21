@@ -2,14 +2,12 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { OrderDetail } from "@/types/order";
 import { fetchUser } from "@/services/userApi";
-import { IProduct } from "@/types/product";
-import { fetchProductById } from "@/services/productApi";
-import { Star } from "lucide-react";
 import ReviewPopup from "../modals/ReviewPopup";
 import { createReview } from "@/services/reviewApi";
-import toast, { Toast } from "react-hot-toast"; // hoặc react-toastify nếu bạn dùng
+import toast from "react-hot-toast";
 
 interface OrderDetailProps {
   order: OrderDetail;
@@ -19,68 +17,33 @@ interface OrderDetailProps {
 export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [products, setProducts] = useState<
-    (IProduct & { _id: string; quantity: number; image: string; price: number })[]
-  >([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
   const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [suggestedReviews] = useState([
+  const router = useRouter();
+  const suggestedReviews = [
     "Sản phẩm tuyệt vời, chất lượng tốt.",
     "Sản phẩm như mô tả, rất hài lòng.",
     "Giá cả hợp lý, sẽ mua lại.",
     "Chất lượng sản phẩm rất tốt, giao hàng nhanh.",
-  ]); // Các gợi ý cho người dùng khi không biết viết gì
+  ];
 
-  // Lấy thông tin người dùng
   useEffect(() => {
     async function fetchUserData() {
       try {
         const fetchedUser = await fetchUser();
         setUser(fetchedUser);
       } catch (error) {
-        // Xử lý lỗi im lặng
+        console.error("Error fetching user:", error);
+        toast.error("Không thể tải thông tin người dùng!");
       } finally {
         setIsLoading(false);
       }
     }
-
     fetchUserData();
   }, []);
 
-  // Lấy thông tin sản phẩm từ đơn hàng
-  useEffect(() => {
-    async function fetchOrderProducts() {
-      try {
-        const fetchedProducts = await Promise.all(
-          order.items.map(async (item) => {
-            const product = await fetchProductById(item.productId);
-            return product
-              ? {
-                  ...product,
-                  _id: item.productId,
-                  quantity: item.quantity,
-                  image: item.image ?? (product.images?.[0] ?? ""), // always a string
-                  price: item.price,
-                }
-              : null;
-          })
-        );
-        setProducts(
-          fetchedProducts.filter((p): p is IProduct & { _id: string; quantity: number; image: string; price: number } => p !== null)
-        );
-      } catch (error) {
-        // Xử lý lỗi
-      }
-    }
-
-    if (order.items.length > 0) {
-      fetchOrderProducts();
-    }
-  }, [order.items]);
-
-  // Hàm lấy phương thức thanh toán
   const getPaymentMethod = (method: OrderDetail["paymentMethod"]) => {
     switch (method) {
       case "cod":
@@ -96,7 +59,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     }
   };
 
-  // Hàm lấy trạng thái đơn hàng
   const getStatusLabel = (status: OrderDetail["status"]) => {
     switch (status) {
       case "pending":
@@ -110,35 +72,24 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
       case "cancelled":
         return "ĐÃ HỦY";
       default:
-        return String(status).toUpperCase();
+        return "UNKNOWN";
     }
   };
 
-  // Tính tổng giá trị sản phẩm trong đơn hàng
   const calculateSubtotal = () => {
+    if (!order.items || !Array.isArray(order.items)) return 0;
     return order.items.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     );
   };
 
-  // Nếu đang tải hoặc không tìm thấy người dùng
-  if (isLoading) {
-    return (
-      <div className="text-center py-10 text-gray-500 font-medium">
-        Đang tải đơn hàng...
-      </div>
-    );
-  }
-
-  // Hàm mở popup đánh giá cho từng sản phẩm
   const handleOpenReview = (productId: string) => {
     setReviewProductId(productId);
     setIsPopupOpen(true);
-    setReviewImages([]); // reset ảnh khi mở popup mới
+    setReviewImages([]);
   };
 
-  // Hàm xử lý gửi đánh giá
   const handleSubmitReview = async (
     review: string,
     rating: number,
@@ -163,10 +114,31 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="text-center py-10 text-gray-500 font-medium">
+        Đang tải thông tin...
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="text-center py-10 text-gray-500 font-medium">
-        Không thể tìm thấy thông tin người dùng!
+        Không thể tải thông tin người dùng!
+      </div>
+    );
+  }
+
+  if (
+    !order ||
+    !order.items ||
+    !Array.isArray(order.items) ||
+    order.items.length === 0
+  ) {
+    return (
+      <div className="text-center py-10 text-gray-500 font-medium">
+        Đơn hàng không tồn tại hoặc không có sản phẩm!
       </div>
     );
   }
@@ -176,7 +148,10 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
       <h1 className="text-xl font-bold border-b pb-2">ĐƠN HÀNG</h1>
       <div className="flex justify-between items-center text-sm">
         <button
-          onClick={() => setActiveTab?.("Đơn hàng")}
+          onClick={() => {
+            setActiveTab?.("Đơn hàng");
+            router.push("/profile?tab=order");
+          }}
           className="flex items-center gap-2 text-gray-600 font-medium"
         >
           <Image src="/profile/Back.svg" alt="back" width={6} height={10} />
@@ -189,15 +164,12 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         </div>
       </div>
 
-      {/* Chỉ hiển thị phần đánh giá khi đơn hàng đã được giao (status === 'delivered') */}
-
-      {/* Danh sách sản phẩm */}
       <div className="space-y-6">
-        {products.map((product, index) => (
+        {order.items.map((product, index) => (
           <div key={index} className="flex items-center gap-8 w-full">
             <div className="w-[94px] h-[94px] relative">
               <Image
-                src={product.images[0]}
+                src={product.image}
                 alt={product.name || "Sản phẩm"}
                 fill
                 className="object-cover rounded"
@@ -210,18 +182,8 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
                   {product.name || "Sản phẩm không tên"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Màu:{" "}
-                  {Array.isArray(product.variants)
-                    ? (product.variants[0] as { color?: string })?.color ||
-                      "Chưa xác định"
-                    : (product.variants as { color?: string } | undefined)
-                        ?.color || "Chưa xác định"}
-                  , Kích thước:{" "}
-                  {Array.isArray(product.variants)
-                    ? (product.variants[0] as { size?: string })?.size ||
-                      "Chưa xác định"
-                    : (product.variants as { size?: string } | undefined)
-                        ?.size || "Chưa xác định"}
+                  Màu: {product.color || "Chưa xác định"}, Kích thước:{" "}
+                  {product.size || "Chưa xác định"}
                 </p>
                 <p className="text-sm text-gray-600">SL: {product.quantity}</p>
               </div>
@@ -230,14 +192,12 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
                   {(product.price * product.quantity).toLocaleString("vi-VN")}₫
                 </div>
                 {order.status === "delivered" && (
-                  <div>
-                    <button
-                      onClick={() => handleOpenReview(product._id)}
-                      className="px-4 py-2 bg-black text-white rounded-md mt-2"
-                    >
-                      Đánh giá
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleOpenReview(product.productId)}
+                    className="px-4 py-2 bg-black text-white rounded-md mt-2"
+                  >
+                    Đánh giá
+                  </button>
                 )}
               </div>
             </div>
@@ -245,7 +205,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         ))}
       </div>
 
-      {/* Địa chỉ nhận hàng */}
       <div className="text-base mb-6">
         <h2 className="text-[20px] font-bold mb-[24px]">ĐỊA CHỈ NHẬN HÀNG</h2>
         <div className="flex justify-between items-start gap-[18px]">
@@ -258,10 +217,10 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
             </p>
             <p>
               <strong>Địa chỉ nhận hàng:</strong>{" "}
-              {order.shippingAddress?.street || ""},{" "}
-              {order.shippingAddress?.ward || ""},{" "}
-              {order.shippingAddress?.district || ""},{" "}
-              {order.shippingAddress?.province || ""}
+              {order.shippingAddress.street || "Chưa cung cấp"},{" "}
+              {order.shippingAddress.ward || "Chưa cung cấp"},{" "}
+              {order.shippingAddress.district || "Chưa cung cấp"},{" "}
+              {order.shippingAddress.province || "Chưa cung cấp"}
             </p>
             <p>
               <strong>Phương thức thanh toán:</strong>{" "}
@@ -281,7 +240,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         </div>
       </div>
 
-      {/* Bảng tổng kết */}
       <table className="w-full text-base text-black bg-[#F8FAFC] rounded overflow-hidden">
         <thead>
           <tr className="text-gray-500 text-[16px] h-[64px]">
@@ -301,13 +259,13 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
               {calculateSubtotal().toLocaleString("vi-VN")}₫
             </td>
             <td className="text-center align-middle">
-              {order.shipping.toLocaleString("vi-VN")}₫
+              {(order.shipping || 0).toLocaleString("vi-VN")}₫
             </td>
             <td className="text-center align-middle">
               {order.couponId ? "Có áp dụng" : "0"}₫
             </td>
             <td className="text-center align-middle font-semibold">
-              {order.totalPrice.toLocaleString("vi-VN")}₫
+              {(order.totalPrice || 0).toLocaleString("vi-VN")}₫
             </td>
           </tr>
         </tbody>

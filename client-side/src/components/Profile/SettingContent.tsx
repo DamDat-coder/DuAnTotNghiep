@@ -5,10 +5,10 @@ import { useState } from "react";
 
 interface Props {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  onTabChange: (tab: string) => void; // Đổi tên prop
 }
 
-export default function SettingsContent({ activeTab, setActiveTab }: Props) {
+export default function SettingsContent({ activeTab, onTabChange }: Props) {
   const accountTabs = ["Hồ sơ", "Địa chỉ", "Yêu thích"];
   const [showAccountMenu, setShowAccountMenu] = useState(true);
 
@@ -40,7 +40,7 @@ export default function SettingsContent({ activeTab, setActiveTab }: Props) {
                 className="py-2 border-b border-gray-200 last:border-0"
               >
                 <button
-                  onClick={() => setActiveTab(item)}
+                  onClick={() => onTabChange(item)} // Đổi lại
                   className={`relative text-left
                     ${activeTab === item ? "text-black" : "text-gray-400"}
                     hover:text-black
@@ -72,7 +72,7 @@ export default function SettingsContent({ activeTab, setActiveTab }: Props) {
       {/* Mục Đơn hàng */}
       <div className="mb-6">
         <button
-          onClick={() => setActiveTab("Đơn hàng")}
+          onClick={() => onTabChange("Đơn hàng")} // Đổi lại
           className="flex items-center gap-2 font-semibold text-black"
         >
           <Image

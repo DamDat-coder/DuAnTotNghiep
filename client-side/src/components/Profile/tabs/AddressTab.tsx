@@ -50,6 +50,12 @@ export default function AddressTab({
       return;
     }
 
+    // Kiểm tra nếu địa chỉ đã là mặc định, không cho phép đặt lại
+    if (address.is_default) {
+      toast.error("Địa chỉ này đã là mặc định, vui lòng chọn địa chỉ khác.");
+      return;
+    }
+
     toast(
       (t) => (
         <div className="flex flex-col items-center gap-4">
@@ -59,7 +65,6 @@ export default function AddressTab({
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               onClick={async () => {
                 try {
-                  // Cập nhật địa chỉ được chọn thành mặc định
                   const updatedAddressData = {
                     street: address.street,
                     ward: address.ward,
@@ -74,12 +79,10 @@ export default function AddressTab({
                     updatedAddressData
                   );
                   if (result) {
-                    // Cập nhật danh sách địa chỉ: đặt is_default cho địa chỉ được chọn, các địa chỉ khác thành false
                     const updatedAddresses = addresses.map((addr) => ({
                       ...addr,
                       is_default: addr._id === address._id,
                     }));
-                    // Sắp xếp lại để địa chỉ mặc định lên đầu
                     const sortedAddresses = [...updatedAddresses].sort(
                       (a, b) => {
                         if (a.is_default && !b.is_default) return -1;
@@ -96,11 +99,10 @@ export default function AddressTab({
                         name: user.name ?? "",
                         phone: user.phone ?? "",
                         role: user.role ?? "user",
-                        // add other required IUser fields here if needed
                         addresses: sortedAddresses,
                       });
                     }
-                    onSelect(address); // Gọi onSelect để cập nhật selectedAddress
+                    onSelect(address);
                     toast.success("Đặt địa chỉ mặc định thành công!");
                   } else {
                     toast.error("Đặt địa chỉ mặc định thất bại.");
@@ -147,7 +149,11 @@ export default function AddressTab({
                         (addr) => addr._id !== addressId
                       );
                       setAddresses(updatedAddresses);
-                      setUser({ ...user, id: user.id!, addresses: updatedAddresses });
+                      setUser({
+                        ...user,
+                        id: user.id!,
+                        addresses: updatedAddresses,
+                      });
                     } else {
                       toast.error("Xóa địa chỉ thất bại.");
                     }
@@ -197,18 +203,20 @@ export default function AddressTab({
               <div
                 key={address._id}
                 className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-                  address.is_default ? "hover:bg-green-600 rounded-lg" : ""
+                  address.is_default
+                    ? "hover:bg-green-600 hover:text-white rounded-lg"
+                    : ""
                 } transition duration-200`}
               >
                 <div className="flex items-center justify-between">
                   <input
                     type="radio"
-                    checked={selectedAddress?._id === address._id}
+                    checked={address.is_default} // Sử dụng is_default để xác định trạng thái tích
                     onChange={() => handleSetDefaultAddress(address)}
-                    className="w-5 h-5 accent-black mr-4"
+                    className="w-5 h-5 rounded-full text-black border-gray-400 accent-black mr-4"
                   />
                   <div
-                    className="flex-1 text-sm text-gray-700 " // Thêm hover cho địa chỉ nếu là mặc định
+                    className="flex-1 text-sm"
                     onClick={() => handleEditAddress(address)}
                   >
                     {address.street}, {address.ward}, {address.district},{" "}

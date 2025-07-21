@@ -18,8 +18,8 @@ export default function PaymentSuccess() {
     const userId = localStorage.getItem("pendingUserId");
 
     const createOrderAfterPayment = async () => {
-      console.log("paymentId "+ paymentId + "userId " + userId);
-      
+      console.log("paymentId " + paymentId + "userId " + userId);
+
       if (!paymentId) {
         toast.error("Không tìm thấy paymentId.");
         router.push("/cart");
@@ -45,7 +45,7 @@ export default function PaymentSuccess() {
 
         toast.success("Đơn hàng đã được xác nhận!");
         const timer = setTimeout(() => {
-          router.push("/profile?tab=orders");
+          router.push("/profile?tab=order");
         }, 3000);
         return () => clearTimeout(timer);
       } catch (error: any) {

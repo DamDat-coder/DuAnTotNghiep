@@ -461,24 +461,24 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     });
 
     // Gửi thông báo cho user
-    // setImmediate(() => {
-    //   (async () => {
-    //     try {
-    //       const users = await UserModel.find({}).select("_id").lean();
-    //       const notifications = users.map((user) => ({
-    //         userId: user._id,
-    //         title: "Sản phẩm vừa được cập nhật!",
-    //         message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
-    //         type: "product",
-    //         isRead: false,
-    //       }));
-    //       await NotificationModel.insertMany(notifications);
-    //       console.log("Thông báo cập nhật sản phẩm đã gửi.");
-    //     } catch (error) {
-    //       console.error("❌ Gửi thông báo thất bại:", error);
-    //     }
-    //   })();
-    // });
+    setImmediate(() => {
+      (async () => {
+        try {
+          const users = await UserModel.find({}).select("_id").lean();
+          const notifications = users.map((user) => ({
+            userId: user._id,
+            title: "Sản phẩm vừa được cập nhật!",
+            message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
+            type: "product",
+            isRead: false,
+          }));
+          await NotificationModel.insertMany(notifications);
+          console.log("Thông báo cập nhật sản phẩm đã gửi.");
+        } catch (error) {
+          console.error("❌ Gửi thông báo thất bại:", error);
+        }
+      })();
+    });
 
   } catch (error: any) {
     console.error('Lỗi khi cập nhật sản phẩm:', error);

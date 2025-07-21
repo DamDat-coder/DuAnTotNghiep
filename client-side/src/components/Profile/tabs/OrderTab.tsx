@@ -194,7 +194,8 @@ export default function Orders({
                 >
                   Xem chi tiết
                 </button>
-                {order.status === "pending" && (
+                {(order.status === "pending") && (
+
                   <button
                     onClick={() => openCancelModal(order._id)}
                     className="w-[82px] h-[42px] bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600"

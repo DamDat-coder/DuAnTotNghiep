@@ -37,13 +37,23 @@ const mongoose_1 = __importStar(require("mongoose"));
 const paymentSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
+    discount_amount: { type: Number, default: 0 },
     status: {
         type: String,
-        enum: ['pending', 'success', 'failed'],
+        enum: ['pending', 'canceled', 'success', 'failed', 'paid'],
         default: 'pending',
     },
     transaction_code: { type: String, required: true, unique: true },
+    gateway: {
+        type: String,
+        enum: ['vnpay', 'zalopay'],
+        required: true,
+    },
     transaction_data: { type: mongoose_1.Schema.Types.Mixed, default: null },
+    transaction_summary: {
+        type: Object,
+        default: {},
+    },
     paid_at: { type: Date, default: null },
     order_info: { type: mongoose_1.Schema.Types.Mixed, default: null },
 }, {

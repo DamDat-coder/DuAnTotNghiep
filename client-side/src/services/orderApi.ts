@@ -1,6 +1,9 @@
 import { PaymentInfo } from "@/types/payment";
 import { API_BASE_URL, fetchWithAuth } from "./api";
+
 import { IOrder, OrderDetail } from "@/types/order";
+
+
 // Initiate payment
 // Khởi tạo thanh toán
 export async function initiatePayment(
@@ -79,8 +82,8 @@ export async function fetchAllOrders(
 
     const url =
       queryParams.toString().length > 0
-        ? `${API_BASE_URL}/order?${queryParams.toString()}`
-        : `${API_BASE_URL}/order`;
+        ? `${API_BASE_URL}/orders?${queryParams.toString()}`
+        : `${API_BASE_URL}/orders`;
 
     const response = await fetchWithAuth<{
       data: any[];
@@ -176,6 +179,7 @@ export async function fetchOrdersUser(
   }
 }
 
+
 export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
   try {
     const response = await fetchWithAuth<any>(`${API_BASE_URL}/orders/${id}`, {
@@ -253,4 +257,56 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       updatedAt: undefined,
     } as OrderDetail;
   }
+}
+// Lấy 5 sản phẩm bán chạy nhất
+export function getBestSellingProductsFromOrders(
+  orders: IOrder[],
+  time: "week" | "month" = "week",
+  limit = 5
+) {
+  const now = new Date();
+
+  const filteredOrders = orders.filter(order => {
+    if (!order.createdAt) return false;
+    const createdAt = new Date(order.createdAt);
+    const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    return time === "week" ? diffDays <= 7 : diffDays <= 30;
+  });
+
+  const productMap = new Map<string, {
+    id: string;
+    name: string;
+    image: string;
+    color: string;
+    size: string;
+    price: number;
+    sold: number;
+  }>();
+
+  filteredOrders.forEach(order => {
+    order.items.forEach(item => {
+      const key = `${item.productId}-${item.color}-${item.size}`; // nếu cần phân biệt theo biến thể
+
+      if (!productMap.has(key)) {
+        productMap.set(key, {
+          id: item.productId,
+          name: item.name,
+          image: item.image,
+          color: item.color,
+          size: item.size,
+          price: item.price,
+          sold: item.quantity,
+        });
+      } else {
+        const existing = productMap.get(key)!;
+        existing.sold += item.quantity;
+        productMap.set(key, existing);
+      }
+    });
+  });
+
+  const sorted = Array.from(productMap.values()).sort((a, b) => b.sold - a.sold);
+
+  return sorted.slice(0, limit);
+
 }

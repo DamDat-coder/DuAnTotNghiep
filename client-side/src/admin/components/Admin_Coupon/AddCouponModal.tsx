@@ -82,6 +82,23 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     setSelectedProducts((prev) => prev.filter((id) => id !== productId));
   };
 
+  // Hàm format số có dấu chấm
+  function formatNumber(value: string | number) {
+    if (!value) return "";
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  // Hàm chỉ cho nhập số
+  function handleNumberInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    // Loại bỏ ký tự không phải số
+    const numericValue = value.replace(/\D/g, "");
+    setForm((prev) => ({
+      ...prev,
+      [name]: numericValue,
+    }));
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -220,23 +237,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     form.endDate &&
     form.usage &&
     form.description;
-
-  // Hàm format số có dấu chấm
-  function formatNumber(value: string | number) {
-    if (!value) return "";
-    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  }
-
-  // Hàm chỉ cho nhập số
-  function handleNumberInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    // Loại bỏ ký tự không phải số
-    const numericValue = value.replace(/\D/g, "");
-    setForm((prev) => ({
-      ...prev,
-      [name]: numericValue,
-    }));
-  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">

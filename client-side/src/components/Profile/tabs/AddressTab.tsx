@@ -79,10 +79,12 @@ export default function AddressTab({
                     updatedAddressData
                   );
                   if (result) {
+                    // Cập nhật danh sách địa chỉ: đặt is_default cho địa chỉ được chọn, các địa chỉ khác thành false
                     const updatedAddresses = addresses.map((addr) => ({
                       ...addr,
                       is_default: addr._id === address._id,
                     }));
+                    // Sắp xếp lại để địa chỉ mặc định lên đầu
                     const sortedAddresses = [...updatedAddresses].sort(
                       (a, b) => {
                         if (a.is_default && !b.is_default) return -1;
@@ -102,7 +104,7 @@ export default function AddressTab({
                         addresses: sortedAddresses,
                       });
                     }
-                    onSelect(address);
+                    onSelect(address); // Gọi onSelect để cập nhật selectedAddress
                     toast.success("Đặt địa chỉ mặc định thành công!");
                   } else {
                     toast.error("Đặt địa chỉ mặc định thất bại.");
@@ -211,7 +213,7 @@ export default function AddressTab({
                 <div className="flex items-center justify-between">
                   <input
                     type="radio"
-                    checked={address.is_default} // Sử dụng is_default để xác định trạng thái tích
+                    checked={address.is_default}
                     onChange={() => handleSetDefaultAddress(address)}
                     className="w-5 h-5 rounded-full text-black border-gray-400 accent-black mr-4"
                   />
@@ -261,18 +263,15 @@ export default function AddressTab({
             });
             setAddresses(sortedAddresses);
             if (user) {
-              if (user) {
-                setUser({
-                  ...user,
-                  id: user.id,
-                  email: user.email,
-                  name: user.name,
-                  phone: user.phone,
-                  role: user.role, // Ensure role is always defined
-                  // add other required IUser fields here if needed
-                  addresses: sortedAddresses,
-                });
-              }
+              setUser({
+                ...user,
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                phone: user.phone,
+                role: user.role, // Ensure role is always defined
+                addresses: sortedAddresses,
+              });
             }
             setShowAddAddress(false);
           }}
@@ -306,8 +305,7 @@ export default function AddressTab({
                 email: user.email,
                 name: user.name,
                 phone: user.phone,
-                role: user.role ?? "user", // Ensure role is always defined
-                // add other required IUser fields here if needed
+                role: user.role ?? "user",
                 addresses: sortedAddresses,
               });
             }

@@ -11,13 +11,18 @@ import { SPAM_KEYWORDS } from "../config/spam-keywords";
 export const createReview = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
-    const { productId, content, rating } = req.body;
+    const { productId, orderId, content, rating } = req.body;
 
-    if (!userId || !productId || !content || !rating) {
+    if (!userId || !productId || !orderId || !content || !rating) {
       return res.status(400).json({ success: false, message: "Thiếu thông tin review." });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({ success: false, message: "ID không hợp lệ." });
+    }
+
     const order = await OrderModel.findOne({
+      _id: new mongoose.Types.ObjectId(orderId),
       userId,
       status: "delivered",
       "items.productId": new mongoose.Types.ObjectId(productId),
@@ -26,15 +31,15 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
     if (!order) {
       return res.status(403).json({
         success: false,
-        message: "Bạn chỉ có thể đánh giá khi đã mua và nhận hàng sản phẩm này.",
+        message: "Bạn chỉ có thể đánh giá sản phẩm trong đơn hàng đã giao.",
       });
     }
 
-    const existingReview = await ReviewModel.findOne({ userId, productId });
+    const existingReview = await ReviewModel.findOne({ userId, productId, orderId });
     if (existingReview) {
       return res.status(400).json({
         success: false,
-        message: "Bạn đã đánh giá sản phẩm này rồi.",
+        message: "Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi.",
       });
     }
 
@@ -82,6 +87,7 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
     const review = await ReviewModel.create({
       userId,
       productId,
+      orderId,
       content,
       rating,
       status,

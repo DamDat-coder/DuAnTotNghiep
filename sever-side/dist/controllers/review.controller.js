@@ -24,11 +24,15 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
-        const { productId, content, rating } = req.body;
-        if (!userId || !productId || !content || !rating) {
+        const { productId, orderId, content, rating } = req.body;
+        if (!userId || !productId || !orderId || !content || !rating) {
             return res.status(400).json({ success: false, message: "Thiếu thông tin review." });
         }
+        if (!mongoose_1.default.Types.ObjectId.isValid(productId) || !mongoose_1.default.Types.ObjectId.isValid(orderId)) {
+            return res.status(400).json({ success: false, message: "ID không hợp lệ." });
+        }
         const order = yield order_model_1.default.findOne({
+            _id: new mongoose_1.default.Types.ObjectId(orderId),
             userId,
             status: "delivered",
             "items.productId": new mongoose_1.default.Types.ObjectId(productId),
@@ -36,14 +40,14 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!order) {
             return res.status(403).json({
                 success: false,
-                message: "Bạn chỉ có thể đánh giá khi đã mua và nhận hàng sản phẩm này.",
+                message: "Bạn chỉ có thể đánh giá sản phẩm trong đơn hàng đã giao.",
             });
         }
-        const existingReview = yield review_model_1.default.findOne({ userId, productId });
+        const existingReview = yield review_model_1.default.findOne({ userId, productId, orderId });
         if (existingReview) {
             return res.status(400).json({
                 success: false,
-                message: "Bạn đã đánh giá sản phẩm này rồi.",
+                message: "Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi.",
             });
         }
         const images = [];
@@ -84,6 +88,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const review = yield review_model_1.default.create({
             userId,
             productId,
+            orderId,
             content,
             rating,
             status,

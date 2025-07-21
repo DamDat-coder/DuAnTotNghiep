@@ -7,8 +7,9 @@ import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
 import { fetchProducts } from "@/services/productApi";
-import CartTablet from "@/components/Cart/CartTablet";
+
 import { Toaster } from "react-hot-toast";
+import CartTablet from "@/components/Cart/Layout/CartTablet";
 
 export default function Cart() {
   const cart = useCart();
@@ -21,7 +22,6 @@ export default function Cart() {
     setIsClient(true);
   }, []);
 
-  // Đồng bộ checkbox "Chọn tất cả"
   useEffect(() => {
     setSelectAll(
       cart.items.length > 0 && cart.items.every((item) => item.selected)
@@ -35,8 +35,7 @@ export default function Cart() {
         .filter((item) => item.selected)
         .reduce(
           (sum, item) =>
-            sum +
-            item.price * (1 - item.discountPercent / 100) * item.quantity,
+            sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
           0
         ),
     [cart.items]
@@ -52,12 +51,6 @@ export default function Cart() {
       });
     });
   };
-
-  // Lấy sản phẩm chưa được chọn
-  const unselectedItems = useMemo(
-    () => cart.items.filter((item) => !item.selected),
-    [cart.items]
-  );
 
   const handleQuantityChange = (id: string, size: string, change: number) => {
     const item = cart.items.find((i) => i.id === id && i.size === size);
@@ -102,36 +95,36 @@ export default function Cart() {
         <Toaster position="top-right" />
         <h1 className="text-[2rem] font-bold text-left">Giỏ hàng của bạn</h1>
         <div className="flex flex-col gap-4 pt-6 relative">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={selectAll}
-              onChange={handleSelectAll}
-              className="w-5 h-5 accent-black"
-            />
-            Chọn tất cả
-          </div>
-
-          {!isClient ? null : unselectedItems.length === 0 ? (
+          {!isClient ? null : cart.items.length === 0 ? (
             <p className="text-center text-gray-500 mt-4">Giỏ hàng trống.</p>
           ) : (
             <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                  className="w-5 h-5 accent-black"
+                />
+                Chọn tất cả
+              </div>
+
               <CartMobile
-                cartItems={unselectedItems}
+                cartItems={cart.items}
                 totalPrice={totalPrice}
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
               />
               <CartTablet
-                cartItems={unselectedItems}
+                cartItems={cart.items}
                 totalPrice={totalPrice}
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
               />
               <CartDesktop
-                cartItems={unselectedItems}
+                cartItems={cart.items}
                 totalPrice={totalPrice}
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}

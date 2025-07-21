@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Coupon } from "@/types/coupon";
 import { fetchCouponById } from "@/services/couponApi";
 import Link from "next/link";
+import toast from "react-hot-toast";
+import { Copy } from "lucide-react";
 
 interface Props {
   initialCoupons: Coupon[];
@@ -29,11 +31,11 @@ export default function CouponList({ initialCoupons }: Props) {
   return (
     <div className="flex gap-6 pb-16">
       {/* DANH SÁCH MÃ */}
-      <div className="w-[60%]">
+      <div className="w-[70%]">
         {coupons.length === 0 ? (
           <p>Không có mã giảm giá nào khả dụng.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {coupons.map((coupon) => (
               <div
                 key={coupon._id}
@@ -46,25 +48,33 @@ export default function CouponList({ initialCoupons }: Props) {
                   </p>
                 </div>
                 <div className="flex flex-col gap-3">
-                  <p className="text-green-600 font-medium">
+                  <p className="text-black font-bold">
                     {coupon.discountType === "percent"
                       ? `Giảm ${coupon.discountValue}%`
                       : `Giảm ${coupon.discountValue.toLocaleString("vi-VN")}đ`}
                   </p>
-                  <p className="text-sm text-gray-400">
-                    HSD:{" "}
-                    {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
+                  <p className="text-sm text-black">
+                    Còn: {coupon.usageLimit - coupon.usedCount}/
+                    {coupon.usageLimit}
                   </p>
-                  <p className="text-sm text-red-500">
-                    Còn {coupon.usageLimit - coupon.usedCount} lượt sử dụng
+                  <p className="text-sm text-black">
+                    HSD: {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleSelectCoupon(coupon._id)}
-                  className="w-[40%] border border-black rounded text-sm py-2 hover:bg-gray-100"
-                >
-                  Xem chi tiết
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleSelectCoupon(coupon._id)}
+                    className="border border-black rounded text-sm py-2 hover:bg-black hover:text-white transition p-3"
+                  >
+                    Xem chi tiết
+                  </button>
+                  <Link
+                    href={`/products?coupon=${coupon.code}`}
+                    className="text-center border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition p-3"
+                  >
+                    Xem sản phẩm áp dụng
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -72,13 +82,27 @@ export default function CouponList({ initialCoupons }: Props) {
       </div>
 
       {/* CHI TIẾT MÃ */}
-      <div className="w-[40%] rounded-lg p-4 shadow-custom-order h-fit sticky top-4">
+      <div className="w-[30%] rounded-lg shadow-custom-order h-fit sticky top-4">
         {detailLoading ? (
           <p className="text-gray-500">Đang tải chi tiết...</p>
         ) : selectedCoupon ? (
-          <div className="p-4 rounded-lg bg-white flex flex-col gap-6">
+          <div className="p-8 rounded-lg bg-white flex flex-col gap-6 relative">
             <div>
-              <h2 className="text-xl font-bold">{selectedCoupon.code}</h2>
+              <h2 className="text-xl font-semibold">{selectedCoupon.code}</h2>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selectedCoupon.code);
+                  toast.success("Đã sao chép mã!");
+                }}
+                className="absolute top-3 right-3 group text-xs px-3 py-2 border rounded hover:bg-black hover:text-white flex gap-2 transition"
+              >
+                <Copy
+                  size={16}
+                  className="text-gray-500 group-hover:text-white transition"
+                />
+                Sao chép
+              </button>
+
               <p className="text-gray-600 text-sm line-clamp-2">
                 {selectedCoupon.description || "Không có mô tả"}
               </p>
@@ -89,7 +113,9 @@ export default function CouponList({ initialCoupons }: Props) {
                 <span>Loại giảm:</span>{" "}
                 {selectedCoupon.discountType === "percent"
                   ? `Giảm ${selectedCoupon.discountValue}%`
-                  : `Giảm ${selectedCoupon.discountValue.toLocaleString("vi-VN")}đ`}
+                  : `Giảm ${selectedCoupon.discountValue.toLocaleString(
+                      "vi-VN"
+                    )}đ`}
               </p>
               <p>
                 <span>Đơn tối thiểu:</span>{" "}
@@ -97,13 +123,15 @@ export default function CouponList({ initialCoupons }: Props) {
                   ? `${selectedCoupon.minOrderAmount.toLocaleString("vi-VN")}đ`
                   : "Không yêu cầu"}
               </p>
-              <p className="text-green-600">
+              <p className="">
                 <span>Giảm tối đa:</span>{" "}
                 {selectedCoupon.maxDiscountAmount
-                  ? `${selectedCoupon.maxDiscountAmount.toLocaleString("vi-VN")}đ`
+                  ? `${selectedCoupon.maxDiscountAmount.toLocaleString(
+                      "vi-VN"
+                    )}đ`
                   : "Không giới hạn"}
               </p>
-              <p className="text-red-500">
+              <p className="">
                 <span>Còn:</span>{" "}
                 {selectedCoupon.usageLimit
                   ? `${selectedCoupon.usageLimit - selectedCoupon.usedCount}/${
@@ -113,11 +141,8 @@ export default function CouponList({ initialCoupons }: Props) {
               </p>
               <p>
                 <span>Hiệu lực:</span>{" "}
-                {new Date(selectedCoupon.startDate).toLocaleDateString(
-                  "vi-VN"
-                )}{" "}
-                -{" "}
-                {new Date(selectedCoupon.endDate).toLocaleDateString("vi-VN")}
+                {new Date(selectedCoupon.startDate).toLocaleDateString("vi-VN")}{" "}
+                - {new Date(selectedCoupon.endDate).toLocaleDateString("vi-VN")}
               </p>
               <p>
                 <span>Trạng thái:</span>{" "}
@@ -127,13 +152,13 @@ export default function CouponList({ initialCoupons }: Props) {
 
             <Link
               href={`/products?coupon=${selectedCoupon.code}`}
-              className="inline-block text-center w-full border border-black border-solid py-2 text-sm rounded hover:bg-gray-100 transition"
+              className="inline-block text-center w-full border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition"
             >
               Xem sản phẩm áp dụng
             </Link>
           </div>
         ) : (
-          <p className="text-gray-500 text-sm italic">
+          <p className="p-4 text-gray-500 text-sm italic">
             Chọn một mã để xem chi tiết.
           </p>
         )}

@@ -34,9 +34,10 @@ export async function login(
   try {
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers:
+        {
+          "Content-Type": "application/json",
+        },
       body: JSON.stringify({ email, password }),
       credentials: "include",
     });
@@ -764,3 +765,4 @@ export const resetPassword = async (
 
   return data;
 };
+

@@ -29,6 +29,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     "Chất lượng sản phẩm rất tốt, giao hàng nhanh.",
   ];
 
+  // Lấy thông tin người dùng
   useEffect(() => {
     async function fetchUserData() {
       try {
@@ -59,6 +60,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     }
   };
 
+  // Hàm lấy trạng thái đơn hàng
   const getStatusLabel = (status: OrderDetail["status"]) => {
     switch (status) {
       case "pending":
@@ -76,6 +78,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     }
   };
 
+  // Tính tổng giá trị sản phẩm trong đơn hàng
   const calculateSubtotal = () => {
     if (!order.items || !Array.isArray(order.items)) return 0;
     return order.items.reduce(

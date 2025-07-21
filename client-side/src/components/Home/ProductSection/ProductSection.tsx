@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { IProduct } from "@/types/product";
 import { useAuth } from "@/contexts/AuthContext";
 import BuyNowPopup from "../../Core/Layout/BuyNowButton/BuyNowPopup";
-import AddToCartPopup from "../../Cart/AddToCartPopup";
+import AddToCartPopup from "../../Cart/AddToCart/AddToCartPopup";
 import ProductCard from "./ProductCard";
 import ProductSwiper from "./ProductSwiper";
 

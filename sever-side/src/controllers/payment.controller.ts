@@ -1,296 +1,228 @@
 import { Request, Response } from "express";
-import { VNPay, ProductCode, VnpLocale, HashAlgorithm } from "vnpay";
+import { ProductCode, VnpLocale } from "vnpay";
 import moment from "moment";
 import type { ReturnQueryFromVNPay } from "vnpay";
-import Payment, { IPayment } from "../models/payment.model";
+import Payment from "../models/payment.model";
 import { Types } from "mongoose";
 import axios from "axios";
 import crypto from "crypto";
-import ProductModel from "../models/product.model";
-import OrderModel from "../models/order.model";
 import { ZALO_PAY, vnpay } from "../config/payment.config";
+import { generateUniqueTransactionCode } from "../utils/generateTransactionCode";
 
-// Tạo URL thanh toán VNPay
+// VNPay - Tạo thanh toán
 export const createVNPayPayment = async (req: Request, res: Response) => {
   try {
-    const { orderId, totalPrice, userId, orderInfo } = req.body;
+    const { totalPrice, userId, orderInfo, discountAmount = 0 } = req.body;
 
-    if (!orderId || !totalPrice || !userId || !orderInfo) {
-      return res
-        .status(400)
-        .json({ message: "Thiếu orderId, totalPrice, userId hoặc orderInfo!" });
+    if (!totalPrice || !userId || !orderInfo) {
+      return res.status(400).json({ message: "Thiếu thông tin!" });
     }
 
-    const paymentData: Partial<IPayment> = {
+    const transactionCode = await generateUniqueTransactionCode("VN");
+
+    const payment = await Payment.create({
       userId: new Types.ObjectId(userId),
       amount: totalPrice,
+      discount_amount: discountAmount,
       status: "pending",
-      transaction_code: orderId,
+      transaction_code: transactionCode,
       transaction_data: {},
-      paid_at: undefined,
-      order_info: orderInfo,
-    };
-
-    // Lưu bản ghi thanh toán ban đầu (trạng thái pending)
-    const payment = await Payment.create(paymentData);
+      transaction_summary: {},
+      order_info: {
+        ...orderInfo,
+        paymentMethod: "vnpay",
+      },
+      gateway: "vnpay",
+    });
 
     const paymentUrl = await vnpay.buildPaymentUrl({
       vnp_Amount: totalPrice,
-      vnp_IpAddr: req.ip || '127.0.0.1',
-      vnp_TxnRef: orderId,
-      vnp_OrderInfo: `Thanh toán đơn hàng ${orderId}|userId:${userId}`,
+      vnp_IpAddr: req.ip || "127.0.0.1",
+      vnp_TxnRef: transactionCode,
+      vnp_OrderInfo: `Thanh toán đơn hàng ${transactionCode}|userId:${userId}`,
       vnp_OrderType: ProductCode.Other,
       vnp_ReturnUrl: `http://localhost:3000/api/payment/check-payment-vnpay`,
       vnp_Locale: VnpLocale.VN,
       vnp_CreateDate: Number(moment().format("YYYYMMDDHHmmss")),
-      vnp_ExpireDate: Number(
-        moment().add(30, "minutes").format("YYYYMMDDHHmmss")
-      ),
+      vnp_ExpireDate: Number(moment().add(30, "minutes").format("YYYYMMDDHHmmss")),
     });
 
     return res.status(200).json({ paymentUrl, paymentId: payment._id });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Không tạo được URL thanh toán", error });
+    return res.status(500).json({ message: "Không tạo được URL VNPay", error });
   }
 };
 
-// Xử lý callback từ VNPay
+// VNPay - Callback xử lý thanh toán
 export const checkVNPayReturn = async (req: Request, res: Response) => {
   try {
     const queryParams = req.query as ReturnQueryFromVNPay;
 
     const isValid = vnpay.verifyReturnUrl(queryParams);
-    if (!isValid) {
-      return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
-    }
+    if (!isValid) return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
 
-    const {
-      vnp_TxnRef,
-      vnp_ResponseCode,
-      vnp_Amount,
-      vnp_TransactionNo,
-      vnp_BankCode,
-      vnp_PayDate,
-      vnp_OrderInfo,
-    } = queryParams;
+    const { vnp_TxnRef, vnp_ResponseCode, vnp_PayDate, vnp_BankCode, vnp_TransactionNo } = queryParams;
 
-    // Lấy lại bản ghi payment đã tạo từ createVNPayPayment
-    const existingPayment = await Payment.findOne({
-      transaction_code: vnp_TxnRef,
-    });
+    const payment = await Payment.findOne({ transaction_code: vnp_TxnRef });
+    if (!payment) return res.status(404).json({ message: "Không tìm thấy giao dịch!" });
 
-    if (!existingPayment) {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy giao dịch để cập nhật!" });
-    }
+    payment.status = vnp_ResponseCode === "00" ? "success" : "failed";
+    payment.paid_at = vnp_PayDate ? moment(vnp_PayDate, "YYYYMMDDHHmmss").toDate() : new Date();
+    payment.transaction_data = queryParams;
+    payment.transaction_summary = {
+      gatewayTransactionId: vnp_TransactionNo?.toString(),
+      bankCode: vnp_BankCode,
+      amount: payment.amount,
+    };
 
-    // Cập nhật trạng thái giao dịch
-    existingPayment.status = vnp_ResponseCode === "00" ? "success" : "failed";
-    existingPayment.transaction_data = queryParams;
-    existingPayment.paid_at = vnp_PayDate
-      ? moment(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
-      : new Date();
+    await payment.save();
 
-    await existingPayment.save();
-
-    // Redirect về frontend tuỳ theo kết quả thanh toán
-    if (vnp_ResponseCode === "00") {
-      return res.redirect(
-        `http://localhost:3300/payment/success?orderId=${vnp_TxnRef}`
-      );
-    } else {
-      return res.redirect(
-        `http://localhost:3300/payment/fail?orderId=${vnp_TxnRef}`
-      );
-    }
+    const redirect = vnp_ResponseCode === "00" ? "success" : "fail";
+    return res.redirect(`http://localhost:3300/payment/${redirect}?orderId=${vnp_TxnRef}`);
   } catch (error) {
-    return res.status(500).json({ message: "Xử lý callback thất bại!", error });
+    return res.status(500).json({ message: "Callback VNPay lỗi!", error });
   }
 };
 
-// Tạo URL thanh toán ZaloPay
+// ZaloPay - Tạo thanh toán
 export const createZaloPayPayment = async (req: Request, res: Response) => {
   try {
-    const { totalPrice, userId, orderInfo } = req.body;
+    const { totalPrice, userId, orderInfo, discountAmount = 0 } = req.body;
 
     if (!totalPrice || !userId || !orderInfo) {
       return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
     }
 
-    const orderId = moment().format("YYMMDD_HHmmss");
+    const transactionCode = await generateUniqueTransactionCode("ZP");
+    const app_time = Date.now();
 
-    const payment = await Payment.create({
-      userId: new Types.ObjectId(userId),
-      amount: totalPrice,
-      status: "pending",
-      transaction_code: orderId,
-      transaction_data: {},
-      order_info: orderInfo,
-    });
-
-    const embed_data = {};
-
-    const order: Record<string, any> = {
-      app_id: ZALO_PAY.app_id,
-      app_trans_id: orderId,
-      app_user: userId.toString(),
-      app_time: Date.now(),
-      amount: Math.floor(totalPrice),
-      item: JSON.stringify([]),
-      embed_data: JSON.stringify(embed_data),
-      description: `Thanh toán Shop4Real #${orderId}`,
-      callback_url: ZALO_PAY.callbackUrl,
-      bank_code: "zalopayapp",
+    const embedData = {
+      redirecturl: `${ZALO_PAY.returnUrl}?orderId=${transactionCode}`,
+      userId,
     };
 
-    const dataString = [
-      order.app_id,
-      order.app_trans_id,
-      order.app_user,
-      order.amount,
-      order.app_time,
+    const order = {
+      app_id: ZALO_PAY.appId,
+      app_trans_id: transactionCode,
+      app_user: userId,
+      app_time,
+      amount: totalPrice,
+      item: JSON.stringify([]),
+      embed_data: JSON.stringify(embedData),
+      description: `Thanh toán đơn hàng ${transactionCode}`,
+      bank_code: "",
+      callback_url: ZALO_PAY.callbackUrl,
+    };
+
+    const data = [
+      ZALO_PAY.appId,
+      transactionCode,
+      userId,
+      totalPrice,
+      app_time,
       order.embed_data,
       order.item,
     ].join("|");
 
-    order.mac = crypto
+    (order as any).mac = crypto
       .createHmac("sha256", ZALO_PAY.key1)
-      .update(dataString)
+      .update(data)
       .digest("hex");
 
-    const params = new URLSearchParams();
-    Object.entries(order).forEach(([key, value]) => {
-      params.append(key, value);
-    });
-
-    const zaloRes = await axios.post(ZALO_PAY.endpoint, params.toString(), {
+    const zalopayRes = await axios.post(ZALO_PAY.endpoint, null, {
+      params: order,
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
-    if (zaloRes.data.return_code !== 1) {
+    if (zalopayRes.data.return_code !== 1) {
       return res.status(400).json({
-        message: "Tạo đơn ZaloPay thất bại!",
-        zaloRes: zaloRes.data,
+        message: "ZaloPay từ chối giao dịch!",
+        error: zalopayRes.data,
       });
     }
 
+    await Payment.create({
+      userId: new Types.ObjectId(userId),
+      amount: totalPrice,
+      discount_amount: discountAmount,
+      status: "pending",
+      transaction_code: transactionCode,
+      transaction_data: order,
+      transaction_summary: {},
+      order_info: {
+        ...orderInfo,
+        paymentMethod: "vnpay",
+      },
+      gateway: "zalopay",
+    });
+
     return res.status(200).json({
-      paymentUrl: zaloRes.data.order_url,
-      paymentId: payment._id,
+      paymentUrl: zalopayRes.data.order_url,
+      paymentId: transactionCode,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Không tạo được đơn ZaloPay",
-      error: error instanceof Error ? error.message : error,
-    });
+    return res.status(500).json({ message: "Không tạo được thanh toán ZaloPay", error });
   }
 };
 
-// Xử lý callback từ ZaloPay
+// ZaloPay - Callback xử lý thanh toán
 export const checkZaloPayReturn = async (req: Request, res: Response) => {
   try {
-    const {
-
-      app_id,
-      app_trans_id,
-      app_time,
-      app_user,
-      amount,
-      embed_data,
-      item,
-      description,
-      status,
-      message,
-      trans_id,
-      mac,
-    } = req.body;
-
-    const dataString = [
-      app_id,
-      app_trans_id,
-      app_user,
-      amount,
-      app_time,
-      embed_data,
-      item,
-      status,
-      message,
-      trans_id,
-    ].join("|");
-
-    const expectedMac = crypto
-      .createHmac("sha256", ZALO_PAY.key1)
-      .update(dataString)
+    const { data, mac } = req.body;
+    const computedMac = crypto
+      .createHmac("sha256", ZALO_PAY.key2)
+      .update(data)
       .digest("hex");
 
-    if (mac !== expectedMac) {
-      return res
-        .status(400)
-        .json({ return_code: -1, return_message: "mac not valid" });
+    if (computedMac !== mac) {
+      return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
     }
+
+    const result = JSON.parse(data);
+    const {
+      app_trans_id,
+      return_code,
+      zp_trans_id,
+      bank_code,
+      discountamount,
+      amount,
+      server_time,
+    } = result;
 
     const payment = await Payment.findOne({ transaction_code: app_trans_id });
-    if (!payment) {
-      return res
-        .status(404)
-        .json({ return_code: -1, return_message: "payment not found" });
+    if (!payment) return res.status(404).json({ message: "Không tìm thấy giao dịch!" });
+
+    if (payment.status !== "pending") {
+      return res.status(200).json({ message: "Giao dịch đã được xử lý trước đó!" });
     }
 
-    const isSuccess = status === 1;
-    payment.status = isSuccess ? "success" : "failed";
-    payment.transaction_data = req.body;
-    payment.paid_at = new Date();
+    if (return_code === 1) {
+      payment.status = "success";
+    } else if (return_code === 2) {
+      payment.status = "canceled";
+    } else {
+      payment.status = "failed";
+    }
+
+    payment.paid_at = server_time ? new Date(Number(server_time)) : new Date();
+    payment.transaction_data = result;
+    payment.transaction_summary = {
+      gatewayTransactionId: zp_trans_id?.toString(),
+      bankCode: bank_code,
+      amount: amount,
+    };
+
+    if (discountamount) {
+      payment.discount_amount = Number(discountamount);
+    }
+
     await payment.save();
 
-    if (isSuccess) {
-      const orderInfo = payment.order_info;
-
-      for (const item of orderInfo.items) {
-        const product = await ProductModel.findById(item.productId);
-        if (!product) continue;
-
-        const variant = product.variants.find(
-          (v: any) => v.color === item.color && v.size === item.size
-        );
-        if (!variant) continue;
-
-        variant.stock = Math.max(variant.stock - item.quantity, 0);
-        product.salesCount += item.quantity;
-        await product.save();
-      }
-
-      await OrderModel.create({
-        userId: payment.userId,
-        couponId: orderInfo.couponId || null,
-        address_id: orderInfo.address_id,
-        shippingAddress: orderInfo.shippingAddress,
-        totalPrice: payment.amount,
-        status: "pending",
-        paymentMethod: "zalopay",
-        paymentStatus: "paid",
-        note: orderInfo.note || "",
-        items: orderInfo.items.map((i: any) => ({
-          product: i.productId,
-          color: i.color,
-          size: i.size,
-          quantity: i.quantity,
-          price: i.price ?? 0, 
-        })),
-      });
-    }
-
-    const frontendRedirectBase = "http://localhost:3300/payment";
-    const redirectUrl = isSuccess
-      ? `${frontendRedirectBase}/success?orderId=${app_trans_id}`
-      : `${frontendRedirectBase}/fail?orderId=${app_trans_id}`;
-
-    return res.redirect(redirectUrl);
+    const redirect = return_code === 1 ? "fail" : "success";
+    return res.redirect(
+      `${ZALO_PAY.returnUrl.replace("success", redirect)}?orderId=${app_trans_id}`
+    );
   } catch (error) {
-    return res
-      .status(500)
-      .json({ return_code: -1, return_message: "internal error" });
+    return res.status(500).json({ message: "Callback ZaloPay lỗi!", error });
   }
 };

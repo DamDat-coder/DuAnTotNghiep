@@ -26,7 +26,7 @@ export default function PaymentSuccess() {
         return;
       }
 
-      if (!user || !user.id || user.id != userId) {
+      if (!user || !user.id) {
         toast.error("Vui lòng đăng nhập để tiếp tục.");
         return;
       }

@@ -19,6 +19,7 @@ export default function ProductControlBar({
     { value: "all", label: "Tất cả" },
     { value: "active", label: "Đang bán" },
     { value: "inactive", label: "Ngừng bán" },
+    { value: "low_stock", label: "Sắp hết hàng" },
   ];
 
   const handleFilter = (opt: typeof filterOptions[number]) => {
@@ -40,12 +41,17 @@ export default function ProductControlBar({
         <div className="relative">
           <button
             onClick={() => setOpenDropdown(!openDropdown)}
-            className="flex items-center gap-2 h-12 px-4 border border-gray-300 rounded-[12px] text-gray-500 font-medium bg-white min-w-[140px]"
+            className="flex items-center justify-center h-12 px-4 pr-10 border border-gray-300 rounded-[12px] text-gray-500 font-medium bg-white min-w-[140px] relative w-full"
+            type="button"
           >
-            {selected.label}
-            <svg width={16} height={16} fill="none">
-              <path d="M4 6l4 4 4-4" stroke="#888" strokeWidth={2} fill="none"/>
-            </svg>
+            {/* Chữ căn giữa tuyệt đối */}
+            <span className="mx-auto">{selected.label}</span>
+            {/* Mũi tên absolute sát phải */}
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg width={16} height={16} fill="none">
+                <path d="M4 6l4 4 4-4" stroke="#888" strokeWidth={2} fill="none"/>
+              </svg>
+            </span>
           </button>
           {openDropdown && (
             <ul className="absolute mt-2 z-10 w-full bg-white border border-gray-200 rounded-[12px] shadow-md text-sm text-gray-600">

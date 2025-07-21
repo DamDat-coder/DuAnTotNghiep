@@ -49,7 +49,7 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true, trim: true },
     addresses: [addressSchema],
     phone: {
-      type: String, // Sửa từ Number -> String
+      type: String,
       default: null,
       unique: true,
       sparse: true,

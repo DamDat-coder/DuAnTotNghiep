@@ -73,6 +73,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             .findById(savedNews._id)
             .populate("user_id", "name email")
             .populate("category_id", "name");
+
         if (newsData.is_published) {
             setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
                 try {
@@ -93,6 +94,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 }
             }));
         }
+
         res.status(201).json({
             status: "success",
             message: "Tạo tin tức thành công",

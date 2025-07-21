@@ -44,7 +44,7 @@ export const footerSections: FooterSection[] = [
     id: "about_us",
     title: "Về chúng tôi",
     content: [
-      "Với Shop4Real – nơi bạn tìm thấy phong cách riêng trong từng thiết kế thời trang. Chúng tôi không chỉ bán quần áo, mà còn đồng hành cùng bạn thể hiện cá tính – từ năng động đường phố, thanh lịch công sở đến độc đáo, cá tính. Bộ sưu tập luôn được chọn lọc kỹ lưỡng theo xu hướng mới nhất.",
+      "Với Style For You – nơi bạn tìm thấy phong cách riêng trong từng thiết kế thời trang. Chúng tôi không chỉ bán quần áo, mà còn đồng hành cùng bạn thể hiện cá tính – từ năng động đường phố, thanh lịch công sở đến độc đáo, cá tính. Bộ sưu tập luôn được chọn lọc kỹ lưỡng theo xu hướng mới nhất.",
     ],
   },
 ];

@@ -83,6 +83,7 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       .populate("user_id", "name email")
       .populate("category_id", "name");
 
+
     if (newsData.is_published) {
       setImmediate(async () => {
         try {
@@ -102,6 +103,7 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
         }
       });
     }
+
 
     res.status(201).json({
       status: "success",

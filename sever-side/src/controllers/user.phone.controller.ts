@@ -19,7 +19,7 @@ export const sendSmsOTP = async (req: Request, res: Response) => {
     try {
       const toPhone = phone.startsWith("0")
         ? "+84" + phone.slice(1)
-        : phone; // Chuyển 0987... thành +84987...
+        : phone; 
         
       const response = await vonage.sms.send({
         to: toPhone,

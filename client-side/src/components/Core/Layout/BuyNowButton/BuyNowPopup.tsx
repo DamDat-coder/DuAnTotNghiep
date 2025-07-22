@@ -163,7 +163,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg w-[100%] max-w-[80%] laptop:max-w-[80%] relative"
+              className="w-[80%] max-w-full flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg  relative"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Nút đóng */}
@@ -358,6 +358,11 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                     </button>
                   </div>
                 </div>
+                {selectedVariant && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Còn {maxQuantity} sản phẩm
+                  </p>
+                )}
                 {couponId && (
                   <div className="mt-2 flex items-center gap-2 cursor-pointer">
                     <input

@@ -12,7 +12,7 @@ export interface IPayment extends Document {
   discount_amount?: number;
   status: 'pending' | 'canceled' |'success' | 'failed' | 'paid';
   transaction_code: string;
-  gateway: 'vnpay' | 'zalopay' ;
+  gateway: 'vnpay' | 'zalopay' | 'cod';
   transaction_data?: any;
   transaction_summary?: ITransactionSummary;
   paid_at?: Date;
@@ -34,7 +34,7 @@ const paymentSchema = new Schema<IPayment>(
     transaction_code: { type: String, required: true, unique: true },
     gateway: {
       type: String,
-      enum: ['vnpay', 'zalopay'],
+      enum: ['vnpay', 'zalopay', 'cod'],
       required: true,
     },
     transaction_data: { type: Schema.Types.Mixed, default: null },

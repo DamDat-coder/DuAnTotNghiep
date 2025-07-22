@@ -443,24 +443,25 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             data: result,
         });
         // Gửi thông báo cho user
-        // setImmediate(() => {
-        //   (async () => {
-        //     try {
-        //       const users = await UserModel.find({}).select("_id").lean();
-        //       const notifications = users.map((user) => ({
-        //         userId: user._id,
-        //         title: "Sản phẩm vừa được cập nhật!",
-        //         message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
-        //         type: "product",
-        //         isRead: false,
-        //       }));
-        //       await NotificationModel.insertMany(notifications);
-        //       console.log("Thông báo cập nhật sản phẩm đã gửi.");
-        //     } catch (error) {
-        //       console.error("Gửi thông báo thất bại:", error); 
-        //     }
-        //   })();
-        // });
+        setImmediate(() => {
+            (() => __awaiter(void 0, void 0, void 0, function* () {
+                try {
+                    const users = yield user_model_1.default.find({}).select("_id").lean();
+                    const notifications = users.map((user) => ({
+                        userId: user._id,
+                        title: "Sản phẩm vừa được cập nhật!",
+                        message: `Sản phẩm "${updatedProduct.name}" vừa được cập nhật, xem ngay!`,
+                        type: "product",
+                        isRead: false,
+                    }));
+                    yield notification_model_1.default.insertMany(notifications);
+                    console.log("Thông báo cập nhật sản phẩm đã gửi.");
+                }
+                catch (error) {
+                    console.error("❌ Gửi thông báo thất bại:", error);
+                }
+            }))();
+        });
     }
     catch (error) {
         console.error('Lỗi khi cập nhật sản phẩm:', error);

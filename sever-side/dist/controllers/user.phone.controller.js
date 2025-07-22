@@ -27,11 +27,11 @@ const sendSmsOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         try {
             const toPhone = phone.startsWith("0")
                 ? "+84" + phone.slice(1)
-                : phone; // Chuyển 0987... thành +84987...
+                : phone;
             const response = yield vonage_1.vonage.sms.send({
                 to: toPhone,
-                from: process.env.VONAGE_FROM || "Shop4Real",
-                text: `Mã OTP Shop4Real của bạn là: ${otp}`,
+                from: process.env.VONAGE_FROM || "Style For You",
+                text: `Mã OTP Style For You của bạn là: ${otp}`,
             });
             console.log("Vonage response:", response);
         }

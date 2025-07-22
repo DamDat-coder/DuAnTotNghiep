@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import OrderModel from "../models/order.model";
 import ProductModel from "../models/product.model";
 import PaymentModel from "../models/payment.model";
 import NotificationModel from "../models/notification.model";
-import UserModel from "../models/user.model";
+import UserModel, { IUser } from "../models/user.model";
+import { sendOrderSpamWarningEmail, sendAccountBlockedEmail } from "../utils/mailer"; 
 import { generateUniqueTransactionCode } from "../utils/generateTransactionCode";
 
 // Tạo đơn hàng
@@ -218,25 +220,32 @@ export const getOrderById = async (req: Request, res: Response) => {
 // Cập nhật trạng thái đơn hàng 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled"];
 
+    const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled", "fake"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ." });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID đơn hàng không hợp lệ." });
+    }
+
     const order = await OrderModel.findByIdAndUpdate(
-      req.params.id,
+      id,
       { status },
       { new: true }
     ).populate("userId", "name email");
 
-    if (!order) {
+    if (!order || !order.userId) {
       return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
     }
 
+    const user = order.userId as unknown as IUser;
+
     await NotificationModel.create({
-      userId: order.userId._id,
+      userId: user._id,
       title: `Đơn hàng #${order._id} đã được cập nhật`,
       message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
       type: "order",
@@ -244,13 +253,46 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       link: `/profile?tab=order/${order._id}`,
     });
 
-    res.status(200).json({
+    if (status === "fake") {
+      const fakeOrderCount = await OrderModel.countDocuments({
+        userId: user._id,
+        status: "fake",
+      });
+
+      if (fakeOrderCount === 1) {
+        await sendOrderSpamWarningEmail(user.email, user.name);
+        await NotificationModel.create({
+          userId: user._id,
+          title: "Cảnh báo hành vi giả mạo",
+          message: "Đơn hàng của bạn đã bị đánh dấu là giả mạo. Nếu tiếp tục, tài khoản có thể bị khóa.",
+          type: "warning",
+          isRead: false,
+          link: "/profile?tab=order",
+        });
+      }
+
+      if (fakeOrderCount >= 3) {
+        await UserModel.findByIdAndUpdate(user._id, { is_active: false });
+        await sendAccountBlockedEmail(user.email, user.name);
+        await NotificationModel.create({
+          userId: user._id,
+          title: "Tài khoản bị khóa",
+          message: "Tài khoản của bạn đã bị khóa vì có quá nhiều đơn hàng giả mạo.",
+          type: "lock",
+          isRead: false,
+          link: "/profile",
+        });
+      }
+    }
+
+    return res.status(200).json({
       success: true,
       message: "Cập nhật trạng thái thành công.",
       data: order,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+    console.error("Lỗi cập nhật đơn:", err);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
 

@@ -80,7 +80,7 @@ export default function Sidebar() {
       <div className="p-4 flex flex-col gap-12 w-full h-auto">
         <Link href="/admin/dashboard">
           <Image
-            src="/admin/sidebar/logo.svg"
+            src="/nav/logoWhite.svg"
             alt="Logo Công Ty"
             width={120}
             height={40}

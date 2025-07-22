@@ -1,41 +1,42 @@
+// app/products/[id]/page.tsx
+
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
 import ProductMobileLayout from "@/components/Detail/Layout/ProductMobileLayout";
 import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
-
 import { Metadata } from "next";
 
-interface ProductPageProps {
+type Props = {
   params: {
     id: string;
   };
-}
+};
 
+// ✅ Updated to await params
 export async function generateMetadata({
   params,
-}: ProductPageProps): Promise<Metadata> {
-  try {
-    const product = await fetchProductById(params.id);
-    if (!product) throw new Error("Not found");
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const { id } = await params; // Awaiting params
+  const product = await fetchProductById(id);
+  if (!product) throw new Error("Not found");
 
-    return {
-      title: product.name || "Sản phẩm",
-      description: product.description || "",
-      openGraph: {
-        images: product.images || [],
-      },
-    };
-  } catch {
-    return {
-      title: "Không tìm thấy sản phẩm",
-    };
-  }
+  return {
+    title: product.name,
+    description: product.description,
+    openGraph: {
+      title: product.name,
+      images: [product.images?.[0] ?? ""],
+    },
+  };
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = params;
+// ✅ Trang chính
+export default async function ProductPage({ params }: Props) {
+  const { id } = await params; // Awaiting params
 
   let product: IProduct | null = null;
   let suggestedProducts: IProduct[] = [];
@@ -45,7 +46,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     product = await fetchProductById(id);
     if (!product) throw new Error("Không tìm thấy sản phẩm.");
 
-    // Lọc các sản phẩm khác (giữ nguyên logic)
     suggestedProducts = await fetchProducts().then((res) =>
       res.data.filter((p) => p.id !== id)
     );
@@ -63,7 +63,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     );
   }
 
-  // Tính toán size & stock (giữ nguyên)
   const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
     (size) => ({
       value: size,

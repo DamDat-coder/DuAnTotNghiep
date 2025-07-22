@@ -1,23 +1,12 @@
+import { IReview } from "@/types/review";
 import { API_BASE_URL, fetchWithAuth } from "./api";
-
-// Định nghĩa interface cho Review
-interface Review {
-  _id: string;
-  userId: { _id: string; name: string };
-  productId: string;
-  content: string;
-  rating: number;
-  status: "approved" | "spam";
-  images?: string[];
-  createdAt: string;
-}
 
 // Lấy danh sách đánh giá của sản phẩm
 export async function fetchProductReviews(
   productId: string
-): Promise<Review[]> {
+): Promise<IReview[]> {
   try {
-    const response = await fetchWithAuth<{ success: boolean; data: Review[] }>(
+    const response = await fetchWithAuth<{ success: boolean; data: IReview[] }>(
       `${API_BASE_URL}/reviews/product/${productId}`,
       {
         cache: "no-store",
@@ -39,11 +28,12 @@ export async function createReview(
   orderId: string,
   content: string,
   rating: number,
+  orderId?: string,
   images?: File[]
 ): Promise<{
   success: boolean;
   message: string;
-  data?: Review;
+  data?: IReview;
   warning?: string;
 }> {
   try {
@@ -51,6 +41,7 @@ export async function createReview(
     formData.append("productId", productId);
     formData.append("orderId", orderId);
     formData.append("content", content);
+    formData.append("orderId", orderId ?? "");
     formData.append("rating", rating.toString());
     if (images) {
       images.forEach((image) => formData.append("images", image));
@@ -59,7 +50,7 @@ export async function createReview(
     const response = await fetchWithAuth<{
       success: boolean;
       message: string;
-      data?: Review;
+      data?: IReview;
       warning?: string;
     }>(`${API_BASE_URL}/reviews`, {
       method: "POST",
@@ -85,7 +76,7 @@ export async function fetchAllReviews(params?: {
   status?: "approved" | "spam";
 }): Promise<{
   success: boolean;
-  data: Review[];
+  data: IReview[];
   pagination: {
     total: number;
     page: number;
@@ -110,7 +101,7 @@ export async function updateReviewStatus(
 ): Promise<{
   success: boolean;
   message: string;
-  data?: Review;
+  data?: IReview;
 }> {
   return fetchWithAuth(`${API_BASE_URL}/reviews/${id}/status`, {
     method: "PUT",

@@ -3,8 +3,10 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface ICategory extends Document {
   name: string;
   slug: string;
+  description: string;
   parentId?: mongoose.Types.ObjectId | null;
   image?: string | null;
+  is_active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,6 +34,17 @@ const categorySchema: Schema<ICategory> = new Schema(
       required: false,
       trim: true,
       default: null,
+    },
+    description: {
+      type: String,
+      required: false,
+      trim: true,
+      default: "",
+    },
+    is_active: {
+      type: Boolean,
+      required: true,
+      default: true,
     },
   },
   {

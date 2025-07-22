@@ -90,13 +90,13 @@ export default function RevenueChart() {
   }, [selectedMonth]);
 
   return (
-    <div className="bg-white w-[743px] h-[284px] rounded-xl p-6">
+    <div className="bg-white w-[743px] h-[360px] rounded-xl p-6">
       <div className="flex justify-between items-center mb-2">
         <div>
           <div className="text-sm text-gray-500 font-medium">Tổng đơn hàng & Doanh thu</div>
           <div className="text-[22px] font-extrabold mb-1">
             {totalOrders.toLocaleString()} đơn ·{" "}
-            {totalRevenue.toLocaleString("vi-VN")}VNĐ
+            {totalRevenue.toLocaleString("vi-VN")} VNĐ
           </div>
         </div>
         <select
@@ -113,8 +113,11 @@ export default function RevenueChart() {
         </select>
       </div>
 
-      <ResponsiveContainer width="100%" height={180}>
-        <LineChart data={data}>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart
+          data={data}
+          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+        >
           <XAxis
             dataKey="label"
             tickLine={false}
@@ -137,6 +140,7 @@ export default function RevenueChart() {
             tickFormatter={(val) => `${Math.round(val / 1e6)} tr`}
             tickLine={false}
             domain={[0, 'auto']}
+            // tickCount={4} // Không cần cũng được
           />
           <Tooltip
             formatter={(val, name) => {

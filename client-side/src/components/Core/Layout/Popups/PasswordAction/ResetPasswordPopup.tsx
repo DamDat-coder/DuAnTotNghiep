@@ -34,6 +34,27 @@ export default function ResetPasswordPopup({
   const router = useRouter();
   const { setOpenLoginWithData, setRegisterFormData } = useAuth();
   const [storedEmail, setStoredEmail] = useState<string | null>(null);
+  const validateField = (name: string, value: string) => {
+    const newErrors: typeof errors = { ...errors };
+
+    if (name === "password") {
+      if (!value || value.length < 6) {
+        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
+      } else {
+        delete newErrors.password;
+      }
+    }
+
+    if (name === "confirmPassword") {
+      if (value !== formData.password) {
+        newErrors.confirmPassword = "Mật khẩu xác nhận không khớp.";
+      } else {
+        delete newErrors.confirmPassword;
+      }
+    }
+
+    setErrors(newErrors);
+  };
 
   useEffect(() => {
     const email = localStorage.getItem("resetEmail");
@@ -153,6 +174,7 @@ export default function ResetPasswordPopup({
                 onChange={handleChange}
                 className="w-full border px-3 py-2 rounded"
                 autoComplete="new-password"
+                onBlur={(e) => validateField(e.target.name, e.target.value)}
               />
               <button
                 type="button"
@@ -177,6 +199,7 @@ export default function ResetPasswordPopup({
               value={formData.confirmPassword}
               onChange={handleChange}
               className="w-full border px-3 py-2 rounded"
+              onBlur={(e) => validateField(e.target.name, e.target.value)}
             />
             {errors.confirmPassword && (
               <p className="text-sm text-red-500">{errors.confirmPassword}</p>
@@ -184,12 +207,13 @@ export default function ResetPasswordPopup({
           </div>
 
           <div className="flex items-center gap-2 mt-2">
-            <label className="flex items-center gap-2 text-sm mt-2 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input
-                type="checkbox"
+                type="radio"
+                name="loginNow"
                 checked={loginNow}
                 onChange={() => setLoginNow(!loginNow)}
-                className="w-4 h-4 accent-black"
+                className="w-4 h-4 rounded-full text-black border-gray-400 accent-black"
               />
               Đăng nhập ngay với mật khẩu mới
             </label>

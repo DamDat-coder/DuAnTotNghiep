@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchOrderById, updateOrderStatus } from "@/services/orderApi";
 
-// THÊM props setOrders vào đây!
-type StatusOption = { key: string; label: string; color: string; };
+type StatusOption = { key: string; label: string; color: string };
 
 export default function EditOrderForm({
   orderId,
@@ -28,7 +27,7 @@ export default function EditOrderForm({
       .then((res) => {
         const data = res.data;
         setOrder(data);
-        setStatus(data.status);
+        setStatus(data.status); // Luôn set về đúng trạng thái thực tế
       })
       .catch(() => {
         alert("Không tìm thấy đơn hàng hoặc lỗi API");
@@ -55,10 +54,14 @@ export default function EditOrderForm({
 
   // Lọc trạng thái hợp lệ
   const getAvailableStatus = (currentStatusKey: string) => {
+    if (["delivered", "cancelled", "fake"].includes(currentStatusKey)) {
+      return STATUS.filter((s) => s.key === currentStatusKey);
+    }
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
     return STATUS.filter(
       (s, idx) =>
-        idx >= currentStatusIndex ||
+        s.key === currentStatusKey ||  // luôn giữ trạng thái hiện tại trong options!
+        idx === currentStatusIndex + 1 ||
         s.key === "cancelled"
     );
   };
@@ -68,11 +71,13 @@ export default function EditOrderForm({
     e.preventDefault();
     setUpdating(true);
     try {
-      await updateOrderStatus(orderId, status);
+      // Nếu chọn fake thì gửi cancelled
+      const sendStatus = status === "fake" ? "cancelled" : status;
+      await updateOrderStatus(orderId, sendStatus);
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           (order._id === orderId || order.id === orderId)
-            ? { ...order, status }
+            ? { ...order, status: sendStatus }
             : order
         )
       );
@@ -99,7 +104,6 @@ export default function EditOrderForm({
   }
 
   const user = order.userId || {};
-  // SỬA TẠI ĐÂY: Ưu tiên lấy trực tiếp từ order
   const shippingFee = order.shipping ?? order.paymentId?.order_info?.shippingFee ?? 0;
   const paymentMethod = order.paymentMethod ?? order.paymentId?.method ?? "";
 
@@ -115,9 +119,7 @@ export default function EditOrderForm({
         className="bg-white w-full max-w-xl shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* scrollable content */}
         <div className="max-h-[90vh] overflow-y-auto p-6">
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Sửa đơn hàng</h2>
             <button
@@ -134,7 +136,6 @@ export default function EditOrderForm({
           </div>
 
           <form onSubmit={handleUpdate}>
-            {/* 2 hàng × 2 cột */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -178,7 +179,6 @@ export default function EditOrderForm({
               </div>
             </div>
 
-            {/* Email */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 Email người mua
@@ -189,8 +189,6 @@ export default function EditOrderForm({
                 disabled
               />
             </div>
-
-            {/* Địa chỉ */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 Địa chỉ
@@ -202,8 +200,6 @@ export default function EditOrderForm({
                 disabled
               />
             </div>
-
-            {/* 1 hàng × 2 cột */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -232,8 +228,6 @@ export default function EditOrderForm({
                 />
               </div>
             </div>
-
-            {/* Thanh toán qua */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 Thanh toán qua
@@ -244,8 +238,6 @@ export default function EditOrderForm({
                 disabled
               />
             </div>
-
-            {/* Trạng thái */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 Trạng thái <span className="text-red-500">*</span>
@@ -255,6 +247,7 @@ export default function EditOrderForm({
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 required
+                disabled={["delivered", "cancelled", "fake"].includes(order.status)}
               >
                 {availableStatus.map((s) => (
                   <option key={s.key} value={s.key}>
@@ -263,8 +256,6 @@ export default function EditOrderForm({
                 ))}
               </select>
             </div>
-
-            {/* Sản phẩm */}
             <div className="mb-2 font-medium">Sản phẩm</div>
             <div className="rounded-xl bg-gray-50 mb-4">
               <div className="grid grid-cols-6 gap-2 text-gray-500 text-sm py-2 px-4 border-b border-gray-100">
@@ -285,11 +276,10 @@ export default function EditOrderForm({
                 </div>
               ))}
             </div>
-
             <button
               type="submit"
               className="w-full bg-black hover:bg-gray-900 text-white rounded-xl py-3 mt-4 font-semibold transition disabled:opacity-70"
-              disabled={updating}
+              disabled={updating || ["delivered", "cancelled", "fake"].includes(order.status)}
             >
               {updating ? "Đang lưu..." : "Cập nhật đơn hàng"}
             </button>

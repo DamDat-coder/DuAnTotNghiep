@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ICategory } from "@/types/category";
 import { addProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
-import { toast } from "react-hot-toast"; // Thêm toast
+import { toast } from "react-hot-toast";
 
 const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL"];
 const colorOptions = [
@@ -18,7 +18,6 @@ const colorOptions = [
   { value: "Hồng", label: "Hồng" },
 ];
 
-// Loại bỏ "Bài Viết" và children của nó (đệ quy)
 function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
   return nodes
     .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
@@ -28,7 +27,6 @@ function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
     }));
 }
 
-// Hiển thị dropdown phân cấp
 function renderCategoryOptions(
   nodes: ICategory[],
   depth = 0,
@@ -261,12 +259,17 @@ export default function AddProductForm({ onClose, onAdded }) {
         images: formData.images,
       });
       if (!res) throw new Error("Không thể thêm sản phẩm.");
-      toast.success("Thêm sản phẩm thành công!"); // Thông báo thành công
+      toast.success("Thêm sản phẩm thành công!");
       if (onAdded) onAdded();
       onClose?.();
     } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra khi thêm sản phẩm.");
-      toast.error(err.message || "Có lỗi xảy ra khi thêm sản phẩm."); // Thông báo lỗi
+      if (err.message === "SLUG_EXISTS") {
+        setError("Tên sản phẩm này đã tồn tại! Vui lòng đặt tên khác để tránh trùng đường dẫn (slug).");
+        toast.error("Tên sản phẩm này đã tồn tại! Vui lòng đặt tên khác để tránh trùng đường dẫn (slug).");
+      } else {
+        setError(err.message || "Có lỗi xảy ra khi thêm sản phẩm.");
+        toast.error(err.message || "Có lỗi xảy ra khi thêm sản phẩm.");
+      }
     }
     setIsSubmitting(false);
   };

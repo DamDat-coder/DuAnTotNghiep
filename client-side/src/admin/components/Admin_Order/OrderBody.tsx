@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { updateOrderStatus } from "@/services/orderApi";
 
-// THÊM props setOrders vào đây!
 export default function OrderBody({
   orders,
   setOrders,
@@ -37,10 +36,19 @@ export default function OrderBody({
   const getStatusInfo = (key) => STATUS.find((s) => s.key === key);
 
   const getAvailableStatus = (currentStatusKey) => {
+    // Nếu đã delivered thì không đổi nữa
+    if (currentStatusKey === "delivered") {
+      return STATUS.filter((s) => s.key === "delivered");
+    }
+    // Nếu đã cancelled/fake thì không đổi nữa
+    if (["cancelled", "fake"].includes(currentStatusKey)) {
+      return STATUS.filter((s) => s.key === currentStatusKey);
+    }
+    // Đang ở trạng thái nào thì chỉ cho phép chuyển tới các trạng thái sau nó (và cancelled)
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
     return STATUS.filter(
       (s, idx) =>
-        idx >= currentStatusIndex ||
+        (idx > currentStatusIndex && s.key !== "fake") || // chỉ chọn các trạng thái sau, trừ "fake"
         s.key === "cancelled"
     );
   };
@@ -50,11 +58,12 @@ export default function OrderBody({
     if (oldStatus === newStatus) return;
     setUpdatingStatusId(orderId);
     try {
-      await updateOrderStatus(orderId, newStatus);
+      const sendStatus = newStatus === "fake" ? "cancelled" : newStatus;
+      await updateOrderStatus(orderId, sendStatus);
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           (order._id === orderId || order.id === orderId)
-            ? { ...order, status: newStatus }
+            ? { ...order, status: sendStatus }
             : order
         )
       );
@@ -65,7 +74,7 @@ export default function OrderBody({
     setStatusDropdownId(null);
   };
 
-  function formatDate(dateString?: string) {
+  function formatDate(dateString) {
     if (!dateString) return "Không xác định";
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN");
@@ -86,7 +95,6 @@ export default function OrderBody({
       {orders.map((order, idx) => {
         const orderId = order._id?.$oid || order._id || order.id || String(idx);
 
-        // Lấy tên sản phẩm từ items
         let productList = [];
         if (Array.isArray(order.items) && order.items.length > 0) {
           productList = order.items.map((item) => item.name).filter(Boolean);

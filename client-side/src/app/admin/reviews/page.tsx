@@ -55,13 +55,6 @@ export default function ReviewsPage() {
         setSearch={setSearch}
         onUpdate={setReviews}
       />
-      <div className="mt-6 flex justify-center">
-        <Pagination
-          currentPage={currentPage}
-          totalPage={totalPage}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
-      </div>
     </AdminLayout>
   );
 }

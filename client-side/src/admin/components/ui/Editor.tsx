@@ -7,13 +7,13 @@ interface EditorProps {
 
 export default function Editor({ value, onChange }: EditorProps) {
   const handleEditorChange = (content: string) => {
-    onChange(content); // Use content directly here
+    onChange(content);
   };
 
   return (
     <TinyMCEEditor
-      apiKey="w4n4wo86o3unfsou6o5j2mxt8rk3phw815e566ztw3xyg6bu"
-      value={value} // Bind the value to the editor
+      apiKey="on744m7z5qglz3dljl45py7oqi6k8z476viskro02ueetjrq"
+      value={value}
       init={{
         height: 500,
         menubar: "file edit view insert format tools table help",
@@ -75,7 +75,7 @@ export default function Editor({ value, onChange }: EditorProps) {
           );
         },
       }}
-      onEditorChange={handleEditorChange} // Correctly handle editor changes
+      onEditorChange={handleEditorChange}
     />
   );
 }

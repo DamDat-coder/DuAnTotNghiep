@@ -158,13 +158,27 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     rating: number,
     images: File[]
   ) => {
+    if (!review || rating === 0) {
+      toast.error("Vui lòng nhập nội dung và chọn số sao đánh giá!");
+      return;
+    }
     if (!reviewProductId) return;
     setIsSubmitting(true);
     try {
-      const res = await createReview(reviewProductId, review, rating, images);
-      if (res.success) {
+      const res = await createReview(
+        reviewProductId,
+        order._id,
+        review,
+        rating,
+        images
+      );
+      if (res.success && !res.warning) {
         toast.success(res.message);
-        if (res.warning) toast(res.warning, { icon: "⚠️" });
+      } else if (res.warning) {
+        toast.error(
+          res.warning ||
+            "Nội dung đánh giá bị đánh dấu spam, không được hiển thị!"
+        );
       } else {
         toast.error(res.message || "Không thể gửi đánh giá.");
       }

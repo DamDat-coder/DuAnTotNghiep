@@ -25,7 +25,6 @@ export async function fetchProductReviews(
 // Tạo đánh giá mới
 export async function createReview(
   productId: string,
-  orderId: string,
   content: string,
   rating: number,
   orderId?: string,
@@ -39,7 +38,6 @@ export async function createReview(
   try {
     const formData = new FormData();
     formData.append("productId", productId);
-    formData.append("orderId", orderId);
     formData.append("content", content);
     formData.append("orderId", orderId ?? "");
     formData.append("rating", rating.toString());

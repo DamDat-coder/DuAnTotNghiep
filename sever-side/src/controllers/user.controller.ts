@@ -6,10 +6,9 @@ import UserModel from "../models/user.model";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { googleClient } from "../config/google";
-import { sendResetPasswordEmail } from "../utils/mailer";
+import { sendAccountBlockedEmail, sendResetPasswordEmail } from "../utils/mailer";
 import { resetTokens } from "../utils/resetTokenStore";
 import {
-  sendAccountLockedEmail,
   sendAccountUnlockedEmail,
 } from "../utils/mailer";
 
@@ -408,7 +407,7 @@ export const toggleUserStatus = async (
     await user.save();
 
     if (!is_active) {
-      await sendAccountLockedEmail(user.email, user.name);
+      await sendAccountBlockedEmail(user.email, user.name);
     } else {
       await sendAccountUnlockedEmail(user.email, user.name);
     }

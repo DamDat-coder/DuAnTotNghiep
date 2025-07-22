@@ -46,7 +46,7 @@ const paymentSchema = new mongoose_1.Schema({
     transaction_code: { type: String, required: true, unique: true },
     gateway: {
         type: String,
-        enum: ['vnpay', 'zalopay'],
+        enum: ['vnpay', 'zalopay', 'cod'],
         required: true,
     },
     transaction_data: { type: mongoose_1.Schema.Types.Mixed, default: null },

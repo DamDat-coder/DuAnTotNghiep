@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkZaloPayReturn = exports.createZaloPayPayment = exports.checkVNPayReturn = exports.createVNPayPayment = void 0;
+exports.createCodPayment = exports.checkZaloPayReturn = exports.createZaloPayPayment = exports.checkVNPayReturn = exports.createVNPayPayment = void 0;
 const vnpay_1 = require("vnpay");
 const moment_1 = __importDefault(require("moment"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
@@ -65,12 +65,14 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         const isValid = payment_config_1.vnpay.verifyReturnUrl(queryParams);
         if (!isValid)
             return res.status(400).json({ message: "Chữ ký không hợp lệ!" });
-        const { vnp_TxnRef, vnp_ResponseCode, vnp_PayDate, vnp_BankCode, vnp_TransactionNo } = queryParams;
+        const { vnp_TxnRef, vnp_ResponseCode, vnp_PayDate, vnp_BankCode, vnp_TransactionNo, } = queryParams;
         const payment = yield payment_model_1.default.findOne({ transaction_code: vnp_TxnRef });
         if (!payment)
             return res.status(404).json({ message: "Không tìm thấy giao dịch!" });
         payment.status = vnp_ResponseCode === "00" ? "success" : "failed";
-        payment.paid_at = vnp_PayDate ? (0, moment_1.default)(vnp_PayDate, "YYYYMMDDHHmmss").toDate() : new Date();
+        payment.paid_at = vnp_PayDate
+            ? (0, moment_1.default)(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
+            : new Date();
         payment.transaction_data = queryParams;
         payment.transaction_summary = {
             gatewayTransactionId: vnp_TransactionNo === null || vnp_TransactionNo === void 0 ? void 0 : vnp_TransactionNo.toString(),
@@ -128,12 +130,12 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             params: order,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
         });
-        if (zalopayRes.data.return_code !== 1) {
-            return res.status(400).json({
-                message: "ZaloPay từ chối giao dịch!",
-                error: zalopayRes.data,
-            });
-        }
+        // if (zalopayRes.data.return_code !== 1) {
+        //   return res.status(400).json({
+        //     message: "ZaloPay từ chối giao dịch!",
+        //     error: zalopayRes.data,
+        //   });
+        // }
         yield payment_model_1.default.create({
             userId: new mongoose_1.Types.ObjectId(userId),
             amount: totalPrice,
@@ -151,7 +153,9 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
     }
     catch (error) {
-        return res.status(500).json({ message: "Không tạo được thanh toán ZaloPay", error });
+        return res
+            .status(500)
+            .json({ message: "Không tạo được thanh toán ZaloPay", error });
     }
 });
 exports.createZaloPayPayment = createZaloPayPayment;
@@ -172,7 +176,9 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
         if (!payment)
             return res.status(404).json({ message: "Không tìm thấy giao dịch!" });
         if (payment.status !== "pending") {
-            return res.status(200).json({ message: "Giao dịch đã được xử lý trước đó!" });
+            return res
+                .status(200)
+                .json({ message: "Giao dịch đã được xử lý trước đó!" });
         }
         if (return_code === 1) {
             payment.status = "success";
@@ -202,3 +208,30 @@ const checkZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.checkZaloPayReturn = checkZaloPayReturn;
+const createCodPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { orderId, totalPrice, userId, orderInfo } = req.body;
+        if (!userId || !totalPrice || !orderInfo) {
+            return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
+        }
+        const payment = yield payment_model_1.default.create({
+            userId: new mongoose_1.Types.ObjectId(userId),
+            amount: totalPrice,
+            status: "success",
+            transaction_code: orderId,
+            gateway: "cod",
+            transaction_data: {},
+            order_info: orderInfo,
+            paid_at: new Date(),
+        });
+        return res.status(200).json({
+            paymentId: payment._id,
+            message: "Tạo thanh toán COD thành công",
+        });
+    }
+    catch (error) {
+        console.error("Lỗi tạo COD payment:", error);
+        res.status(500).json({ message: "Lỗi server" });
+    }
+});
+exports.createCodPayment = createCodPayment;

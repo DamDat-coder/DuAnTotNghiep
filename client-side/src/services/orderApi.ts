@@ -21,7 +21,7 @@ export async function initiatePayment(
         endpoint = "/payment/create-momo-payment";
         break;
       case "zalopay":
-        endpoint = "/payment/create-payment-zalopay";
+        endpoint = "/payment/create-zalopay-payment";
         break;
       default:
         throw new Error("Phương thức thanh toán không hợp lệ");

@@ -69,3 +69,8 @@ export interface ProductReview {
   _id: string;
   name: string;
 }
+
+export interface Suggestion {
+  name: string;
+  id: string;
+}

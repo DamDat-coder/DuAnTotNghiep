@@ -1,3 +1,4 @@
+//adminlayout
 import Sidebar from "./Sidebar";
 import AdminHeader from "./AdminHeader";
 
@@ -15,7 +16,7 @@ export default function AdminLayout({
       <Sidebar />
       <div className="ml-[285px] bg-[#F8FAFC] min-h-screen">
         <AdminHeader pageTitle={pageTitle} pageSubtitle={pageSubtitle} />
-        <div className="max-w-[1185px] w-full mx-auto">{children}</div>
+        <div className="max-w-[1185px] w-full mx-auto ml-6">{children}</div>
       </div>
     </>
   );

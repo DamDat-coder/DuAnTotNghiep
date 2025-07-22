@@ -1,4 +1,5 @@
 import { ICategoryNews } from "./category";
+import { ProductReview } from "./product";
 
 // types/coupon.ts
 export interface Coupon {
@@ -14,8 +15,8 @@ export interface Coupon {
   usageLimit: number;
   usedCount: number;
   is_active: boolean;
-  applicableCategories: ICategoryNews[];
-  applicableProducts: string[];
+  applicableCategories: string[];
+  applicableProducts: string[];  
   createdAt: string;
   updatedAt: string;
 }

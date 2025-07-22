@@ -20,7 +20,12 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<
-    (IProduct & { _id: string; quantity: number; image: string; price: number })[]
+    (IProduct & {
+      _id: string;
+      quantity: number;
+      image: string;
+      price: number;
+    })[]
   >([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
@@ -61,14 +66,23 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
                   ...product,
                   _id: item.productId,
                   quantity: item.quantity,
-                  image: item.image ?? (product.images?.[0] ?? ""), // always a string
+                  image: item.image ?? product.images?.[0] ?? "", // always a string
                   price: item.price,
                 }
               : null;
           })
         );
         setProducts(
-          fetchedProducts.filter((p): p is IProduct & { _id: string; quantity: number; image: string; price: number } => p !== null)
+          fetchedProducts.filter(
+            (
+              p
+            ): p is IProduct & {
+              _id: string;
+              quantity: number;
+              image: string;
+              price: number;
+            } => p !== null
+          )
         );
       } catch (error) {
         // Xử lý lỗi
@@ -144,13 +158,27 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     rating: number,
     images: File[]
   ) => {
+    if (!review || rating === 0) {
+      toast.error("Vui lòng nhập nội dung và chọn số sao đánh giá!");
+      return;
+    }
     if (!reviewProductId) return;
     setIsSubmitting(true);
     try {
-      const res = await createReview(reviewProductId, review, rating, images);
-      if (res.success) {
+      const res = await createReview(
+        reviewProductId,
+        order._id,
+        review,
+        rating,
+        images
+      );
+      if (res.success && !res.warning) {
         toast.success(res.message);
-        if (res.warning) toast(res.warning, { icon: "⚠️" });
+      } else if (res.warning) {
+        toast.error(
+          res.warning ||
+            "Nội dung đánh giá bị đánh dấu spam, không được hiển thị!"
+        );
       } else {
         toast.error(res.message || "Không thể gửi đánh giá.");
       }
@@ -172,7 +200,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   }
 
   return (
-    <div className="w-[894px] mx-auto px-4 py-6 space-y-12">
+    <div className="w-[894px] mx-auto px-4 py-6 space-y-5">
       <h1 className="text-xl font-bold border-b pb-2">ĐƠN HÀNG</h1>
       <div className="flex justify-between items-center text-sm">
         <button
@@ -183,7 +211,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
           TRỞ LẠI
         </button>
         <div className="flex items-center gap-2 font-medium">
-          <span>MÃ ĐƠN HÀNG: {order._id}</span>
+          <span>MÃ ĐƠN HÀNG: {order.orderCode || order._id}</span>
           <span>|</span>
           <span>ĐƠN HÀNG {getStatusLabel(order.status)}</span>
         </div>

@@ -61,7 +61,6 @@ export async function fetchStats() {
   checkClient();
   const now = new Date();
   const day = now.getDay();
-  const day = now.getDay();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   startOfWeek.setHours(0, 0, 0, 0);
@@ -70,9 +69,6 @@ export async function fetchStats() {
   endOfWeek.setHours(23, 59, 59, 999);
 
   try {
-    // Users mới tuần này
-    const usersThisWeek = await fetchNewUsersThisWeek();
-
     // Đơn hàng tuần này
     // Users mới tuần này
     const usersThisWeek = await fetchNewUsersThisWeek();

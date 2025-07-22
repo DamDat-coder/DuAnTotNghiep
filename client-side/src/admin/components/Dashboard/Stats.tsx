@@ -25,8 +25,7 @@ const icons: Record<string, JSX.Element> = {
 export default function Stats() {
   const [stats, setStats] = useState<Stat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<Stat[]>([]);
-  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     fetchStats()
@@ -68,17 +67,11 @@ export default function Stats() {
         >
           <div className="flex items-center gap-3">
             <div className="bg-gray-100 rounded-full p-2">{icons[s.label] ?? null}</div>
-            <div className="bg-gray-100 rounded-full p-2">{icons[s.label] ?? null}</div>
             <div className="font-medium">{s.label}</div>
           </div>
           <div className="flex items-baseline gap-2">
             <div className="text-2xl font-extrabold">{s.value}</div>
             <span
-              className={`text-sm ${
-                typeof s.change === "string" && s.change.startsWith("-")
-                  ? "text-red-500"
-                  : "text-green-500"
-              }`}
               className={`text-sm ${
                 typeof s.change === "string" && s.change.startsWith("-")
                   ? "text-red-500"

@@ -206,6 +206,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
   try {
     const { slug } = req.params;
+    const isExact = req.query.exact === "true";
 
     if (!slug || typeof slug !== "string") {
       res.status(400).json({ status: "error", message: "Slug không hợp lệ" });
@@ -214,15 +215,50 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
 
     const normalizedSlug = slugify(removeVietnameseTones(slug), { lower: true });
 
+    if (isExact) {
+      const product = await productModel
+        .findOne({ slug: normalizedSlug })
+        .populate("category", "name")
+        .lean();
+
+      if (!product) {
+        res.status(404).json({
+          status: "error",
+          message: "Không tìm thấy sản phẩm trùng khớp chính xác.",
+          matchedExactly: false,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: {
+          ...product,
+          category: {
+            _id: product.category?._id || null,
+            name: product.category?.name || "Không rõ",
+          },
+        },
+        matchedExactly: true,
+      });
+      return;
+    }
+
     const products = await productModel
       .find({ slug: { $regex: normalizedSlug, $options: "i" } })
       .populate("category", "name")
       .lean();
 
     if (!products || products.length === 0) {
-      res.status(404).json({ status: "error", message: "Không tìm thấy sản phẩm nào" });
+      res.status(404).json({
+        status: "error",
+        message: "Không tìm thấy sản phẩm phù hợp.",
+        matchedExactly: false,
+      });
       return;
     }
+
+    const matchedExactly = products.some(p => p.slug === normalizedSlug);
 
     const result = products.map((product) => ({
       ...product,
@@ -232,14 +268,20 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
       },
     }));
 
-    res.status(200).json({ status: "success", data: result, total: result.length });
+    res.status(200).json({
+      status: "success",
+      data: result,
+      total: result.length,
+      matchedExactly,
+    });
   } catch (error: any) {
     res.status(500).json({
       status: "error",
-      message: error.message || "Lỗi server khi lấy sản phẩm theo slug",
+      message: error.message || "Lỗi server khi tìm sản phẩm theo slug.",
     });
   }
 };
+
 
 // Thêm sản phẩm mới
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
@@ -330,7 +372,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         const notifications = users.map((user) => ({
           userId: user._id,
           title: "Sản phẩm mới vừa ra mắt!",
-          message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop4Real, khám phá ngay!`,
+          message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Style For You, khám phá ngay!`,
           type: "product",
           isRead: false,
           link: `/products/${savedProduct._id}`,
@@ -338,7 +380,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         await NotificationModel.insertMany(notifications);
         console.log("Thông báo đã gửi đến người dùng.");
       } catch (notiError) {
-        console.error("❌ Gửi thông báo thất bại:", notiError);
+        console.error("Gửi thông báo thất bại:", notiError);
       }
     });
 
@@ -402,7 +444,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       product.image = existingProduct.image;
     }
 
-    // Parse lại variants nếu là string (gửi từ FormData)
     if (typeof product.variants === 'string') {
       try {
         product.variants = JSON.parse(product.variants);
@@ -412,7 +453,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       }
     }
 
-    // === XỬ LÝ DANH MỤC CHUẨN ===
     let newCategory = existingProduct.category;
     const categoryId = product.categoryId || product['category._id'];
     if (categoryId) {
@@ -426,12 +466,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         name: category.name,
       };
     }
-    // Xoá trường thừa liên quan category để tránh lỗi conflict
+
     delete product.category;
     delete product.categoryId;
     delete product['category._id'];
-
-    // Build object update chuẩn
     const updateData: any = {
       ...product,
       category: newCategory,

@@ -25,7 +25,7 @@ export interface IOrder extends Document {
   totalPrice: number;
   discountAmount?: number;
   shipping: number;
-  status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled' | 'fake';
   paymentMethod: 'cod' | 'vnpay' | 'zalopay';
   paymentId?: Types.ObjectId | null;
   items: IOrderItem[];
@@ -73,7 +73,7 @@ const orderSchema = new Schema<IOrder>(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],
+      enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled', 'fake' ],
       default: 'pending',
     },
     paymentId: {

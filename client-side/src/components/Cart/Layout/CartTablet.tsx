@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
 import { ICartItem } from "@/types/cart";
 import { useCartDispatch } from "@/contexts/CartContext";
+import CartItem from "./CartItem";
 
 interface CartTabletProps {
   cartItems: ICartItem[];
@@ -35,7 +36,8 @@ export default function CartTablet({
   const selectedItems = cartItems.filter((item) => item.selected);
   const selectedItemsCount = selectedItems.length;
   const selectedTotalPrice = selectedItems.reduce(
-    (sum, item) => sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+    (sum, item) =>
+      sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
     0
   );
 
@@ -46,10 +48,14 @@ export default function CartTablet({
           <CartItem
             key={`${item.id}-${item.size}`}
             item={item}
-            onQuantityChange={(id, change) => onQuantityChange(id, item.size, change)}
+            onQuantityChange={(id, change) =>
+              onQuantityChange(id, item.size, change)
+            }
             onToggleLike={() => onToggleLike(item.id, item.size)}
             onRemove={() => onRemove(item.id, item.size, item.color)}
-            onSelect={(selected) => handleSelectItem(item.id, item.size, selected)}
+            onSelect={(selected) =>
+              handleSelectItem(item.id, item.size, selected)
+            }
           />
         ))}
       </div>

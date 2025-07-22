@@ -13,11 +13,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const order_model_1 = __importDefault(require("../models/order.model"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
+const mailer_1 = require("../utils/mailer");
 const generateTransactionCode_1 = require("../utils/generateTransactionCode");
 // Tạo đơn hàng
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -201,31 +203,66 @@ exports.getOrderById = getOrderById;
 // Cập nhật trạng thái đơn hàng 
 const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const { id } = req.params;
         const { status } = req.body;
-        const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled"];
+        const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled", "fake"];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ." });
         }
-        const order = yield order_model_1.default.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate("userId", "name email");
-        if (!order) {
+        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "ID đơn hàng không hợp lệ." });
+        }
+        const order = yield order_model_1.default.findByIdAndUpdate(id, { status }, { new: true }).populate("userId", "name email");
+        if (!order || !order.userId) {
             return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
         }
+        const user = order.userId;
         yield notification_model_1.default.create({
-            userId: order.userId._id,
+            userId: user._id,
             title: `Đơn hàng #${order._id} đã được cập nhật`,
             message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
             type: "order",
             isRead: false,
             link: `/profile?tab=order/${order._id}`,
         });
-        res.status(200).json({
+        if (status === "fake") {
+            const fakeOrderCount = yield order_model_1.default.countDocuments({
+                userId: user._id,
+                status: "fake",
+            });
+            if (fakeOrderCount === 1) {
+                yield (0, mailer_1.sendOrderSpamWarningEmail)(user.email, user.name);
+                yield notification_model_1.default.create({
+                    userId: user._id,
+                    title: "Cảnh báo hành vi giả mạo",
+                    message: "Đơn hàng của bạn đã bị đánh dấu là giả mạo. Nếu tiếp tục, tài khoản có thể bị khóa.",
+                    type: "warning",
+                    isRead: false,
+                    link: "/profile?tab=order",
+                });
+            }
+            if (fakeOrderCount >= 3) {
+                yield user_model_1.default.findByIdAndUpdate(user._id, { is_active: false });
+                yield (0, mailer_1.sendAccountBlockedEmail)(user.email, user.name);
+                yield notification_model_1.default.create({
+                    userId: user._id,
+                    title: "Tài khoản bị khóa",
+                    message: "Tài khoản của bạn đã bị khóa vì có quá nhiều đơn hàng giả mạo.",
+                    type: "lock",
+                    isRead: false,
+                    link: "/profile",
+                });
+            }
+        }
+        return res.status(200).json({
             success: true,
             message: "Cập nhật trạng thái thành công.",
             data: order,
         });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+        console.error("Lỗi cập nhật đơn:", err);
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
     }
 });
 exports.updateOrderStatus = updateOrderStatus;

@@ -38,8 +38,12 @@ const EditNewsModal = ({
       ? new Date(newsData.published_at).toISOString().slice(0, 16)
       : ""
   );
-  const [action, setAction] = useState<"draft" | "publish">(
-    newsData.is_published ? "publish" : "draft"
+  const [action, setAction] = useState<"draft" | "publish" | "upcoming">(
+    newsData.is_published
+      ? "publish"
+      : newsData.published_at && new Date(newsData.published_at) > new Date()
+      ? "upcoming"
+      : "draft"
   );
   const [meta_description, setMeta_description] = useState(
     newsData.meta_description || ""
@@ -132,7 +136,7 @@ const EditNewsModal = ({
     setIsPreviewVisible(false);
   };
 
-  const handleSave = async (publishStatus?: boolean) => {
+  const handleSave = async () => {
     if (!title || !content || !category) {
       setError("Vui lòng điền đầy đủ thông tin.");
       return;
@@ -144,18 +148,20 @@ const EditNewsModal = ({
       return;
     }
 
-    if (action === "publish" && !publishedAt) {
-      setError("Vui lòng chọn ngày đăng khi xuất bản!");
+    // Validate ngày đăng nếu cần
+    if ((action === "publish" || action === "upcoming") && !publishedAt) {
+      setError("Vui lòng chọn ngày đăng!");
       return;
     }
 
-    const is_published =
-      typeof publishStatus === "boolean" ? publishStatus : isPublished;
-    const published_at: Date | undefined = is_published
-      ? publishedAt
-        ? new Date(publishedAt)
-        : new Date()
-      : undefined;
+    let published_at: Date | undefined = undefined;
+    if (action === "publish" && publishedAt) {
+      published_at = new Date(publishedAt);
+    } else if (action === "upcoming" && publishedAt) {
+      published_at = new Date(publishedAt);
+    }
+
+    const is_published = action === "publish";
 
     try {
       setLoading(true);
@@ -167,7 +173,7 @@ const EditNewsModal = ({
           _id: category,
           name: categories.find((cat) => cat._id === category)?.name,
         },
-        thumbnail: thumbnail ?? undefined, // Ensure type is File | undefined
+        thumbnail: thumbnail ?? undefined,
         is_published,
         published_at,
         meta_description,
@@ -248,7 +254,7 @@ const EditNewsModal = ({
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
                       Ngày đăng
-                      {action === "publish" && (
+                      {(action === "publish" || action === "upcoming") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </label>
@@ -256,7 +262,7 @@ const EditNewsModal = ({
                       type="datetime-local"
                       value={publishedAt}
                       onChange={(e) => setPublishedAt(e.target.value)}
-                      disabled={action !== "publish"}
+                      disabled={action === "draft"}
                       className="w-full h-[46px] border border-[#D1D1D1] rounded-[12px] appearance-none"
                     />
                     <Image
@@ -294,6 +300,20 @@ const EditNewsModal = ({
                         }`}
                       >
                         Xuất bản
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAction("upcoming");
+                          setIsPublished(false);
+                        }}
+                        className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
+                          action === "upcoming"
+                            ? "bg-black text-white"
+                            : "border border-gray-300"
+                        }`}
+                      >
+                        Hẹn ngày đăng
                       </button>
                     </div>
 

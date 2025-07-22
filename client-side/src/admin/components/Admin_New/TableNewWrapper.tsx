@@ -12,7 +12,7 @@ const statusMap = {
   published: { text: "Đã xuất bản", color: "bg-[#EDF7ED] text-[#2E7D32]" },
   draft: { text: "Bản nháp", color: "bg-[#FDECEA] text-[#D93025]" },
   // Uncomment if needed
-  // upcoming: { text: "Sắp xuất bản", color: "bg-[#FFF4E5] text-[#FF9900]" },
+  upcoming: { text: "Sắp xuất bản", color: "bg-[#FFF4E5] text-[#FF9900]" },
   // unknown: { text: "Không xác định", color: "bg-gray-200 text-gray-700" },
 };
 
@@ -34,7 +34,7 @@ export default function TableNewWrapper({
   const [showModal, setShowModal] = useState(false);
   const [selectedNews, setSelectedNews] = useState<News | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "published" | "draft">("all");
+  const [filter, setFilter] = useState<"all" | "published" | "draft" | "upcoming">("all");
   const [news, setNews] = useState<News[]>(
     Array.isArray(newsList) ? newsList : []
   );
@@ -96,12 +96,9 @@ export default function TableNewWrapper({
         style: { background: "#EDF7ED", color: "#2E7D32" },
       });
     } catch (err: any) {
-      toast.error(
-        `Lỗi khi xóa tin tức: ${err.message || "Không xác định"}`,
-        {
-          style: { background: "#FDECEA", color: "#D93025" },
-        }
-      );
+      toast.error(`Lỗi khi xóa tin tức: ${err.message || "Không xác định"}`, {
+        style: { background: "#FDECEA", color: "#D93025" },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -117,18 +114,23 @@ export default function TableNewWrapper({
   };
 
   const filteredNews = useMemo(() => {
-    // Ensure news is an array before filtering
-    if (!Array.isArray(news)) {
-      console.error("News is not an array:", news);
-      return [];
-    }
-
+    if (!Array.isArray(news)) return [];
     return news
       .filter((item) => {
-        if (!item._id) return false; // Skip invalid items
+        if (!item._id) return false;
         if (filter === "all") return true;
         if (filter === "published") return item.is_published === true;
-        if (filter === "draft") return item.is_published === false;
+        if (filter === "draft")
+          return (
+            item.is_published === false &&
+            (!item.published_at || new Date(item.published_at) <= new Date())
+          );
+        if (filter === "upcoming")
+          return (
+            item.is_published === false &&
+            item.published_at &&
+            new Date(item.published_at) > new Date()
+          );
         return true;
       })
       .filter((item) => {

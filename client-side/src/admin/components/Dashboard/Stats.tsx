@@ -22,9 +22,8 @@ export default function Stats() {
 
   useEffect(() => {
     fetchStats()
-      .then((data) => {
-        setStats(data || []);
-      })
+      .then((data) => setStats(data || []))
+      .catch(() => setStats([]))
       .finally(() => setLoading(false));
   }, []);
 

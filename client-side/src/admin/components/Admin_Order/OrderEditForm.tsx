@@ -99,8 +99,9 @@ export default function EditOrderForm({
   }
 
   const user = order.userId || {};
-  const shippingFee = order.paymentId?.order_info?.shippingFee ?? 0;
-  const paymentMethod = order.paymentId?.method ?? "";
+  // SỬA TẠI ĐÂY: Ưu tiên lấy trực tiếp từ order
+  const shippingFee = order.shipping ?? order.paymentId?.order_info?.shippingFee ?? 0;
+  const paymentMethod = order.paymentMethod ?? order.paymentId?.method ?? "";
 
   // Lấy danh sách trạng thái hợp lệ cho form
   const availableStatus = getAvailableStatus(order.status);

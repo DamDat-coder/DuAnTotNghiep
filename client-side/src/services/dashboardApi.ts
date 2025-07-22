@@ -17,12 +17,25 @@ interface IUser {
   updatedAt?: string;
 }
 
+// ----------- HÀM CHỈ FETCH Ở CLIENT-SIDE -----------
+function checkClient() {
+  if (typeof window === "undefined") {
+    throw new Error("Các hàm dashboardApi chỉ được gọi ở phía client!");
+  }
+}
+
 // ----------- LẤY USERS MỚI TRONG TUẦN -----------
 export async function fetchNewUsersThisWeek(): Promise<IUser[]> {
+  checkClient();
   const res = await fetchAllUsersAdmin("", 1, 9999);
-  const users: IUser[] = (res.users || []).map(u => ({
+
+  // Đảm bảo lấy đúng mảng user từ res (BE có thể trả về users: [], hoặc data: [])
+  const usersRaw = res.users || [];
+  const users: IUser[] = usersRaw.map((u: any) => ({
     ...u,
     addresses: u.addresses ?? [],
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
   }));
 
   // Xác định thứ 2 đầu tuần và cuối tuần (CN)
@@ -45,6 +58,7 @@ export async function fetchNewUsersThisWeek(): Promise<IUser[]> {
 
 // ----------- HÀM THỐNG KÊ DASHBOARD -----------
 export async function fetchStats() {
+  checkClient();
   const now = new Date();
   const day = now.getDay();
   const startOfWeek = new Date(now);
@@ -60,6 +74,7 @@ export async function fetchStats() {
 
     // Đơn hàng tuần này
     const ordersRes = await fetchAllOrders({ limit: 9999 });
+    // Đảm bảo lấy đúng trường trả về từ BE (data hoặc orders)
     const allOrders: IOrder[] = ordersRes.data || [];
     const newOrders = allOrders.filter((o) => {
       if (!o.createdAt) return false;
@@ -79,11 +94,12 @@ export async function fetchStats() {
       }
     });
 
-    return [
+    // Dữ liệu trả về FE
+    const result = [
       {
         label: "Khách hàng mới",
         value: usersThisWeek.length,
-        change: "", // Tùy bạn, có thể làm tăng giảm %
+        change: "",
       },
       {
         label: "Đơn hàng",
@@ -101,14 +117,18 @@ export async function fetchStats() {
         change: "",
       },
     ];
+
+    return result;
   } catch (error) {
     console.error("fetchStats error:", error);
     return [];
   }
 }
 
+
 // ----------- BIỂU ĐỒ KHÁCH HÀNG MỚI TRONG TUẦN -----------
 export async function fetchCustomerChart() {
+  checkClient();
   const users = await fetchNewUsersThisWeek();
   const now = new Date();
   const day = now.getDay();
@@ -138,6 +158,7 @@ export async function fetchCustomerChart() {
 
 // ----------- BIỂU ĐỒ DOANH THU THEO THÁNG -----------
 export async function fetchRevenueChart() {
+  checkClient();
   const ordersRes = await fetchAllOrders({ limit: 9999 });
   const allOrders: IOrder[] = ordersRes.data || [];
   const deliveredOrders = allOrders.filter((o) => o.status === "delivered");
@@ -160,14 +181,17 @@ export async function fetchRevenueChart() {
 
 // ----------- TOP 5 SẢN PHẨM BÁN CHẠY -----------
 export async function fetchBestSellers() {
+  checkClient();
   const res = await fetchProducts({ sort_by: "best_selling", is_active: true });
-  return (res.data || [])
+  // Đảm bảo lấy đúng trường trả về từ BE
+  const products = res.data || [];
+  return products
     .slice(0, 5)
-    .map((product) => ({
+    .map((product: any) => ({
       id: product.id,
       name: product.name,
       category: product.category?.name || "",
-      stock: product.variants?.reduce((s, v) => s + (v.stock || 0), 0) ?? 0,
+      stock: product.variants?.reduce((s: number, v: any) => s + (v.stock || 0), 0) ?? 0,
       sold: product.salesCount || 0,
       price:
         product.variants && product.variants.length > 0
@@ -178,6 +202,7 @@ export async function fetchBestSellers() {
 
 // ----------- GIAO DỊCH GẦN NHẤT -----------
 export async function fetchTransactionHistory() {
+  checkClient();
   const ordersRes = await fetchAllOrders({ limit: 5 });
   const allOrders: IOrder[] = ordersRes.data || [];
   allOrders.sort(

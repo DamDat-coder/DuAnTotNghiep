@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { IOrder } from "@/types/order";
+import { UserData } from "@/types/auth";
 import { Pagination } from "../ui/Panigation";
 import OrderControlBar from "./OrderControlBar";
 import OrderBody from "./OrderBody";

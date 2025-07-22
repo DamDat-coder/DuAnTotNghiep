@@ -67,7 +67,12 @@ export default function EditCouponModal({
   // Initialize form with coupon data
   const [form, setForm] = useState({
     code: coupon.code,
-    category: coupon.applicableCategories?.[0]?._id || "",
+    category:
+      coupon.applicableCategories && coupon.applicableCategories.length > 0
+        ? typeof coupon.applicableCategories[0] === "object"
+          ? (coupon.applicableCategories[0] as { _id: string })._id
+          : coupon.applicableCategories[0]
+        : "",
     type: coupon.discountType === "percentage" ? "%" : "vnd",
     value: coupon.discountValue?.toString() || "",
     minOrder: coupon.minOrderAmount?.toString() || "",
@@ -163,7 +168,7 @@ export default function EditCouponModal({
   const selectedProductNames = useMemo(
     () =>
       selectedProducts
-        .map((id) => allProducts.find((p) => p._id === id)?.name)
+        .map((id) => allProducts.find((p) => p.id === id)?.name)
         .filter((name): name is string => !!name),
     [selectedProducts, allProducts]
   );
@@ -358,7 +363,7 @@ export default function EditCouponModal({
               {/* Luôn hiển thị tag sản phẩm đã chọn */}
               <div className="flex flex-wrap gap-2 mt-2">
                 {[...new Set(selectedProducts)].map((id) => {
-                  const prod = allProducts.find((p) => p._id === id || p.id === id);
+                  const prod = allProducts.find((p) => p.id === id);
                   if (!prod) return null;
                   return (
                     <span

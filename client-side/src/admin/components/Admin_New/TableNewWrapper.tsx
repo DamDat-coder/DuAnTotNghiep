@@ -7,6 +7,8 @@ import NewControlBar from "./NewControlBar";
 import EditNewsModal from "./EditNewsModal";
 import { toast, Toaster } from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { Pagination } from "../ui/Panigation";
+
 
 const statusMap = {
   published: { text: "Đã xuất bản", color: "bg-[#EDF7ED] text-[#2E7D32]" },
@@ -40,6 +42,8 @@ export default function TableNewWrapper({
   );
   const [isLoading, setIsLoading] = useState(true);
   const [confirmNewsId, setConfirmNewsId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,10 +67,11 @@ export default function TableNewWrapper({
         if (filter === "published") isPublished = true;
         else if (filter === "draft") isPublished = false;
 
-        const data = await getNewsList(1, 10, search, isPublished);
+        const data = await getNewsList(currentPage, 10, search, isPublished);
         console.log("getNewsList response:", data);
         if (data && Array.isArray(data.news)) {
           setNews(data.news);
+          setTotalPage(data.totalPages || 1);
         } else {
           console.error("No valid news data received:", data);
           setNews([]);
@@ -79,7 +84,7 @@ export default function TableNewWrapper({
       }
     };
     loadNews();
-  }, [search, filter]);
+  }, [search, filter, currentPage]);
 
   const handleDelete = (id: string) => {
     setConfirmNewsId(id);
@@ -278,6 +283,26 @@ export default function TableNewWrapper({
                 </tr>
               );
             })}
+            {totalPage > 1 && (
+              <>
+                <tr>
+                  <td colSpan={6} className="py-2">
+                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={6} className="pt-4 pb-2">
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPage={totalPage}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
         {showModal && selectedNews && (

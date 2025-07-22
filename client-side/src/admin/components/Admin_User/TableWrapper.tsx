@@ -29,6 +29,8 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
   const [users, setUsers] = useState<IUser[]>(initialUsers);
   const [confirmUserId, setConfirmUserId] = useState<string | null>(null);
   const [confirmActive, setConfirmActive] = useState<boolean>(true);
+   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
 
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -275,6 +277,26 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
                 </td>
               </tr>
             ))}
+            {totalPage > 1 && (
+              <>
+                <tr>
+                  <td colSpan={6} className="py-2">
+                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={6} className="pt-4 pb-2">
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPage={totalPage}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
         {showModal && selectedUser && (

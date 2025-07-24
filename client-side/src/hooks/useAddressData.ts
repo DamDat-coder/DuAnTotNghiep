@@ -65,19 +65,30 @@ export function useAddressData() {
   const [districtCode, setDistrictCode] = useState<string | null>(null);
   const [wardCode, setWardCode] = useState<string | null>(null);
 
+  // Thêm biến loading
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+  const [isLoadingWards, setIsLoadingWards] = useState(false);
+
   // Lấy danh sách tỉnh/thành phố (updated after merging)
   useEffect(() => {
+    setIsLoadingProvinces(true);
     fetch("https://provinces.open-api.vn/api/p/")
       .then((res) => res.json())
       .then((data) => {
-        setProvinces(data || []); // API trả về array trực tiếp
+        setProvinces(data || []);
+        setIsLoadingProvinces(false);
       })
-      .catch(() => setProvinces([]));
+      .catch(() => {
+        setProvinces([]);
+        setIsLoadingProvinces(false);
+      });
   }, []);
 
   // Lấy danh sách quận/huyện dựa trên provinceCode
   useEffect(() => {
     if (provinceCode) {
+      setIsLoadingDistricts(true);
       fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`)
         .then((res) => res.json())
         .then((data) => {
@@ -85,29 +96,38 @@ export function useAddressData() {
           setDistrictCode(null);
           setWards([]);
           setWardCode(null);
+          setIsLoadingDistricts(false);
         })
         .catch(() => {
           setDistricts([]);
           setWards([]);
+          setIsLoadingDistricts(false);
         });
     } else {
       setDistricts([]);
       setWards([]);
+      setIsLoadingDistricts(false);
     }
   }, [provinceCode]);
 
   // Lấy danh sách phường/xã dựa trên districtCode
   useEffect(() => {
     if (districtCode) {
+      setIsLoadingWards(true);
       fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`)
         .then((res) => res.json())
         .then((data) => {
           setWards(data.wards || []);
           setWardCode(null);
+          setIsLoadingWards(false);
         })
-        .catch(() => setWards([]));
+        .catch(() => {
+          setWards([]);
+          setIsLoadingWards(false);
+        });
     } else {
       setWards([]);
+      setIsLoadingWards(false);
     }
   }, [districtCode]);
 
@@ -155,5 +175,8 @@ export function useAddressData() {
     getDistrictName,
     getWardName,
     getFullAddress,
+    isLoadingProvinces,
+    isLoadingDistricts,
+    isLoadingWards,
   };
 }

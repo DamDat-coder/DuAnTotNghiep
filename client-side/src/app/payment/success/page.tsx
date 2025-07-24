@@ -51,7 +51,7 @@ export default function PaymentSuccess() {
 
         toast.success("Đơn hàng đã được xác nhận!");
         const timer = setTimeout(() => {
-          router.push("/profile?tab=orders");
+          router.push("/profile?tab=order");
         }, 3000);
         return () => clearTimeout(timer);
       } catch (error: any) {

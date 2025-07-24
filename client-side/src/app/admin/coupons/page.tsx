@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import { Pagination } from "@/admin/components/ui/Panigation";
-import { fetchCoupons, updateCouponStatus } from "@/services/couponApi";
+import { fetchCoupons } from "@/services/couponApi";
 import { Coupon } from "@/types/coupon";
 import TableCouponWrapper from "@/admin/components/Admin_Coupon/TableCouponWrapper";
 
@@ -63,11 +62,17 @@ export default function CouponsPage() {
     >
       <TableCouponWrapper
         coupons={coupons}
+        currentPage={currentPage}
+        totalPage={totalPages}
+        onPageChange={setCurrentPage}
         filter={filter}
         search={search}
         setFilter={setFilter}
         setSearch={setSearch}
         onUpdate={setCoupons}
+        onDelete={(id: string) => {
+          setCoupons((prev) => prev.filter((coupon) => coupon._id !== id));
+        }}
       />
 
       {loading && (
@@ -84,14 +89,6 @@ export default function CouponsPage() {
           )}
         </div>
       )}
-
-      <div className="mt-6 flex justify-center">
-        <Pagination
-          currentPage={currentPage}
-          totalPage={totalPages}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
-      </div>
     </AdminLayout>
   );
 }

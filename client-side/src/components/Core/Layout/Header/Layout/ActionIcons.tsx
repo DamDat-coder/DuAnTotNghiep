@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import NotificationIcon from "./Notification";
 import UserDropdown from "./UserDropdown";
+import { useRouter } from "next/navigation";
 
 interface ActionIconsProps {
   isClient: boolean;
@@ -22,15 +23,17 @@ export default function ActionIcons({
   setActiveTab,
   isMenuOpen,
 }: ActionIconsProps) {
-  const handleFavoriteClick = () => {
-    setActiveTab("Yêu thích");
-    window.history.pushState({}, "", "/profile?tab=favorite");
+  const router = useRouter();
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/profile?tab=favorite");
   };
 
   return (
     <>
       <Link
-        href="#"
+        href="/profile?tab=favorite"
         className="text-gray-400 hover:text-black hidden tablet:hidden laptop:block desktop:block"
         aria-label="Danh sách yêu thích"
         onClick={handleFavoriteClick}

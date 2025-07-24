@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import Image from "next/image";
 import { ResetPasswordData, ResetPasswordResponse } from "@/types/auth";
 import { updatePassword } from "@/services/userApi";
@@ -80,7 +81,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
     }
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white w-[536px] h-[400px] rounded-lg shadow-lg px-[48px] pt-[36px] pb-[24px] relative">
         {/* Tiêu đề + Nút đóng */}
@@ -189,4 +190,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
       </div>
     </div>
   );
+
+  if (typeof window === "undefined") return null;
+  return ReactDOM.createPortal(modalContent, document.body);
 }

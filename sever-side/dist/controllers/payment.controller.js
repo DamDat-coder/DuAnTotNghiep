@@ -90,24 +90,33 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
 exports.checkVNPayReturn = checkVNPayReturn;
 // ZaloPay - Tạo thanh toán
 const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { totalPrice, userId, orderInfo, discountAmount = 0 } = req.body;
         if (!totalPrice || !userId || !orderInfo) {
             return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
         }
-        const transactionCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("ZP");
+        const datePrefix = (0, moment_1.default)().format("YYMMDD");
+        const randomSuffix = Math.floor(Math.random() * 1000000);
+        const transactionCode = `${datePrefix}_${randomSuffix}`;
         const app_time = Date.now();
         const embedData = {
             redirecturl: `${payment_config_1.ZALO_PAY.returnUrl}?orderId=${transactionCode}`,
             userId,
         };
+        const itemList = orderInfo.items.map((item) => ({
+            itemid: item.productId,
+            itemname: item.name,
+            itemprice: item.price,
+            itemquantity: item.quantity,
+        }));
         const order = {
             app_id: payment_config_1.ZALO_PAY.appId,
             app_trans_id: transactionCode,
-            app_user: userId,
+            app_user: `user_${userId.slice(-4)}`, // rút gọn userId
             app_time,
             amount: totalPrice,
-            item: JSON.stringify([]),
+            item: JSON.stringify(itemList),
             embed_data: JSON.stringify(embedData),
             description: `Thanh toán đơn hàng ${transactionCode}`,
             bank_code: "",
@@ -116,7 +125,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const data = [
             payment_config_1.ZALO_PAY.appId,
             transactionCode,
-            userId,
+            order.app_user,
             totalPrice,
             app_time,
             order.embed_data,
@@ -130,12 +139,12 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             params: order,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
         });
-        // if (zalopayRes.data.return_code !== 1) {
-        //   return res.status(400).json({
-        //     message: "ZaloPay từ chối giao dịch!",
-        //     error: zalopayRes.data,
-        //   });
-        // }
+        if (zalopayRes.data.return_code !== 1) {
+            return res.status(400).json({
+                message: "ZaloPay từ chối giao dịch!",
+                error: zalopayRes.data,
+            });
+        }
         yield payment_model_1.default.create({
             userId: new mongoose_1.Types.ObjectId(userId),
             amount: totalPrice,
@@ -144,7 +153,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
             transaction_code: transactionCode,
             transaction_data: order,
             transaction_summary: {},
-            order_info: Object.assign(Object.assign({}, orderInfo), { paymentMethod: "vnpay" }),
+            order_info: Object.assign(Object.assign({}, orderInfo), { paymentMethod: "zalopay" }),
             gateway: "zalopay",
         });
         return res.status(200).json({
@@ -153,9 +162,10 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
     }
     catch (error) {
-        return res
-            .status(500)
-            .json({ message: "Không tạo được thanh toán ZaloPay", error });
+        return res.status(500).json({
+            message: "Không tạo được thanh toán ZaloPay",
+            error: ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error,
+        });
     }
 });
 exports.createZaloPayPayment = createZaloPayPayment;

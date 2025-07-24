@@ -107,7 +107,10 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
     }
 
-    const transactionCode = await generateUniqueTransactionCode("ZP");
+    const datePrefix = moment().format("YYMMDD");
+    const randomSuffix = Math.floor(Math.random() * 1000000);
+    const transactionCode = `${datePrefix}_${randomSuffix}`;
+
     const app_time = Date.now();
 
     const embedData = {
@@ -115,13 +118,20 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       userId,
     };
 
+    const itemList = orderInfo.items.map((item: any) => ({
+      itemid: item.productId,
+      itemname: item.name,
+      itemprice: item.price,
+      itemquantity: item.quantity,
+    }));
+
     const order = {
       app_id: ZALO_PAY.appId,
       app_trans_id: transactionCode,
-      app_user: userId,
+      app_user: `user_${userId.slice(-4)}`, // rút gọn userId
       app_time,
       amount: totalPrice,
-      item: JSON.stringify([]),
+      item: JSON.stringify(itemList),
       embed_data: JSON.stringify(embedData),
       description: `Thanh toán đơn hàng ${transactionCode}`,
       bank_code: "",
@@ -131,7 +141,7 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
     const data = [
       ZALO_PAY.appId,
       transactionCode,
-      userId,
+      order.app_user,
       totalPrice,
       app_time,
       order.embed_data,
@@ -148,12 +158,12 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
-    // if (zalopayRes.data.return_code !== 1) {
-    //   return res.status(400).json({
-    //     message: "ZaloPay từ chối giao dịch!",
-    //     error: zalopayRes.data,
-    //   });
-    // }
+    if (zalopayRes.data.return_code !== 1) {
+      return res.status(400).json({
+        message: "ZaloPay từ chối giao dịch!",
+        error: zalopayRes.data,
+      });
+    }
 
     await Payment.create({
       userId: new Types.ObjectId(userId),
@@ -165,7 +175,7 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       transaction_summary: {},
       order_info: {
         ...orderInfo,
-        paymentMethod: "vnpay",
+        paymentMethod: "zalopay",
       },
       gateway: "zalopay",
     });
@@ -175,9 +185,10 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       paymentId: transactionCode,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Không tạo được thanh toán ZaloPay", error });
+    return res.status(500).json({
+      message: "Không tạo được thanh toán ZaloPay",
+      error: (error as any).response?.data || error,
+    });
   }
 };
 

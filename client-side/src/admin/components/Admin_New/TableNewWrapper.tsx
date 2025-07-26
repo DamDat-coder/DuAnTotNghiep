@@ -120,6 +120,7 @@ export default function TableNewWrapper({
     if (!Array.isArray(news)) return [];
     const now = new Date();
     now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
+
     return news
       .filter((item) => {
         if (!item._id) return false;
@@ -129,12 +130,14 @@ export default function TableNewWrapper({
           return (
             item.is_published === false &&
             (!item.published_at || new Date(item.published_at) <= now)
+
           );
         if (filter === "upcoming")
           return (
             item.is_published === false &&
             item.published_at &&
             new Date(item.published_at) > now
+
           );
         return true;
       })

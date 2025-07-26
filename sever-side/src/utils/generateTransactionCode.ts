@@ -1,20 +1,18 @@
-import Payment from '../models/payment.model';
+import Payment from "../models/payment.model";
 
-function generateTransactionCode(length = 6): string {
+function generateShortCode(length = 6): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let code = "";
-  for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-export async function generateUniqueTransactionCode(prefix: string): Promise<string> {
-  while (true) {
-    const randomCode = generateTransactionCode();
-    const code = `${prefix}-${randomCode}`;
-    const exists = await Payment.findOne({ transaction_code: code });
+export async function generateUniqueTransactionCode(prefix: string, maxTries = 10): Promise<string> {
+  const minuteCode = new Date().getMinutes().toString().padStart(2, "0"); 
 
+  for (let i = 0; i < maxTries; i++) {
+    const code = `${prefix}-${generateShortCode(6)}${minuteCode}`;
+    const exists = await Payment.findOne({ transaction_code: code });
     if (!exists) return code;
   }
+
+  throw new Error("Không thể tạo transaction_code duy nhất!");
 }

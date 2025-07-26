@@ -122,6 +122,9 @@ export const createNews = async (
       message: "Tạo tin tức thành công",
       data: populated,
     });
+    console.log("Tin tức tạo mới:");
+    console.log("published_at:", parsedPublishedAt);
+    console.log("is_published:", newsData.is_published);
   } catch (error: any) {
     console.error("Error in createNews:", error);
     if (error.code === 11000) {
@@ -385,4 +388,7 @@ export const getAllNews = async (
       message: error.message || "Lỗi server khi lấy danh sách tin tức",
     });
   }
+
 };
+
+

@@ -115,7 +115,7 @@ export default function DesktopNav() {
                         damping: 40,
                       }}
                       className={
-                        "fixed top-16 left-0 right-0 w-screen bg-white shadow-lg z-[80]"
+                        "fixed top-16 left-0 right-0 w-[100%] bg-white shadow-lg z-[80] overflow-x-hidden"
                       }
                       onMouseLeave={handleMouseLeave}
                     >

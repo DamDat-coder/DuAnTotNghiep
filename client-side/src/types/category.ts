@@ -43,4 +43,5 @@ export interface ICategoryNews {
 export interface CategoryProduct {
   _id: string;
   name: string;
+  parentId: string | null;
 }

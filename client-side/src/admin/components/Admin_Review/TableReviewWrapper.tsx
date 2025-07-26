@@ -4,8 +4,10 @@ import { IReview } from "@/types/review";
 import { updateReviewStatus } from "@/services/reviewApi";
 import EditReviewModal from "./EditReviewModal";
 import { toast } from "react-hot-toast";
-import { Pagination } from "../ui/Panigation";
+
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { Pagination } from "../ui/Panigation";
+
 
 interface Props {
   reviews: IReview[];
@@ -67,6 +69,8 @@ export default function TableReviewWrapper({
   const [totalPage, setTotalPage] = useState(1);
   const [confirmReviewId, setConfirmReviewId] = useState<string | null>(null);
   const [pendingStatus, setPendingStatus] = useState<"approved" | "spam" | null>(null);
+
+
 
   // Ref to store dropdown refs for each review
   const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());

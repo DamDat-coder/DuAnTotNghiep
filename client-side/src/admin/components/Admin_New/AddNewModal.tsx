@@ -30,7 +30,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [newsImages, setNewsImages] = useState<File[]>([]);
   const [meta_description, setMeta_description] = useState("");
-
   const handlePreview = () => {
     setIsPreviewVisible(true);
   };
@@ -88,12 +87,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       toast.error("Vui lòng nhập mô tả SEO!");
       return;
     }
-    if (action === "publish" && !date) {
-      toast.error("Vui lòng chọn ngày đăng khi xuất bản!");
-      return;
-    }
-    if (action === "upcoming" && !date) {
-      toast.error("Vui lòng chọn ngày đăng khi hẹn lịch!");
+    if ((action === "publish" || action === "upcoming") && !date) {
+      toast.error("Vui lòng chọn ngày đăng khi xuất bản hoặc hẹn lịch!");
       return;
     }
 
@@ -129,7 +124,12 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       tags,
       thumbnail,
       is_published: action === "publish",
-      published_at: publishedAtValue,
+      published_at:
+        action === "publish"
+          ? publishedAtValue
+          : action === "upcoming"
+          ? publishedAtValue
+          : undefined,
       meta_description,
       status:
         action === "publish"
@@ -147,6 +147,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
 
     try {
       setLoading(true);
+      // Gọi API tạo/sửa tin tức
       const createdNews = await createNews(payload);
       toast.success("Tạo tin tức thành công!");
 
@@ -156,7 +157,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         }
         await updateNews(createdNews.id, {
           is_published: true,
-          published_at: new Date(),
+          published_at: publishedAtValue,
         });
       }
 
@@ -188,13 +189,12 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
     loadCategories();
   }, []);
 
+  // Hàm hiển thị trạng thái tin tức
   const getStatusLabel = (news: News) => {
-    const now = new Date();
-    now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
     if (news.is_published) return "Xuất bản";
     if (
       news.published_at &&
-      new Date(news.published_at) > now &&
+      new Date(news.published_at) > new Date() &&
       !news.is_published
     )
       return "Sắp xuất bản";

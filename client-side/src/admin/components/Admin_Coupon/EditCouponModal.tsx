@@ -247,9 +247,7 @@ export default function EditCouponModal({
       const result = await updateCoupon(coupon._id, payload);
       toast.success("Cập nhật mã giảm giá thành công!");
       onSave(result);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      onClose();
     } catch (err: any) {
       const errorMessage =
         err.message || "Đã xảy ra lỗi khi cập nhật mã giảm giá.";
@@ -439,7 +437,7 @@ export default function EditCouponModal({
                   name="value"
                   value={formatNumber(form.value)}
                   onChange={(e) => handleNumberInput(e, setForm)}
-                  placeholder={isPercent ? "Vd: 10, 20, 99" : "Vd: 50.000"}
+                  placeholder="Vd: 20 hoặc 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                   required
                 />
@@ -488,6 +486,7 @@ export default function EditCouponModal({
                   value={form.startDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
+                  required
                 />
                 <button
                   type="button"
@@ -511,6 +510,7 @@ export default function EditCouponModal({
                   value={form.endDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
+                  required
                 />
                 <button
                   type="button"
@@ -536,6 +536,7 @@ export default function EditCouponModal({
                   onChange={handleChange}
                   placeholder="Để trống nếu không giới hạn"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
+                  required
                 />
                 {!isUsageValid && (
                   <div className="text-red-500 text-xs mt-1">
@@ -610,14 +611,10 @@ export default function EditCouponModal({
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedProducts((prev) =>
-                                  prev.includes(prod.id)
-                                    ? prev
-                                    : [...prev, prod.id]
+                                  prev.includes(prod.id) ? prev : [...prev, prod.id]
                                 );
                               } else {
-                                setSelectedProducts((prev) =>
-                                  prev.filter((id) => id !== prod.id)
-                                );
+                                setSelectedProducts((prev) => prev.filter((id) => id !== prod.id));
                               }
                             }}
                           />

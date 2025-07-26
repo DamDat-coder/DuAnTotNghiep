@@ -13,6 +13,7 @@ import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
 import { useMemo } from "react";
+import { Phone } from "lucide-react";
 
 // Hàm sinh orderId 7 ký tự
 const generateOrderId = () => {
@@ -393,12 +394,12 @@ export const useCheckout = () => {
         totalPrice: total,
         userId: user.id,
         orderInfo: {
-          address_id: addressId,
           shippingAddress: {
             street: formData.address,
             ward: formData.ward,
             district: formData.district,
             province: formData.province,
+            phone:formData.phone
           },
           couponId: couponId || undefined,
           items: orderItems.map((item) => ({

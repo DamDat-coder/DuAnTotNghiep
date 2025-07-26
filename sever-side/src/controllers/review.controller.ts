@@ -6,20 +6,33 @@ import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import mongoose from "mongoose";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import { SPAM_KEYWORDS } from "../config/spam-keywords";
-import { sendReviewWarningEmail, sendAccountBlockedEmail } from "../utils/mailer";
+import {
+  sendReviewWarningEmail,
+  sendAccountBlockedEmail,
+} from "../utils/mailer";
 
 // Tạo đánh giá sản phẩm
-export const createReview = async (req: AuthenticatedRequest, res: Response) => {
+export const createReview = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
     const { productId, orderId, content, rating } = req.body;
 
     if (!userId || !productId || !orderId || !content || !rating) {
-      return res.status(400).json({ success: false, message: "Thiếu thông tin review." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu thông tin review." });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(orderId)) {
-      return res.status(400).json({ success: false, message: "ID không hợp lệ." });
+    if (
+      !mongoose.Types.ObjectId.isValid(productId) ||
+      !mongoose.Types.ObjectId.isValid(orderId)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID không hợp lệ." });
     }
 
     const order = await OrderModel.findOne({
@@ -36,7 +49,11 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
       });
     }
 
-    const existingReview = await ReviewModel.findOne({ userId, productId, orderId });
+    const existingReview = await ReviewModel.findOne({
+      userId,
+      productId,
+      orderId,
+    });
     if (existingReview) {
       return res.status(400).json({
         success: false,
@@ -47,21 +64,23 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
     const imageUrls: string[] = [];
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files as Express.Multer.File[]) {
-        const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { resource_type: "image", folder: "reviews" },
-            (error, result) => {
-              if (error || !result) return reject(error);
-              resolve(result);
-            }
-          );
-          stream.end(file.buffer);
-        });
+        const result = await new Promise<UploadApiResponse>(
+          (resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              { resource_type: "image", folder: "reviews" },
+              (error, result) => {
+                if (error || !result) return reject(error);
+                resolve(result);
+              }
+            );
+            stream.end(file.buffer);
+          }
+        );
         imageUrls.push(result.secure_url);
       }
     }
 
-    const isSpam = SPAM_KEYWORDS.some(keyword =>
+    const isSpam = SPAM_KEYWORDS.some((keyword) =>
       content.toLowerCase().includes(keyword.toLowerCase())
     );
 
@@ -70,24 +89,47 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
 
     const user = await UserModel.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng." });
     }
 
     if (isSpam) {
-      const existingSpamCount = await ReviewModel.countDocuments({ userId, status: "spam" });
+      const existingSpamCount = await ReviewModel.countDocuments({
+        userId,
+        status: "spam",
+      });
       const spamCountAfterThis = existingSpamCount + 1;
 
       if (spamCountAfterThis >= 3) {
         await UserModel.findByIdAndUpdate(userId, { is_active: false });
         await sendAccountBlockedEmail(user.email, user.name || "Người dùng");
-        spamWarningMessage = "Tài khoản đã bị khóa vì có quá nhiều đánh giá spam.";
+        spamWarningMessage =
+          "Tài khoản đã bị khóa vì có quá nhiều đánh giá spam.";
       } else {
         await sendReviewWarningEmail(user.email, user.name || "Người dùng");
         spamWarningMessage = `Đánh giá bị đánh dấu là spam. Đây là lần thứ ${spamCountAfterThis}. Nếu tiếp tục, tài khoản sẽ bị khóa.`;
       }
+
+      // Trả về success: false khi đánh giá là spam
+      const newReview = await ReviewModel.create({
+        userId,
+        productId,
+        orderId,
+        content,
+        rating,
+        status: reviewStatus,
+        images: imageUrls,
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: spamWarningMessage,
+        data: newReview,
+      });
     }
 
-    // Tạo đánh giá
+    // Tạo đánh giá khi không phải spam
     const newReview = await ReviewModel.create({
       userId,
       productId,
@@ -102,7 +144,6 @@ export const createReview = async (req: AuthenticatedRequest, res: Response) => 
       success: true,
       message: "Đã gửi đánh giá.",
       data: newReview,
-      ...(spamWarningMessage && { warning: spamWarningMessage }),
     });
   } catch (error) {
     console.error("Lỗi tạo review:", error);
@@ -183,7 +224,9 @@ export const updateReviewStatus = async (req: Request, res: Response) => {
     const { status } = req.body;
 
     if (!["approved", "spam"].includes(status)) {
-      return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Trạng thái không hợp lệ." });
     }
 
     const updated = await ReviewModel.findByIdAndUpdate(
@@ -193,10 +236,18 @@ export const updateReviewStatus = async (req: Request, res: Response) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy đánh giá." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đánh giá." });
     }
 
-    res.status(200).json({ success: true, message: "Cập nhật trạng thái thành công.", data: updated });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Cập nhật trạng thái thành công.",
+        data: updated,
+      });
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái đánh giá:", error);
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });

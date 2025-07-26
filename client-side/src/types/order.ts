@@ -20,7 +20,6 @@ export interface IOrder {
   _id: string;
   userId: string;
   couponId?: string | null;
-  address_id: string;
   shippingAddress: ShippingAddress;
   totalPrice: number;
   shipping: number;

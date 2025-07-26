@@ -169,7 +169,6 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
   }
 };
 
-
 // Lấy sản phẩm theo ID
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {

@@ -27,7 +27,6 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const { paymentId, order_info } = req.body;
         let userId;
         let paymentMethod;
-        let address_id;
         let shippingAddress;
         let items;
         let shipping = 0;
@@ -44,14 +43,14 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             if (existed) {
                 return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
             }
-            ({ paymentMethod, address_id, shippingAddress, items, shipping = 0, discountAmount = 0 } = payment.order_info);
+            ({ paymentMethod, shippingAddress, items, shipping = 0, discountAmount = 0 } = payment.order_info);
             userId = payment.userId;
         }
         else {
             if (!order_info) {
                 return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
             }
-            ({ paymentMethod, userId, address_id, shippingAddress, items, shipping = 0, discountAmount = 0 } = order_info);
+            ({ paymentMethod, userId, shippingAddress, items, shipping = 0, discountAmount = 0 } = order_info);
             if (paymentMethod !== 'cod') {
                 return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
             }
@@ -59,11 +58,12 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const orderItems = [];
         let totalPrice = 0;
         for (const item of items) {
-            const product = yield product_model_1.default.findById(item.productId);
+            const product = yield product_model_1.default.findById(item.product || item.productId);
             if (!product) {
                 return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm.' });
             }
-            const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
+            const variantData = item.variant || item;
+            const variant = product.variants.find(v => v.color === variantData.color && v.size === variantData.size);
             if (!variant || variant.stock < item.quantity) {
                 return res.status(400).json({ success: false, message: 'Biến thể không hợp lệ hoặc hết hàng.' });
             }
@@ -73,8 +73,8 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 productId: product._id,
                 name: product.name,
                 image: product.image[0] || '',
-                color: item.color,
-                size: item.size,
+                color: variantData.color,
+                size: variantData.size,
                 price: discountPrice,
                 quantity: item.quantity,
             });
@@ -87,7 +87,6 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const orderCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("CD");
         const order = yield order_model_1.default.create({
             userId,
-            address_id,
             shippingAddress,
             totalPrice,
             discountAmount,

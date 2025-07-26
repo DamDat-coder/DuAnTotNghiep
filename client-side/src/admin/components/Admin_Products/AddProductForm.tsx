@@ -285,6 +285,7 @@ export default function AddProductForm({ onClose, onAdded }) {
             className="p-2 ml-auto rounded-full hover:bg-gray-200 text-2xl font-bold flex items-center justify-center"
             style={{ width: 36, height: 36, lineHeight: 1 }}
             aria-label="Đóng"
+            disabled={isSubmitting}
           >
             ×
           </button>
@@ -321,6 +322,7 @@ export default function AddProductForm({ onClose, onAdded }) {
               onChange={handleChange}
               className="w-full border rounded p-3"
               placeholder="Nhập tên sản phẩm"
+              disabled={isSubmitting}
             />
           </div>
           {/* Mô tả */}
@@ -337,6 +339,7 @@ export default function AddProductForm({ onClose, onAdded }) {
               onChange={handleChange}
               className="w-full border rounded p-3 min-h-[120px]"
               placeholder="Nhập mô tả..."
+              disabled={isSubmitting}
             />
           </div>
           {/* Danh mục */}
@@ -349,6 +352,7 @@ export default function AddProductForm({ onClose, onAdded }) {
               value={formData.categoryId}
               onChange={handleChange}
               className="w-full border rounded p-3"
+              disabled={isSubmitting}
             >
               <option value="">Chọn danh mục</option>
               {renderCategoryOptions(categories)}
@@ -386,6 +390,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                             onChange={e =>
                               handleVariantTableChange(idx, "size", e.target.value)
                             }
+                            disabled={isSubmitting}
                           >
                             {sizeOptions.map(s => (
                               <option key={s} value={s}>{s}</option>
@@ -399,6 +404,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                             onChange={e =>
                               handleVariantTableChange(idx, "color", e.target.value)
                             }
+                            disabled={isSubmitting}
                           >
                             {colorOptions.map(c => (
                               <option key={c.value} value={c.value}>{c.label}</option>
@@ -415,6 +421,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                               handleVariantTableChange(idx, "price", e.target.value)
                             }
                             placeholder="Giá"
+                            disabled={isSubmitting}
                           />
                         </td>
                         <td className="p-2 border w-[80px]">
@@ -427,6 +434,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                               handleVariantTableChange(idx, "discountPercent", e.target.value)
                             }
                             placeholder="Giảm"
+                            disabled={isSubmitting}
                           />
                         </td>
                         <td className="p-2 border w-[80px]">
@@ -439,6 +447,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                               handleVariantTableChange(idx, "stock", e.target.value)
                             }
                             placeholder="Kho"
+                            disabled={isSubmitting}
                           />
                         </td>
                         <td className="p-2 border text-center">
@@ -447,6 +456,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                             className="text-red-500 hover:underline"
                             onClick={() => handleRemoveVariant(idx)}
                             title="Xóa biến thể"
+                            disabled={isSubmitting}
                           >
                             Xóa
                           </button>
@@ -474,6 +484,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                             : "bg-white border-gray-200 text-black hover:bg-gray-100")
                         }
                         onClick={() => handleNewVariantChange("size", size)}
+                        disabled={isSubmitting}
                       >
                         {size}
                       </button>
@@ -486,6 +497,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                     className="border rounded-lg p-2 w-full text-sm"
                     value={newVariant.color}
                     onChange={e => handleNewVariantChange("color", e.target.value)}
+                    disabled={isSubmitting}
                   >
                     <option value="">Chọn màu sắc</option>
                     {colorOptions.map(c => (
@@ -502,6 +514,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                     value={newVariant.price}
                     onChange={e => handleNewVariantChange("price", e.target.value)}
                     placeholder="Giá (đ)"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div>
@@ -513,6 +526,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                     value={newVariant.discountPercent || ""}
                     onChange={e => handleNewVariantChange("discountPercent", e.target.value)}
                     placeholder="Giảm (%)"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="col-span-2">
@@ -524,6 +538,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                     value={newVariant.stock}
                     onChange={e => handleNewVariantChange("stock", e.target.value)}
                     placeholder="Số lượng sản phẩm"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -531,6 +546,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                 type="button"
                 className="flex items-center justify-center gap-2 font-semibold text-base text-black mt-3 mx-auto hover:opacity-70"
                 onClick={handleAddVariant}
+                disabled={isSubmitting}
               >
                 <span className="text-2xl font-bold">+</span>
                 Thêm biến thể
@@ -551,10 +567,20 @@ export default function AddProductForm({ onClose, onAdded }) {
             </button>
             <button
               type="submit"
-              className="w-1/2 bg-black text-white py-3 rounded font-semibold hover:opacity-90"
+              className="w-1/2 bg-black text-white py-3 rounded font-semibold hover:opacity-90 flex items-center justify-center"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Đang lưu..." : "Thêm sản phẩm"}
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Đang lưu...
+                </span>
+              ) : (
+                "Thêm sản phẩm"
+              )}
             </button>
           </div>
         </form>

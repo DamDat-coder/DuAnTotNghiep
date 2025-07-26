@@ -242,12 +242,11 @@ export default function EditProductForm({
     );
   };
 
-  // PHẦN HANDLE SUBMIT QUAN TRỌNG!
+  // Submit logic với hiệu ứng loading/toast/error
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validate như cũ...
     if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
     if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
     if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
@@ -274,7 +273,7 @@ export default function EditProductForm({
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
-        categoryId: formData.categoryId, // <-- CHỈ gửi trường này
+        categoryId: formData.categoryId,
         variants: formData.variants.map((v: any) => ({
           price: Number(v.price),
           color: v.color,
@@ -559,10 +558,20 @@ export default function EditProductForm({
         <div className="flex gap-3 mt-4">
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 rounded font-semibold hover:opacity-90"
+            className="w-full bg-black text-white py-3 rounded font-semibold hover:opacity-90 flex items-center justify-center"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Đang lưu..." : "Cập nhật sản phẩm"}
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Đang lưu...
+              </span>
+            ) : (
+              "Cập nhật sản phẩm"
+            )}
           </button>
         </div>
       </form>

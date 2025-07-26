@@ -35,7 +35,7 @@ export default function SearchInput({
           placeholder="Tìm kiếm sản phẩm..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full py-2 pl-12 pr-12 text-lg text-black bg-[#ededed] border-none rounded-full focus:outline-none focus:ring-0 placeholder:text-base placeholder:text-[#687176] truncate "
+          className="w-full py-2 pl-12 pr-12 text-black bg-[#ededed] border-none rounded-full focus:outline-none focus:ring-0 placeholder:text-base placeholder:text-[#687176] truncate "
         />
         {searchTerm && (
           <button

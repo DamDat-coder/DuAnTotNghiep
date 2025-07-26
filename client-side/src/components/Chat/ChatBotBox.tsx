@@ -119,7 +119,7 @@ export default function ChatBotBox() {
                   )}
 
                   {msg.sender === "typing" && (
-                    <div className="text-left text-gray-400 italic px-3">
+                    <div className="text-left text-gray-400 italic px-3 animate-pulse">
                       Đang trả lời...
                     </div>
                   )}

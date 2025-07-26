@@ -98,6 +98,9 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             message: "Tạo tin tức thành công",
             data: populated,
         });
+        console.log("Tin tức tạo mới:");
+        console.log("published_at:", parsedPublishedAt);
+        console.log("is_published:", newsData.is_published);
     }
     catch (error) {
         if (error.code === 11000) {

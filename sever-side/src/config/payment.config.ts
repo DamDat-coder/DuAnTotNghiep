@@ -7,6 +7,7 @@ export const ZALO_PAY = {
   endpoint: process.env.ZALOPAY_ENDPOINT!,
   callbackUrl: process.env.ZALOPAY_CALLBACK_URL!,
   returnUrl: process.env.ZALOPAY_RETURN_URL!,
+  clientRedirect: process.env.ZALOPAY_CLIENT_REDIRECT!,
 };
 
 export const vnpay = new VNPay({

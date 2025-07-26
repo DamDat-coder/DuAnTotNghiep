@@ -14,22 +14,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateUniqueTransactionCode = generateUniqueTransactionCode;
 const payment_model_1 = __importDefault(require("../models/payment.model"));
-function generateTransactionCode(length = 6) {
+function generateShortCode(length = 6) {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let code = "";
-    for (let i = 0; i < length; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
-function generateUniqueTransactionCode(prefix) {
-    return __awaiter(this, void 0, void 0, function* () {
-        while (true) {
-            const randomCode = generateTransactionCode();
-            const code = `${prefix}-${randomCode}`;
+function generateUniqueTransactionCode(prefix_1) {
+    return __awaiter(this, arguments, void 0, function* (prefix, maxTries = 10) {
+        const minuteCode = new Date().getMinutes().toString().padStart(2, "0");
+        for (let i = 0; i < maxTries; i++) {
+            const code = `${prefix}-${generateShortCode(6)}${minuteCode}`;
             const exists = yield payment_model_1.default.findOne({ transaction_code: code });
             if (!exists)
                 return code;
         }
+        throw new Error("Không thể tạo transaction_code duy nhất!");
     });
 }

@@ -108,6 +108,8 @@ export const sendAccountLockedEmail = async (to: string, name: string) => {
     },
   });
 
+// Gửi email đặt lại mật khẩu
+export const sendResetPasswordEmail = async (to: string, resetLink: string) => {
   const mailOptions = {
     from: `"Style For You" <${process.env.EMAIL_USER}>`,
     to,

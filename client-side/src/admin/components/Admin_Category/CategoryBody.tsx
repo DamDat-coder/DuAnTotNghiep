@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { ICategory } from "@/types/category";
 import { toast } from "react-hot-toast";
@@ -109,7 +110,7 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
       return (
         <React.Fragment key={rowKey}>
           <tr className="group border-b hover:bg-[#F9FAFB] transition-colors duration-150 h-[64px] align-middle">
-            {/* Tên danh mục */}
+            {/* Tên danh mục và ảnh */}
             <td
               className="h-[64px] align-middle px-4 py-0 min-w-[180px] max-w-[320px]"
               style={{ paddingLeft: `${depth * 28}px` }}
@@ -126,9 +127,26 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
                     </span>
                   </button>
                 )}
-                <span className={`font-semibold text-[#202020] text-base break-words leading-6 ${depth === 0 ? "" : "font-medium"}`}>
-                  {cat.name || "Không có dữ liệu"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg overflow-hidden bg-[#f3f3f3] flex items-center justify-center">
+                    <Image
+                      src={
+                        cat.image && cat.image.startsWith("https")
+                          ? cat.image
+                          : "/no-image.png"
+                      }
+                      alt={cat.name || "No image"}
+                      width={32}
+                      height={32}
+                      className="object-cover w-8 h-8"
+                      loading="lazy"
+                      unoptimized={!cat.image || !cat.image.startsWith("https")}
+                    />
+                  </div>
+                  <span className={`font-semibold text-[#202020] text-base break-words leading-6 ${depth === 0 ? "" : "font-medium"}`}>
+                    {cat.name || "Không có dữ liệu"}
+                  </span>
+                </div>
               </div>
             </td>
             {/* Mô tả danh mục */}

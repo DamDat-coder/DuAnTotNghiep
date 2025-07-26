@@ -19,6 +19,7 @@ function normalizeCategory(cat: any): ICategory {
     name: cat.name,
     description: cat.description ?? "",
     parentId: cat.parentId ?? cat.parentid ?? null,
+    image: cat.image ?? null,
     is_active:
       typeof cat.is_active === "string"
         ? cat.is_active === "true"

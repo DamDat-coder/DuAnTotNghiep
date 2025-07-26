@@ -33,21 +33,28 @@ export function flattenCategories(categories: ICategory[]): ICategory[] {
 }
 
 // Thêm danh mục
-export async function addCategory(input: CategoryInput): Promise<ICategory> {
+export async function addCategory(input: CategoryInput, imageFile?: File): Promise<ICategory> {
   try {
-    const body: any = {
-      name: input.name,
-      description: input.description ?? "",
-      parentId: input.parentId === "" ? null : input.parentId ?? null,
-      // Nếu FE gửi is_active, sẽ dùng; không thì default true (chuẩn hóa FE gửi gì sẽ truyền như vậy)
-      is_active: typeof input.is_active === "boolean" ? input.is_active : true,
-    };
+    const formData = new FormData();
+    formData.append("name", input.name);
+    formData.append("description", input.description ?? "");
+    // Nếu parentId là "" thì gửi null, còn undefined thì bỏ qua
+    if (input.parentId !== undefined) {
+      formData.append("parentId", input.parentId === "" ? "" : String(input.parentId));
+    }
+    if (typeof input.is_active === "boolean") {
+      formData.append("is_active", String(input.is_active));
+    }
+    if (imageFile) {
+      formData.append("image", imageFile); // "image" phải khớp tên Multer xử lý bên BE
+    }
 
     const response = await fetchWithAuth<SingleCategoryResponse>(
       `${API_BASE_URL}/categories`,
       {
         method: "POST",
-        body: JSON.stringify(body),
+        body: formData,
+        // KHÔNG set Content-Type, browser sẽ tự thêm multipart/form-data
       },
       true
     );
@@ -71,21 +78,21 @@ export async function addCategory(input: CategoryInput): Promise<ICategory> {
 }
 
 // Cập nhật danh mục
-export async function updateCategory(id: string, input: CategoryInput): Promise<ICategory> {
+export async function updateCategory(id: string, input: CategoryInput, imageFile?: File): Promise<ICategory> {
   try {
-    const body: any = {};
-    if (typeof input.name !== "undefined") body.name = input.name;
-    if (typeof input.description !== "undefined") body.description = input.description;
-    if (typeof input.parentId !== "undefined")
-      body.parentId = input.parentId === "" ? null : input.parentId;
-    if (typeof input.is_active !== "undefined")
-      body.is_active = input.is_active;
+    const formData = new FormData();
+    if (input.name !== undefined) formData.append("name", input.name);
+    if (input.description !== undefined) formData.append("description", input.description ?? "");
+    if (input.parentId !== undefined) formData.append("parentId", input.parentId === "" ? "" : String(input.parentId));
+    if (typeof input.is_active === "boolean") formData.append("is_active", String(input.is_active));
+    if (imageFile) formData.append("image", imageFile);
 
     const response = await fetchWithAuth<SingleCategoryResponse>(
       `${API_BASE_URL}/categories/${id}`,
       {
         method: "PUT",
-        body: JSON.stringify(body),
+        body: formData,
+        // KHÔNG set Content-Type
       },
       true
     );

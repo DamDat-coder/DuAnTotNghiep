@@ -16,6 +16,7 @@ import paymentRoutes from "./routes/payment.routers";
 import reviewRoutes from './routes/review.routes';
 import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
+import "./jobs/cron";
 dotenv.config();
 
 const app = express();

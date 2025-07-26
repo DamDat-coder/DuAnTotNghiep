@@ -1,6 +1,9 @@
 import { PaymentInfo } from "@/types/payment";
 import { API_BASE_URL, fetchWithAuth } from "./api";
-import { IOrder } from "@/types/order";
+
+import { IOrder, OrderDetail } from "@/types/order";
+
+
 // Initiate payment
 // Khởi tạo thanh toán
 export async function initiatePayment(
@@ -21,7 +24,7 @@ export async function initiatePayment(
         endpoint = "/payment/create-momo-payment";
         break;
       case "zalopay":
-        endpoint = "/payment/create-payment-zalopay";
+        endpoint = "/payment/create-zalopay-payment";
         break;
       default:
         throw new Error("Phương thức thanh toán không hợp lệ");
@@ -176,6 +179,85 @@ export async function fetchOrdersUser(
   }
 }
 
+
+export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
+  try {
+    const response = await fetchWithAuth<any>(`${API_BASE_URL}/orders/${id}`, {
+      cache: "no-store",
+    });
+
+    console.log("fetchOrderByIdForUser response:", response);
+
+    if (!response.success || !response.data || typeof response.data !== "object") {
+      throw new Error("Invalid order data received: Response is empty or not an object");
+    }
+
+    const order = response.data;
+
+    return {
+      _id: order._id || id,
+      userId: typeof order.userId === "object" ? order.userId._id || "" : order.userId || "",
+      couponId: order.couponId || null,
+      address_id: order.address_id || "",
+      shippingAddress: order.shippingAddress || {
+        street: "",
+        ward: "",
+        district: "",
+        province: "",
+        is_default: false,
+      },
+      totalPrice: order.totalPrice || 0,
+      shipping: order.shipping || 0,
+      status:
+        order.status &&
+        ["pending", "confirmed", "shipping", "delivered", "cancelled"].includes(order.status)
+          ? order.status
+          : "unknown",
+      paymentMethod:
+        order.paymentMethod &&
+        ["cod", "vnpay", "momo", "zalopay"].includes(order.paymentMethod)
+          ? order.paymentMethod
+          : "unknown",
+      paymentId: typeof order.paymentId === "object" ? order.paymentId._id || null : order.paymentId || null,
+      items: Array.isArray(order.items)
+        ? order.items.map((item: any) => ({
+            productId: item.productId || "",
+            name: item.name || "Unknown Product",
+            image: item.image || "/fallback-image.jpg",
+            color: item.color || "Chưa xác định",
+            size: item.size || "Chưa xác định",
+            price: item.price || 0,
+            quantity: item.quantity || 0,
+          }))
+        : [],
+      note: order.note || undefined,
+      createdAt: order.createdAt ? new Date(order.createdAt) : undefined,
+      updatedAt: order.updatedAt ? new Date(order.updatedAt) : undefined,
+    } as OrderDetail;
+  } catch (error) {
+    console.error(`Error fetching order ${id}:`, error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    return {
+      _id: id,
+      userId: "",
+      couponId: null,
+      address_id: "",
+      shippingAddress: { street: "", ward: "", district: "", province: "", is_default: false },
+      totalPrice: 0,
+      shipping: 0,
+      status: "pending",
+      paymentMethod: "cod",
+      paymentId: null,
+      items: [],
+      note: undefined,
+      createdAt: undefined,
+      updatedAt: undefined,
+    } as OrderDetail;
+  }
+}
 // Lấy 5 sản phẩm bán chạy nhất
 export function getBestSellingProductsFromOrders(
   orders: IOrder[],
@@ -226,4 +308,5 @@ export function getBestSellingProductsFromOrders(
   const sorted = Array.from(productMap.values()).sort((a, b) => b.sold - a.sold);
 
   return sorted.slice(0, limit);
+
 }

@@ -71,9 +71,8 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       tags: tags ? tags.split(",") : [],
       thumbnail,
       meta_description,
-      is_published: shouldPublishNow ? true : false,
+      is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
       published_at: parsedPublishedAt ?? (shouldPublishNow ? new Date() : null),
-
     };
 
     const createdNews = new newsModel(newsData);
@@ -339,3 +338,4 @@ export const getAllNews = async (req: Request, res: Response): Promise<void> => 
     });
   }
 };
+

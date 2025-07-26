@@ -92,6 +92,11 @@ export default function EditUserModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    // Không cho phép sửa role nếu user là admin và đang sửa admin khác
+    if (name === "role" && user.role === "admin" && value !== "admin") {
+      toast.error("Không thể thay đổi vai trò của admin.");
+      return;
+    }
     setForm({ ...form, [name]: value });
 
     if (name === "role" && value !== originalRole) {
@@ -224,6 +229,7 @@ export default function EditUserModal({
                 value={form.role}
                 onChange={handleChange}
                 className="w-full h-[56px] px-4 pr-10 border border-[#E2E8F0] rounded-lg appearance-none"
+                disabled={user.role === "admin"} // Không cho sửa nếu là admin
               >
                 <option value="">Chọn role</option>
                 <option value="admin">Admin</option>

@@ -1,20 +1,25 @@
-import React, { createContext, useState, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 
-// Create a context for active tab
+const tabMap: Record<string, string> = {
+  profile: "Hồ sơ",
+  address: "Địa chỉ",
+  favorite: "Yêu thích",
+  order: "Đơn hàng",
+  detail: "Chi tiết đơn hàng",
+};
+
 const ActiveTabContext = createContext<{
   activeTab: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
 }>({
-  activeTab: "main", // Default tab
-  setActiveTab: () => {}, // Empty function for initialization
+  activeTab: "Hồ sơ",
+  setActiveTab: () => {},
 });
 
-// Provider component to wrap your app with
 export const ActiveTabProvider: React.FC<React.PropsWithChildren<{}>> = ({
   children,
 }) => {
-  const [activeTab, setActiveTab] = useState<string>("main");
-
+  const [activeTab, setActiveTab] = useState<string>("Hồ sơ");
   return (
     <ActiveTabContext.Provider value={{ activeTab, setActiveTab }}>
       {children}

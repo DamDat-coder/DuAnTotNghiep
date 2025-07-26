@@ -29,6 +29,7 @@ export interface IOrder {
   paymentId?: string | null;
   items: OrderItem[];
   note?: string;
+  orderCode: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -46,6 +47,7 @@ export interface OrderDetail {
   paymentId?: string | null;
   items: OrderItem[];
   note?: string;
+  orderCode: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

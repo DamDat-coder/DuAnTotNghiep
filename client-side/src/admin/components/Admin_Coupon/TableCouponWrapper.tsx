@@ -4,17 +4,18 @@ import Image from "next/image";
 import { Coupon } from "@/types/coupon";
 import EditCouponModal from "./EditCouponModal";
 import { toast } from "react-hot-toast";
-import { fetchCoupons, hideCoupon, enableCoupon } from "@/services/couponApi";
+import { hideCoupon, enableCoupon } from "@/services/couponApi";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { Pagination } from "@/admin/components/ui/Panigation";
 
 interface Props {
-  filter: string;
   coupons: Coupon[];
-  search: string;
-  setFilter: React.Dispatch<React.SetStateAction<string>>;
-  setSearch: React.Dispatch<React.SetStateAction<string>>;
-  onUpdate: React.Dispatch<React.SetStateAction<Coupon[]>>;
+  currentPage: number;
+  totalPage: number;
+  onPageChange: (page: number) => void;
   children?: (filtered: Coupon[]) => React.ReactNode;
   onDelete: (id: string) => void;
+  onUpdate: (updater: (prev: Coupon[]) => Coupon[]) => void; // thêm prop onUpdate
 }
 
 function SimpleSwitch({
@@ -45,9 +46,13 @@ function SimpleSwitch({
 }
 
 export default function TableCouponWrapper({
-  coupons: initialCoupons,
+  coupons,
+  currentPage,
+  totalPage,
+  onPageChange,
   onDelete,
   children,
+  onUpdate, // nhận thêm prop này từ cha
 }: Props) {
   // State declarations
   const [filter, setFilter] = useState("all");
@@ -55,49 +60,10 @@ export default function TableCouponWrapper({
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
+  const [confirmCouponId, setConfirmCouponId] = useState<string | null>(null);
+  const [confirmActive, setConfirmActive] = useState<boolean>(true);
 
   const popupRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const loadCoupons = async () => {
-      setIsLoading(true);
-      try {
-        const data = await fetchCoupons(
-          1,
-          10,
-          search,
-          filter === "all"
-            ? undefined
-            : filter === "active"
-            ? true
-            : filter === "inactive"
-            ? false
-            : undefined
-        );
-        if (data && Array.isArray(data.coupons)) {
-          setCoupons(data.coupons);
-        } else {
-          console.error("No valid coupons data received");
-          setCoupons([]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch coupons:", error);
-        setCoupons([]);
-      }
-      setIsLoading(false);
-    };
-    loadCoupons();
-  }, [search, filter]);
-
-  // Filter coupons based on search and filter criteria
-  const filteredCoupons = coupons.filter((coupon) => {
-    const matchFilter = filter === "all" || String(coupon.is_active) === filter;
-    const code = coupon.code || "";
-    const matchSearch = code.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -112,15 +78,9 @@ export default function TableCouponWrapper({
     return () => window.removeEventListener("mousedown", handler);
   }, []);
 
+  // Khi đổi trạng thái, cập nhật ngay coupon trong danh sách
   const performStatusChange = async (couponId: string, isActive: boolean) => {
     try {
-      // Optimistically update the coupon state
-      setCoupons((prev) =>
-        prev.map((coupon) =>
-          coupon._id === couponId ? { ...coupon, is_active: isActive } : coupon
-        )
-      );
-
       await toast.promise(
         isActive ? enableCoupon(couponId) : hideCoupon(couponId),
         {
@@ -147,47 +107,22 @@ export default function TableCouponWrapper({
           },
         }
       );
-    } catch (error: any) {
-      // Revert optimistic update on failure, except for 404 or 400 errors
-      if (!error.message.includes("404") && !error.message.includes("400")) {
-        setCoupons((prev) =>
-          prev.map((coupon) =>
-            coupon._id === couponId
-              ? { ...coupon, is_active: !isActive }
-              : coupon
+      // Cập nhật trạng thái coupon ngay trong danh sách
+      if (typeof onUpdate === "function") {
+        onUpdate((prev) =>
+          prev.map((c) =>
+            c._id === couponId ? { ...c, is_active: isActive } : c
           )
         );
       }
+    } catch (error: any) {
       console.error(`${isActive ? "Enable" : "Hide"} coupon failed:`, error);
     }
   };
 
-  const onStatusChange = async (couponId: string, isActive: boolean) => {
-    toast(
-      (t) => (
-        <div>
-          <p>Bạn có chắc muốn {isActive ? "mở khóa" : "ẩn"} mã giảm giá này?</p>
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Hủy
-            </button>
-            <button
-              className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
-              onClick={async () => {
-                toast.dismiss(t.id);
-                await performStatusChange(couponId, isActive);
-              }}
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+  const onStatusChange = (couponId: string, isActive: boolean) => {
+    setConfirmCouponId(couponId);
+    setConfirmActive(isActive);
   };
 
   const handleEditClick = (coupon: Coupon) => {
@@ -195,11 +130,20 @@ export default function TableCouponWrapper({
     setShowModal(true);
   };
 
-  const handleUpdateCoupon = (updatedCoupon: Coupon | null) => {
-    if (!updatedCoupon) return;
-    setCoupons((prev) =>
-      prev.map((u) => (u._id === updatedCoupon._id ? updatedCoupon : u))
-    );
+  // Không dùng setCoupons nữa, chỉ gọi onDelete từ cha khi cần xóa
+
+  // Filter coupons based on search and filter criteria (nếu cần filter ở FE)
+  const filteredCoupons = coupons.filter((coupon) => {
+    const matchFilter = filter === "all" || String(coupon.is_active) === filter;
+    const code = coupon.code || "";
+    const matchSearch = code.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  // Khi thêm/sửa thành công, reload lại trang
+  const handleEditModalClose = (shouldReload: boolean = false) => {
+    setShowModal(false);
+    setSelectedCoupon(null);
   };
 
   return (
@@ -237,7 +181,7 @@ export default function TableCouponWrapper({
             </tr>
           </thead>
           <tbody>
-            {filteredCoupons.map((coupon) => (
+            {coupons.map((coupon) => (
               <tr
                 key={coupon._id}
                 className="border-b text-[#0F172A] font-[500] text-[16px] hover:bg-[#F9FAFB] transition-colors duration-150"
@@ -297,19 +241,56 @@ export default function TableCouponWrapper({
                 </td>
               </tr>
             ))}
+            {totalPage > 1 && (
+              <>
+                <tr>
+                  <td colSpan={6} className="py-2">
+                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={6} className="pt-4 pb-2">
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPage={totalPage}
+                        onPageChange={onPageChange}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
         {showModal && selectedCoupon && (
           <EditCouponModal
             coupon={selectedCoupon}
-            onClose={() => {
-              setShowModal(false);
-              setSelectedCoupon(null);
+            onClose={handleEditModalClose}
+            onSave={(updatedCoupon) => {
+              // Cập nhật coupon trong danh sách ngay khi sửa thành công
+              if (typeof onUpdate === "function") {
+                onUpdate((prev) =>
+                  prev.map((c) =>
+                    c._id === updatedCoupon._id ? updatedCoupon : c
+                  )
+                );
+              }
             }}
-            onSave={handleUpdateCoupon}
           />
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmCouponId}
+        title={`Bạn có chắc muốn ${
+          confirmActive ? "mở khóa" : "ẩn"
+        } mã giảm giá này?`}
+        onConfirm={async () => {
+          await performStatusChange(confirmCouponId!, confirmActive);
+          setConfirmCouponId(null);
+        }}
+        onCancel={() => setConfirmCouponId(null)}
+      />
       {children && children(filteredCoupons)}
     </div>
   );

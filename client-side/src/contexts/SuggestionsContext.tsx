@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { fetchProducts } from "@/services/productApi";
-
+import { Suggestion } from "@/types/product";
 interface SuggestionsContextType {
-  defaultSuggestions: string[];
+  defaultSuggestions: Suggestion[];
 }
 
 const SuggestionsContext = createContext<SuggestionsContextType>({
@@ -12,15 +12,20 @@ const SuggestionsContext = createContext<SuggestionsContextType>({
 });
 
 export function SuggestionsProvider({ children }: { children: React.ReactNode }) {
-  const [defaultSuggestions, setDefaultSuggestions] = useState<string[]>([]);
+  const [defaultSuggestions, setDefaultSuggestions] = useState<Suggestion[]>([]); // ✅ sửa string[] thành Suggestion[]
 
   useEffect(() => {
     const loadDefaultSuggestions = async () => {
       try {
-        const response = await fetchProducts({ sort_by: "best_selling", is_active: true });
-        const suggestions = response.data
-          .map((product: any) => product.name)
-          .slice(0, 5);
+        const response = await fetchProducts({
+          sort_by: "best_selling",
+          is_active: true,
+        });
+        const suggestions = response.data.slice(0, 5).map((product: any) => ({
+          name: product.name,
+          id: product.id, // hoặc product.slug nếu bạn dùng slug
+        }));
+        console.log(suggestions);
         setDefaultSuggestions(suggestions);
       } catch (error) {
         console.error("Lỗi khi tải gợi ý mặc định:", error);

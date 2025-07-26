@@ -281,6 +281,7 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
   }
 };
 
+
 // Thêm sản phẩm mới
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {

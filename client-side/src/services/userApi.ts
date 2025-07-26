@@ -49,7 +49,7 @@ export async function login(
 
     const data = await res.json();
     const user: IUser = {
-      id: data.data.user._id,
+      id: data.data.user._id, 
       email: data.data.user.email,
       name: data.data.user.name,
       phone: data.data.user.phone || null,
@@ -64,7 +64,7 @@ export async function login(
       document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=3600`;
     }
 
-    return { user, accessToken: data.accessToken };
+    return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
     console.error("Error logging in:", error.message);
     return null;

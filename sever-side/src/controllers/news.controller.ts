@@ -7,7 +7,10 @@ import { v2 as cloudinary } from "cloudinary";
 import { MulterRequest, normalizeFiles } from "../middlewares/upload.middleware";
 
 // Thêm tin tức
-export const createNews = async (req: MulterRequest, res: Response): Promise<void> => {
+export const createNews = async (
+  req: MulterRequest,
+  res: Response
+): Promise<void> => {
   try {
     const {
       title,
@@ -19,6 +22,8 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       published_at,
       is_published,
     } = req.body;
+
+    console.log("Received request body:", req.body);
 
     const user_id = req.user?.userId;
 
@@ -49,10 +54,11 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
         const stream = cloudinary.uploader.upload_stream(
           { folder: "news" },
           (error, result) => {
-            if (error || !result) return reject(error);
+            if (error || !result) return reject(error || new Error("Upload failed"));
             resolve(result.secure_url);
           }
         );
+        stream.on("error", (error) => reject(error));
         stream.end(files[0].buffer);
       });
 
@@ -61,6 +67,14 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
 
     const parsedPublishedAt = published_at ? new Date(published_at) : null;
     const shouldPublishNow = is_published === "true" || is_published === true;
+
+    if (published_at && (!parsedPublishedAt || isNaN(parsedPublishedAt.getTime()))) {
+      res.status(400).json({
+        status: "error",
+        message: `Thời gian đăng bài không hợp lệ: ${published_at}`,
+      });
+      return;
+    }
 
     const newsData: Partial<INews> = {
       title,
@@ -72,7 +86,7 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       thumbnail,
       meta_description,
       is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
-      published_at: parsedPublishedAt ?? (shouldPublishNow ? new Date() : null),
+      published_at: parsedPublishedAt && !isNaN(parsedPublishedAt.getTime()) ? parsedPublishedAt : null,
     };
 
     const createdNews = new newsModel(newsData);
@@ -82,7 +96,6 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       .findById(savedNews._id)
       .populate("user_id", "name email")
       .populate("category_id", "name");
-
 
     if (newsData.is_published) {
       setImmediate(async () => {
@@ -104,13 +117,13 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       });
     }
 
-
     res.status(201).json({
       status: "success",
       message: "Tạo tin tức thành công",
       data: populated,
     });
   } catch (error: any) {
+    console.error("Error in createNews:", error);
     if (error.code === 11000) {
       res.status(409).json({ status: "error", message: "Slug đã tồn tại" });
     } else {
@@ -120,7 +133,10 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
 };
 
 // Cập nhật tin tức
-export const updateNews = async (req: MulterRequest, res: Response): Promise<void> => {
+export const updateNews = async (
+  req: MulterRequest,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
     const {
@@ -131,16 +147,23 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
       tags,
       is_published,
       meta_description,
+      published_at,
     } = req.body;
 
+    console.log("Received update request body:", req.body);
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID tin tức không hợp lệ" });
       return;
     }
 
     const existingNews = await newsModel.findById(id);
     if (!existingNews) {
-      res.status(404).json({ status: "error", message: "Tin tức không tồn tại" });
+      res
+        .status(404)
+        .json({ status: "error", message: "Tin tức không tồn tại" });
       return;
     }
 
@@ -151,6 +174,20 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
     if (slug) updates.slug = slug;
     if (tags) updates.tags = tags.split(",");
     if (meta_description) updates.meta_description = meta_description;
+
+    if (published_at) {
+      const parsedPublishedAt = new Date(published_at);
+      if (isNaN(parsedPublishedAt.getTime())) {
+        res.status(400).json({
+          status: "error",
+          message: `Thời gian đăng bài không hợp lệ: ${published_at}`,
+        });
+        return;
+      }
+      updates.published_at = parsedPublishedAt;
+    } else if (is_published === "false") {
+      updates.published_at = null;
+    }
 
     if (
       typeof is_published === "boolean" ||
@@ -179,10 +216,11 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
         const stream = cloudinary.uploader.upload_stream(
           { folder: "news" },
           (error, result) => {
-            if (error || !result) return reject(error);
+            if (error || !result) return reject(error || new Error("Upload failed"));
             resolve(result.secure_url);
           }
         );
+        stream.on("error", (error) => reject(error));
         stream.end(files[0].buffer);
       });
 
@@ -200,6 +238,7 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
       data: updatedNews,
     });
   } catch (error: any) {
+    console.error("Error in updateNews:", error);
     if (error.code === 11000) {
       res.status(409).json({ status: "error", message: "Slug đã tồn tại" });
     } else {
@@ -208,8 +247,11 @@ export const updateNews = async (req: MulterRequest, res: Response): Promise<voi
   }
 };
 
-// Xoá tin tức
-export const deleteNews = async (req: Request, res: Response): Promise<void> => {
+// Xóa tin tức
+export const deleteNews = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -229,7 +271,10 @@ export const deleteNews = async (req: Request, res: Response): Promise<void> => 
 };
 
 // Lấy danh sách tin tức
-export const getNewsList = async (req: Request, res: Response): Promise<void> => {
+export const getNewsList = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const {
       page = "1",
@@ -286,7 +331,10 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
 };
 
 // Lấy chi tiết tin tức
-export const getNewsDetail = async (req: Request, res: Response): Promise<void> => {
+export const getNewsDetail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -316,7 +364,10 @@ export const getNewsDetail = async (req: Request, res: Response): Promise<void> 
 };
 
 // Lấy tất cả tin tức
-export const getAllNews = async (req: Request, res: Response): Promise<void> => {
+export const getAllNews = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const news = await newsModel
       .find({})
@@ -335,4 +386,3 @@ export const getAllNews = async (req: Request, res: Response): Promise<void> => 
     });
   }
 };
-

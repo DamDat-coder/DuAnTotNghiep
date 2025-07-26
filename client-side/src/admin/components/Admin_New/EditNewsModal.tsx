@@ -179,9 +179,9 @@ const EditNewsModal = ({
         meta_description,
       });
       toast.success("Cập nhật tin tức thành công!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 1000);
     } catch (err: any) {
       setError("Lỗi khi cập nhật tin tức.");
       toast.error("Cập nhật thất bại!");

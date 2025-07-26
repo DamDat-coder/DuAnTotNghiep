@@ -64,7 +64,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             tags: tags ? tags.split(",") : [],
             thumbnail,
             meta_description,
-            is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
+            is_published: shouldPublishNow ? true : false,
             published_at: parsedPublishedAt !== null && parsedPublishedAt !== void 0 ? parsedPublishedAt : (shouldPublishNow ? new Date() : null),
         };
         const createdNews = new news_model_1.default(newsData);
@@ -73,7 +73,6 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             .findById(savedNews._id)
             .populate("user_id", "name email")
             .populate("category_id", "name");
-
         if (newsData.is_published) {
             setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
                 try {
@@ -94,12 +93,14 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 }
             }));
         }
-
         res.status(201).json({
             status: "success",
             message: "Tạo tin tức thành công",
             data: populated,
         });
+        console.log("Tin tức tạo mới:");
+        console.log("published_at:", parsedPublishedAt);
+        console.log("is_published:", newsData.is_published);
     }
     catch (error) {
         if (error.code === 11000) {

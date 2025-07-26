@@ -6,6 +6,7 @@ import { fetchAllUsersAdmin, toggleUserStatus } from "@/services/userApi";
 import EditUserModal from "./EditUserModal";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Props {
   users: IUser[];
@@ -26,6 +27,10 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<IUser[]>(initialUsers);
+  const [confirmUserId, setConfirmUserId] = useState<string | null>(null);
+  const [confirmActive, setConfirmActive] = useState<boolean>(true);
+   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
 
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -124,44 +129,14 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
     return () => window.removeEventListener("mousedown", handler);
   }, []);
 
-  const onStatusChange = async (userId: string, isActive: boolean) => {
+  const onStatusChange = (userId: string, isActive: boolean) => {
     const targetUser = users.find((u) => u.id === userId);
     if (user?.role === "admin" && !isActive && targetUser?.role === "admin") {
       toast.error("Không thể khóa tài khoản admin khác.");
       return;
     }
-
-    if (!isActive) {
-      toast(
-        (t) => (
-          <div>
-            <p>
-              Bạn có chắc muốn {isActive ? "mở khóa" : "khóa"} tài khoản này?
-            </p>
-            <div className="mt-2 flex justify-end gap-2">
-              <button
-                className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-                onClick={() => toast.dismiss(t.id)}
-              >
-                Hủy
-              </button>
-              <button
-                className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
-                onClick={async () => {
-                  toast.dismiss(t.id);
-                  await performStatusChange(userId, isActive);
-                }}
-              >
-                Xác nhận
-              </button>
-            </div>
-          </div>
-        ),
-        { duration: Infinity }
-      );
-    } else {
-      await performStatusChange(userId, isActive);
-    }
+    setConfirmUserId(userId);
+    setConfirmActive(isActive);
   };
 
   const performStatusChange = async (userId: string, isActive: boolean) => {
@@ -302,6 +277,26 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
                 </td>
               </tr>
             ))}
+            {totalPage > 1 && (
+              <>
+                <tr>
+                  <td colSpan={6} className="py-2">
+                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={6} className="pt-4 pb-2">
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPage={totalPage}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
         {showModal && selectedUser && (
@@ -313,6 +308,17 @@ export default function TableWrapper({ users: initialUsers, children }: Props) {
           />
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmUserId}
+        title={`Bạn có chắc muốn ${
+          confirmActive ? "mở khóa" : "khóa"
+        } tài khoản này?`}
+        onConfirm={async () => {
+          await performStatusChange(confirmUserId!, confirmActive);
+          setConfirmUserId(null);
+        }}
+        onCancel={() => setConfirmUserId(null)}
+      />
       {children && children(filteredUsers)}
     </div>
   );

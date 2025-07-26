@@ -9,14 +9,14 @@ const options = [
   { value: "all", label: "Tất cả" },
   { value: "published", label: "Đã xuất bản" },
   { value: "draft", label: "Bản nháp" },
-  // { value: "upcoming", label: "Sắp xuất bản" },
+  { value: "upcoming", label: "Sắp xuất bản" },
 ];
 
 export default function NewControlBar({
   onFilterChange,
   onSearchChange,
 }: {
-  onFilterChange: (val: "all" | "published" | "draft") => void;
+  onFilterChange: (val: "all" | "published" | "draft" | "upcoming") => void;
   onSearchChange: (val: string) => void;
 }) {
   const [selected, setSelected] = useState(options[0]);
@@ -34,7 +34,7 @@ export default function NewControlBar({
   const handleFilter = (opt: (typeof options)[number]) => {
     setSelected(opt);
     setOpenDropdown(false);
-    onFilterChange(opt.value);
+    onFilterChange(opt.value as "all" | "published" | "draft");
   };
 
   const handleSearch = (val: string) => {

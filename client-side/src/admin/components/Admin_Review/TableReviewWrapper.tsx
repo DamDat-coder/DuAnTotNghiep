@@ -4,6 +4,7 @@ import { IReview } from "@/types/review";
 import { updateReviewStatus } from "@/services/reviewApi";
 import EditReviewModal from "./EditReviewModal";
 import { toast } from "react-hot-toast";
+import { Pagination } from "../ui/Panigation";
 
 interface Props {
   reviews: IReview[];
@@ -61,6 +62,8 @@ export default function TableReviewWrapper({
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [selectedReview, setSelectedReview] = useState<IReview | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
 
   // Ref to store dropdown refs for each review
   const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -257,6 +260,26 @@ export default function TableReviewWrapper({
                 </tr>
               );
             })}
+            {totalPage > 1 && (
+              <>
+                <tr>
+                  <td colSpan={6} className="py-2">
+                    <div className="w-full h-[1.5px] bg-gray-100 rounded"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={6} className="pt-4 pb-2">
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPage={totalPage}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
         {showModal && selectedReview && (

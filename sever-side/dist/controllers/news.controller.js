@@ -64,7 +64,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             tags: tags ? tags.split(",") : [],
             thumbnail,
             meta_description,
-            is_published: shouldPublishNow ? true : false,
+            is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
             published_at: parsedPublishedAt !== null && parsedPublishedAt !== void 0 ? parsedPublishedAt : (shouldPublishNow ? new Date() : null),
         };
         const createdNews = new news_model_1.default(newsData);

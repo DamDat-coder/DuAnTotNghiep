@@ -408,22 +408,24 @@ export const useCheckout = () => {
             size: item.size,
           })),
           paymentMethod,
+          shipping: shippingFee,
         },
       };
 
       const paymentResponse = await initiatePayment(paymentInfo);
       if (paymentInfo.orderInfo.paymentMethod === "cod") {
-        // 🧠 Flow COD: có paymentId ngay, nên gọi tiếp createOrder
-        const orderResponse = await createOrder(
-          paymentResponse.paymentId,
-          user.id
-        );
-        dispatch({ type: "clear" });
-        toast.success("Đơn hàng đã được xác nhận!");
-        router.push("/profile?tab=orders");
+        localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
+        localStorage.setItem("pendingUserId", user.id);
+        router.push("/payment/success");
       } else {
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
+        console.log(
+          "pendingPaymentId " +
+            paymentResponse.paymentId +
+            " pendingUserId " +
+            user.id
+        );
         if (paymentResponse.paymentUrl) {
           window.location.href = paymentResponse.paymentUrl;
         } else {

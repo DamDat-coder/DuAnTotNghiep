@@ -11,10 +11,11 @@ import SearchInput from "../LookupMenu/SearchInput";
 import SearchSuggestions from "../LookupMenu/SearchSuggestions";
 import SearchResults from "../LookupMenu/SearchResults";
 import { useSuggestions } from "@/contexts/SuggestionsContext";
+import { convertToSlug } from "@/utils/slugify";
 
 export default function SearchSection() {
   const { isLookupOpen, setIsLookupOpen } = useLookup();
-  const { defaultSuggestions } = useSuggestions();
+  const { defaultSuggestions } = useSuggestions(); // ✅ Đã lấy suggestion từ context
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +30,8 @@ export default function SearchSection() {
     }
     try {
       setIsLoading(true);
-      const result = await fetchProductBySlug(term, false);
+      const slug = convertToSlug(term); // ✅ dùng term ở đây, không dùng searchTerm để tránh stale value
+      const result = await fetchProductBySlug(slug, false);
       setFilteredProducts(
         Array.isArray(result) ? result : result ? [result] : []
       );
@@ -63,11 +65,6 @@ export default function SearchSection() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isLookupOpen, setIsLookupOpen]);
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchTerm(suggestion);
-    setIsLookupOpen(false);
-  };
-
   const handleResultClick = () => {
     setIsLookupOpen(false);
     setSearchTerm("");
@@ -75,9 +72,12 @@ export default function SearchSection() {
   };
 
   const suggestions =
-    filteredProducts.length > 0
-      ? filteredProducts.map((product) => product.name).slice(0, 3)
-      : defaultSuggestions;
+    searchTerm.trim() === ""
+      ? defaultSuggestions
+      : filteredProducts.slice(0, 3).map((product) => ({
+          name: product.name,
+          id: product.slug || product.id,
+        }));
 
   return (
     <div className="w-6 h-6 relative">
@@ -126,8 +126,9 @@ export default function SearchSection() {
                     {searchTerm.trim() === "" ? (
                       <SearchSuggestions
                         suggestions={suggestions}
-                        handleSuggestionClick={handleSuggestionClick}
-                        onClick={handleSuggestionClick}
+                        onClick={(suggestion) => {
+                          setIsLookupOpen(false);
+                        }}
                       />
                     ) : (
                       <SearchResults

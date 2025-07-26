@@ -19,13 +19,12 @@ export default function ProductCardList({ items }: { items: ProductItem[] }) {
         <Link
           key={item.slug}
           href={`/products/${item.id}`}
-          className="flex items-center gap-3 border p-2 rounded-lg hover:shadow transition bg-white"
+          className="flex items-center gap-3 border p-2 rounded-lg hover:shadow-custom-order transition bg-white"
         >
           {item.image && (
             <div className="w-16 h-16 relative flex-shrink-0">
               <Image
-                src={`/product/img/${item.image}`}
-                // src={item.image}
+                src={item.image}
                 alt={item.name}
                 fill
                 className="rounded object-cover"

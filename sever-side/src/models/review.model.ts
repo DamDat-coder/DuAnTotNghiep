@@ -9,6 +9,7 @@ export interface IReview extends Document {
   status: "approved" | "spam";
   createdAt?: Date;
   updatedAt?: Date;
+  images?: string[];
 }
 
 const reviewSchema = new Schema<IReview>(
@@ -23,6 +24,7 @@ const reviewSchema = new Schema<IReview>(
       enum: ["approved", "spam"],
       default: "approved",
     },
+    images: [{ type: String }],
   },
   { timestamps: true }
 );

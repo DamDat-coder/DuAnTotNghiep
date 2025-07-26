@@ -420,12 +420,6 @@ export const useCheckout = () => {
       } else {
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
-        console.log(
-          "pendingPaymentId " +
-            paymentResponse.paymentId +
-            " pendingUserId " +
-            user.id
-        );
         if (paymentResponse.paymentUrl) {
           window.location.href = paymentResponse.paymentUrl;
         } else {

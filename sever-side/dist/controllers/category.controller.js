@@ -45,7 +45,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const newCategory = yield category_model_1.default.create({
             name,
             slug,
-            description: description || "", // thêm mô tả
+            description: description || "",
             parentId: parentId || null,
             image: imageUrl,
             is_active: typeof is_active === "boolean" ? is_active : true,
@@ -111,7 +111,7 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (typeof is_active !== "undefined") {
             updateData.is_active = is_active;
         }
-        if (typeof description !== "undefined") { // thêm mô tả
+        if (typeof description !== "undefined") {
             updateData.description = description;
         }
         const file = req.file;

@@ -34,7 +34,7 @@ export const createCategory = async (req: Request, res: Response) => {
     const newCategory = await Category.create({
       name,
       slug,
-      description: description || "", // thêm mô tả
+      description: description || "",
       parentId: parentId || null,
       image: imageUrl,
       is_active: typeof is_active === "boolean" ? is_active : true,
@@ -110,7 +110,7 @@ export const updateCategory = async (req: Request, res: Response) => {
       updateData.is_active = is_active;
     }
 
-    if (typeof description !== "undefined") {  // thêm mô tả
+    if (typeof description !== "undefined") { 
       updateData.description = description;
     }
 

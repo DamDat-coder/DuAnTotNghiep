@@ -71,8 +71,9 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       tags: tags ? tags.split(",") : [],
       thumbnail,
       meta_description,
-      is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
+      is_published: shouldPublishNow ? true : false,
       published_at: parsedPublishedAt ?? (shouldPublishNow ? new Date() : null),
+
     };
 
     const createdNews = new newsModel(newsData);
@@ -110,6 +111,9 @@ export const createNews = async (req: MulterRequest, res: Response): Promise<voi
       message: "Tạo tin tức thành công",
       data: populated,
     });
+    console.log("Tin tức tạo mới:");
+    console.log("published_at:", parsedPublishedAt);
+    console.log("is_published:", newsData.is_published);
   } catch (error: any) {
     if (error.code === 11000) {
       res.status(409).json({ status: "error", message: "Slug đã tồn tại" });

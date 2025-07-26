@@ -6,8 +6,11 @@ import UserModel from "../models/user.model";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { googleClient } from "../config/google";
-import { sendResetPasswordEmail } from "../utils/mailer";
+import { sendAccountBlockedEmail, sendResetPasswordEmail } from "../utils/mailer";
 import { resetTokens } from "../utils/resetTokenStore";
+import {
+  sendAccountUnlockedEmail,
+} from "../utils/mailer";
 
 // Đăng nhập bằng Google
 export const googleLogin = async (
@@ -295,7 +298,7 @@ export const getAllUsers = async (
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)
-      .select("name email role is_active createdAt")
+      .select("name email phone role is_active createdAt")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
@@ -379,6 +382,7 @@ export const toggleUserStatus = async (
   next: NextFunction
 ) => {
   try {
+    const { id } = req.params;
     const { is_active } = req.body;
     if (typeof is_active !== "boolean") {
       return res
@@ -386,7 +390,7 @@ export const toggleUserStatus = async (
         .json({ success: false, message: "`is_active` phải là boolean." });
     }
 
-    const user = await UserModel.findById(req.params.id);
+    const user = await UserModel.findById(id);
     if (!user) {
       return res
         .status(404)
@@ -401,6 +405,12 @@ export const toggleUserStatus = async (
 
     user.is_active = is_active;
     await user.save();
+
+    if (!is_active) {
+      await sendAccountBlockedEmail(user.email, user.name);
+    } else {
+      await sendAccountUnlockedEmail(user.email, user.name);
+    }
 
     const { password, ...userData } = user.toObject();
 
@@ -705,12 +715,10 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     const tokenData = resetTokens.get(token);
     if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Token không hợp lệ hoặc đã hết hạn.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Token không hợp lệ hoặc đã hết hạn.",
+      });
     }
 
     const user = await UserModel.findById(tokenData.userId);

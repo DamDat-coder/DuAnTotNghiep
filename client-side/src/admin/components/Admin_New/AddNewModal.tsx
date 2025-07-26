@@ -24,11 +24,14 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState<"draft" | "publish">("draft");
+  const [action, setAction] = useState<"draft" | "publish" | "upcoming">(
+    "draft"
+  );
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [newsImages, setNewsImages] = useState<File[]>([]);
   const [meta_description, setMeta_description] = useState("");
+  const [scheduleDate, setScheduleDate] = useState<string>("");
   const handlePreview = () => {
     setIsPreviewVisible(true); // Show the preview modal
   };
@@ -59,11 +62,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   };
 
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (
-      e.key === "Enter" ||
-      e.key === "," ||
-      e.key === ";" 
-    ) {
+    if (e.key === "Enter" || e.key === "," || e.key === ";") {
       e.preventDefault();
       const newTag = tagInput.trim();
       if (newTag && !tags.includes(newTag)) {
@@ -111,16 +110,37 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
+    const slug = title.toLowerCase().replace(/\s+/g, "-");
+    const category_id = selectedCategory || { _id: category, name: "" };
+
+    console.log("scheduleDate:", scheduleDate);
+    console.log("new Date(scheduleDate):", new Date(scheduleDate));
+
+    let publishedAtValue: Date | undefined = undefined;
+    if (action === "upcoming" && scheduleDate) {
+      const dateObj = new Date(scheduleDate);
+      if (!isNaN(dateObj.getTime())) {
+        publishedAtValue = dateObj;
+      } else {
+        setError("Ngày đăng không hợp lệ!");
+        return;
+      }
+    }
+
     const payload: NewsPayload = {
       title,
       content,
-      slug: title.toLowerCase().replace(/\s+/g, "-"),
-      category_id: selectedCategory || { _id: category, name: "" },
+      slug,
+      category_id,
       tags,
       is_published: action === "publish",
-      thumbnail: thumbnail || undefined,
-      meta_description: meta_description || "",
-      published_at: action === "publish" ? new Date(date) : undefined,
+      published_at:
+        action === "upcoming"
+          ? publishedAtValue
+          : action === "publish"
+          ? new Date()
+          : undefined,
+      meta_description,
     };
 
     console.log("Payload to send:", {
@@ -130,6 +150,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
 
     try {
       setLoading(true);
+      // Gọi API tạo/sửa tin tức
       const createdNews = await createNews(payload);
       toast.success("Tạo tin tức thành công!");
 
@@ -169,6 +190,18 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
     };
     loadCategories();
   }, []);
+
+  // Hàm hiển thị trạng thái tin tức
+  const getStatusLabel = (news: News) => {
+    if (news.is_published) return "Xuất bản";
+    if (
+      news.published_at &&
+      new Date(news.published_at) > new Date() &&
+      !news.is_published
+    )
+      return "Sắp xuất bản";
+    return "Bản nháp";
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -234,7 +267,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
                       Ngày đăng
-                      {action === "publish" && (
+                      {(action === "publish" || action === "upcoming") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </label>
@@ -242,7 +275,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       type="datetime-local"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      disabled={action !== "publish"}
+                      disabled={action !== "publish" && action !== "upcoming"}
                       className="w-full h-[46px] border border-[#D1D1D1] rounded-[12px] appearance-none"
                     />
                     <Image
@@ -275,11 +308,24 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       >
                         Xuất bản
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setAction("upcoming")}
+                        className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
+                          action === "upcoming"
+                            ? "bg-black text-white"
+                            : "border border-gray-300"
+                        }`}
+                      >
+                        Hẹn ngày đăng
+                      </button>
                     </div>
 
                     {/* Add Preview button to show content preview before publish */}
                     <div className="mt-4">
-                      {action === "draft" || action === "publish" ? (
+                      {action === "draft" ||
+                      action === "publish" ||
+                      action === "upcoming" ? (
                         <button
                           type="button"
                           onClick={handlePreview}

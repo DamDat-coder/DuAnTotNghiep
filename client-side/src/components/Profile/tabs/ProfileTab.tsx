@@ -162,7 +162,7 @@ export default function ProfileTab() {
                 className="text-black underline hover:text-gray-700 text-sm"
                 onClick={() => setShowPhoneModal(true)}
               >
-                {phone ? "Đổi số điện thoại" : "Thêm số điện thoại"}
+                {phone ? "Sửa" : "Thêm"}
               </button>
             </div>
           </div>
@@ -177,117 +177,6 @@ export default function ProfileTab() {
               }}
             />
           )}
-
-          <div>
-            <label className="block font-medium mb-4">Địa chỉ</label>
-            <div className="space-y-4">
-              {/* Tỉnh / Thành */}
-              <div className="space-y-1">
-                <label className="text-sm text-gray-700 font-medium">
-                  Tỉnh / Thành
-                </label>
-                <select
-                  id="province"
-                  value={province}
-                  onChange={(e) => {
-                    const selectedProvince = provinces.find(
-                      (p) => p.name === e.target.value
-                    );
-                    setProvince(e.target.value);
-                    setProvinceCode(selectedProvince?.code ?? null);
-                    setDistrict("");
-                    setWard("");
-
-                    // Kiểm tra nếu districts có giá trị không
-                    if (selectedProvince && selectedProvince.districts) {
-                      setDistrict(selectedProvince.districts[0]?.name || ""); // Chọn quận mặc định
-                    }
-                  }}
-                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Chọn tỉnh / thành</option>
-                  {provinces.map((p) => (
-                    <option key={p.code} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Quận / Huyện */}
-              <div className="space-y-1">
-                <label className="text-sm text-gray-700 font-medium">
-                  Quận / Huyện
-                </label>
-                <select
-                  id="district"
-                  value={district}
-                  onChange={(e) => {
-                    const selectedDistrict = districts.find(
-                      (d) => d.name === e.target.value
-                    );
-                    setDistrict(e.target.value);
-                    setDistrictCode(selectedDistrict?.code ?? null);
-                    setWard(""); // Clear ward when changing district
-                    // Kiểm tra nếu wards có giá trị không
-                    if (selectedDistrict && selectedDistrict.wards) {
-                      setWard(selectedDistrict.wards[0]?.name || ""); // Chọn phường mặc định
-                    }
-                  }}
-                  disabled={!province} // Disable if no province is selected
-                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Chọn quận / huyện</option>
-                  {districts.map((d) => (
-                    <option key={d.code} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Phường / Xã */}
-              <div className="space-y-1">
-                <label className="text-sm text-gray-700 font-medium">
-                  Phường / Xã
-                </label>
-                <select
-                  id="ward"
-                  value={ward}
-                  onChange={(e) => {
-                    const selectedWard = wards.find(
-                      (w) => w.name === e.target.value
-                    );
-                    setWard(e.target.value);
-                    setWardCode(selectedWard?.code ?? null);
-                  }}
-                  disabled={!district} // Disable if no district is selected
-                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Chọn phường / xã</option>
-                  {wards.map((w) => (
-                    <option key={w.code} value={w.name}>
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Địa chỉ */}
-              <div className="space-y-1">
-                <label className="text-sm text-gray-700 font-medium">
-                  Địa chỉ
-                </label>
-                <input
-                  type="text"
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  className="w-full p-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập địa chỉ (số nhà, tên đường...)"
-                />
-              </div>
-            </div>
-          </div>
 
           <div className="text-right">
             <button

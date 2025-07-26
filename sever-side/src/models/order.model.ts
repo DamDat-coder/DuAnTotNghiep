@@ -15,6 +15,7 @@ export interface IShippingAddress {
   ward: string;
   district: string;
   province: string;
+  phone: string;
   is_default?: boolean;
 }
 
@@ -53,6 +54,7 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
     ward: { type: String, required: true },
     district: { type: String, required: true },
     province: { type: String, required: true },
+     phone: { type: String, required: true },
     is_default: { type: Boolean, default: false },
   },
   { _id: false }

@@ -158,7 +158,7 @@ export default function Orders({
             >
               <div className="flex justify-between items-start mb-[16px]">
                 <p className="font-bold text-sm text-black">
-                  MÃ ĐƠN HÀNG: {order._id}
+                  MÃ ĐƠN HÀNG: {order.orderCode || order._id}
                 </p>
                 {getStatusBadge(order.status)}
               </div>
@@ -191,7 +191,7 @@ export default function Orders({
                 >
                   Xem chi tiết
                 </button>
-                {(order.status === "pending") && (
+                {order.status === "pending" && (
                   <button
                     onClick={() => openCancelModal(order._id)}
                     className="w-[82px] h-[42px] bg-[#E74C3C] text-white text-sm rounded hover:bg-red-600"

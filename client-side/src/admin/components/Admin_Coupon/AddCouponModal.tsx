@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { createCoupon } from "@/services/couponApi";
 import { Coupon } from "@/types/coupon";
-import { ICategoryNews } from "@/types/category";
+import { ICategory } from "@/types/category";
 import { fetchCategoryTree } from "@/services/categoryApi";
+import { fetchProducts } from "@/services/productApi";
 import toast from "react-hot-toast";
+import { IProduct } from "@/types/product";
 
 interface AddCouponModalProps {
   onClose: () => void;
@@ -15,10 +17,14 @@ interface AddCouponModalProps {
 export default function AddCouponModal({ onClose }: AddCouponModalProps) {
   const startDateRef = useRef<HTMLInputElement | null>(null);
   const endDateRef = useRef<HTMLInputElement | null>(null);
-  const [categories, setCategories] = useState<ICategoryNews[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [allProducts, setAllProducts] = useState<IProduct[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
   const [form, setForm] = useState({
     code: "",
     category: "",
@@ -32,6 +38,22 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     description: "",
     is_active: true,
   });
+
+  // Memoize filteredCategories to ensure stability
+  const filteredCategories = useMemo(
+    () => categories.filter((cat) => cat.name !== "Bài viết"),
+    [categories]
+  );
+  const parentCategories = useMemo(
+    () => filteredCategories.filter((cat) => !cat.parentId),
+    [filteredCategories]
+  );
+
+  useEffect(() => {
+    if (categories.length) {
+      console.log("Sample category:", categories[0]);
+    }
+  }, [categories]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -49,23 +71,57 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
         ...prev,
         [name]: value,
       }));
+      // Reset selected products when category changes
+      if (name === "category") {
+        setSelectedProducts([]);
+      }
     }
   };
 
+  const handleRemoveProduct = (productId: string) => {
+    setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+  };
+
+  // Hàm format số có dấu chấm
+  function formatNumber(value: string | number) {
+    if (!value) return "";
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  // Hàm chỉ cho nhập số
+  function handleNumberInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    // Loại bỏ ký tự không phải số
+    const numericValue = value.replace(/\D/g, "");
+    setForm((prev) => ({
+      ...prev,
+      [name]: numericValue,
+    }));
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); 
+    e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+
+    // Get child category IDs for the selected parent category
+    const childCategoryIds = filteredCategories
+      .filter((cat) => cat.parentId === form.category)
+      .map((cat) => cat._id);
 
     // Transform form data to match Coupon schema
     const couponData: Partial<Coupon> = {
       code: form.code,
       description: form.description,
       discountType: form.type === "%" ? "percentage" : "fixed",
-      discountValue: parseFloat(form.value) || 0,
-      minOrderAmount: form.minOrder ? parseFloat(form.minOrder) : undefined,
+      discountValue: form.value
+        ? parseInt(form.value.replace(/\./g, ""), 10)
+        : 0,
+      minOrderAmount: form.minOrder
+        ? parseInt(form.minOrder.replace(/\./g, ""), 10)
+        : undefined,
       maxDiscountAmount: form.maxDiscount
-        ? parseFloat(form.maxDiscount)
+        ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
       startDate: form.startDate
         ? new Date(form.startDate).toISOString()
@@ -74,16 +130,19 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
       usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
       is_active: form.is_active,
       applicableCategories: form.category
-        ? categories.filter((cat) => cat._id === form.category)
+        ? [form.category, ...childCategoryIds]
         : [],
-      applicableProducts: [], 
+      applicableProducts:
+        selectedProducts.length > 0 ? selectedProducts : undefined,
     };
 
     try {
       console.log("Coupon data being sent:", couponData);
       const createdCoupon = await createCoupon(couponData);
       toast.success("Mã giảm giá được tạo thành công!");
-      onClose(); // Close modal on success
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       const errorMessage =
         error.message ||
@@ -96,6 +155,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     }
   };
 
+  // Fetch categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -108,6 +168,67 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     };
     loadCategories();
   }, []);
+
+  // Fetch products
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const res = await fetchProducts();
+        setAllProducts(res.data);
+      } catch (err) {
+        setError("Lỗi khi tải sản phẩm.");
+        console.error("Error loading products:", err);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  // Filter products based on selected category
+  useEffect(() => {
+    let childCategoryIds: string[] = [];
+    if (form.category) {
+      const selectedParent = filteredCategories.find(
+        (cat) => cat._id === form.category
+      );
+      if (selectedParent && selectedParent.children) {
+        childCategoryIds = selectedParent.children.map((cat) => cat._id);
+      }
+    }
+
+    const allCateIds = form.category
+      ? [form.category, ...childCategoryIds]
+      : [];
+
+    if (form.category) {
+      setFilteredProducts(
+        allProducts.filter((p) =>
+          typeof p.category === "object"
+            ? allCateIds.includes(p.category?._id ?? "")
+            : allCateIds.includes(p.category)
+        )
+      );
+    } else {
+      setFilteredProducts(allProducts);
+    }
+  }, [form.category, allProducts, filteredCategories]);
+
+  // Filter products in the modal based on search term
+  const searchedProducts = useMemo(
+    () =>
+      filteredProducts.filter((prod) =>
+        prod.name.toLowerCase().includes(productSearch.toLowerCase())
+      ),
+    [filteredProducts, productSearch]
+  );
+
+  // Map selected product IDs to their names for display
+  const selectedProductNames = useMemo(
+    () =>
+      selectedProducts
+        .map((id) => allProducts.find((p) => p.id === id)?.name)
+        .filter((name): name is string => !!name),
+    [selectedProducts, allProducts]
+  );
 
   const isFormValid =
     form.code &&
@@ -163,27 +284,25 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
               />
             </div>
 
-            {/* Danh mục không bắt buộc */}
+            {/* Category selection */}
             <div className="mb-8 relative">
-              <label className="block font-bold mb-4">Danh mục áp dụng</label>
+              <label className="block font-bold mb-4">
+                Danh mục áp dụng (không bắt buộc)
+              </label>
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] appearance-none"
               >
-                <option value="">Chọn danh mục (Nếu có)</option>
-                {categories.length > 0 ? (
-                  categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>
-                    Không có danh mục
+                <option value="">
+                  Không chọn danh mục (áp dụng cho tất cả)
+                </option>
+                {parentCategories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
                   </option>
-                )}
+                ))}
               </select>
               <Image
                 src="/admin_user/chevron-down.svg"
@@ -192,6 +311,42 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 alt="arrow down"
                 className="absolute right-3 top-[calc(50%+19px)] transform -translate-y-1/2 pointer-events-none"
               />
+            </div>
+
+            {/* Product selection */}
+            <div className="mb-8">
+              <label className="block font-bold mb-4">
+                Sản phẩm áp dụng (không bắt buộc)
+              </label>
+              <button
+                type="button"
+                className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px] text-left bg-white"
+                onClick={() => setShowProductModal(true)}
+              >
+                {selectedProducts.length === 0
+                  ? "Chọn sản phẩm (hoặc để trống để áp dụng tất cả)"
+                  : `${selectedProducts.length} sản phẩm đã chọn`}
+              </button>
+              {/* Display selected products as tags */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedProductNames.map((name, index) => (
+                  <span
+                    key={index}
+                    className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center"
+                  >
+                    {name}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveProduct(selectedProducts[index])
+                      }
+                      className="ml-2 text-red-500"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
@@ -221,9 +376,9 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 </label>
                 <input
                   name="value"
-                  value={form.value}
-                  onChange={handleChange}
-                  placeholder="Vd: 20 hoặc 50000"
+                  value={formatNumber(form.value)}
+                  onChange={handleNumberInput}
+                  placeholder="Vd: 20 hoặc 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                   required
                 />
@@ -237,9 +392,9 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 </label>
                 <input
                   name="minOrder"
-                  value={form.minOrder}
-                  onChange={handleChange}
-                  placeholder="Vd: 50000"
+                  value={formatNumber(form.minOrder)}
+                  onChange={handleNumberInput}
+                  placeholder="Vd: 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                 />
               </div>
@@ -247,9 +402,9 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 <label className="block font-bold mb-4">Giảm tối đa (đ)</label>
                 <input
                   name="maxDiscount"
-                  value={form.maxDiscount}
-                  onChange={handleChange}
-                  placeholder="Vd: 50000"
+                  value={formatNumber(form.maxDiscount)}
+                  onChange={handleNumberInput}
+                  placeholder="Vd: 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                 />
               </div>
@@ -366,11 +521,66 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
             <button
               type="submit"
               className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
+              disabled={isSubmitting || !isFormValid}
             >
-              Tạo mã giảm giá
+              {isSubmitting ? "Đang tạo..." : "Tạo mã giảm giá"}
             </button>
           </form>
         </div>
+
+        {/* Product selection modal */}
+        {showProductModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-[500px] max-h-[80vh] overflow-y-auto relative">
+              <h3 className="font-bold mb-4">Chọn sản phẩm áp dụng</h3>
+              <button
+                className="absolute top-2 right-2 text-gray-500"
+                onClick={() => setShowProductModal(false)}
+              >
+                Đóng
+              </button>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="w-full mb-2 px-3 py-2 border rounded"
+                />
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {searchedProducts.length > 0 ? (
+                  searchedProducts.map((prod) => (
+                    <label key={prod.id} className="flex items-center mb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.includes(prod.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedProducts((prev) => [...prev, prod.id]);
+                          } else {
+                            setSelectedProducts((prev) =>
+                              prev.filter((id) => id !== prod.id)
+                            );
+                          }
+                        }}
+                      />
+                      <span className="ml-2">{prod.name}</span>
+                    </label>
+                  ))
+                ) : (
+                  <p>Không có sản phẩm nào phù hợp.</p>
+                )}
+              </div>
+              <button
+                className="mt-4 w-full bg-black text-white py-2 rounded"
+                onClick={() => setShowProductModal(false)}
+              >
+                Xong
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

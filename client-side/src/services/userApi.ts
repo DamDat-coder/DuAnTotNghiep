@@ -34,9 +34,10 @@ export async function login(
   try {
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers:
+        {
+          "Content-Type": "application/json",
+        },
       body: JSON.stringify({ email, password }),
       credentials: "include",
     });
@@ -615,7 +616,9 @@ export async function fetchAllUsersAdmin(
       createdAt: (userData as any).createdAt ?? undefined,
       updatedAt: (userData as any).updatedAt ?? undefined,
     }));
-
+    // Sau khi fetch users
+    console.log("API raw response:", response.data);
+    console.log("Fetched users:", users);
     return {
       users,
       total: response.total || 0,
@@ -694,7 +697,9 @@ export async function updatePassword(
 }
 
 // Gửi OTP qua SMS
-export async function sendOtp(phone: string): Promise<{ success: boolean; message: string }> {
+export async function sendOtp(
+  phone: string
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE_URL}/users/send-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -706,7 +711,10 @@ export async function sendOtp(phone: string): Promise<{ success: boolean; messag
 }
 
 // Xác minh OTP
-export async function verifyOtp(phone: string, otp: string): Promise<{ success: boolean; message: string }> {
+export async function verifyOtp(
+  phone: string,
+  otp: string
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE_URL}/users/verify-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

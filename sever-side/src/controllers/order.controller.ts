@@ -5,7 +5,7 @@ import ProductModel from "../models/product.model";
 import PaymentModel from "../models/payment.model";
 import NotificationModel from "../models/notification.model";
 import UserModel, { IUser } from "../models/user.model";
-import { sendOrderSpamWarningEmail, sendAccountBlockedEmail } from "../utils/mailer"; 
+import { sendOrderSpamWarningEmail, sendAccountBlockedEmail } from "../utils/mailer";
 import { generateUniqueTransactionCode } from "../utils/generateTransactionCode";
 
 // Tạo đơn hàng
@@ -15,7 +15,6 @@ export const createOrder = async (req: Request, res: Response) => {
 
     let userId;
     let paymentMethod: 'cod' | 'vnpay' | 'zalopay';
-    let address_id;
     let shippingAddress;
     let items;
     let shipping = 0;
@@ -36,14 +35,14 @@ export const createOrder = async (req: Request, res: Response) => {
         return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
       }
 
-      ({ paymentMethod, address_id, shippingAddress, items, shipping = 0, discountAmount = 0 } = payment.order_info);
+      ({ paymentMethod,  shippingAddress, items, shipping = 0, discountAmount = 0 } = payment.order_info);
       userId = payment.userId;
     } else {
       if (!order_info) {
         return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
       }
 
-      ({ paymentMethod, userId, address_id, shippingAddress, items, shipping = 0, discountAmount = 0 } = order_info);
+      ({ paymentMethod, userId, shippingAddress, items, shipping = 0, discountAmount = 0 } = order_info);
 
       if (paymentMethod !== 'cod') {
         return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
@@ -54,12 +53,16 @@ export const createOrder = async (req: Request, res: Response) => {
     let totalPrice = 0;
 
     for (const item of items) {
-      const product = await ProductModel.findById(item.productId);
+      const product = await ProductModel.findById(item.product || item.productId);
       if (!product) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm.' });
       }
 
-      const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
+      const variantData = item.variant || item; 
+
+      const variant = product.variants.find(
+        v => v.color === variantData.color && v.size === variantData.size
+      );
       if (!variant || variant.stock < item.quantity) {
         return res.status(400).json({ success: false, message: 'Biến thể không hợp lệ hoặc hết hàng.' });
       }
@@ -71,8 +74,8 @@ export const createOrder = async (req: Request, res: Response) => {
         productId: product._id,
         name: product.name,
         image: product.image[0] || '',
-        color: item.color,
-        size: item.size,
+        color: variantData.color,
+        size: variantData.size,
         price: discountPrice,
         quantity: item.quantity,
       });
@@ -85,11 +88,10 @@ export const createOrder = async (req: Request, res: Response) => {
     totalPrice -= discountAmount;
     totalPrice += shipping;
 
-const orderCode = await generateUniqueTransactionCode("CD");
+    const orderCode = await generateUniqueTransactionCode("CD");
 
     const order = await OrderModel.create({
       userId,
-      address_id,
       shippingAddress,
       totalPrice,
       discountAmount,

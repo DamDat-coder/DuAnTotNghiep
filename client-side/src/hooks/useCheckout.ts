@@ -29,7 +29,6 @@ export const useCheckout = () => {
   const dispatch = useCartDispatch();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  // Lấy các sản phẩm được chọn từ giỏ hàng
   const orderItems: ICartItem[] = items.filter((item) => item.selected);
 
   // Tính toán giá
@@ -48,6 +47,7 @@ export const useCheckout = () => {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [total, setTotal] = useState(subtotal - discount + shippingFee);
+  const [isFreeShipping, setIsFreeShipping] = useState(false); // Theo dõi miễn phí vận chuyển
 
   // Khởi tạo formData
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -70,7 +70,6 @@ export const useCheckout = () => {
     address: "",
   });
 
-  // State cho danh sách địa chỉ, địa chỉ mặc định, và địa chỉ đang chọn
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
@@ -92,33 +91,15 @@ export const useCheckout = () => {
     });
 
     if (user && user.addresses) {
-      console.log("DEBUG useCheckout - User and addresses exist", {
-        addresses: user.addresses,
-        addressesCount: user.addresses.length,
-      });
-
-      // 1. Điền thông tin cá nhân vào form
-      setFormData((prev) => {
-        const newFormData = {
-          ...prev,
-          fullName: user.name || "",
-          email: user.email || "",
-          phone: user.phone || "",
-        };
-        console.log("DEBUG useCheckout - Updated formData", newFormData);
-        return newFormData;
-      });
-
-      // 2. Xử lý danh sách địa chỉ
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      }));
       setAddresses(user.addresses);
-      console.log("DEBUG useCheckout - Set addresses", user.addresses);
-
-      const defaultAddr =
-        user.addresses.find((addr) => addr.is_default) || null;
-      console.log("DEBUG useCheckout - Default address", defaultAddr);
+      const defaultAddr = user.addresses.find((addr) => addr.is_default) || null;
       setDefaultAddress(defaultAddr);
-
-      // 3. Xác định địa chỉ được chọn ban đầu
       let addressToSelect: Address | null = null;
       if (user.addresses.length === 1) {
         addressToSelect = user.addresses[0];
@@ -127,52 +108,32 @@ export const useCheckout = () => {
       } else if (user.addresses.length > 1) {
         addressToSelect = user.addresses[0];
       }
-      console.log("DEBUG useCheckout - Selected address", addressToSelect);
       setSelectedAddress(addressToSelect);
-
-      // 4. Cập nhật địa chỉ được chọn + đồng bộ lại form
       if (addressToSelect) {
-        setFormData((prev) => {
-          const updatedFormData = {
-            ...prev,
-            province: addressToSelect.province,
-            district: addressToSelect.district,
-            ward: addressToSelect.ward,
-            address: addressToSelect.street,
-          };
-          console.log(
-            "DEBUG useCheckout - Updated formData with address",
-            updatedFormData
-          );
-          return updatedFormData;
-        });
+        setFormData((prev) => ({
+          ...prev,
+          province: addressToSelect.province,
+          district: addressToSelect.district,
+          ward: addressToSelect.ward,
+          address: addressToSelect.street,
+        }));
       }
-
-      // 5. Chỉ đặt isLoading = false khi tất cả dữ liệu đã sẵn sàng
-      console.log(
-        "DEBUG useCheckout - Setting isLoading to false (with addresses)"
-      );
       setIsLoading(false);
     } else if (user && !user.addresses) {
-      console.log("DEBUG useCheckout - User exists but no addresses", { user });
       setAddresses([]);
       setDefaultAddress(null);
       setSelectedAddress(null);
-      console.log(
-        "DEBUG useCheckout - Setting isLoading to false (no addresses)"
-      );
       setIsLoading(false);
     } else {
-      console.log("DEBUG useCheckout - No user, setting isLoading to false");
       setIsLoading(false);
     }
   }, [user]);
 
+  // Áp dụng mã giảm giá từ localStorage
   useEffect(() => {
     const savedCouponCode = localStorage.getItem("pendingCouponCode");
     if (!savedCouponCode) return;
 
-    // Đợi `items` có dữ liệu
     if (items.length === 0 || subtotal <= 0) {
       console.log("⛔ Chưa đủ điều kiện áp dụng coupon", { items, subtotal });
       return;
@@ -180,12 +141,10 @@ export const useCheckout = () => {
 
     const applyCoupon = async () => {
       try {
-        // Chuẩn bị danh sách sản phẩm để kiểm tra
         const itemsToValidate = orderItems.map((item) => ({
           id: item.id,
-          categoryId: item.categoryId ?? "", // Đảm bảo categoryId luôn là string
+          categoryId: item.categoryId ?? "",
         }));
-
         const response = await validateCoupon(savedCouponCode, subtotal, itemsToValidate);
         if (response.success && response.data) {
           const { discountValue, discountType } = response.data;
@@ -194,7 +153,6 @@ export const useCheckout = () => {
               ? subtotal * (discountValue / 100)
               : discountValue;
 
-          // Áp dụng maxDiscountAmount nếu có
           if (response.data.maxDiscountAmount) {
             discountAmount = Math.min(discountAmount, response.data.maxDiscountAmount);
           }
@@ -216,9 +174,53 @@ export const useCheckout = () => {
     applyCoupon();
   }, [subtotal, items.length, orderItems]);
 
+  // Xử lý phí vận chuyển và tổng tiền
   useEffect(() => {
-    setTotal(subtotal - discount + shippingFee);
-  }, [subtotal, discount, shippingFee]);
+    let newShippingFee = shippingMethod === "standard" ? 25000 : 35000;
+
+    // Kiểm tra điều kiện miễn phí vận chuyển hoặc giảm phí
+    if (subtotal >= 1000000) {
+      if (shippingMethod === "standard") {
+        newShippingFee = 0; // Miễn phí vận chuyển cho giao hàng thường
+        if (!isFreeShipping) {
+          toast.success("Đơn hàng của bạn được miễn phí vận chuyển!");
+          setIsFreeShipping(true);
+        }
+      } else if (shippingMethod === "express") {
+        newShippingFee = 15000; // Giảm phí vận chuyển cho giao hàng nhanh
+        if (!isFreeShipping) {
+          toast.success("Phí giao hàng nhanh được giảm còn 15.000 VNĐ!");
+          setIsFreeShipping(true);
+        }
+      }
+    } else {
+      setIsFreeShipping(false); // Reset khi không đủ điều kiện
+    }
+
+    setShippingFee(newShippingFee);
+    setTotal(subtotal - discount + newShippingFee);
+  }, [subtotal, discount, shippingMethod, isFreeShipping]);
+
+  // Xử lý thay đổi phương thức vận chuyển
+  const handleShippingChange = (method: string) => {
+    setShippingMethod(method);
+    let newShippingFee = method === "standard" ? 25000 : 35000;
+
+    // Áp dụng lại logic miễn phí/giảm phí khi thay đổi phương thức
+    if (subtotal >= 1000000) {
+      newShippingFee = method === "standard" ? 0 : 15000;
+      toast.success(
+        method === "standard"
+          ? "Đơn hàng của bạn được miễn phí vận chuyển!"
+          : "Phí giao hàng nhanh được giảm còn 15.000 VNĐ!"
+      );
+      setIsFreeShipping(true);
+    } else {
+      setIsFreeShipping(false);
+    }
+
+    setShippingFee(newShippingFee);
+  };
 
   // Xử lý thay đổi input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -239,13 +241,6 @@ export const useCheckout = () => {
     setSelectedAddress(null);
   };
 
-  // Xử lý thay đổi phương thức vận chuyển
-  const handleShippingChange = (method: string) => {
-    setShippingMethod(method);
-    const newFee = method === "standard" ? 25000 : 35000;
-    setShippingFee(newFee);
-  };
-
   // Xử lý thay đổi phương thức thanh toán
   const handlePaymentChange = (method: string) => {
     setPaymentMethod(method);
@@ -259,12 +254,10 @@ export const useCheckout = () => {
     }
 
     try {
-      // Chuẩn bị danh sách sản phẩm để kiểm tra
       const itemsToValidate = orderItems.map((item) => ({
         id: item.id,
-        categoryId: item.categoryId ?? "", // Đảm bảo categoryId luôn là string
+        categoryId: item.categoryId ?? "",
       }));
-
       const response = await validateCoupon(discountCode, subtotal, itemsToValidate);
       if (response.success && response.data) {
         const { discountValue, discountType } = response.data;
@@ -273,7 +266,6 @@ export const useCheckout = () => {
             ? subtotal * (discountValue / 100)
             : discountValue;
 
-        // Áp dụng maxDiscountAmount nếu có
         if (response.data.maxDiscountAmount) {
           discountAmount = Math.min(discountAmount, response.data.maxDiscountAmount);
         }
@@ -449,5 +441,6 @@ export const useCheckout = () => {
     isAddressPopupOpen,
     setIsAddressPopupOpen,
     handleSelectAddress,
+    isFreeShipping,
   };
 };

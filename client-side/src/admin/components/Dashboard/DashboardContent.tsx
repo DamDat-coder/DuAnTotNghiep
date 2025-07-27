@@ -10,7 +10,6 @@ import TransactionHistory from './TransactionHistory';
 export default function DashboardPage() {
   const { user } = useAuth();
 
-  // Nếu chưa login thì không cho xem dashboard
   if (!user) {
     return (
       <div className="pt-10 px-6 max-w-[1200px] mx-auto text-center text-red-500 font-semibold">
@@ -19,7 +18,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Nếu không phải admin thì chặn truy cập
   if (user.role !== "admin") {
     return (
       <div className="pt-10 px-6 max-w-[1200px] mx-auto text-center text-red-500 font-semibold">
@@ -28,24 +26,30 @@ export default function DashboardPage() {
     );
   }
 
-  // Chỉ khi user đã login và là admin mới render dashboard thật sự
   return (
     <main className="pt-10 px-6 max-w-[1200px] mx-auto">
       {/* Stats row */}
       <div className="flex gap-6 mb-6">
         <Stats />
       </div>
-      {/* Main content: 2 cột */}
+
+      {/* RevenueChart full width */}
+      <div className="w-full mb-6">
+        <RevenueChart />
+      </div>
+
+      {/* BestSellerTable full width */}
+      <div className="w-full mb-6">
+        <BestSellerTable />
+      </div>
+
+      {/* CustomerChart + TransactionHistory */}
       <div className="flex gap-6">
-        {/* Cột trái lớn */}
-        <div className="flex flex-col gap-6 w-[743px]">
-          <RevenueChart />
-          <BestSellerTable />
-        </div>
-        {/* Cột phải nhỏ */}
-        <div className="flex flex-col gap-6 w-[359px]">
-          <CustomerChart />
+        <div className="w-[743px]">
           <TransactionHistory />
+        </div>
+        <div className="w-[359px]">
+          <CustomerChart />
         </div>
       </div>
     </main>

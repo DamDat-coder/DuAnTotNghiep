@@ -181,7 +181,6 @@ export async function fetchRevenueChart() {
 }
 
 // ----------- TOP 5 SẢN PHẨM BÁN CHẠY -----------
-// ----------- TOP 5 SẢN PHẨM BÁN CHẠY -----------
 export async function fetchBestSellers() {
   checkClient();
   const res = await fetchProducts({ sort_by: "best_selling", is_active: true });
@@ -203,19 +202,22 @@ export async function fetchBestSellers() {
 }
 
 // ----------- GIAO DỊCH GẦN NHẤT -----------
-// ----------- GIAO DỊCH GẦN NHẤT -----------
 export async function fetchTransactionHistory() {
   checkClient();
-  const ordersRes = await fetchAllOrders({ limit: 5 });
+  const ordersRes = await fetchAllOrders({ limit: 9999 });
   const allOrders: IOrder[] = ordersRes.data || [];
-  allOrders.sort(
-    (a, b) =>
-      new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime()
-  );
-  return allOrders.slice(0, 5).map((order) => ({
-    id: order._id,
-    date: order.createdAt,
-    amount: order.totalPrice || 0,
-    status: order.status,
-  }));
+
+  const pendingOrders = allOrders.filter(o => o.status === "pending");
+
+  return pendingOrders
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime()
+    )
+    .map((order) => ({
+      id: order._id,
+      date: order.createdAt,
+      amount: order.totalPrice || 0,
+      status: order.status,
+    }));
 }

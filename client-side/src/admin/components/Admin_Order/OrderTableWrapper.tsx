@@ -1,10 +1,14 @@
+"use client";
 import { useState, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { IOrder } from "@/types/order";
-import { UserData } from "@/types/auth";
 import { Pagination } from "../ui/Panigation";
 import OrderControlBar from "./OrderControlBar";
 import OrderBody from "./OrderBody";
-import EditOrderForm from "./OrderEditForm";
+import dynamic from "next/dynamic";
+
+// ✅ Tối ưu: Load EditOrderForm chỉ khi cần (giảm render double)
+const EditOrderForm = dynamic(() => import("./OrderEditForm"), { ssr: false });
 
 export default function OrderTableWrapper({
   orders,
@@ -18,7 +22,11 @@ export default function OrderTableWrapper({
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [editOrderId, setEditOrderId] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const editOrderId = searchParams.get("edit");
 
   const PAGE_SIZE = 10;
 
@@ -59,11 +67,18 @@ export default function OrderTableWrapper({
 
   function handleEdit(order: IOrder) {
     const orderId = order._id?.$oid || order._id || order.id;
-    setEditOrderId(orderId);
+    const params = new URLSearchParams(window.location.search);
+    params.set("edit", orderId);
+    router.push(`/admin/order?${params.toString()}`);
   }
 
   function handleCloseEditForm() {
-    setEditOrderId(null);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("edit");
+    const newUrl = `${window.location.pathname}${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+    router.replace(newUrl);
   }
 
   return (
@@ -104,7 +119,8 @@ export default function OrderTableWrapper({
           </div>
         )}
       </div>
-      {editOrderId && (
+
+      {!!editOrderId && (
         <EditOrderForm
           orderId={editOrderId}
           onClose={handleCloseEditForm}

@@ -106,6 +106,23 @@ export const createReview = async (
         await sendAccountBlockedEmail(user.email, user.name || "Người dùng");
         spamWarningMessage =
           "Tài khoản đã bị khóa vì có quá nhiều đánh giá spam.";
+        const newReview = await ReviewModel.create({
+          userId,
+          productId,
+          orderId,
+          content,
+          rating,
+          status: reviewStatus,
+          images: imageUrls,
+        });
+
+        return res.status(403).json({
+          success: false,
+          message: "Tài khoản đã bị khóa vì spam",
+          errorCode: "ACCOUNT_BLOCKED",
+          accountBlocked: true,
+          data: newReview,
+        });
       } else {
         await sendReviewWarningEmail(user.email, user.name || "Người dùng");
         spamWarningMessage = `Đánh giá bị đánh dấu là spam. Đây là lần thứ ${spamCountAfterThis}. Nếu tiếp tục, tài khoản sẽ bị khóa.`;
@@ -125,6 +142,7 @@ export const createReview = async (
       return res.status(400).json({
         success: false,
         message: spamWarningMessage,
+        errorCode: "REVIEW_SPAM",
         data: newReview,
       });
     }
@@ -241,13 +259,11 @@ export const updateReviewStatus = async (req: Request, res: Response) => {
         .json({ success: false, message: "Không tìm thấy đánh giá." });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Cập nhật trạng thái thành công.",
-        data: updated,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật trạng thái thành công.",
+      data: updated,
+    });
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái đánh giá:", error);
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });

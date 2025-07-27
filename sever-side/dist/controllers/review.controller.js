@@ -94,6 +94,22 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 yield (0, mailer_1.sendAccountBlockedEmail)(user.email, user.name || "Người dùng");
                 spamWarningMessage =
                     "Tài khoản đã bị khóa vì có quá nhiều đánh giá spam.";
+                const newReview = yield review_model_1.default.create({
+                    userId,
+                    productId,
+                    orderId,
+                    content,
+                    rating,
+                    status: reviewStatus,
+                    images: imageUrls,
+                });
+                return res.status(403).json({
+                    success: false,
+                    message: "Tài khoản đã bị khóa vì spam",
+                    errorCode: "ACCOUNT_BLOCKED",
+                    accountBlocked: true,
+                    data: newReview,
+                });
             }
             else {
                 yield (0, mailer_1.sendReviewWarningEmail)(user.email, user.name || "Người dùng");
@@ -112,6 +128,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             return res.status(400).json({
                 success: false,
                 message: spamWarningMessage,
+                errorCode: "REVIEW_SPAM",
                 data: newReview,
             });
         }
@@ -215,9 +232,7 @@ const updateReviewStatus = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 .status(404)
                 .json({ success: false, message: "Không tìm thấy đánh giá." });
         }
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             success: true,
             message: "Cập nhật trạng thái thành công.",
             data: updated,

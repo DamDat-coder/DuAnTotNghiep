@@ -8,6 +8,7 @@ import { createReview } from "@/services/reviewApi";
 import { IUser } from "@/types/auth";
 import { IReview } from "@/types/review";
 import { useValidOrderId } from "@/hooks/useValidOrderId";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReviewFormProps {
   productId: string;
@@ -30,6 +31,7 @@ export default function ReviewForm({
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { logout } = useAuth();
 
   const { orderId, loading: isCheckingOrder } = useValidOrderId(productId);
 
@@ -56,7 +58,6 @@ export default function ReviewForm({
   const handleSuggestedClick = (suggestion: string) => {
     setReview((prev) => (prev ? `${prev} ${suggestion}` : suggestion));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -71,7 +72,7 @@ export default function ReviewForm({
     }
 
     if (isCheckingOrder) {
-      toast.loading("Đang kiểm tra đơn hàng...");
+      toast.error("Đang kiểm tra đơn hàng...");
       return;
     }
 
@@ -90,7 +91,6 @@ export default function ReviewForm({
         orderId,
         images
       );
-      console.log("Review response:", response);
 
       if (response.success) {
         if (response.data?.status === "approved") {
@@ -98,22 +98,34 @@ export default function ReviewForm({
           setReview("");
           setRating(0);
           setImages([]);
-          toast.success(response.message); // Chỉ hiển thị khi approved
+          toast.success(response.message);
           onClose();
         } else {
-          // Đánh giá là spam, không gọi onReviewSubmitted
           toast.error(response.message || "Đánh giá bị đánh dấu là spam.");
         }
       } else {
+        if (response.accountBlocked) {
+          toast.error(response.message || "Tài khoản của bạn đã bị khóa.");
+          setTimeout(() => {
+            logout();
+          }, 1000);
+          return;
+        }
         toast.error(response.message || "Không thể gửi đánh giá.");
       }
     } catch (error: any) {
-      toast.error(error?.message || "Không thể gửi đánh giá.");
+      if (error.accountBlocked) {
+        toast.error(error.message || "Tài khoản của bạn đã bị khóa.");
+        setTimeout(() => {
+          logout();
+        }, 1000);
+        return;
+      }
+      toast.error(error.message || "Không thể gửi đánh giá.");
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <form
       onSubmit={handleSubmit}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,8 +12,6 @@ import {
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
-import { useMemo } from "react";
-import { Phone } from "lucide-react";
 
 // Hàm sinh orderId 7 ký tự
 const generateOrderId = () => {
@@ -35,7 +33,6 @@ export const useCheckout = () => {
   const orderItems: ICartItem[] = items.filter((item) => item.selected);
 
   // Tính toán giá
-
   const subtotal = useMemo(
     () =>
       orderItems.reduce(
@@ -111,7 +108,6 @@ export const useCheckout = () => {
         console.log("DEBUG useCheckout - Updated formData", newFormData);
         return newFormData;
       });
-      console.log(user);
 
       // 2. Xử lý danh sách địa chỉ
       setAddresses(user.addresses);
@@ -159,7 +155,6 @@ export const useCheckout = () => {
       setIsLoading(false);
     } else if (user && !user.addresses) {
       console.log("DEBUG useCheckout - User exists but no addresses", { user });
-      // Nếu user tồn tại nhưng không có địa chỉ
       setAddresses([]);
       setDefaultAddress(null);
       setSelectedAddress(null);
@@ -177,7 +172,7 @@ export const useCheckout = () => {
     const savedCouponCode = localStorage.getItem("pendingCouponCode");
     if (!savedCouponCode) return;
 
-    // ✅ Đợi `items` có dữ liệu
+    // Đợi `items` có dữ liệu
     if (items.length === 0 || subtotal <= 0) {
       console.log("⛔ Chưa đủ điều kiện áp dụng coupon", { items, subtotal });
       return;
@@ -185,13 +180,24 @@ export const useCheckout = () => {
 
     const applyCoupon = async () => {
       try {
-        const response = await validateCoupon(savedCouponCode, subtotal);
+        // Chuẩn bị danh sách sản phẩm để kiểm tra
+        const itemsToValidate = orderItems.map((item) => ({
+          id: item.id,
+          categoryId: item.categoryId ?? "", // Đảm bảo categoryId luôn là string
+        }));
+
+        const response = await validateCoupon(savedCouponCode, subtotal, itemsToValidate);
         if (response.success && response.data) {
           const { discountValue, discountType } = response.data;
-          const discountAmount =
+          let discountAmount =
             discountType === "percent"
               ? subtotal * (discountValue / 100)
               : discountValue;
+
+          // Áp dụng maxDiscountAmount nếu có
+          if (response.data.maxDiscountAmount) {
+            discountAmount = Math.min(discountAmount, response.data.maxDiscountAmount);
+          }
 
           setDiscount(discountAmount);
           setDiscountCode(response.data.code);
@@ -208,7 +214,7 @@ export const useCheckout = () => {
     };
 
     applyCoupon();
-  }, [subtotal, items.length]);
+  }, [subtotal, items.length, orderItems]);
 
   useEffect(() => {
     setTotal(subtotal - discount + shippingFee);
@@ -230,7 +236,6 @@ export const useCheckout = () => {
     } else if (name === "district") {
       setFormData((prev) => ({ ...prev, ward: "" }));
     }
-    // Reset selectedAddress khi người dùng thay đổi form thủ công
     setSelectedAddress(null);
   };
 
@@ -250,20 +255,32 @@ export const useCheckout = () => {
   const handleApplyDiscount = async () => {
     if (!discountCode) {
       setDiscount(0);
-      return null; // Không có mã giảm giá
+      return null;
     }
 
     try {
-      const response = await validateCoupon(discountCode, subtotal);
+      // Chuẩn bị danh sách sản phẩm để kiểm tra
+      const itemsToValidate = orderItems.map((item) => ({
+        id: item.id,
+        categoryId: item.categoryId ?? "", // Đảm bảo categoryId luôn là string
+      }));
+
+      const response = await validateCoupon(discountCode, subtotal, itemsToValidate);
       if (response.success && response.data) {
         const { discountValue, discountType } = response.data;
-        const discountAmount =
+        let discountAmount =
           discountType === "percent"
             ? subtotal * (discountValue / 100)
             : discountValue;
+
+        // Áp dụng maxDiscountAmount nếu có
+        if (response.data.maxDiscountAmount) {
+          discountAmount = Math.min(discountAmount, response.data.maxDiscountAmount);
+        }
+
         setDiscount(discountAmount);
         toast.success("Áp dụng mã giảm giá thành công!");
-        return response.data.id; // Trả về couponId
+        return response.data.id;
       } else {
         setDiscount(0);
         toast.error(response.message || "Mã giảm giá không hợp lệ!");
@@ -288,7 +305,6 @@ export const useCheckout = () => {
       address: address.street,
     }));
 
-    // Cập nhật lại user.addresses
     if (user && user.id) {
       await refreshUser();
       console.log("DEBUG useCheckout - Refreshed user after selecting address");
@@ -299,7 +315,6 @@ export const useCheckout = () => {
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    // Kiểm tra đăng nhập
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
       toast.error("Vui lòng đăng nhập trước khi thanh toán!");
@@ -307,14 +322,12 @@ export const useCheckout = () => {
       return;
     }
 
-    // Kiểm tra sản phẩm
     if (orderItems.length === 0) {
       toast.error("Vui lòng chọn ít nhất một sản phẩm!");
       router.push("/cart");
       return;
     }
 
-    // Validate form
     const newErrors: CheckoutErrors = {
       fullName: "",
       email: "",
@@ -344,27 +357,7 @@ export const useCheckout = () => {
     }
 
     try {
-      // Đảm bảo có addressId
       let addressId: string;
-      if (
-        selectedAddress &&
-        formData.address === selectedAddress.street &&
-        formData.ward === selectedAddress.ward &&
-        formData.district === selectedAddress.district &&
-        formData.province === selectedAddress.province
-      ) {
-        addressId = selectedAddress._id;
-      } else {
-        const newAddress = await addAddressWhenCheckout(user.id, {
-          street: formData.address,
-          ward: formData.ward,
-          district: formData.district,
-          province: formData.province,
-          is_default: false,
-        });
-        addressId = newAddress._id;
-        setAddresses((prev) => [...prev, newAddress]);
-      }
       if (
         selectedAddress &&
         formData.address === selectedAddress.street &&
@@ -383,12 +376,10 @@ export const useCheckout = () => {
         });
         addressId = newAddress._id;
         setAddresses((prev) => [...prev, newAddress]);
-        await refreshUser(); // Cập nhật user sau khi thêm địa chỉ
+        await refreshUser();
       }
 
-      // Kiểm tra và lấy couponId
       const couponId = await handleApplyDiscount();
-      // Chuẩn bị dữ liệu thanh toán
       const paymentInfo = {
         orderId: generateOrderId(),
         totalPrice: total,
@@ -399,7 +390,7 @@ export const useCheckout = () => {
             ward: formData.ward,
             district: formData.district,
             province: formData.province,
-            phone:formData.phone
+            phone: formData.phone,
           },
           couponId: couponId || undefined,
           items: orderItems.map((item) => ({

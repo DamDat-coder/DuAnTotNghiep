@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState, ChangeEvent } from "react";
+import Image from "next/image";
 import { fetchCategoryTree, updateCategory } from "@/services/categoryApi";
+import { toast } from "react-hot-toast";
 
 interface Category {
   _id: string;
   name: string;
   description: string;
+  image?: string | null;
   parentId?: string | null;
   children?: Category[];
 }
@@ -16,7 +19,6 @@ interface EditCategoryFormProps {
   onSuccess?: () => void;
 }
 
-// Hàm lấy tất cả _id con/cháu (dùng để loại khỏi dropdown)
 function getAllChildIds(node: Category): string[] {
   if (!node.children || node.children.length === 0) return [];
   let ids: string[] = [];
@@ -27,7 +29,6 @@ function getAllChildIds(node: Category): string[] {
   return ids;
 }
 
-// Hàm tìm node theo _id trong cây
 function findNodeById(nodes: Category[], id: string): Category | null {
   for (const node of nodes) {
     if (node._id === id) return node;
@@ -39,7 +40,6 @@ function findNodeById(nodes: Category[], id: string): Category | null {
   return null;
 }
 
-// Hàm lọc loại bỏ các node có tên "Bài Viết" (và children của nó)
 function filterOutBaiViet(nodes: Category[]): Category[] {
   return nodes
     .filter(cat => cat.name?.trim().toLowerCase() !== "bài viết")
@@ -49,7 +49,6 @@ function filterOutBaiViet(nodes: Category[]): Category[] {
     }));
 }
 
-// Chuẩn hóa dữ liệu về type Category chuẩn
 function normalizeCats(arr: any[]): Category[] {
   return arr
     .filter(cat => !!cat._id)
@@ -57,6 +56,7 @@ function normalizeCats(arr: any[]): Category[] {
       _id: String(cat._id),
       name: cat.name,
       description: cat.description || "",
+      image: cat.image ?? null,
       parentId: cat.parentId ? String(cat.parentId) : "",
       children: Array.isArray(cat.children) ? normalizeCats(cat.children) : [],
     }));
@@ -73,13 +73,16 @@ export default function EditCategoryForm({
     description: initialCategory.description,
     parentId: initialCategory.parentId ? String(initialCategory.parentId) : "",
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initialCategory.image || null
+  );
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Lưu danh sách tất cả các _id con/cháu của chính nó để exclude khỏi dropdown
   const [excludedIds, setExcludedIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -88,7 +91,6 @@ export default function EditCategoryForm({
         const normalized = filterOutBaiViet(normalizeCats(cats));
         setAllCategories(normalized);
 
-        // Tìm node hiện tại và lấy all _id con/cháu
         const currentNode = findNodeById(normalized, String(initialCategory._id));
         if (currentNode) {
           setExcludedIds([currentNode._id, ...getAllChildIds(currentNode)]);
@@ -98,7 +100,7 @@ export default function EditCategoryForm({
       } catch (err) {
         setError("Không thể tải danh mục cha.");
       } finally {
-        setLoading(false);
+        setFetching(false);
       }
     };
     load();
@@ -114,22 +116,38 @@ export default function EditCategoryForm({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await updateCategory(formData._id, {
-        ...formData,
-        parentId: formData.parentId === "" ? null : formData.parentId,
-      });
-      alert("Cập nhật danh mục thành công!");
-      onSuccess?.();
-      if (onClose) onClose();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || "Đã xảy ra lỗi khi cập nhật.");
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // renderOptions mới, exclude các _id bị cấm (chính nó & all con/cháu & các node đã là "Bài Viết")
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await updateCategory(
+        formData._id,
+        {
+          ...formData,
+          parentId: formData.parentId === "" ? null : formData.parentId,
+        },
+        imageFile || undefined
+      );
+      toast.success("Cập nhật danh mục thành công!");
+      onSuccess?.();
+      if (onClose) onClose();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || err?.message || "Đã xảy ra lỗi khi cập nhật."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderOptions = (
     nodes: Category[],
     depth = 0,
@@ -149,7 +167,7 @@ export default function EditCategoryForm({
     });
   };
 
-  if (loading) {
+  if (fetching) {
     return <div className="text-center py-8">Đang tải dữ liệu...</div>;
   }
 
@@ -160,9 +178,43 @@ export default function EditCategoryForm({
   }
 
   return (
-    <div className="w-full bg-white rounded-2xl p-8 mx-auto shadow-md">
+    <div className="w-full bg-white rounded-2xl p-8 mx-auto shadow-md max-h-[90vh] overflow-y-auto">
       <h2 className="text-[20px] font-bold mb-6">Sửa danh mục</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {/* Ảnh danh mục */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
+            Ảnh danh mục
+          </label>
+          {imagePreview && (
+            <div className="mb-2">
+              {imagePreview.startsWith("blob:") ? (
+                <img
+                  src={imagePreview}
+                  alt="Category preview"
+                  width={90}
+                  height={90}
+                  className="rounded-lg object-cover border"
+                  style={{ maxHeight: 90, maxWidth: 90 }}
+                />
+              ) : (
+                <Image
+                  src={imagePreview}
+                  alt="Category preview"
+                  width={90}
+                  height={90}
+                  className="rounded-lg object-cover border"
+                />
+              )}
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="p-2 border border-gray-300 rounded"
+          />
+        </div>
         {/* Tên danh mục */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-gray-700">
@@ -209,9 +261,20 @@ export default function EditCategoryForm({
         </div>
         <button
           type="submit"
-          className="w-full mt-4 bg-black text-white text-base font-semibold py-3 rounded-full hover:opacity-90 transition-all"
+          disabled={loading}
+          className={`w-full mt-4 bg-black text-white text-base font-semibold py-3 rounded-full hover:opacity-90 transition-all flex items-center justify-center ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
         >
-          Cập nhật danh mục
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+              Đang cập nhật...
+            </span>
+          ) : (
+            "Cập nhật danh mục"
+          )}
         </button>
       </form>
     </div>

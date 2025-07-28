@@ -9,6 +9,12 @@ interface Stat {
   change: string;
 }
 
+interface Stat {
+  label: string;
+  value: number | string;
+  change: string;
+}
+
 const icons: Record<string, JSX.Element> = {
   "Khách hàng mới": <User className="w-6 h-6 text-pink-500" />,
   "Đơn hàng": <ShoppingCart className="w-6 h-6 text-yellow-500" />,
@@ -20,13 +26,25 @@ export default function Stats() {
   const [stats, setStats] = useState<Stat[]>([]);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
     fetchStats()
-      .then((data) => {
-        setStats(data || []);
-      })
+      .then((data) => setStats(data || []))
+      .catch(() => setStats([]))
       .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return <div className="text-gray-400">Đang tải thống kê...</div>;
+  }
+
+  if (!stats.length) {
+    return (
+      <div className="text-red-500 font-medium">
+        Không có dữ liệu thống kê tuần này.
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="text-gray-400">Đang tải thống kê...</div>;

@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Tag } from "lucide-react";
-import { fetchAllOrders } from "@/services/orderApi";
-import { getBestSellingProductsFromOrders } from "@/services/orderApi";
+import { fetchAllOrders, getBestSellingProductsFromOrders } from "@/services/orderApi";
 import type { IOrder } from "@/types/order";
 
 export default function BestSellerTable() {
@@ -20,7 +19,7 @@ export default function BestSellerTable() {
   }, [timeRange]);
 
   return (
-    <div className="bg-white w-[743px] rounded-xl p-6">
+    <div className="bg-white w-full rounded-xl p-6">
       <div className="flex justify-between items-center mb-4">
         <div className="font-bold text-lg">Bán chạy nhất</div>
         <select
@@ -57,7 +56,10 @@ export default function BestSellerTable() {
             </tr>
           ) : (
             data.map((item) => (
-              <tr key={item.id + item.color + item.size} className="border-b last:border-b-0 hover:bg-gray-50 text-base">
+              <tr
+                key={item.id + item.color + item.size}
+                className="border-b last:border-b-0 hover:bg-gray-50 text-base"
+              >
                 <td className="py-2 px-2 flex items-center gap-2 font-medium truncate max-w-[220px] align-middle">
                   <div className="bg-gray-200 p-2 rounded-lg">
                     <Tag className="w-5 h-5 text-gray-800" />

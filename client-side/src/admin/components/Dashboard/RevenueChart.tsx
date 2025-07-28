@@ -24,7 +24,6 @@ export default function RevenueChart() {
       .then(res => {
         const orders = res.data || [];
 
-        // Lọc theo năm hiện tại + tháng đã chọn
         const filteredOrders = orders.filter(order => {
           if (!order.createdAt) return false;
           const date = new Date(order.createdAt);
@@ -38,7 +37,6 @@ export default function RevenueChart() {
         let result: any[] = [];
 
         if (selectedMonth === 0) {
-          // Dữ liệu theo tháng trong năm
           const monthMap = new Map<number, { count: number; revenue: number }>();
           for (let i = 1; i <= 12; i++) {
             monthMap.set(i, { count: 0, revenue: 0 });
@@ -59,7 +57,6 @@ export default function RevenueChart() {
             revenue,
           }));
         } else {
-          // Dữ liệu theo từng ngày trong tháng
           const dayInMonth = new Date(currentYear, selectedMonth, 0).getDate();
           const dayMap = new Map<number, { count: number; revenue: number }>();
           for (let i = 1; i <= dayInMonth; i++) {
@@ -90,7 +87,7 @@ export default function RevenueChart() {
   }, [selectedMonth]);
 
   return (
-    <div className="bg-white w-[743px] h-[360px] rounded-xl p-6">
+    <div className="bg-white w-full h-[360px] rounded-xl p-6">
       <div className="flex justify-between items-center mb-2">
         <div>
           <div className="text-sm text-gray-500 font-medium">Tổng đơn hàng & Doanh thu</div>
@@ -114,19 +111,12 @@ export default function RevenueChart() {
       </div>
 
       <ResponsiveContainer width="100%" height={260}>
-        <LineChart
-          data={data}
-          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-        >
+        <LineChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
           <XAxis
             dataKey="label"
             tickLine={false}
-            ticks={
-              selectedMonth === 0
-                ? undefined
-                : data.filter((_, index) => index % 3 === 0).map(item => item.label)
-            }
             tick={{ fontSize: 12 }}
+            interval={0} 
           />
           <YAxis
             yAxisId="left"
@@ -140,7 +130,6 @@ export default function RevenueChart() {
             tickFormatter={(val) => `${Math.round(val / 1e6)} tr`}
             tickLine={false}
             domain={[0, 'auto']}
-            // tickCount={4} // Không cần cũng được
           />
           <Tooltip
             formatter={(val, name) => {
@@ -149,6 +138,7 @@ export default function RevenueChart() {
               }
               return [`${val} đơn`, "Số đơn"];
             }}
+            labelFormatter={(label) => `Ngày ${label}`}
           />
           <Legend />
           <Line

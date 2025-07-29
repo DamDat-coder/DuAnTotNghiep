@@ -4,7 +4,10 @@ import { IReview } from "@/types/review";
 import { updateReviewStatus } from "@/services/reviewApi";
 import EditReviewModal from "./EditReviewModal";
 import { toast } from "react-hot-toast";
+
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { Pagination } from "../ui/Panigation";
+
 
 interface Props {
   reviews: IReview[];
@@ -64,6 +67,10 @@ export default function TableReviewWrapper({
   const [showModal, setShowModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPage, setTotalPage] = useState(1);
+  const [confirmReviewId, setConfirmReviewId] = useState<string | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<"approved" | "spam" | null>(null);
+
+
 
   // Ref to store dropdown refs for each review
   const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -85,53 +92,35 @@ export default function TableReviewWrapper({
 
   const onStatusChange = (reviewId: string, isApproved: boolean) => {
     const newStatus = isApproved ? "approved" : "spam";
-    toast(
-      (t) => (
-        <div>
-          <p>
-            Bạn có chắc muốn{" "}
-            {newStatus === "approved" ? "duyệt" : "chuyển thành spam"} đánh giá
-            này?
-          </p>
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Hủy
-            </button>
-            <button
-              className="px-3 py-1 bg-black  text-white rounded hover:bg-gray-800"
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  await toast.promise(updateReviewStatus(reviewId, newStatus), {
-                    loading: "Đang cập nhật trạng thái...",
-                    success: "Cập nhật trạng thái thành công!",
-                    error: "Cập nhật trạng thái thất bại!",
-                  });
-                  setReviews((prev) =>
-                    prev.map((r) =>
-                      r._id === reviewId ? { ...r, status: newStatus } : r
-                    )
-                  );
-                  onUpdate((prev) =>
-                    prev.map((r) =>
-                      r._id === reviewId ? { ...r, status: newStatus } : r
-                    )
-                  );
-                } catch (error) {
-                  // nothing
-                }
-              }}
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity }
-    );
+    if (newStatus === "spam") {
+      setConfirmReviewId(reviewId);
+      setPendingStatus("spam");
+    } else {
+      // Duyệt không cần xác nhận
+      updateStatus(reviewId, newStatus);
+    }
+  };
+
+  const updateStatus = async (reviewId: string, status: "approved" | "spam") => {
+    try {
+      await toast.promise(updateReviewStatus(reviewId, status), {
+        loading: "Đang cập nhật trạng thái...",
+        success: "Cập nhật trạng thái thành công!",
+        error: "Cập nhật trạng thái thất bại!",
+      });
+      setReviews((prev) =>
+        prev.map((r) =>
+          r._id === reviewId ? { ...r, status } : r
+        )
+      );
+      onUpdate((prev) =>
+        prev.map((r) =>
+          r._id === reviewId ? { ...r, status } : r
+        )
+      );
+    } catch (error) {
+      // nothing
+    }
   };
 
   return (
@@ -304,6 +293,21 @@ export default function TableReviewWrapper({
           />
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmReviewId}
+        title="Bạn có chắc chắn muốn ẩn đánh giá này không?"
+        onConfirm={async () => {
+          if (confirmReviewId && pendingStatus) {
+            await updateStatus(confirmReviewId, pendingStatus);
+          }
+          setConfirmReviewId(null);
+          setPendingStatus(null);
+        }}
+        onCancel={() => {
+          setConfirmReviewId(null);
+          setPendingStatus(null);
+        }}
+      />
       {children && children(filteredReviews)}
     </div>
   );

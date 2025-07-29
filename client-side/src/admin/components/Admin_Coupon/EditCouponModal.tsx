@@ -230,10 +230,8 @@ export default function EditCouponModal({
       maxDiscountAmount: form.maxDiscount
         ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
-      startDate: form.startDate
-        ? new Date(form.startDate).toISOString()
-        : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
       is_active: form.is_active,
       applicableCategories: form.category
@@ -247,7 +245,9 @@ export default function EditCouponModal({
       const result = await updateCoupon(coupon._id, payload);
       toast.success("Cập nhật mã giảm giá thành công!");
       onSave(result);
-      onClose();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: any) {
       const errorMessage =
         err.message || "Đã xảy ra lỗi khi cập nhật mã giảm giá.";
@@ -259,12 +259,36 @@ export default function EditCouponModal({
     }
   };
 
+  const isPercent = form.type === "%";
+  const isVnd = form.type === "vnd";
+
+  // Validate giá trị giảm giá
+  const isValueValid =
+    (isPercent &&
+      /^\d{1,2}$/.test(form.value) &&
+      +form.value > 0 &&
+      +form.value < 100) ||
+    (isVnd && /^\d+$/.test(form.value) && +form.value >= 1000);
+
+  // Validate ngày
+  const isDateValid =
+    // Không nhập ngày bắt đầu, chỉ nhập ngày kết thúc
+    (!form.startDate && !!form.endDate) ||
+    // Nhập ngày bắt đầu, không nhập ngày kết thúc
+    (!!form.startDate && !form.endDate) ||
+    // Nhập cả hai
+    (!!form.startDate && !!form.endDate);
+
+  // Validate lượt dùng: có thể bỏ trống hoặc là số > 0
+  const isUsageValid =
+    !form.usage || (/^\d+$/.test(form.usage) && +form.usage > 0);
+
+  // Validate tổng thể
   const isFormValid =
     form.code &&
-    form.value &&
-    form.startDate &&
-    form.endDate &&
-    form.usage &&
+    isValueValid &&
+    isDateValid &&
+    isUsageValid &&
     form.description;
 
   if (!mounted) {
@@ -405,7 +429,6 @@ export default function EditCouponModal({
                   className="absolute right-3 top-[calc(50%+19px)] transform -translate-y-1/2 pointer-events-none"
                 />
               </div>
-
               <div>
                 <label className="block font-bold mb-4">
                   Giá trị giảm<span className="text-red-500 ml-1">*</span>
@@ -418,6 +441,13 @@ export default function EditCouponModal({
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                   required
                 />
+                {!isValueValid && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {isPercent
+                      ? "Chỉ nhập số từ 1 đến 99 (%)"
+                      : "Giá trị phải lớn hơn hoặc bằng 1.000đ"}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -448,9 +478,7 @@ export default function EditCouponModal({
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="relative">
-                <label className="block font-bold mb-4">
-                  Ngày bắt đầu<span className="text-red-500 ml-1">*</span>
-                </label>
+                <label className="block font-bold mb-4">Ngày bắt đầu</label>
                 <input
                   ref={startDateRef}
                   type="date"
@@ -458,7 +486,6 @@ export default function EditCouponModal({
                   value={form.startDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
-                  required
                 />
                 <button
                   type="button"
@@ -473,11 +500,8 @@ export default function EditCouponModal({
                   />
                 </button>
               </div>
-
               <div className="relative">
-                <label className="block font-bold mb-4">
-                  Ngày kết thúc<span className="text-red-500 ml-1">*</span>
-                </label>
+                <label className="block font-bold mb-4">Ngày kết thúc</label>
                 <input
                   ref={endDateRef}
                   type="date"
@@ -485,7 +509,6 @@ export default function EditCouponModal({
                   value={form.endDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
-                  required
                 />
                 <button
                   type="button"
@@ -504,17 +527,20 @@ export default function EditCouponModal({
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div>
-                <label className="block font-bold mb-4">
-                  Lượt dùng<span className="text-red-500 ml-1">*</span>
-                </label>
+                <label className="block font-bold mb-4">Lượt dùng</label>
                 <input
                   name="usage"
                   value={form.usage}
                   onChange={handleChange}
-                  placeholder="Vd: 200"
+                  placeholder="Để trống nếu không giới hạn"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                   required
                 />
+                {!isUsageValid && (
+                  <div className="text-red-500 text-xs mt-1">
+                    "Chỉ nhập số dương hoặc để trống"
+                  </div>
+                )}
               </div>
               <div className="relative">
                 <label className="block font-bold mb-4">
@@ -583,10 +609,14 @@ export default function EditCouponModal({
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedProducts((prev) =>
-                                  prev.includes(prod.id) ? prev : [...prev, prod.id]
+                                  prev.includes(prod.id)
+                                    ? prev
+                                    : [...prev, prod.id]
                                 );
                               } else {
-                                setSelectedProducts((prev) => prev.filter((id) => id !== prod.id));
+                                setSelectedProducts((prev) =>
+                                  prev.filter((id) => id !== prod.id)
+                                );
                               }
                             }}
                           />

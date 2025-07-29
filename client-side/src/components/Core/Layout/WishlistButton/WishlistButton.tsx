@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 import { IProduct } from "@/types/product";
 import LikeIcon from "./LikeIcon";
+import WishlistPopup from "./WishlistPopup";
 import { useState } from "react";
 
 interface WishlistButtonProps {
@@ -24,6 +25,7 @@ export default function WishlistButton({
   const router = useRouter();
   const isLiked = isInWishlist(product.id);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const handleWishlistToggle = async () => {
     if (isLoading) return;
@@ -31,28 +33,46 @@ export default function WishlistButton({
       toast.error("🔐 Vui lòng đăng nhập để thêm vào danh sách yêu thích!");
       return;
     }
+    setIsPopupOpen(true);
+  };
 
+  const handleAddWishlist = async () => {
     setIsLoading(true);
     try {
-      if (!isLiked) {
-        await addToWishlist(product);
-      } else {
-        await removeFromWishlist(product.id);
-      }
+      await addToWishlist(product);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleWishlistClick = () => {
+    if (isInWishlist(product.id)) {
+     
+      removeFromWishlist(product.id);
+      return;
+    }
+    setIsPopupOpen(true); 
+  };
+
   return (
-    <button
-      className="cursor-pointer"
-      onClick={handleWishlistToggle}
-      role="button"
-      aria-label={isLiked ? "Xóa khỏi wishlist" : "Thêm vào wishlist"}
-      disabled={isLoading} // Vô hiệu hóa khi đang loading
-    >
-      <LikeIcon variant={variant} isActive={isLiked} />
-    </button>
+    <>
+      <button
+        className="cursor-pointer"
+        onClick={handleWishlistClick}
+        role="button"
+        aria-label="Thêm vào wishlist"
+        disabled={isLoading}
+      >
+        <LikeIcon variant={variant} isActive={isLiked} />
+      </button>
+      {isPopupOpen && (
+        <WishlistPopup
+          product={product}
+          isOpen={isPopupOpen}
+          onClose={() => setIsPopupOpen(false)}
+          onAdd={handleAddWishlist}
+        />
+      )}
+    </>
   );
 }

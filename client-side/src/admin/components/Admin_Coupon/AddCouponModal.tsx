@@ -230,12 +230,32 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     [selectedProducts, allProducts]
   );
 
+  const isPercent = form.type === "%";
+  const isVnd = form.type === "vnd";
+
+  // Validate giá trị giảm giá
+  const isValueValid =
+    (isPercent && /^\d{1,2}$/.test(form.value) && +form.value > 0 && +form.value < 100) ||
+    (isVnd && /^\d+$/.test(form.value) && +form.value >= 1000);
+
+  // Validate ngày
+  const isDateValid =
+    // Không nhập ngày bắt đầu, chỉ nhập ngày kết thúc
+    (!form.startDate && !!form.endDate) ||
+    // Nhập ngày bắt đầu, không nhập ngày kết thúc
+    (!!form.startDate && !form.endDate) ||
+    // Nhập cả hai
+    (!!form.startDate && !!form.endDate);
+
+  // Validate lượt dùng: có thể bỏ trống hoặc là số > 0
+  const isUsageValid = !form.usage || (/^\d+$/.test(form.usage) && +form.usage > 0);
+
+  // Validate tổng thể
   const isFormValid =
     form.code &&
-    form.value &&
-    form.startDate &&
-    form.endDate &&
-    form.usage &&
+    isValueValid &&
+    isDateValid &&
+    isUsageValid &&
     form.description;
 
   return (
@@ -369,7 +389,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                   className="absolute right-3 top-[calc(50%+19px)] transform -translate-y-1/2 pointer-events-none"
                 />
               </div>
-
               <div>
                 <label className="block font-bold mb-4">
                   Giá trị giảm<span className="text-red-500 ml-1">*</span>
@@ -378,10 +397,17 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                   name="value"
                   value={formatNumber(form.value)}
                   onChange={handleNumberInput}
-                  placeholder="Vd: 20 hoặc 50.000"
+                  placeholder={isPercent ? "Vd: 10, 20, 99" : "Vd: 50.000"}
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                   required
                 />
+                {!isValueValid && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {isPercent
+                      ? "Chỉ nhập số từ 1 đến 99 (%)"
+                      : "Giá trị phải lớn hơn hoặc bằng 1.000đ"}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -413,7 +439,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="relative">
                 <label className="block font-bold mb-4">
-                  Ngày bắt đầu<span className="text-red-500 ml-1">*</span>
+                  Ngày bắt đầu
                 </label>
                 <input
                   ref={startDateRef}
@@ -422,7 +448,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                   value={form.startDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
-                  required
                 />
                 <button
                   type="button"
@@ -437,10 +462,9 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                   />
                 </button>
               </div>
-
               <div className="relative">
                 <label className="block font-bold mb-4">
-                  Ngày kết thúc<span className="text-red-500 ml-1">*</span>
+                  Ngày kết thúc
                 </label>
                 <input
                   ref={endDateRef}
@@ -449,7 +473,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                   value={form.endDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
-                  required
                 />
                 <button
                   type="button"
@@ -469,16 +492,20 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div>
                 <label className="block font-bold mb-4">
-                  Lượt dùng<span className="text-red-500 ml-1">*</span>
+                  Lượt dùng
                 </label>
                 <input
                   name="usage"
                   value={form.usage}
                   onChange={handleChange}
-                  placeholder="Vd: 200"
+                  placeholder="Để trống nếu không giới hạn"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                  required
                 />
+                {!isUsageValid && (
+                  <div className="text-red-500 text-xs mt-1">
+                    "Chỉ nhập số dương hoặc để trống"
+                  </div>
+                )}
               </div>
               <div className="relative">
                 <label className="block font-bold mb-4">
@@ -520,7 +547,11 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
+              className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6 ${
+                isSubmitting || !isFormValid
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
               disabled={isSubmitting || !isFormValid}
             >
               {isSubmitting ? "Đang tạo..." : "Tạo mã giảm giá"}

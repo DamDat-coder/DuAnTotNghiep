@@ -53,7 +53,6 @@ const shippingAddressSchema = new mongoose_1.Schema({
 }, { _id: false });
 const orderSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
-    address_id: { type: mongoose_1.Schema.Types.ObjectId, required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
     discountAmount: { type: Number, default: 0 },

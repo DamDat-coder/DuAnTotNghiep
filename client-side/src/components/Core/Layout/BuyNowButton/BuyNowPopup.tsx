@@ -105,6 +105,11 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       toast.error("Sản phẩm không đủ hàng!");
       return;
     }
+    // Kiểm tra categoryId
+    if (!product.categoryId) {
+      toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
+      return;
+    }
 
     dispatch({ type: "resetSelected" });
 
@@ -120,13 +125,13 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       color: selectedColor,
       liked: false,
       selected: true,
+      categoryId: product.categoryId, // Đã kiểm tra không null ở trên
     };
     if (applyCoupon && couponId) {
       localStorage.setItem("pendingCouponCode", couponId);
     }
     // Thêm vào giỏ hàng
     dispatch({ type: "add", item: cartItem });
-    const selectedId = `${product.id}-${selectedSize}-${selectedColor}`;
 
     toast.success("Đã thêm vào giỏ hàng!");
 
@@ -163,7 +168,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="w-[80%] max-w-full flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg  relative"
+              className="w-[80%] max-w-full flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg relative"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Nút đóng */}

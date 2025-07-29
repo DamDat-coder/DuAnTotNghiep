@@ -69,7 +69,7 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         const payment = yield payment_model_1.default.findOne({ transaction_code: vnp_TxnRef });
         if (!payment)
             return res.status(404).json({ message: "Không tìm thấy giao dịch!" });
-        payment.status = vnp_ResponseCode === "00" ? "failed" : "success";
+        payment.status = vnp_ResponseCode === "00" ? "success" : "failed";
         payment.paid_at = vnp_PayDate
             ? (0, moment_1.default)(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
             : new Date();

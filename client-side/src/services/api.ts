@@ -84,8 +84,15 @@ export async function fetchWithAuth<T>(
       status: res.status,
       message: errorData.message || "No error message",
       url,
+      accountBlocked: errorData.accountBlocked,
     });
-    throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+    throw {
+      message: errorData.message || `HTTP error! status: ${res.status}`,
+      status: res.status,
+      accountBlocked: errorData.accountBlocked || false,
+      errorCode: errorData.errorCode,
+    };
   }
+
   return res.json();
 }

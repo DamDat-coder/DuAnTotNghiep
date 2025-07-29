@@ -3,7 +3,6 @@ import { API_BASE_URL, fetchWithAuth } from "./api";
 
 import { IOrder, OrderDetail } from "@/types/order";
 
-
 // Initiate payment
 // Khởi tạo thanh toán
 export async function initiatePayment(
@@ -179,7 +178,6 @@ export async function fetchOrdersUser(
   }
 }
 
-
 export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
   try {
     const response = await fetchWithAuth<any>(`${API_BASE_URL}/orders/${id}`, {
@@ -188,15 +186,25 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
 
     console.log("fetchOrderByIdForUser response:", response);
 
-    if (!response.success || !response.data || typeof response.data !== "object") {
-      throw new Error("Invalid order data received: Response is empty or not an object");
+    if (
+      !response.success ||
+      !response.data ||
+      typeof response.data !== "object"
+    ) {
+      throw new Error(
+        "Invalid order data received: Response is empty or not an object"
+      );
     }
 
     const order = response.data;
 
     return {
       _id: order._id || id,
-      userId: typeof order.userId === "object" ? order.userId._id || "" : order.userId || "",
+      orderCode: order.orderCode || "",
+      userId:
+        typeof order.userId === "object"
+          ? order.userId._id || ""
+          : order.userId || "",
       couponId: order.couponId || null,
       address_id: order.address_id || "",
       shippingAddress: order.shippingAddress || {
@@ -210,7 +218,9 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       shipping: order.shipping || 0,
       status:
         order.status &&
-        ["pending", "confirmed", "shipping", "delivered", "cancelled"].includes(order.status)
+        ["pending", "confirmed", "shipping", "delivered", "cancelled"].includes(
+          order.status
+        )
           ? order.status
           : "unknown",
       paymentMethod:
@@ -218,7 +228,10 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
         ["cod", "vnpay", "momo", "zalopay"].includes(order.paymentMethod)
           ? order.paymentMethod
           : "unknown",
-      paymentId: typeof order.paymentId === "object" ? order.paymentId._id || null : order.paymentId || null,
+      paymentId:
+        typeof order.paymentId === "object"
+          ? order.paymentId._id || null
+          : order.paymentId || null,
       items: Array.isArray(order.items)
         ? order.items.map((item: any) => ({
             productId: item.productId || "",
@@ -242,11 +255,17 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
     }
     return {
       _id: id,
-      orderCode: "", 
+      orderCode: "",
       userId: "",
       couponId: null,
       address_id: "",
-      shippingAddress: { street: "", ward: "", district: "", province: "", is_default: false },
+      shippingAddress: {
+        street: "",
+        ward: "",
+        district: "",
+        province: "",
+        is_default: false,
+      },
       totalPrice: 0,
       shipping: 0,
       status: "pending",
@@ -267,25 +286,29 @@ export function getBestSellingProductsFromOrders(
 ) {
   const now = new Date();
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order) => {
     if (!order.createdAt) return false;
     const createdAt = new Date(order.createdAt);
-    const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    const diffDays =
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
     return time === "week" ? diffDays <= 7 : diffDays <= 30;
   });
 
-  const productMap = new Map<string, {
-    id: string;
-    name: string;
-    image: string;
-    color: string;
-    size: string;
-    price: number;
-    sold: number;
-  }>();
+  const productMap = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      image: string;
+      color: string;
+      size: string;
+      price: number;
+      sold: number;
+    }
+  >();
 
-  filteredOrders.forEach(order => {
-    order.items.forEach(item => {
+  filteredOrders.forEach((order) => {
+    order.items.forEach((item) => {
       const key = `${item.productId}-${item.color}-${item.size}`; // nếu cần phân biệt theo biến thể
 
       if (!productMap.has(key)) {
@@ -306,8 +329,9 @@ export function getBestSellingProductsFromOrders(
     });
   });
 
-  const sorted = Array.from(productMap.values()).sort((a, b) => b.sold - a.sold);
+  const sorted = Array.from(productMap.values()).sort(
+    (a, b) => b.sold - a.sold
+  );
 
   return sorted.slice(0, limit);
-
 }

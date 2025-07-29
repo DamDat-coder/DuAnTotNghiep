@@ -62,7 +62,7 @@ export async function login(
 
     const data = await res.json();
     const user: IUser = {
-      id: data.data.user._id,
+      id: data.data.user.id,
       email: data.data.user.email,
       name: data.data.user.name,
       phone: data.data.user.phone || null,

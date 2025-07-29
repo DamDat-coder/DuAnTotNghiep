@@ -20,7 +20,7 @@ interface ApiResponse<T> {
   pagination?: PaginationInfo;
 }
 
-// ✅ Hàm lấy tất cả tin tức (không phân trang, không token)
+// Lấy tất cả tin tức
 export const getAllNews = async (): Promise<ApiResponse<News[]>> => {
   try {
     const res = await fetch(`${API_BASE_URL}/news/all`, {
@@ -43,7 +43,7 @@ export const getAllNews = async (): Promise<ApiResponse<News[]>> => {
   }
 };
 
-// Hàm lấy danh sách tin tức (có phân trang, tìm kiếm...)
+// Lấy danh sách tin tức
 export const getNewsList = async (
   page: number = 1,
   limit: number = 10,
@@ -56,7 +56,9 @@ export const getNewsList = async (
       page: page.toString(),
       limit: limit.toString(),
       ...(category_id && { category_id }),
-      ...(isPublished !== undefined ? { isPublished: isPublished.toString() } : {}),
+      ...(isPublished !== undefined
+        ? { isPublished: isPublished.toString() }
+        : {}),
       ...(search ? { search } : {}),
     });
 
@@ -82,7 +84,7 @@ export const getNewsList = async (
   }
 };
 
-// Hàm lấy chi tiết tin tức
+// Lấy chi tiết tin tức
 export const getNewsDetail = async (id: string): Promise<News> => {
   try {
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
@@ -105,11 +107,13 @@ export const getNewsDetail = async (id: string): Promise<News> => {
   }
 };
 
-// Hàm tạo tin tức (cần token)
+// Tạo tin tức
 export const createNews = async (payload: NewsPayload): Promise<News> => {
   try {
     if (!isBrowser()) {
-      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
+      throw new Error(
+        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
+      );
     }
 
     const token = localStorage.getItem("accessToken");
@@ -125,28 +129,37 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
     if (payload.tags) {
       formData.append("tags", payload.tags.join(","));
     }
-    if (payload.is_published !== undefined) {
-      formData.append("is_published", payload.is_published ? "true" : "false");
-    }
-    if (payload.thumbnail) {
-      formData.append("images", payload.thumbnail); // field name phải là "images"
-    }
-    if (payload.published_at) {
-      formData.append("published_at", payload.published_at.toISOString());
-    }
     if (payload.meta_description) {
-      console.log(
-        "Adding meta_description to FormData:",
-        payload.meta_description
-      );
       formData.append("meta_description", payload.meta_description);
     } else {
-      console.warn("meta_description is empty or undefined");
-      formData.append("meta_description", ""); // Gửi giá trị rỗng nếu không có meta_description
+      formData.append("meta_description", "");
     }
 
-    // Debug: Log FormData entries
-    console.log("FormData entries:", Object.fromEntries(formData));
+    // Xử lý published_at và is_published dựa trên status
+    if (payload.status === "published") {
+      formData.append("is_published", "true");
+      formData.append("published_at", new Date().toISOString());
+    } else if (payload.status === "upcoming" && payload.published_at) {
+      if (!isNaN(payload.published_at.getTime())) {
+        formData.append("is_published", "false");
+        formData.append("published_at", payload.published_at.toISOString());
+      } else {
+        throw new Error("Ngày đăng không hợp lệ trong payload");
+      }
+    } else {
+      formData.append("is_published", "false");
+    }
+
+    if (payload.thumbnail) {
+      formData.append("images", payload.thumbnail);
+    }
+
+    const formDataEntries: { [key: string]: string | File } = {};
+    for (const [key, value] of formData.entries()) {
+      formDataEntries[key] =
+        value instanceof File ? value.name : value.toString();
+    }
+    console.log("FormData entries:", formDataEntries);
 
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
       `${API_BASE_URL}/news`,
@@ -163,7 +176,7 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
       throw new Error(result.message || "Không thể tạo tin tức");
     }
 
-    console.log("API response:", result); // Debug: Log phản hồi từ API
+    console.log("API response:", result);
 
     return {
       ...result.data,
@@ -178,11 +191,15 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
 // Cập nhật tin tức
 export const updateNews = async (
   id: string,
-  payload: Partial<NewsPayload>
+  payload: Partial<
+    NewsPayload & { status?: "draft" | "published" | "upcoming" }
+  >
 ): Promise<News> => {
   try {
     if (!isBrowser()) {
-      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
+      throw new Error(
+        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
+      );
     }
 
     const token = localStorage.getItem("accessToken");
@@ -202,21 +219,28 @@ export const updateNews = async (
       );
     }
     if (payload.tags) formData.append("tags", payload.tags.join(","));
-    if (payload.is_published !== undefined) {
-      formData.append("is_published", payload.is_published ? "true" : "false");
-    }
-    if (payload.thumbnail) {
-      formData.append("thumbnail", payload.thumbnail); // Sử dụng "thumbnail" thay vì "images"
-    }
     if (payload.meta_description && payload.meta_description.trim()) {
-      console.log(
-        "Adding meta_description to FormData:",
-        payload.meta_description
-      );
       formData.append("meta_description", payload.meta_description);
     }
+    if (payload.thumbnail) {
+      formData.append("thumbnail", payload.thumbnail);
+    }
 
-    // Debug: Log FormData entries
+    // Xử lý published_at và is_published dựa trên status
+    if (payload.status === "published") {
+      formData.append("is_published", "true");
+      formData.append("published_at", new Date().toISOString());
+    } else if (payload.status === "upcoming" && payload.published_at) {
+      if (!isNaN(payload.published_at.getTime())) {
+        formData.append("is_published", "false");
+        formData.append("published_at", payload.published_at.toISOString());
+      } else {
+        throw new Error("Ngày đăng không hợp lệ trong payload");
+      }
+    } else {
+      formData.append("is_published", "false");
+    }
+
     const formDataEntries: { [key: string]: string | File } = {};
     for (const [key, value] of formData.entries()) {
       formDataEntries[key] =
@@ -241,7 +265,7 @@ export const updateNews = async (
       );
     }
 
-    console.log("API response:", result); // Debug: Log phản hồi từ API
+    console.log("API response:", result);
 
     return result.data;
   } catch (error: any) {
@@ -253,7 +277,9 @@ export const updateNews = async (
 export const deleteNews = async (id: string): Promise<void> => {
   try {
     if (!isBrowser()) {
-      throw new Error("Không thể truy cập localStorage trong môi trường không phải trình duyệt");
+      throw new Error(
+        "Không thể truy cập localStorage trong môi trường không phải trình duyệt"
+      );
     }
 
     const token = localStorage.getItem("accessToken");

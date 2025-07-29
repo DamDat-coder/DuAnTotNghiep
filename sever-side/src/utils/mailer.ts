@@ -99,7 +99,6 @@ export const sendAccountBlockedEmail = async (to: string, name: string) => {
   await transporter.sendMail(mailOptions);
 };
 
-// Gửi email tài khoản được mở khóa
 export const sendAccountUnlockedEmail = async (to: string, name: string) => {
   const mailOptions = {
     from: `"Style For You" <${process.env.EMAIL_USER}>`,

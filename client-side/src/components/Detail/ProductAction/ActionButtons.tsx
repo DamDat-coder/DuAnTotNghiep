@@ -34,9 +34,13 @@ export default function ActionButtons({
       toast.error("Vui lòng chọn size trước!");
       return;
     }
-
     if (!selectedVariant || selectedVariant.stock === 0) {
       toast.error("Sản phẩm này hiện không có sẵn!");
+      return;
+    }
+    // Kiểm tra categoryId
+    if (!product.categoryId) {
+      toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
       return;
     }
 
@@ -50,6 +54,8 @@ export default function ActionButtons({
       size: selectedSize,
       color: selectedColor,
       liked: isLiked,
+      selected: false, // Thêm selected để nhất quán với ICartItem
+      categoryId: product.categoryId, // Đã kiểm tra không null ở trên
     };
 
     dispatch({ type: "add", item: cartItem });
@@ -76,7 +82,7 @@ export default function ActionButtons({
               height={20}
             />
           </button>
-          <div className="absolute bottom-[-0.3rem] right-[1rem] bg-white border-2 border-black w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
+          <div className="absolute bottom-[-0.3rem] right-[0.875rem] bg-white border-2 border-black w-[95%] border-solid px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
             <span>THÊM VÀO GIỎ HÀNG</span>
             <Image
               src="/product/product_addToCart_angle.svg"

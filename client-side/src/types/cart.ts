@@ -9,4 +9,5 @@ export interface ICartItem {
   color: string;
   liked: boolean;
   selected?: boolean;
+  categoryId: string;
 }

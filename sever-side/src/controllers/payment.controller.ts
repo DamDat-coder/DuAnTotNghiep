@@ -76,7 +76,7 @@ export const checkVNPayReturn = async (req: Request, res: Response) => {
     if (!payment)
       return res.status(404).json({ message: "Không tìm thấy giao dịch!" });
 
-    payment.status = vnp_ResponseCode === "00" ? "failed" : "success";
+    payment.status = vnp_ResponseCode === "00" ? "success" : "failed";
     payment.paid_at = vnp_PayDate
       ? moment(vnp_PayDate, "YYYYMMDDHHmmss").toDate()
       : new Date();

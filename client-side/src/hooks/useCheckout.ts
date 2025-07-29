@@ -12,6 +12,7 @@ import {
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
+import { fetchProductCategory } from "@/services/productApi";
 
 // Hàm sinh orderId 7 ký tự
 const generateOrderId = () => {
@@ -25,11 +26,11 @@ const generateOrderId = () => {
 
 export const useCheckout = () => {
   const { user, refreshUser } = useAuth();
-  const { items } = useCart();
+  const state = useCart();
   const dispatch = useCartDispatch();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const orderItems: ICartItem[] = items.filter((item) => item.selected);
+  const orderItems: ICartItem[] = state.items.filter((item) => item.selected);
 
   // Tính toán giá
   const subtotal = useMemo(
@@ -43,11 +44,15 @@ export const useCheckout = () => {
   );
   const [discountCode, setDiscountCode] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [applicableItemIds, setApplicableItemIds] = useState<string[]>([]);
+  const [discountPerItem, setDiscountPerItem] = useState<{
+    [itemKey: string]: number;
+  }>({});
   const [shippingFee, setShippingFee] = useState(25000); // Mặc định standard
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [total, setTotal] = useState(subtotal - discount + shippingFee);
-  const [isFreeShipping, setIsFreeShipping] = useState(false); // Theo dõi miễn phí vận chuyển
+  const [isFreeShipping, setIsFreeShipping] = useState(false);
 
   // Khởi tạo formData
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -75,6 +80,44 @@ export const useCheckout = () => {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isAddressPopupOpen, setIsAddressPopupOpen] = useState(false);
 
+  // Tính toán phân bổ discount cho từng sản phẩm
+  const calculateDiscountPerItem = (
+    items: ICartItem[],
+    discount: number,
+    applicableItemIds: string[]
+  ) => {
+    const result: { [itemKey: string]: number } = {};
+    const applicableItems = items.filter((item) =>
+      applicableItemIds.includes(item.id)
+    );
+    if (applicableItems.length === 0) return result;
+
+    // Tính tổng giá áp dụng được mã
+    const totalApplicablePrice = applicableItems.reduce(
+      (sum, item) =>
+        sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+      0
+    );
+
+    // Phân bổ discount theo tỷ lệ giá
+    applicableItems.forEach((item) => {
+      const itemKey = `${item.id}-${item.size}-${item.color}`;
+      const itemPrice =
+        item.price * (1 - item.discountPercent / 100) * item.quantity;
+      result[itemKey] = (itemPrice / totalApplicablePrice) * discount;
+    });
+
+    console.log("DEBUG calculateDiscountPerItem", {
+      discount,
+      applicableItemIds,
+      applicableItems,
+      totalApplicablePrice,
+      result,
+    });
+
+    return result;
+  };
+
   // Đồng bộ formData với user và chọn địa chỉ hiển thị
   useEffect(() => {
     console.log("DEBUG useCheckout useEffect - Start", {
@@ -98,7 +141,8 @@ export const useCheckout = () => {
         phone: user.phone || "",
       }));
       setAddresses(user.addresses);
-      const defaultAddr = user.addresses.find((addr) => addr.is_default) || null;
+      const defaultAddr =
+        user.addresses.find((addr) => addr.is_default) || null;
       setDefaultAddress(defaultAddr);
       let addressToSelect: Address | null = null;
       if (user.addresses.length === 1) {
@@ -129,42 +173,123 @@ export const useCheckout = () => {
     }
   }, [user]);
 
+  // Xử lý phí vận chuyển và tổng tiền
+  useEffect(() => {
+    let newShippingFee = shippingMethod === "standard" ? 25000 : 35000;
+
+    if (subtotal >= 1000000) {
+      if (shippingMethod === "standard") {
+        newShippingFee = 0;
+        if (!isFreeShipping) {
+          toast.success("Đơn hàng của bạn được miễn phí vận chuyển!");
+          setIsFreeShipping(true);
+        }
+      } else if (shippingMethod === "express") {
+        newShippingFee = 15000;
+        if (!isFreeShipping) {
+          toast.success("Phí giao hàng nhanh được giảm còn 15.000 VNĐ!");
+          setIsFreeShipping(true);
+        }
+      }
+    } else {
+      setIsFreeShipping(false);
+    }
+
+    setShippingFee(newShippingFee);
+    setTotal(subtotal - discount + newShippingFee);
+  }, [subtotal, discount, shippingMethod, isFreeShipping]);
+
   // Áp dụng mã giảm giá từ localStorage
   useEffect(() => {
     const savedCouponCode = localStorage.getItem("pendingCouponCode");
     if (!savedCouponCode) return;
 
-    if (items.length === 0 || subtotal <= 0) {
-      console.log("⛔ Chưa đủ điều kiện áp dụng coupon", { items, subtotal });
+    if (orderItems.length === 0 || subtotal <= 0) {
+      console.log("⛔ Chưa đủ điều kiện áp dụng coupon", {
+        orderItems,
+        subtotal,
+      });
       return;
     }
 
     const applyCoupon = async () => {
       try {
-        const itemsToValidate = orderItems.map((item) => ({
-          id: item.id,
-          categoryId: item.categoryId ?? "",
-        }));
-        const response = await validateCoupon(savedCouponCode, subtotal, itemsToValidate);
+        // Lấy categoryId nếu thiếu
+        const itemsToValidate = await Promise.all(
+          orderItems.map(async (item) => ({
+            id: item.id,
+            categoryId:
+              item.categoryId || (await fetchProductCategory(item.id)),
+            price: item.price,
+            discountPercent: item.discountPercent,
+            quantity: item.quantity,
+          }))
+        );
+
+        // Kiểm tra nếu vẫn thiếu categoryId
+        if (
+          itemsToValidate.some(
+            (item) => !item.categoryId || item.categoryId.trim() === ""
+          )
+        ) {
+          console.log("DEBUG useCheckout - Missing categoryId after fetch", {
+            itemsToValidate,
+          });
+          toast.error(
+            "Thiếu thông tin danh mục cho một số sản phẩm trong đơn hàng!"
+          );
+          return;
+        }
+
+        console.log("DEBUG useCheckout - Applying coupon", {
+          savedCouponCode,
+          itemsToValidate,
+        });
+        const response = await validateCoupon(
+          savedCouponCode,
+          subtotal,
+          itemsToValidate
+        );
+        console.log("DEBUG useCheckout - Coupon validation response", {
+          response,
+        });
         if (response.success && response.data) {
-          const { discountValue, discountType } = response.data;
+          const {
+            discountValue,
+            discountType,
+            applicableTotal,
+            applicableItemIds,
+          } = response.data;
           let discountAmount =
             discountType === "percent"
-              ? subtotal * (discountValue / 100)
+              ? applicableTotal * (discountValue / 100)
               : discountValue;
 
           if (response.data.maxDiscountAmount) {
-            discountAmount = Math.min(discountAmount, response.data.maxDiscountAmount);
+            discountAmount = Math.min(
+              discountAmount,
+              response.data.maxDiscountAmount
+            );
           }
 
           setDiscount(discountAmount);
           setDiscountCode(response.data.code);
-          toast.success("Đã áp dụng mã giảm giá!");
+          setApplicableItemIds(applicableItemIds);
+          setDiscountPerItem(
+            calculateDiscountPerItem(
+              orderItems,
+              discountAmount,
+              applicableItemIds
+            )
+          );
+          toast.success(
+            `Áp dụng mã giảm giá ${response.data.code} thành công cho ${applicableItemIds.length} sản phẩm!`
+          );
         } else {
           toast.error(response.message || "Mã giảm giá không hợp lệ!");
         }
       } catch (error) {
-        console.error("Không thể áp dụng mã giảm giá:", error);
+        console.error("DEBUG useCheckout - Error applying coupon", { error });
         toast.error("Có lỗi khi áp dụng mã giảm giá!");
       } finally {
         localStorage.removeItem("pendingCouponCode");
@@ -172,41 +297,13 @@ export const useCheckout = () => {
     };
 
     applyCoupon();
-  }, [subtotal, items.length, orderItems]);
-
-  // Xử lý phí vận chuyển và tổng tiền
-  useEffect(() => {
-    let newShippingFee = shippingMethod === "standard" ? 25000 : 35000;
-
-    // Kiểm tra điều kiện miễn phí vận chuyển hoặc giảm phí
-    if (subtotal >= 1000000) {
-      if (shippingMethod === "standard") {
-        newShippingFee = 0; // Miễn phí vận chuyển cho giao hàng thường
-        if (!isFreeShipping) {
-          toast.success("Đơn hàng của bạn được miễn phí vận chuyển!");
-          setIsFreeShipping(true);
-        }
-      } else if (shippingMethod === "express") {
-        newShippingFee = 15000; // Giảm phí vận chuyển cho giao hàng nhanh
-        if (!isFreeShipping) {
-          toast.success("Phí giao hàng nhanh được giảm còn 15.000 VNĐ!");
-          setIsFreeShipping(true);
-        }
-      }
-    } else {
-      setIsFreeShipping(false); // Reset khi không đủ điều kiện
-    }
-
-    setShippingFee(newShippingFee);
-    setTotal(subtotal - discount + newShippingFee);
-  }, [subtotal, discount, shippingMethod, isFreeShipping]);
+  }, [subtotal, orderItems]);
 
   // Xử lý thay đổi phương thức vận chuyển
   const handleShippingChange = (method: string) => {
     setShippingMethod(method);
     let newShippingFee = method === "standard" ? 25000 : 35000;
 
-    // Áp dụng lại logic miễn phí/giảm phí khi thay đổi phương thức
     if (subtotal >= 1000000) {
       newShippingFee = method === "standard" ? 0 : 15000;
       toast.success(
@@ -250,37 +347,95 @@ export const useCheckout = () => {
   const handleApplyDiscount = async () => {
     if (!discountCode) {
       setDiscount(0);
+      setApplicableItemIds([]);
+      setDiscountPerItem({});
       return null;
     }
 
     try {
-      const itemsToValidate = orderItems.map((item) => ({
-        id: item.id,
-        categoryId: item.categoryId ?? "",
-      }));
-      const response = await validateCoupon(discountCode, subtotal, itemsToValidate);
+      // Lấy categoryId nếu thiếu
+      const itemsToValidate = await Promise.all(
+        orderItems.map(async (item) => ({
+          id: item.id,
+          categoryId: item.categoryId || (await fetchProductCategory(item.id)),
+          price: item.price,
+          discountPercent: item.discountPercent,
+          quantity: item.quantity,
+        }))
+      );
+
+      // Kiểm tra nếu vẫn thiếu categoryId
+      if (
+        itemsToValidate.some(
+          (item) => !item.categoryId || item.categoryId.trim() === ""
+        )
+      ) {
+        console.log("DEBUG useCheckout - Missing categoryId after fetch", {
+          itemsToValidate,
+        });
+        toast.error(
+          "Thiếu thông tin danh mục cho một số sản phẩm trong đơn hàng!"
+        );
+        return null;
+      }
+
+      console.log("DEBUG useCheckout - Applying coupon", {
+        discountCode,
+        itemsToValidate,
+      });
+      const response = await validateCoupon(
+        discountCode,
+        subtotal,
+        itemsToValidate
+      );
+      console.log("DEBUG useCheckout - Coupon validation response", {
+        response,
+      });
       if (response.success && response.data) {
-        const { discountValue, discountType } = response.data;
+        const {
+          discountValue,
+          discountType,
+          applicableTotal,
+          applicableItemIds,
+        } = response.data;
         let discountAmount =
           discountType === "percent"
-            ? subtotal * (discountValue / 100)
+            ? applicableTotal * (discountValue / 100)
             : discountValue;
 
         if (response.data.maxDiscountAmount) {
-          discountAmount = Math.min(discountAmount, response.data.maxDiscountAmount);
+          discountAmount = Math.min(
+            discountAmount,
+            response.data.maxDiscountAmount
+          );
         }
 
         setDiscount(discountAmount);
-        toast.success("Áp dụng mã giảm giá thành công!");
+        setApplicableItemIds(applicableItemIds);
+        setDiscountPerItem(
+          calculateDiscountPerItem(
+            orderItems,
+            discountAmount,
+            applicableItemIds
+          )
+        );
+        toast.success(
+          `Áp dụng mã giảm giá ${response.data.code} thành công cho ${applicableItemIds.length} sản phẩm!`
+        );
         return response.data.id;
       } else {
         setDiscount(0);
+        setApplicableItemIds([]);
+        setDiscountPerItem({});
         toast.error(response.message || "Mã giảm giá không hợp lệ!");
         return null;
       }
     } catch (error: any) {
+      console.error("DEBUG useCheckout - Error applying coupon", { error });
       setDiscount(0);
-      toast.error(error.message || "Mã giảm giá không hợp lệ!");
+      setApplicableItemIds([]);
+      setDiscountPerItem({});
+      toast.error("Có lỗi khi áp dụng mã giảm giá!");
       return null;
     }
   };
@@ -423,6 +578,8 @@ export const useCheckout = () => {
     discountCode,
     setDiscountCode,
     discount,
+    applicableItemIds,
+    discountPerItem,
     shippingFee,
     shippingMethod,
     paymentMethod,

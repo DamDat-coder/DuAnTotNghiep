@@ -372,3 +372,15 @@ export async function fetchProductsAdmin(
     throw new Error(error.message || "Không thể tải sản phẩm (admin)");
   }
 }
+
+// Hàm lấy categoryId từ API nếu thiếu
+export const fetchProductCategory = async (productId: string): Promise<string> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/products/${productId}`);
+    const product = await response.json();
+    return product.category._id || "";
+  } catch (error) {
+    console.error('DEBUG fetchProductCategory - Error', { productId, error });
+    return "";
+  }
+};

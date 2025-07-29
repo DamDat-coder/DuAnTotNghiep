@@ -34,9 +34,13 @@ export default function ActionButtons({
       toast.error("Vui lòng chọn size trước!");
       return;
     }
-
     if (!selectedVariant || selectedVariant.stock === 0) {
       toast.error("Sản phẩm này hiện không có sẵn!");
+      return;
+    }
+    // Kiểm tra categoryId
+    if (!product.categoryId) {
+      toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
       return;
     }
 
@@ -50,6 +54,8 @@ export default function ActionButtons({
       size: selectedSize,
       color: selectedColor,
       liked: isLiked,
+      selected: false, // Thêm selected để nhất quán với ICartItem
+      categoryId: product.categoryId, // Đã kiểm tra không null ở trên
     };
 
     dispatch({ type: "add", item: cartItem });

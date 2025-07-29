@@ -107,7 +107,13 @@ export async function enableCoupon(id: string): Promise<void> {
 export async function validateCoupon(
   code: string,
   orderTotal: number,
-  orderItems: { id: string; categoryId: string }[] // Thêm orderItems để kiểm tra
+  orderItems: {
+    id: string;
+    categoryId: string;
+    price: number;
+    discountPercent: number;
+    quantity: number;
+  }[]
 ): Promise<{
   success: boolean;
   message?: string;
@@ -117,80 +123,210 @@ export async function validateCoupon(
     discountType: string;
     code: string;
     maxDiscountAmount?: number;
+    applicableItemIds: string[];
+    applicableTotal: number;
   };
 }> {
   try {
+    console.log("DEBUG validateCoupon - Start", {
+      code,
+      orderTotal,
+      orderItems: orderItems.map((item) => ({
+        id: item.id,
+        categoryId: item.categoryId,
+        price: item.price,
+        discountPercent: item.discountPercent,
+        quantity: item.quantity,
+      })),
+    });
+
     // Kiểm tra đầu vào
-    if (!code || typeof code !== 'string' || code.trim() === '') {
-      return { success: false, message: 'Mã giảm giá không hợp lệ.' };
+    if (!code || typeof code !== "string" || code.trim() === "") {
+      console.log("DEBUG validateCoupon - Invalid code");
+      return { success: false, message: "Mã giảm giá không hợp lệ." };
     }
-    if (typeof orderTotal !== 'number' || orderTotal <= 0) {
-      return { success: false, message: 'Tổng đơn hàng không hợp lệ.' };
+    if (typeof orderTotal !== "number" || orderTotal <= 0) {
+      console.log("DEBUG validateCoupon - Invalid orderTotal");
+      return { success: false, message: "Tổng đơn hàng không hợp lệ." };
     }
     if (!orderItems || orderItems.length === 0) {
-      return { success: false, message: 'Không có sản phẩm nào trong đơn hàng.' };
+      console.log("DEBUG validateCoupon - No order items");
+      return {
+        success: false,
+        message: "Không có sản phẩm nào trong đơn hàng.",
+      };
+    }
+    if (
+      orderItems.some(
+        (item) => !item.categoryId || item.categoryId.trim() === ""
+      )
+    ) {
+      console.log(
+        "DEBUG validateCoupon - Missing or invalid categoryId in orderItems"
+      );
+      return {
+        success: false,
+        message: "Thiếu thông tin danh mục cho một số sản phẩm.",
+      };
     }
 
     const url = `${API_BASE_URL}/coupons?search=${encodeURIComponent(
       code
     )}&isActive=true&limit=1`;
+    console.log("DEBUG validateCoupon - Fetching coupon", { url });
     const response = await fetchWithAuth<{ data: Coupon[] }>(url, {
       cache: "no-store",
     });
 
-    const coupon = response.data?.find((c) => c.code === code); // Loại bỏ toLowerCase để phân biệt hoa thường
+    const coupon = response.data?.find((c) => c.code === code);
+    console.log("DEBUG validateCoupon - Coupon found", {
+      coupon: coupon
+        ? {
+            _id: coupon._id,
+            code: coupon.code,
+            applicableCategories: coupon.applicableCategories,
+            applicableProducts: coupon.applicableProducts,
+            discountValue: coupon.discountValue,
+            discountType: coupon.discountType,
+          }
+        : null,
+    });
 
     if (!coupon) {
-      return { success: false, message: 'Mã giảm giá không hợp lệ.' };
+      console.log("DEBUG validateCoupon - Coupon not found");
+      return { success: false, message: "Mã giảm giá không hợp lệ." };
     }
 
     const now = new Date();
+    console.log("DEBUG validateCoupon - Checking dates", {
+      now: now.toISOString(),
+      startDate: coupon.startDate,
+      endDate: coupon.endDate,
+    });
     if (new Date(coupon.startDate) > now || new Date(coupon.endDate) < now) {
-      return { success: false, message: 'Mã giảm giá hết hiệu lực.' };
+      console.log("DEBUG validateCoupon - Coupon expired");
+      return { success: false, message: "Mã giảm giá hết hiệu lực." };
     }
 
+    console.log("DEBUG validateCoupon - Checking usage limit", {
+      usageLimit: coupon.usageLimit,
+      usedCount: coupon.usedCount,
+    });
     if (
       coupon.usageLimit &&
       coupon.usedCount &&
       coupon.usedCount >= coupon.usageLimit
     ) {
-      return { success: false, message: 'Mã giảm giá đã hết lượt sử dụng.' };
+      console.log("DEBUG validateCoupon - Coupon usage limit reached");
+      return { success: false, message: "Mã giảm giá đã hết lượt sử dụng." };
     }
 
+    console.log("DEBUG validateCoupon - Checking minOrderAmount", {
+      minOrderAmount: coupon.minOrderAmount,
+      orderTotal,
+    });
     if (coupon.minOrderAmount && orderTotal < coupon.minOrderAmount) {
+      console.log("DEBUG validateCoupon - Order total below minimum");
       return {
         success: false,
         message: `Đơn hàng cần tối thiểu ${coupon.minOrderAmount}đ để áp dụng mã.`,
       };
     }
 
-    // Kiểm tra xem tất cả sản phẩm có thuộc danh mục hoặc sản phẩm áp dụng của coupon không
-    const isApplicable = orderItems.every((item) => {
+    // Kiểm tra các sản phẩm hợp lệ
+    const applicableItems = orderItems.filter((item) => {
+      console.log("DEBUG validateCoupon - Checking item applicability", {
+        itemId: item.id,
+        itemCategoryId: item.categoryId,
+        applicableCategories: coupon.applicableCategories,
+        applicableProducts: coupon.applicableProducts,
+      });
+      // Nếu không có applicableCategories hoặc applicableProducts, áp dụng cho tất cả sản phẩm
+      if (
+        (!coupon.applicableCategories ||
+          coupon.applicableCategories.length === 0) &&
+        (!coupon.applicableProducts || coupon.applicableProducts.length === 0)
+      ) {
+        console.log("DEBUG validateCoupon - Item applicable (no restrictions)");
+        return true;
+      }
       // Kiểm tra applicableCategories
       if (
         coupon.applicableCategories &&
         coupon.applicableCategories.length > 0
       ) {
-        return coupon.applicableCategories.includes(item.categoryId);
+        // Xử lý trường hợp applicableCategories là mảng object hoặc mảng string
+        const isCategoryMatch = coupon.applicableCategories.some((category) => {
+          if (typeof category === "string") {
+            return category === item.categoryId;
+          } else if (
+            typeof category === "object" &&
+            category !== null &&
+            "_id" in category &&
+            typeof (category as { _id: string })._id === "string"
+          ) {
+            return (category as { _id: string })._id === item.categoryId;
+          }
+          return false;
+        });
+        console.log("DEBUG validateCoupon - Category check", {
+          itemCategoryId: item.categoryId,
+          applicableCategories: coupon.applicableCategories,
+          isCategoryMatch,
+        });
+        return isCategoryMatch;
       }
       // Kiểm tra applicableProducts
       if (coupon.applicableProducts && coupon.applicableProducts.length > 0) {
-        return coupon.applicableProducts.includes(item.id);
+        const isProductMatch = coupon.applicableProducts.includes(item.id);
+        console.log("DEBUG validateCoupon - Product check", {
+          itemId: item.id,
+          applicableProducts: coupon.applicableProducts,
+          isProductMatch,
+        });
+        return isProductMatch;
       }
-      return false; // Nếu không có danh mục hoặc sản phẩm áp dụng, trả về false
+      console.log("DEBUG validateCoupon - Item not applicable");
+      return false;
+    });
+    console.log("DEBUG validateCoupon - Applicable items", {
+      applicableItemIds: applicableItems.map((item) => item.id),
+      applicableItemsCount: applicableItems.length,
     });
 
-    if (!isApplicable) {
+    if (applicableItems.length === 0) {
+      console.log("DEBUG validateCoupon - No applicable items");
       return {
         success: false,
-        message: 'Mã giảm giá không áp dụng được cho một số sản phẩm trong đơn hàng.',
+        message:
+          "Mã giảm giá không áp dụng được cho sản phẩm nào trong đơn hàng.",
       };
     }
 
     // Kiểm tra giá trị giảm giá
+    console.log("DEBUG validateCoupon - Checking discountValue", {
+      discountValue: coupon.discountValue,
+      discountType: coupon.discountType,
+    });
     if (coupon.discountValue <= 0) {
-      return { success: false, message: 'Giá trị giảm giá không hợp lệ.' };
+      console.log("DEBUG validateCoupon - Invalid discount value");
+      return { success: false, message: "Giá trị giảm giá không hợp lệ." };
     }
+    if (coupon.discountType === "percentage" && coupon.discountValue > 100) {
+      console.log("DEBUG validateCoupon - Invalid percentage discount value");
+      return {
+        success: false,
+        message: "Giá trị giảm giá phần trăm không hợp lệ.",
+      };
+    }
+
+    // Tính tổng giá trị của các sản phẩm hợp lệ
+    const applicableTotal = applicableItems.reduce(
+      (sum, item) =>
+        sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+      0
+    );
+    console.log("DEBUG validateCoupon - Applicable total", { applicableTotal });
 
     return {
       success: true,
@@ -199,13 +335,16 @@ export async function validateCoupon(
         discountValue: coupon.discountValue,
         discountType: coupon.discountType,
         code: coupon.code,
+        maxDiscountAmount: coupon.maxDiscountAmount ?? undefined,
+        applicableItemIds: applicableItems.map((item) => item.id),
+        applicableTotal,
       },
     };
   } catch (error: any) {
-    console.error('Error validating coupon:', error);
+    console.error("DEBUG validateCoupon - Error", { error: error.message });
     return {
       success: false,
-      message: error.message || 'Không thể kiểm tra mã giảm giá.',
+      message: error.message || "Không thể kiểm tra mã giảm giá.",
     };
   }
 }
@@ -278,7 +417,6 @@ export async function fetchCouponByCode(code: string): Promise<Coupon> {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
-
 
     if (!res.data || !Array.isArray(res.data)) {
       console.error("Invalid response structure:", res);

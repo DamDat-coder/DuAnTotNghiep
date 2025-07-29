@@ -131,17 +131,12 @@ export async function addProduct(product: {
     formData.append("name", product.name);
     formData.append("slug", product.slug);
     if (product.description) formData.append("description", product.description);
-    // BE của bạn đang nhận category[_id], giữ nguyên nếu đúng.
     formData.append("category._id", product.categoryId);
 
-    // Serialize variants thành JSON string
     formData.append("variants", JSON.stringify(product.variants));
-
-    // Upload nhiều ảnh
     product.images.forEach((image) => {
       formData.append("images", image);
     });
-
     formData.append("is_active", String(product.is_active ?? true));
 
     const res = await fetchWithAuth<any>(`${API_BASE_URL}/products`, {
@@ -149,13 +144,25 @@ export async function addProduct(product: {
       body: formData,
     });
 
-    // CHUẨN HÓA: dùng mapToIProduct
     return mapToIProduct(res.data);
   } catch (error: any) {
-    console.error("Lỗi khi thêm sản phẩm:", error);
-    return null;
+    // --- XỬ LÝ TRÙNG SLUG ---
+    // Nếu dùng fetchWithAuth trả về error.response.status hoặc BE trả về message trùng slug
+    if (
+      (error?.response && error.response.status === 409) ||
+      (typeof error?.message === "string" && (
+        error.message.includes("slug") ||
+        error.message.includes("đã tồn tại")
+      ))
+    ) {
+      throw new Error("SLUG_EXISTS");
+    }
+
+    // Các lỗi khác throw lại để FE xử lý chung
+    throw error;
   }
 }
+
 
 export async function fetchProductById(id: string): Promise<IProduct | null> {
   try {

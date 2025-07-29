@@ -193,11 +193,16 @@ export default function TableCouponWrapper({
                   {coupon.description || "Không có mô tả"}
                 </td>
                 <td className="px-4 h-[64px] whitespace-normal break-words">
-                  {new Date(coupon.startDate).toLocaleDateString("vi-VN")} -{" "}
-                  {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
+                  {coupon.startDate
+                    ? new Date(coupon.startDate).toLocaleDateString("vi-VN")
+                    : "Không xác định"}{" "}
+                  -{" "}
+                  {coupon.endDate
+                    ? new Date(coupon.endDate).toLocaleDateString("vi-VN")
+                    : "Không giới hạn"}
                 </td>
                 <td className="px-4 h-[64px] whitespace-normal break-words">
-                  {coupon.usedCount}/{coupon.usageLimit || "Không giới hạn"}
+                  {coupon.usedCount}/{coupon.usageLimit || "∞"}
                 </td>
                 <td className="px-5 py-4">
                   <SimpleSwitch
@@ -276,6 +281,9 @@ export default function TableCouponWrapper({
                   )
                 );
               }
+              // Cập nhật lại selectedCoupon để khi mở lại form sẽ lấy dữ liệu mới
+              setSelectedCoupon(updatedCoupon);
+
             }}
           />
         )}

@@ -99,3 +99,15 @@ export interface ResetPasswordResponse {
   user: IUser;
   accessToken: string;
 }
+
+export interface IWishlistItem {
+  id: string; // id sản phẩm
+  name: string;
+  image: string;
+  size: string;
+  color: string;
+  price: number;
+  discountPercent: number;
+  discountedPrice: number;
+  outOfStock?: boolean;
+}

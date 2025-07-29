@@ -9,13 +9,10 @@ import { toast, Toaster } from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { Pagination } from "../ui/Panigation";
 
-
 const statusMap = {
   published: { text: "Đã xuất bản", color: "bg-[#EDF7ED] text-[#2E7D32]" },
   draft: { text: "Bản nháp", color: "bg-[#FDECEA] text-[#D93025]" },
-  // Uncomment if needed
   upcoming: { text: "Sắp xuất bản", color: "bg-[#FFF4E5] text-[#FF9900]" },
-  // unknown: { text: "Không xác định", color: "bg-gray-200 text-gray-700" },
 };
 
 interface TableNewWrapperProps {
@@ -66,6 +63,7 @@ export default function TableNewWrapper({
         let isPublished: boolean | undefined = undefined;
         if (filter === "published") isPublished = true;
         else if (filter === "draft") isPublished = false;
+        // Không cần xử lý filter "upcoming" ở đây vì đã xử lý trong filteredNews
 
         const data = await getNewsList(currentPage, 10, search, isPublished);
         console.log("getNewsList response:", data);
@@ -120,6 +118,9 @@ export default function TableNewWrapper({
 
   const filteredNews = useMemo(() => {
     if (!Array.isArray(news)) return [];
+    const now = new Date();
+    now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
+
     return news
       .filter((item) => {
         if (!item._id) return false;
@@ -128,13 +129,15 @@ export default function TableNewWrapper({
         if (filter === "draft")
           return (
             item.is_published === false &&
-            (!item.published_at || new Date(item.published_at) <= new Date())
+            (!item.published_at || new Date(item.published_at) <= now)
+
           );
         if (filter === "upcoming")
           return (
             item.is_published === false &&
             item.published_at &&
-            new Date(item.published_at) > new Date()
+            new Date(item.published_at) > now
+
           );
         return true;
       })
@@ -143,6 +146,7 @@ export default function TableNewWrapper({
         return title.toLowerCase().includes(search.toLowerCase());
       });
   }, [news, filter, search]);
+
   return (
     <div className="space-y-4 mt-6">
       <NewControlBar onFilterChange={setFilter} onSearchChange={setSearch} />
@@ -205,9 +209,19 @@ export default function TableNewWrapper({
               </tr>
             )}
             {filteredNews.map((news) => {
-              const status = news.is_published
-                ? statusMap.published
-                : statusMap.draft;
+              const now = new Date();
+              now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
+              let status;
+              if (news.is_published) {
+                status = statusMap.published;
+              } else if (
+                news.published_at &&
+                new Date(news.published_at) > now
+              ) {
+                status = statusMap.upcoming;
+              } else {
+                status = statusMap.draft;
+              }
 
               return (
                 <tr
@@ -224,7 +238,7 @@ export default function TableNewWrapper({
                     {news.category_id?.name || "Chưa có danh mục"}
                   </td>
                   <td className="px-4 py-4">
-                    {news.is_published && news.published_at
+                    {news.published_at
                       ? new Date(news.published_at).toLocaleDateString("vi-VN")
                       : "Chưa xuất bản"}
                   </td>
@@ -265,7 +279,7 @@ export default function TableNewWrapper({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-t-lg"
+                            className="w-full text-left px-4 py-2 text-[#000] hover:bg-gray-100 rounded-t-lg"
                             onClick={() => handleEdit(news)}
                           >
                             Sửa
@@ -327,4 +341,4 @@ export default function TableNewWrapper({
       {children && children(filteredNews)}
     </div>
   );
-}
+};

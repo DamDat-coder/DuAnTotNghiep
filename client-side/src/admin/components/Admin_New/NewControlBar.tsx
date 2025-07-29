@@ -85,7 +85,7 @@ export default function NewControlBar({
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Tìm kiếm theo tiêu đề, nội dung..."
+              placeholder="Tìm kiếm theo tiêu đề"
               className="w-full h-full pl-10 pr-10 border border-gray-300 rounded-[12px] text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <Image

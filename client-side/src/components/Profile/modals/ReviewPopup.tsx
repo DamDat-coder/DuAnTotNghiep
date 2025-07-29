@@ -7,12 +7,14 @@ import { FreeMode, Mousewheel } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/free-mode";
 import Image from "next/image";
+import { toast } from "react-hot-toast";
 
 interface ReviewPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (review: string, rating: number, images: File[]) => void;
   suggestedReviews: string[];
+  isSubmitting?: boolean; // thêm prop này
 }
 
 const ReviewPopup: React.FC<ReviewPopupProps> = ({
@@ -20,6 +22,7 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
   onClose,
   onSubmit,
   suggestedReviews,
+  isSubmitting = false, // default
 }) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -28,8 +31,13 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).slice(0, 3);
-      setImages(files);
+      const files = Array.from(e.target.files);
+      let newImages = [...images, ...files];
+      if (newImages.length > 3) {
+        toast.error("Chỉ được chọn tối đa 3 ảnh!");
+        newImages = newImages.slice(0, 3);
+      }
+      setImages(newImages);
     }
   };
 
@@ -91,6 +99,35 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
             {images.length} ảnh đã chọn
           </span>
         </div>
+        <p className="text-xs text-gray-400 mt-1 mb-4">
+          * Chỉ được chọn tối đa 3 ảnh
+        </p>
+        {images.length > 0 && (
+          <div className="flex gap-2 mt-2 mb-4">
+            {images.map((file, idx) => (
+              <div
+                key={idx}
+                className="relative w-16 h-16 rounded overflow-hidden border border-gray-200"
+              >
+                <Image
+                  src={URL.createObjectURL(file)}
+                  alt={`Ảnh ${idx + 1}`}
+                  fill
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  className="absolute top-1 right-0 bg-black bg-opacity-60 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                  onClick={() => {
+                    setImages((prev) => prev.filter((_, i) => i !== idx));
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {/* Gợi ý nhận xét */}
         <div className="mb-4">
           <h3 className="font-semibold">Gợi ý nhận xét:</h3>
@@ -137,16 +174,43 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
           <button
             className="bg-gray-300 text-black px-4 py-2 rounded-md"
             onClick={onClose}
+            disabled={isSubmitting}
           >
             Hủy
           </button>
           <button
-            className="bg-black text-white px-4 py-2 rounded-md flex items-center"
+            className="bg-black text-white px-4 py-2 rounded-md flex items-center justify-center min-w-[110px]"
             onClick={() => {
               onSubmit(review, rating, images);
             }}
+            disabled={isSubmitting}
           >
-            Gửi đánh giá
+            {isSubmitting ? (
+              <>
+                <svg
+                  className="animate-spin mr-2 h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                Đang gửi...
+              </>
+            ) : (
+              "Gửi đánh giá"
+            )}
           </button>
         </div>
       </div>

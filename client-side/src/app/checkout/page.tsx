@@ -19,6 +19,8 @@ export default function Checkout() {
     discountCode,
     setDiscountCode,
     discount,
+    applicableItemIds,
+    discountPerItem,
     shippingFee,
     shippingMethod,
     paymentMethod,
@@ -38,6 +40,15 @@ export default function Checkout() {
     setIsAddressPopupOpen,
     handleSelectAddress,
   } = useCheckout();
+
+  // Debug log để kiểm tra props trước khi truyền vào OrderItems
+  console.log("DEBUG Checkout - Props to OrderItems", {
+    orderItems,
+    applicableItemIds,
+    discountPerItem,
+    discountCode,
+  });
+
   if (isLoading) {
     return (
       <div className="py-8">
@@ -55,6 +66,7 @@ export default function Checkout() {
       </div>
     );
   }
+
   return (
     <div className="py-8">
       <Container>
@@ -67,7 +79,12 @@ export default function Checkout() {
             </p>
           ) : (
             <>
-              <OrderItems orderItems={orderItems} />
+              <OrderItems
+                orderItems={orderItems}
+                applicableItemIds={applicableItemIds}
+                discountPerItem={discountPerItem}
+                discountCode={discountCode}
+              />
               <DiscountCode
                 discountCode={discountCode}
                 setDiscountCode={setDiscountCode}
@@ -161,7 +178,12 @@ export default function Checkout() {
                     {subtotal.toLocaleString("vi-VN")}₫
                   </span>
                 </div>
-                <OrderItems orderItems={orderItems} />
+                <OrderItems
+                  orderItems={orderItems}
+                  applicableItemIds={applicableItemIds}
+                  discountPerItem={discountPerItem}
+                  discountCode={discountCode}
+                />
                 <DiscountCode
                   discountCode={discountCode}
                   setDiscountCode={setDiscountCode}

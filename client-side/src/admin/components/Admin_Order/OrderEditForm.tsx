@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { fetchOrderById, updateOrderStatus } from "@/services/orderApi";
+import toast from "react-hot-toast";
 
-// THÊM props setOrders vào đây!
-type StatusOption = { key: string; label: string; color: string; };
+type StatusOption = { key: string; label: string; color: string };
 
 export default function EditOrderForm({
   orderId,
@@ -40,9 +40,9 @@ export default function EditOrderForm({
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
     const d = new Date(dateString);
-    return `${String(d.getDate()).padStart(2, "0")}.${
-      String(d.getMonth() + 1).padStart(2, "0")
-    }.${d.getFullYear()}`;
+    return `${String(d.getDate()).padStart(2, "0")}.${String(
+      d.getMonth() + 1
+    ).padStart(2, "0")}.${d.getFullYear()}`;
   };
 
   const formatAddress = (addr: any) => {
@@ -53,17 +53,31 @@ export default function EditOrderForm({
       .join(", ");
   };
 
-  // Lọc trạng thái hợp lệ
   const getAvailableStatus = (currentStatusKey: string) => {
+    if (currentStatusKey === "delivered") {
+      return STATUS.filter((s) => s.key === "delivered");
+    }
+
+    if (["cancelled", "fake"].includes(currentStatusKey)) {
+      return STATUS.filter((s) => s.key === currentStatusKey);
+    }
+
+    if (currentStatusKey === "shipping") {
+      return STATUS.filter((s) =>
+        ["shipping", "delivered", "cancelled", "fake"].includes(s.key)
+      );
+    }
+
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
     return STATUS.filter(
       (s, idx) =>
-        idx >= currentStatusIndex ||
-        s.key === "cancelled"
+        s.key === currentStatusKey ||
+        (idx > currentStatusIndex && s.key !== "fake") ||
+        s.key === "cancelled" ||
+        s.key === "fake"
     );
   };
 
-  // Cập nhật trạng thái chỉ trên FE, không reload!
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
@@ -71,12 +85,15 @@ export default function EditOrderForm({
       await updateOrderStatus(orderId, status);
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
-          (order._id === orderId || order.id === orderId)
+          order._id === orderId || order.id === orderId
             ? { ...order, status }
             : order
         )
       );
+      toast.success("Cập nhật trạng thái đơn hàng thành công.");
       onClose();
+    } catch {
+      toast.error("Cập nhật trạng thái thất bại.");
     } finally {
       setUpdating(false);
     }
@@ -99,11 +116,11 @@ export default function EditOrderForm({
   }
 
   const user = order.userId || {};
-  const shippingFee = order.paymentId?.order_info?.shippingFee ?? 0;
-  const paymentMethod = order.paymentId?.method ?? "";
-
-  // Lấy danh sách trạng thái hợp lệ cho form
+  const shippingFee = order.shipping ?? order.paymentId?.order_info?.shippingFee ?? 0;
+  const paymentMethod = order.paymentMethod ?? order.paymentId?.method ?? "";
   const availableStatus = getAvailableStatus(order.status);
+  const isShipping = order.status === "shipping";
+  const optionsToShow = availableStatus.filter((s) => isShipping || s.key !== "fake");
 
   return (
     <div
@@ -114,9 +131,7 @@ export default function EditOrderForm({
         className="bg-white w-full max-w-xl shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* scrollable content */}
         <div className="max-h-[90vh] overflow-y-auto p-6">
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Sửa đơn hàng</h2>
             <button
@@ -133,118 +148,47 @@ export default function EditOrderForm({
           </div>
 
           <form onSubmit={handleUpdate}>
-            {/* 2 hàng × 2 cột */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Mã đơn hàng
-                </label>
-                <input
-                  className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl"
-                  value={order._id}
-                  disabled
-                />
+                <label className="block text-sm font-medium mb-1">Mã đơn hàng</label>
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl" value={order._id} disabled />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Ngày đặt hàng
-                </label>
-                <input
-                  className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl"
-                  value={formatDate(order.createdAt)}
-                  disabled
-                />
+                <label className="block text-sm font-medium mb-1">Ngày đặt hàng</label>
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl" value={formatDate(order.createdAt)} disabled />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Tên người mua
-                </label>
-                <input
-                  className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl"
-                  value={user.name || ""}
-                  disabled
-                />
+                <label className="block text-sm font-medium mb-1">Tên người mua</label>
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl" value={user.name || ""} disabled />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Số điện thoại người mua
-                </label>
-                <input
-                  className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl"
-                  value={user.phone || ""}
-                  disabled
-                />
+                <label className="block text-sm font-medium mb-1">Số điện thoại người mua</label>
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl" value={user.phone || ""} disabled />
               </div>
             </div>
 
-            {/* Email */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Email người mua
-              </label>
-              <input
-                className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none"
-                value={user.email || ""}
-                disabled
-              />
+              <label className="block text-sm font-medium mb-1">Email người mua</label>
+              <input className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none" value={user.email || ""} disabled />
             </div>
-
-            {/* Địa chỉ */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Địa chỉ
-              </label>
-              <textarea
-                className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none"
-                rows={2}
-                value={formatAddress(order.shippingAddress)}
-                disabled
-              />
+              <label className="block text-sm font-medium mb-1">Địa chỉ</label>
+              <textarea className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none" rows={2} value={formatAddress(order.shippingAddress)} disabled />
             </div>
-
-            {/* 1 hàng × 2 cột */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Tổng tiền
-                </label>
-                <input
-                  className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl"
-                  value={
-                    order.totalPrice
-                      ? `${order.totalPrice.toLocaleString()} đ`
-                      : ""
-                  }
-                  disabled
-                />
+                <label className="block text-sm font-medium mb-1">Tổng tiền</label>
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl" value={order.totalPrice ? `${order.totalPrice.toLocaleString()} đ` : ""} disabled />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Tiền ship
-                </label>
-                <input
-                  className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl"
-                  value={
-                    shippingFee ? `${shippingFee.toLocaleString()} đ` : ""
-                  }
-                  disabled
-                />
+                <label className="block text-sm font-medium mb-1">Tiền ship</label>
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl" value={shippingFee ? `${shippingFee.toLocaleString()} đ` : ""} disabled />
               </div>
             </div>
-
-            {/* Thanh toán qua */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Thanh toán qua
-              </label>
-              <input
-                className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none"
-                value={paymentMethod}
-                disabled
-              />
+              <label className="block text-sm font-medium mb-1">Thanh toán qua</label>
+              <input className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none" value={paymentMethod} disabled />
             </div>
-
-            {/* Trạng thái */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 Trạng thái <span className="text-red-500">*</span>
@@ -254,16 +198,15 @@ export default function EditOrderForm({
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 required
+                disabled={["delivered", "cancelled", "fake"].includes(order.status)}
               >
-                {availableStatus.map((s) => (
+                {optionsToShow.map((s) => (
                   <option key={s.key} value={s.key}>
                     {s.label}
                   </option>
                 ))}
               </select>
             </div>
-
-            {/* Sản phẩm */}
             <div className="mb-2 font-medium">Sản phẩm</div>
             <div className="rounded-xl bg-gray-50 mb-4">
               <div className="grid grid-cols-6 gap-2 text-gray-500 text-sm py-2 px-4 border-b border-gray-100">
@@ -273,10 +216,7 @@ export default function EditOrderForm({
                 <div>SL</div>
               </div>
               {(order.items || []).map((prod: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-6 gap-2 py-2 px-4 items-center border-b border-gray-100"
-                >
+                <div key={idx} className="grid grid-cols-6 gap-2 py-2 px-4 items-center border-b border-gray-100">
                   <div className="col-span-3 font-medium">{prod.name}</div>
                   <div>{prod.color}</div>
                   <div>{prod.size}</div>
@@ -284,7 +224,6 @@ export default function EditOrderForm({
                 </div>
               ))}
             </div>
-
             <button
               type="submit"
               className="w-full bg-black hover:bg-gray-900 text-white rounded-xl py-3 mt-4 font-semibold transition disabled:opacity-70"

@@ -135,11 +135,8 @@ export default function LoginPopup({
         });
         setErrors({});
       }
-    } catch (err: any) {
-      setErrors((prev) => ({
-        ...prev,
-        password: err.message || "Có lỗi xảy ra khi đăng nhập.",
-      }));
+    } catch (error: any) {
+      console.error("Login error:", error);
     } finally {
       setLoading(false);
     }

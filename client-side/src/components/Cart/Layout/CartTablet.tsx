@@ -1,10 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-
+import CartItem from "./CartItem";
 import { ICartItem } from "@/types/cart";
 import { useCartDispatch } from "@/contexts/CartContext";
-import CartItem from "./CartItem";
 
 interface CartTabletProps {
   cartItems: ICartItem[];

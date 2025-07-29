@@ -34,6 +34,7 @@ export async function createReview(
   message: string;
   data?: IReview;
   warning?: string;
+  accountBlocked?: boolean;
 }> {
   try {
     const formData = new FormData();
@@ -50,19 +51,22 @@ export async function createReview(
       message: string;
       data?: IReview;
       warning?: string;
+      accountBlocked?: boolean;
     }>(`${API_BASE_URL}/reviews`, {
       method: "POST",
       body: formData,
       headers: {
-        // Không set Content-Type, để browser tự xử lý với FormData
       },
     });
 
     return response;
   } catch (error: any) {
     console.error("Error creating review:", error);
-    // Throw lại toàn bộ object để xử lý bên ngoài
-    throw error;
+    throw {
+      message: error.message || "Không thể gửi đánh giá.",
+      status: error.status || 500,
+      accountBlocked: error.accountBlocked || false,
+    };
   }
 }
 

@@ -34,6 +34,7 @@ export interface NewsPayload {
   news_image?: File[];
   published_at?: Date;
   meta_description: string;
+  status: "published" | "draft" | "upcoming";
 }
 
 export interface NewsProduct {

@@ -5,7 +5,6 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ICategory } from "@/types/category";
 import { News, NewsPayload } from "@/types/new";
-import { IUser } from "@/types/auth";
 import { createNews, updateNews } from "@/services/newApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
@@ -20,7 +19,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   const [date, setDate] = useState("");
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState(""); // Thêm state này
+  const [tagInput, setTagInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,30 +30,21 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [newsImages, setNewsImages] = useState<File[]>([]);
   const [meta_description, setMeta_description] = useState("");
-  const [scheduleDate, setScheduleDate] = useState<string>("");
   const handlePreview = () => {
-    setIsPreviewVisible(true); // Show the preview modal
+    setIsPreviewVisible(true);
   };
 
   const handleClosePreview = () => {
-    setIsPreviewVisible(false); // Close the preview modal
+    setIsPreviewVisible(false);
   };
 
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setThumbnail(file);
+    } else {
+      setThumbnail(null);
     }
-  };
-
-  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Allow both commas and spaces as valid tag separators
-    const inputTags = e.target.value
-      .split(/[,; \t]+/) // Split by comma, space, semicolon or tabs
-      .map((tag) => tag.trim()) // Trim spaces from each tag
-      .filter((tag) => tag); // Filter out empty strings
-
-    setTags(inputTags); // Update the tags state
   };
 
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,8 +87,8 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       toast.error("Vui lòng nhập mô tả SEO!");
       return;
     }
-    if (action === "publish" && !date) {
-      toast.error("Vui lòng chọn ngày đăng khi xuất bản!");
+    if ((action === "publish" || action === "upcoming") && !date) {
+      toast.error("Vui lòng chọn ngày đăng khi xuất bản hoặc hẹn lịch!");
       return;
     }
 
@@ -113,18 +103,17 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
     const slug = title.toLowerCase().replace(/\s+/g, "-");
     const category_id = selectedCategory || { _id: category, name: "" };
 
-    console.log("scheduleDate:", scheduleDate);
-    console.log("new Date(scheduleDate):", new Date(scheduleDate));
-
     let publishedAtValue: Date | undefined = undefined;
-    if (action === "upcoming" && scheduleDate) {
-      const dateObj = new Date(scheduleDate);
-      if (!isNaN(dateObj.getTime())) {
-        publishedAtValue = dateObj;
-      } else {
+    if ((action === "publish" || action === "upcoming") && date) {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
         setError("Ngày đăng không hợp lệ!");
+        toast.error("Ngày đăng không hợp lệ!");
         return;
       }
+      // Điều chỉnh múi giờ sang UTC+7
+      dateObj.setHours(dateObj.getHours() + 7);
+      publishedAtValue = dateObj;
     }
 
     const payload: NewsPayload = {
@@ -133,19 +122,27 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       slug,
       category_id,
       tags,
+      thumbnail,
       is_published: action === "publish",
       published_at:
-        action === "upcoming"
+        action === "publish"
           ? publishedAtValue
-          : action === "publish"
-          ? new Date()
+          : action === "upcoming"
+          ? publishedAtValue
           : undefined,
       meta_description,
+      status:
+        action === "publish"
+          ? "published"
+          : action === "upcoming"
+          ? "upcoming"
+          : "draft",
     };
 
     console.log("Payload to send:", {
       ...payload,
       thumbnail: payload.thumbnail?.name,
+      published_at: payload.published_at?.toISOString(),
     });
 
     try {
@@ -160,7 +157,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         }
         await updateNews(createdNews.id, {
           is_published: true,
-          published_at: new Date(date),
+          published_at: publishedAtValue,
         });
       }
 
@@ -170,11 +167,12 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
     } catch (err: any) {
       console.error("Lỗi khi tạo hoặc cập nhật tin tức:", err);
       setError(err.message);
-      toast.error("Đã xảy ra lỗi khi tạo tin tức.");
+      toast.error(`Đã xảy ra lỗi khi tạo tin tức: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -206,7 +204,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-[#F8FAFC] shadow-xl w-[1086px] max-w-full max-h-[90vh] overflow-y-auto relative">
-        {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
             <h2 className="text-lg font-bold">Thêm Tin Tức Mới</h2>
@@ -226,7 +223,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         <div className="w-full h-px bg-[#E7E7E7]" />
         <div className="pl-6 pr-6">
           <div className="flex justify-between mt-3 mb-3">
-            {/* Left side */}
             <div className="md:col-span-2 w-[668px] bg-white rounded-[12px]">
               <div className="m-4 ">
                 <div className="mb-6">
@@ -260,13 +256,12 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* Right side */}
             <div className="md:col-span-2 w-[370px] bg-white rounded-[12px]">
               <div className="m-4 ">
                 <div className="space-y-6">
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
-                      Ngày đăng
+                      Ngày đăng (UTC+7)
                       {(action === "publish" || action === "upcoming") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
@@ -320,8 +315,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                         Hẹn ngày đăng
                       </button>
                     </div>
-
-                    {/* Add Preview button to show content preview before publish */}
                     <div className="mt-4">
                       {action === "draft" ||
                       action === "publish" ||
@@ -433,7 +426,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       className="w-full h-12 px-4 border border-gray-300 rounded-[12px] text-sm"
                     />
                   </div>
-                  {/* Display the tags as individual tag elements */}
                   <div className="flex flex-wrap gap-2 mt-2">
                     {tags.map((tag, index) => (
                       <span

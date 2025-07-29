@@ -34,10 +34,10 @@ export async function login(
   try {
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
-      headers:
-        {
-          "Content-Type": "application/json",
-        },
+      headers: 
+      {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ email, password }),
       credentials: "include",
     });
@@ -49,7 +49,7 @@ export async function login(
 
     const data = await res.json();
     const user: IUser = {
-      id: data.data.user._id, 
+      id: data.data.user.id,
       email: data.data.user.email,
       name: data.data.user.name,
       phone: data.data.user.phone || null,
@@ -603,7 +603,7 @@ export async function fetchAllUsersAdmin(
       return { users: null, total: 0, totalPages: 0, currentPage: page };
     }
 
-    const users: IUser[] = response.data.map((userData: UserData & { createdAt?: string; updatedAt?: string }) => ({
+      const users: IUser[] = response.data.map((userData: UserData & { createdAt?: string; updatedAt?: string }) => ({
       id: userData._id,
       email: userData.email,
       name: userData.name,

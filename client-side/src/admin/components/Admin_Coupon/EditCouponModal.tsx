@@ -230,10 +230,8 @@ export default function EditCouponModal({
       maxDiscountAmount: form.maxDiscount
         ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
-      startDate: form.startDate
-        ? new Date(form.startDate).toISOString()
-        : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
       is_active: form.is_active,
       applicableCategories: form.category
@@ -247,7 +245,9 @@ export default function EditCouponModal({
       const result = await updateCoupon(coupon._id, payload);
       toast.success("Cập nhật mã giảm giá thành công!");
       onSave(result);
-      onClose();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: any) {
       const errorMessage =
         err.message || "Đã xảy ra lỗi khi cập nhật mã giảm giá.";
@@ -486,7 +486,6 @@ export default function EditCouponModal({
                   value={form.startDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
-                  required
                 />
                 <button
                   type="button"
@@ -510,7 +509,6 @@ export default function EditCouponModal({
                   value={form.endDate}
                   onChange={handleChange}
                   className="w-full h-[46px] px-4 pr-10 border border-[#D1D1D1] rounded-[12px]"
-                  required
                 />
                 <button
                   type="button"
@@ -611,10 +609,14 @@ export default function EditCouponModal({
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedProducts((prev) =>
-                                  prev.includes(prod.id) ? prev : [...prev, prod.id]
+                                  prev.includes(prod.id)
+                                    ? prev
+                                    : [...prev, prod.id]
                                 );
                               } else {
-                                setSelectedProducts((prev) => prev.filter((id) => id !== prod.id));
+                                setSelectedProducts((prev) =>
+                                  prev.filter((id) => id !== prod.id)
+                                );
                               }
                             }}
                           />

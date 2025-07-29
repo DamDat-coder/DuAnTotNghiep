@@ -242,6 +242,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
     }
     return {
       _id: id,
+      orderCode: "", 
       userId: "",
       couponId: null,
       address_id: "",

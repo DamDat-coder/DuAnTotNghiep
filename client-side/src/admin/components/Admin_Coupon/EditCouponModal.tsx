@@ -73,7 +73,7 @@ export default function EditCouponModal({
           ? (coupon.applicableCategories[0] as { _id: string })._id
           : coupon.applicableCategories[0]
         : "",
-    type: coupon.discountType === "percentage" ? "%" : "vnd",
+    type: coupon.discountType === "percent" ? "%" : "vnd",
     value: coupon.discountValue?.toString() || "",
     minOrder: coupon.minOrderAmount?.toString() || "",
     maxDiscount: coupon.maxDiscountAmount?.toString() || "",
@@ -220,7 +220,7 @@ export default function EditCouponModal({
     const payload: Partial<Coupon> = {
       code: form.code,
       description: form.description,
-      discountType: form.type === "%" ? "percentage" : "fixed",
+      discountType: form.type === "%" ? "percent" : "fixed",
       discountValue: form.value
         ? parseInt(form.value.replace(/\./g, ""), 10)
         : 0,
@@ -337,7 +337,6 @@ export default function EditCouponModal({
                 onChange={handleChange}
                 placeholder="Nhập tên mã km"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 
@@ -439,7 +438,6 @@ export default function EditCouponModal({
                   onChange={(e) => handleNumberInput(e, setForm)}
                   placeholder="Vd: 20 hoặc 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                  required
                 />
                 {!isValueValid && (
                   <div className="text-red-500 text-xs mt-1">
@@ -534,7 +532,6 @@ export default function EditCouponModal({
                   onChange={handleChange}
                   placeholder="Để trống nếu không giới hạn"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                  required
                 />
                 {!isUsageValid && (
                   <div className="text-red-500 text-xs mt-1">
@@ -575,7 +572,6 @@ export default function EditCouponModal({
                 onChange={handleChange}
                 placeholder="Nhập nội dung chương trình, điều kiện áp dụng..."
                 className="w-full min-h-[200px] px-4 py-3 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 

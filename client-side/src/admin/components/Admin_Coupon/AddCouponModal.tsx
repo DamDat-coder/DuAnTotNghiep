@@ -113,7 +113,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     const couponData: Partial<Coupon> = {
       code: form.code,
       description: form.description,
-      discountType: form.type === "%" ? "percentage" : "fixed",
+      discountType: form.type === "%" ? "percent" : "fixed",
       discountValue: form.value
         ? parseInt(form.value.replace(/\./g, ""), 10)
         : 0,

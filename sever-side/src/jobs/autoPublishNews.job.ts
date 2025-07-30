@@ -5,7 +5,6 @@ import NotificationModel from "../models/notification.model";
 export const autoPublishNews = async () => {
   try {
     const now = new Date();
-    now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
     const newsToPublish = await newsModel
       .find({ is_published: false, published_at: { $lte: now } })
       .select("title _id")
@@ -36,7 +35,7 @@ export const autoPublishNews = async () => {
         const notifications = newsToPublish.flatMap((news) =>
           users.map((user) => ({
             userId: user._id,
-            title: "Tin tức mới từ Shop4Real!",
+            title: "Tin tức mới từ Style For You",
             message: `Tin tức "${news.title}" vừa được đăng, xem ngay nhé!`,
             type: "news",
             isRead: false,
@@ -53,6 +52,3 @@ export const autoPublishNews = async () => {
     console.error("[AutoPublish] Lỗi khi tự động đăng tin tức:", error);
   }
 };
-
-
-

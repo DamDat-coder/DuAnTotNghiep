@@ -10,7 +10,7 @@ export const scheduleNewsPublishing = () => {
     try {
       const scheduledNews = await newsModel.find({
         is_published: false,
-        published_at: { $ne: null, $lte: now }
+        published_at: { $ne: null, $lte: now },
       });
 
       for (const news of scheduledNews) {
@@ -20,7 +20,7 @@ export const scheduleNewsPublishing = () => {
         const users = await UserModel.find({}).select("_id").lean();
         const notifications = users.map((user: { _id: string }) => ({
           userId: user._id,
-          title: "Tin tức mới từ Shop4Real!",
+          title: "Tin tức mới từ Style For You!",
           message: `Tin tức "${news.title}" đã được đăng, xem ngay nhé!`,
           type: "news",
           isRead: false,
@@ -31,7 +31,6 @@ export const scheduleNewsPublishing = () => {
 
         console.log(`Tự động đăng bài: ${news.title}`);
       }
-
     } catch (err) {
       console.error("Lỗi khi đăng bài tự động:", err);
     }

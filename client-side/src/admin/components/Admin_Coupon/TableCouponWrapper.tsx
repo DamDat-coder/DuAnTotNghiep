@@ -16,6 +16,10 @@ interface Props {
   children?: (filtered: Coupon[]) => React.ReactNode;
   onDelete: (id: string) => void;
   onUpdate: (updater: (prev: Coupon[]) => Coupon[]) => void; // thêm prop onUpdate
+  renderControlBar?: (props: {
+    onFilterChange: (val: string) => void;
+    onSearchChange: (val: string) => void;
+  }) => React.ReactNode;
 }
 
 function SimpleSwitch({
@@ -53,6 +57,7 @@ export default function TableCouponWrapper({
   onDelete,
   children,
   onUpdate, // nhận thêm prop này từ cha
+  renderControlBar,
 }: Props) {
   // State declarations
   const [filter, setFilter] = useState("all");
@@ -77,6 +82,18 @@ export default function TableCouponWrapper({
     window.addEventListener("mousedown", handler);
     return () => window.removeEventListener("mousedown", handler);
   }, []);
+
+  // Khóa scroll khi mở EditCouponModal
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [showModal]);
 
   // Khi đổi trạng thái, cập nhật ngay coupon trong danh sách
   const performStatusChange = async (couponId: string, isActive: boolean) => {
@@ -148,7 +165,22 @@ export default function TableCouponWrapper({
 
   return (
     <div className="space-y-4 mt-6">
-      <CouponControlBar onFilterChange={setFilter} onSearchChange={setSearch} />
+      {renderControlBar ? (
+        renderControlBar({
+          onFilterChange: setFilter,
+          onSearchChange: setSearch,
+        })
+      ) : (
+        <CouponControlBar
+          onFilterChange={setFilter}
+          onSearchChange={setSearch}
+          onAddCoupon={() => {
+            // You can implement your logic here, e.g., open a modal to add a coupon
+            setShowModal(true);
+            setSelectedCoupon(null);
+          }}
+        />
+      )}
       <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
         <table className="min-w-full text-[16px] text-left">
           <thead className="bg-[#F8FAFC] text-[#94A3B8]">

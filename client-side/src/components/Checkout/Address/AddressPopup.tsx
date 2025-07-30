@@ -47,7 +47,10 @@ export default function AddressPopup({
                   <input
                     type="radio"
                     checked={selectedAddress?._id === address._id}
-                    onChange={() => onSelect(address)}
+                    onChange={() => {
+                      onSelect(address);
+                      onClose();
+                    }}
                     className="flex items-baseline justify-center w-9 h-full accent-black"
                   />
                   <span>

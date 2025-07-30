@@ -53,8 +53,13 @@ export default function ShippingForm({
       const wardObj = wards.find((w) => w.name === selectedAddress.ward);
 
       if (provinceObj) setProvinceCode(provinceObj.code);
+      else console.warn("Province not found:", selectedAddress.province);
+
       if (districtObj) setDistrictCode(districtObj.code);
+      else console.warn("District not found:", selectedAddress.district);
+
       if (wardObj) setWardCode(wardObj.code);
+      else console.warn("Ward not found:", selectedAddress.ward);
     }
   }, [selectedAddress, provinces, districts, wards]);
 

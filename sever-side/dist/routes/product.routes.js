@@ -14,6 +14,7 @@ router.get("/admin", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmi
 router.get("/", product_controller_1.getAllProducts);
 router.get("/:id", product_controller_1.getProductById);
 router.get("/slug/:slug", product_controller_1.getProductBySlug);
+router.post("/active-status", product_controller_1.getProductsActiveStatus);
 router.post("/", upload.array("images", 20), auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.createProduct);
 router.put("/:id", upload.array("images", 20), auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.updateProduct);
 router.patch("/:id/lock", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.lockProduct);

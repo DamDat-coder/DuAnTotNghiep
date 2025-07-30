@@ -21,9 +21,6 @@ export default function PaymentSuccess() {
     const paymentId = localStorage.getItem("pendingPaymentId");
     const userId = localStorage.getItem("pendingUserId");
 
-    console.log("Raw paymentId from localStorage:", paymentId); // Log giá trị thô
-    console.log("Raw userId from localStorage:", userId); // Log giá trị thô
-
     const createOrderAfterPayment = async (retries = 2) => {
       // Kiểm tra paymentId có hợp lệ không
       if (!paymentId || typeof paymentId !== "string" || paymentId.trim() === "") {
@@ -39,11 +36,9 @@ export default function PaymentSuccess() {
         return;
       }
 
-      console.log("Gọi createOrder với paymentId:", paymentId, "userId:", userId);
 
       try {
         const orderResponse = await createOrder(paymentId, userId);
-        console.log("Order created:", orderResponse);
 
         localStorage.removeItem("pendingPaymentId");
         localStorage.removeItem("pendingUserId");
@@ -57,7 +52,6 @@ export default function PaymentSuccess() {
       } catch (error: any) {
         console.error("Lỗi khi tạo đơn hàng:", error);
         if (retries > 0) {
-          console.log(`Thử lại... Còn ${retries} lần.`);
           await new Promise((resolve) => setTimeout(resolve, 1000)); // Chờ 1 giây trước khi thử lại
           return createOrderAfterPayment(retries - 1);
         }

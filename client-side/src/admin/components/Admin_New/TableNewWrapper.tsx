@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useMemo } from "react";
 import Image from "next/image";
-import { deleteNews, getNewsList } from "@/services/newApi";
+import { deleteNews, getNewsList } from "@/services/newsApi";
 import { News } from "@/types/new";
 import NewControlBar from "./NewControlBar";
 import EditNewsModal from "./EditNewsModal";

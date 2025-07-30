@@ -2,17 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
-import { ICartItem } from "@/types/cart";
+import { CartProps, ICartItem } from "@/types/cart";
 import { useCartDispatch } from "@/contexts/CartContext";
 import toast from "react-hot-toast";
-
-interface CartDesktopProps {
-  cartItems: ICartItem[];
-  totalPrice: number;
-  onQuantityChange: (id: string, size: string, change: number) => void;
-  onToggleLike: (id: string, size: string) => void;
-  onRemove: (id: string, size: string, color: string) => void;
-}
 
 export default function CartDesktop({
   cartItems,
@@ -20,20 +12,23 @@ export default function CartDesktop({
   onQuantityChange,
   onToggleLike,
   onRemove,
-}: CartDesktopProps) {
+  productsActiveStatus,
+}: CartProps) {
   const router = useRouter();
   const dispatch = useCartDispatch();
 
   const handleSelectItem = (id: string, size: string, selected: boolean) => {
     const item = cartItems.find((i) => i.id === id && i.size === size);
-    if (!item) return;
+    if (!item || productsActiveStatus[item.id] === false) return;
     dispatch({
       type: "update",
       item: { ...item, selected },
     });
   };
 
-  const selectedItems = cartItems.filter((item) => item.selected);
+  const selectedItems = cartItems.filter(
+    (item) => item.selected && productsActiveStatus[item.id] !== false
+  );
   const selectedItemsCount = selectedItems.length;
   const selectedTotalPrice = selectedItems.reduce(
     (sum, item) =>
@@ -66,7 +61,7 @@ export default function CartDesktop({
   };
 
   return (
-    <div className="hidden desktop:flex desktop:gap-6 laptop:flex laptop:gap-6 mt-4">
+    <div className="hidden tablet:hidden desktop:flex desktop:gap-6 laptop:flex laptop:gap-6 mt-4">
       <div className="w-[70%]">
         <div className="grid grid-cols-1 gap-6 border-b-2 border-black">
           {cartItems.map((item) => (
@@ -81,6 +76,8 @@ export default function CartDesktop({
               onSelect={(selected) =>
                 handleSelectItem(item.id, item.size, selected)
               }
+              isDisabled={productsActiveStatus[item.id] === false}
+              isOutOfStock={productsActiveStatus[item.id] === false}
             />
           ))}
         </div>

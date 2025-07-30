@@ -3,7 +3,7 @@
 import { useState, useEffect, JSX } from "react";
 import { toast } from "react-hot-toast";
 import { News, NewsPayload } from "@/types/new";
-import { updateNews } from "@/services/newApi";
+import { updateNews } from "@/services/newsApi";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { ICategory } from "@/types/category";

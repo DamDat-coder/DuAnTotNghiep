@@ -201,6 +201,56 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
   }
 };
 
+export const getProductsActiveStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { productIds } = req.body;
+
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Danh sách productIds phải là mảng và không được rỗng',
+      });
+      return;
+    }
+
+    // Lọc các ID hợp lệ
+    const validIds = productIds.filter((id: string) =>
+      mongoose.Types.ObjectId.isValid(id)
+    );
+
+    if (validIds.length === 0) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Không có ID sản phẩm hợp lệ',
+      });
+      return;
+    }
+
+    const products = await productModel
+      .find(
+        { _id: { $in: validIds } },
+        { _id: 1, is_active: 1 }
+      )
+      .lean();
+
+    const result = productIds.map((id: string) => ({
+      id,
+      is_active: products.find((p) => p._id.toString() === id)?.is_active ?? false,
+    }));
+
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  } catch (error: any) {
+    console.error('Lỗi khi kiểm tra trạng thái sản phẩm:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Lỗi server khi kiểm tra trạng thái sản phẩm',
+    });
+  }
+};
+
 // Lấy sản phẩm theo slug 
 export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
   try {

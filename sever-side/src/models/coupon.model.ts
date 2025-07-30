@@ -7,10 +7,11 @@ export interface ICoupon extends Document {
   discountValue: number;
   minOrderAmount?: number | null;
   maxDiscountAmount?: number | null;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | null;
+  endDate: Date | null;
   usageLimit?: number | null;
   usedCount?: number | null;
+  perUserLimit?: number | null;
   is_active: boolean;
   applicableCategories?: Types.ObjectId[] | null;
   applicableProducts?: Types.ObjectId[] | null;
@@ -26,10 +27,11 @@ const couponSchema = new Schema<ICoupon>(
     discountValue: { type: Number, required: true },
     minOrderAmount: { type: Number, default: null },
     maxDiscountAmount: { type: Number, default: null },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
+    startDate: { type: Date, default: null },
+    endDate: { type: Date, default: null },
     usageLimit: { type: Number, default: null },
     usedCount: { type: Number, default: 0 },
+    perUserLimit: { type: Number, default: null },
     is_active:  { type: Boolean, default: true },
     applicableCategories: [{ type: Schema.Types.ObjectId, ref: 'categories', default: null }],
     applicableProducts: [{ type: Schema.Types.ObjectId, ref: 'Product', default: null }],

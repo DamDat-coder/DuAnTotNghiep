@@ -32,6 +32,7 @@ const jwt_1 = require("../utils/jwt");
 const google_1 = require("../config/google");
 const mailer_1 = require("../utils/mailer");
 const resetTokenStore_1 = require("../utils/resetTokenStore");
+const mailer_2 = require("../utils/mailer");
 // Đăng nhập bằng Google
 const googleLogin = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -265,7 +266,7 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
         const total = yield user_model_1.default.countDocuments(filter);
         const users = yield user_model_1.default.find(filter)
-            .select("name email role is_active createdAt")
+            .select("name email phone role is_active createdAt")
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })
@@ -336,13 +337,14 @@ exports.updateUserInfo = updateUserInfo;
 // Khoá/mở khoá
 const toggleUserStatus = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const { id } = req.params;
         const { is_active } = req.body;
         if (typeof is_active !== "boolean") {
             return res
                 .status(400)
                 .json({ success: false, message: "`is_active` phải là boolean." });
         }
-        const user = yield user_model_1.default.findById(req.params.id);
+        const user = yield user_model_1.default.findById(id);
         if (!user) {
             return res
                 .status(404)
@@ -355,6 +357,12 @@ const toggleUserStatus = (req, res, next) => __awaiter(void 0, void 0, void 0, f
         }
         user.is_active = is_active;
         yield user.save();
+        if (!is_active) {
+            yield (0, mailer_1.sendAccountBlockedEmail)(user.email, user.name);
+        }
+        else {
+            yield (0, mailer_2.sendAccountUnlockedEmail)(user.email, user.name);
+        }
         const _a = user.toObject(), { password } = _a, userData = __rest(_a, ["password"]);
         res.status(200).json({
             success: true,
@@ -601,9 +609,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
         const tokenData = resetTokenStore_1.resetTokens.get(token);
         if (!tokenData || tokenData.expiresAt < new Date().getTime()) {
-            return res
-                .status(400)
-                .json({
+            return res.status(400).json({
                 success: false,
                 message: "Token không hợp lệ hoặc đã hết hạn.",
             });

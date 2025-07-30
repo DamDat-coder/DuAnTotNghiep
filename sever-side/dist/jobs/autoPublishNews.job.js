@@ -14,18 +14,45 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.autoPublishNews = void 0;
 const news_model_1 = __importDefault(require("../models/news.model"));
+const user_model_1 = __importDefault(require("../models/user.model"));
+const notification_model_1 = __importDefault(require("../models/notification.model"));
 const autoPublishNews = () => __awaiter(void 0, void 0, void 0, function* () {
-    const now = new Date();
-    const newsToPublish = yield news_model_1.default.find({
-        is_published: false,
-        published_at: { $lte: now, $ne: null },
-    });
-    console.log(`[AutoPublish] Số bài cần đăng: ${newsToPublish.length}`);
-    for (const news of newsToPublish) {
-        news.is_published = true;
-        yield news.save();
-        console.log(`[AutoPublish] Đã đăng bài: ${news.title} (${news._id})`);
-        // TODO: Gửi thông báo cho người dùng nếu cần
+    try {
+        const now = new Date();
+        now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
+        const newsToPublish = yield news_model_1.default
+            .find({ is_published: false, published_at: { $lte: now } })
+            .select("title _id")
+            .lean();
+        if (newsToPublish.length === 0) {
+            console.log("[AutoPublish] Không có bài nào cần đăng.");
+            return;
+        }
+        const newsIds = newsToPublish.map((news) => news._id);
+        const result = yield news_model_1.default.updateMany({ _id: { $in: newsIds } }, { $set: { is_published: true } });
+        console.log("[AutoPublish] Đã đăng", result.modifiedCount, "bài:", newsToPublish.map((news) => news.title).join(", "));
+        // Gửi thông báo
+        setImmediate(() => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const users = yield user_model_1.default.find({}).select("_id").lean();
+                const notifications = newsToPublish.flatMap((news) => users.map((user) => ({
+                    userId: user._id,
+                    title: "Tin tức mới từ Shop4Real!",
+                    message: `Tin tức "${news.title}" vừa được đăng, xem ngay nhé!`,
+                    type: "news",
+                    isRead: false,
+                    link: `/posts/${news._id}`,
+                })));
+                yield notification_model_1.default.insertMany(notifications);
+                console.log(`[AutoPublish] Đã gửi ${notifications.length} thông báo.`);
+            }
+            catch (notifyErr) {
+                console.error("[AutoPublish] Gửi thông báo thất bại:", notifyErr);
+            }
+        }));
+    }
+    catch (error) {
+        console.error("[AutoPublish] Lỗi khi tự động đăng tin tức:", error);
     }
 });
 exports.autoPublishNews = autoPublishNews;

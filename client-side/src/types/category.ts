@@ -45,3 +45,10 @@ export interface CategoryProduct {
   name: string;
   parentId: string | null;
 }
+
+export interface ToggleCategoryResponse {
+  status: "success" | "warning" | "error";
+  message: string;
+  data?: any;
+  requiresConfirmation?: boolean;
+}

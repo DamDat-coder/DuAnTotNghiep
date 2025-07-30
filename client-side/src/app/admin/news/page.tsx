@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import TableNewWrapper from "@/admin/components/Admin_New/TableNewWrapper";
 import { getNewsList } from "@/services/newApi";
 import { News, NewsFilterStatus } from "@/types/new";
-import { Pagination } from "@/admin/components/ui/Panigation";
+import AddNewModal from "@/admin/components/Admin_New/AddNewModal";
+import NewControlBar from "@/admin/components/Admin_New/NewControlBar"; // nếu cần custom control bar
 
 export default function NewsPage() {
   const [newsList, setNewsList] = useState<News[]>([]);
@@ -15,6 +16,21 @@ export default function NewsPage() {
   const [totalPages, setTotalPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+
+  // Khóa scroll khi mở modal
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    // Cleanup khi unmount
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [showModal]);
+
   const pageSize = 10;
 
   const loadNews = async () => {
@@ -72,14 +88,19 @@ export default function NewsPage() {
       pageSubtitle="Quản lý bài viết và trạng thái xuất bản"
     >
       <TableNewWrapper
+        newsList={newsList}
         token={""}
-        filter={filter}
-        search={search}
-        setFilter={setFilter}
-        setSearch={setSearch}
-        onUpdate={setNewsList}
         onDelete={handleDelete}
+        // Custom renderControlBar để truyền hàm mở modal xuống
+        renderControlBar={(props) => (
+          <NewControlBar
+            {...props}
+            onAddNews={() => setShowModal(true)}
+          />
+        )}
       />
+
+      {showModal && <AddNewModal onClose={() => setShowModal(false)} />}
 
       {/* Hiển thị trạng thái tải */}
       {loading && (

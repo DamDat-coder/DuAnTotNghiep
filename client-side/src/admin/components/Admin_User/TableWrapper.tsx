@@ -181,6 +181,18 @@ export default function TableWrapper({
     );
   };
 
+  // Khóa scroll khi mở EditUserModal
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [showModal]);
+
   return (
     <>
       <div className="space-y-4 mt-6">

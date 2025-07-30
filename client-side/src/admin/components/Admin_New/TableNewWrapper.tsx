@@ -20,13 +20,18 @@ interface TableNewWrapperProps {
   token?: string;
   onDelete: (id: string) => void;
   children?: (filtered: News[]) => React.ReactNode;
+  renderControlBar?: (props: {
+    onFilterChange: (val: string) => void;
+    onSearchChange: (val: string) => void;
+  }) => React.ReactNode;
 }
 
 export default function TableNewWrapper({
-  newsList = [], // Default to empty array to prevent undefined
+  newsList = [],
   token,
   onDelete,
   children,
+  renderControlBar,
 }: TableNewWrapperProps) {
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -147,10 +152,36 @@ export default function TableNewWrapper({
       });
   }, [news, filter, search]);
 
+  // Thêm đoạn này để khóa scroll khi mở EditNewsModal
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [showModal]);
+
   return (
     <>
       <div className="space-y-4 mt-6">
-        <NewControlBar onFilterChange={setFilter} onSearchChange={setSearch} />
+        {renderControlBar ? (
+          renderControlBar({
+            onFilterChange: (val: string) =>
+              setFilter(val as "all" | "published" | "draft" | "upcoming"),
+            onSearchChange: setSearch,
+          })
+        ) : (
+          <NewControlBar
+            onFilterChange={(val: string) =>
+              setFilter(val as "all" | "published" | "draft" | "upcoming")
+            }
+            onSearchChange={setSearch}
+            onAddNews={() => setShowModal(true)}
+          />
+        )}
         {isLoading && (
           <div className="text-center py-4">Đang tải dữ liệu...</div>
         )}

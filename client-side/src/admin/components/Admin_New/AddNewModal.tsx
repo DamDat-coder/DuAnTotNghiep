@@ -203,7 +203,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-[#F8FAFC] shadow-xl w-[1086px] max-w-full max-h-[90vh] overflow-y-auto relative">
+      <div className="bg-[#F8FAFC] shadow-xl rounded-[16px] w-[1086px] max-w-full max-h-[90vh] overflow-y-auto relative scroll-hidden">
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
             <h2 className="text-lg font-bold">Thêm Tin Tức Mới</h2>

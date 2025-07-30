@@ -25,7 +25,6 @@ export function SuggestionsProvider({ children }: { children: React.ReactNode })
           name: product.name,
           id: product.id, // hoặc product.slug nếu bạn dùng slug
         }));
-        console.log(suggestions);
         setDefaultSuggestions(suggestions);
       } catch (error) {
         console.error("Lỗi khi tải gợi ý mặc định:", error);

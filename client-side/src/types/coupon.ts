@@ -10,13 +10,13 @@ export interface Coupon {
   discountValue: number;
   minOrderAmount: number | null;
   maxDiscountAmount: number | null;
-  startDate: string;
-  endDate: string;
+  startDate: string | null;
+  endDate: string | null;
   usageLimit: number;
   usedCount: number;
   is_active: boolean;
   applicableCategories: string[];
-  applicableProducts: string[];  
+  applicableProducts: string[];
   createdAt: string;
   updatedAt: string;
 }

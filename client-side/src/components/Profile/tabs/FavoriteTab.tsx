@@ -126,10 +126,15 @@ export default function FavoriteTab() {
                   <div className="flex-1 flex items-center justify-between">
                     <div>
                       <Link href={`/products/${product.id}`}>
-                        <h3 className="font-semibold hover:text-blue-600 cursor-pointer transition-colors">
-                          {productName}
-                        </h3>
+                        <div>
+                          <span className="font-semibold">{product.name}</span>
+                          <span className="ml-2 text-sm text-gray-500">
+                            ({product.variants && product.variants[0]?.color}/
+                            {product.variants && product.variants[0]?.size})
+                          </span>
+                        </div>
                       </Link>
+
                       <p className="text-gray-500 text-sm">{categoryName}</p>
                     </div>
                     <button

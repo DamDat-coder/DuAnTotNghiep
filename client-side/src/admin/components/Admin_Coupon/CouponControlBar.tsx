@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { debounce } from "lodash";
-import AddCouponModal from "./AddCouponModal";
 
 const options = [
   { value: "all", label: "Tất cả" },
@@ -14,14 +13,15 @@ const options = [
 export default function CouponControlBar({
   onFilterChange,
   onSearchChange,
+  onAddCoupon, // thêm prop này
 }: {
   onFilterChange: (val: string) => void;
   onSearchChange: (val: string) => void;
+  onAddCoupon: () => void; // thêm prop này
 }) {
   const [selected, setSelected] = useState(options[0]);
   const [search, setSearch] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
-  const [showModal, setShowModal] = useState(false);
 
   // Debounce hàm onSearchChange
   const debouncedSearch = useCallback(
@@ -44,7 +44,6 @@ export default function CouponControlBar({
     debouncedSearch(val); // Gọi hàm debounce thay vì onSearchChange trực tiếp
   };
 
-  // Xử lý xóa từ khóa tìm kiếm
   // Xử lý xóa từ khóa tìm kiếm
   const handleClearSearch = () => {
     setSearch("");
@@ -121,7 +120,7 @@ export default function CouponControlBar({
         {/* Add User Button */}
         <div className="pr-6">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={onAddCoupon}
             className="flex items-center gap-2 bg-black text-white px-5 h-12 rounded-[12px] text-sm font-medium hover:opacity-90"
           >
             <Image
@@ -134,8 +133,6 @@ export default function CouponControlBar({
           </button>
         </div>
       </div>
-
-      {showModal && <AddCouponModal onClose={() => setShowModal(false)} />}
     </>
   );
 }

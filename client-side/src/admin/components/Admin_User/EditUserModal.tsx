@@ -127,7 +127,7 @@ export default function EditUserModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-br-[16px] rounded-bl-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative">
+      <div className="bg-white rounded-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative scroll-hidden">
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
             <h2 className="text-lg font-semibold">Chỉnh sửa người dùng</h2>

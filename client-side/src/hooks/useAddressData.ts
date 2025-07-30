@@ -161,6 +161,9 @@ export function useAddressData() {
     return parts.join(", ");
   };
 
+  const isLoadingAllAddress =
+    isLoadingProvinces || isLoadingDistricts || isLoadingWards;
+
   return {
     provinces,
     districts,
@@ -178,5 +181,6 @@ export function useAddressData() {
     isLoadingProvinces,
     isLoadingDistricts,
     isLoadingWards,
+    isLoadingAllAddress,
   };
 }

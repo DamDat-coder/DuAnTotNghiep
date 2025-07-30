@@ -74,6 +74,9 @@ export default function UsersPage() {
         setFilter={setFilter}
         setSearch={setSearch}
         onUpdate={setUsers}
+        currentPage={currentPage}
+        totalPage={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {/* Hiển thị trạng thái tải */}

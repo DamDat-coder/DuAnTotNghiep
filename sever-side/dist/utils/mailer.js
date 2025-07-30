@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAccountUnlockedEmail = exports.sendAccountLockedEmail = exports.sendAccountBlockedEmail = exports.sendOrderSpamWarningEmail = exports.sendReviewWarningEmail = exports.sendResetPasswordEmail = void 0;
+exports.sendAccountUnlockedEmail = exports.sendAccountBlockedEmail = exports.sendOrderSpamWarningEmail = exports.sendReviewWarningEmail = exports.sendResetPasswordEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -108,42 +108,11 @@ const sendAccountBlockedEmail = (to, name) => __awaiter(void 0, void 0, void 0, 
     yield transporter.sendMail(mailOptions);
 });
 exports.sendAccountBlockedEmail = sendAccountBlockedEmail;
-const sendAccountLockedEmail = (to, name) => __awaiter(void 0, void 0, void 0, function* () {
-    const transporter = nodemailer_1.default.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
-    const mailOptions = {
-        from: `"Style For You" <${process.env.EMAIL_USER}>`,
-        to,
-        subject: "Tài khoản của bạn đã bị khóa",
-        html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-        <h2 style="text-align: center; color: #111827;">Style For You</h2>
-        <p>Xin chào ${name || ""},</p>
-        <p>Tài khoản của bạn đã bị khóa do vi phạm chính sách hoặc yêu cầu từ quản trị viên.</p>
-        <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ với chúng tôi.</p>
-      </div>
-    `,
-    };
-    yield transporter.sendMail(mailOptions);
-});
-exports.sendAccountLockedEmail = sendAccountLockedEmail;
 const sendAccountUnlockedEmail = (to, name) => __awaiter(void 0, void 0, void 0, function* () {
-    const transporter = nodemailer_1.default.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
     const mailOptions = {
         from: `"Style For You" <${process.env.EMAIL_USER}>`,
         to,
-        subject: "Tài khoản của bạn đã được mở khóa",
+        subject: "Tài khoản của bạn đã được mở khóa - Style For You",
         html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
         <h2 style="text-align: center; color: #111827;">Style For You</h2>

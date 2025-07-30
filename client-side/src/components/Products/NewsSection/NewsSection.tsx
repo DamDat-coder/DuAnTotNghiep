@@ -6,7 +6,7 @@ import Container from "../../Core/Container";
 import Image from "next/image";
 import NewsSwiper from "./NewsSwiper";
 import { News } from "@/types/new";
-import { getAllNews } from "@/services/newApi";
+import { getAllNews } from "@/services/newsApi";
 import Link from "next/link";
 
 interface NewsSectionProps {

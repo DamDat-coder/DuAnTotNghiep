@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { getNewsDetail, getAllNews } from '@/services/newApi';
+import { getNewsDetail, getAllNews } from '@/services/newsApi';
 import { News } from '@/types/new';
 
 export default function ArticleDetailPage() {

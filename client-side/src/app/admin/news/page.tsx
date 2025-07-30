@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import TableNewWrapper from "@/admin/components/Admin_New/TableNewWrapper";
-import { getNewsList } from "@/services/newApi";
+import { getNewsList } from "@/services/newsApi";
 import { News, NewsFilterStatus } from "@/types/new";
 import { Pagination } from "@/admin/components/ui/Panigation";
 

@@ -7,6 +7,7 @@ import {
   getProductBySlug,
   updateProduct,
   lockProduct,
+  getProductsActiveStatus,
 } from "../controllers/product.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
@@ -20,6 +21,7 @@ router.get("/admin", verifyToken, verifyAdmin, getAllProductsAdmin);
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 router.get("/slug/:slug", getProductBySlug);
+router.post("/active-status", getProductsActiveStatus);
 
 router.post(
   "/",

@@ -11,6 +11,7 @@ import { isBrowser } from "../utils";
 import { fetchProductById } from "./productApi";
 import { IProduct } from "@/types/product";
 import { ForgotPasswordResponse } from "@/types/auth";
+import toast from "react-hot-toast";
 interface AddAddressResponse {
   message: string;
   data: Address[];
@@ -34,29 +35,41 @@ export async function login(
   try {
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
-      headers:
-        {
-          "Content-Type": "application/json",
-        },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ email, password }),
       credentials: "include",
     });
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+      const error = {
+        message: errorData.message || `HTTP error! status: ${res.status}`,
+        status: res.status,
+        accountBlocked: errorData.accountBlocked || false,
+        errorCode: errorData.errorCode,
+      };
+
+      // Kiểm tra trường hợp tài khoản bị khóa
+      if (error.status === 403 && error.accountBlocked) {
+        toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        throw error;
+      }
+
+      throw error;
     }
 
     const data = await res.json();
     const user: IUser = {
-      id: data.data.user._id,
+      id: data.data.user.id,
       email: data.data.user.email,
       name: data.data.user.name,
       phone: data.data.user.phone || null,
       role: data.data.user.role,
       is_active: data.data.user.is_active,
       active: data.data.user.is_active,
-      addresses: [],
+      addresses: data.data.user.addresses || [],
     };
 
     if (isBrowser()) {
@@ -64,9 +77,13 @@ export async function login(
       document.cookie = `refreshToken=${data.data.refreshToken}; path=/; max-age=3600`;
     }
 
-    return { user, accessToken: data.accessToken };
+    return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
-    console.error("Error logging in:", error.message);
+    console.error("Error logging in:", error);
+    // Hiển thị toast lỗi chung nếu không phải lỗi tài khoản bị khóa
+    if (!error.accountBlocked) {
+      toast.error(error.message || "Đăng nhập thất bại. Vui lòng thử lại.");
+    }
     return null;
   }
 }
@@ -603,19 +620,21 @@ export async function fetchAllUsersAdmin(
       return { users: null, total: 0, totalPages: 0, currentPage: page };
     }
 
-    const users: IUser[] = response.data.map((userData: UserData & { createdAt?: string; updatedAt?: string }) => ({
-      id: userData._id,
-      email: userData.email,
-      name: userData.name,
-      phone: userData.phone ?? null,
-      role: userData.role,
-      is_active: userData.is_active,
-      addresses: userData.addresses ?? [],
-      active: userData.is_active,
-      avatar: (userData as any).avatar ?? undefined,
-      createdAt: (userData as any).createdAt ?? undefined,
-      updatedAt: (userData as any).updatedAt ?? undefined,
-    }));
+    const users: IUser[] = response.data.map(
+      (userData: UserData & { createdAt?: string; updatedAt?: string }) => ({
+        id: userData._id,
+        email: userData.email,
+        name: userData.name,
+        phone: userData.phone ?? null,
+        role: userData.role,
+        is_active: userData.is_active,
+        addresses: userData.addresses ?? [],
+        active: userData.is_active,
+        avatar: (userData as any).avatar ?? undefined,
+        createdAt: (userData as any).createdAt ?? undefined,
+        updatedAt: (userData as any).updatedAt ?? undefined,
+      })
+    );
     // Sau khi fetch users
     console.log("API raw response:", response.data);
     console.log("Fetched users:", users);
@@ -764,4 +783,3 @@ export const resetPassword = async (
 
   return data;
 };
-

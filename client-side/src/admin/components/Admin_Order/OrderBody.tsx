@@ -1,7 +1,9 @@
+"use client";
 import React, { useState, useRef, useEffect } from "react";
 import { updateOrderStatus } from "@/services/orderApi";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast"; // ✅ dùng toast giống EditOrderForm
 
-// THÊM props setOrders vào đây!
 export default function OrderBody({
   orders,
   setOrders,
@@ -14,6 +16,7 @@ export default function OrderBody({
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
   const actionPopupRef = useRef(null);
   const statusPopupRef = useRef(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handler = (event) => {
@@ -37,35 +40,48 @@ export default function OrderBody({
   const getStatusInfo = (key) => STATUS.find((s) => s.key === key);
 
   const getAvailableStatus = (currentStatusKey) => {
+    if (currentStatusKey === "delivered") {
+      return STATUS.filter((s) => s.key === "delivered");
+    }
+    if (["cancelled", "fake"].includes(currentStatusKey)) {
+      return STATUS.filter((s) => s.key === currentStatusKey);
+    }
+    if (currentStatusKey === "shipping") {
+      return STATUS.filter((s) =>
+        ["delivered", "cancelled", "fake"].includes(s.key)
+      );
+    }
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
     return STATUS.filter(
       (s, idx) =>
-        idx >= currentStatusIndex ||
+        (idx > currentStatusIndex && s.key !== "fake") ||
         s.key === "cancelled"
     );
   };
 
-  // Cập nhật trạng thái chỉ trên FE, không reload!
-  const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
-    if (oldStatus === newStatus) return;
-    setUpdatingStatusId(orderId);
-    try {
-      await updateOrderStatus(orderId, newStatus);
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          (order._id === orderId || order.id === orderId)
-            ? { ...order, status: newStatus }
-            : order
-        )
-      );
-    } catch (e) {
-      alert("Lỗi khi cập nhật trạng thái");
-    }
+const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
+  if (oldStatus === newStatus) return;
+  setUpdatingStatusId(orderId);
+  try {
+    const sendStatus = newStatus; // ✅ giữ nguyên fake
+    await updateOrderStatus(orderId, sendStatus);
+    setOrders((prev) =>
+      prev.map((order) =>
+        (order._id === orderId || order.id === orderId)
+          ? { ...order, status: sendStatus }
+          : order
+      )
+    );
+    toast.success("Cập nhật trạng thái đơn hàng thành công.");
+  } catch (err) {
+    toast.error("Cập nhật trạng thái thất bại.");
+  } finally {
     setUpdatingStatusId(null);
     setStatusDropdownId(null);
-  };
+  }
+};
 
-  function formatDate(dateString?: string) {
+  function formatDate(dateString) {
     if (!dateString) return "Không xác định";
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN");
@@ -85,38 +101,11 @@ export default function OrderBody({
     <>
       {orders.map((order, idx) => {
         const orderId = order._id?.$oid || order._id || order.id || String(idx);
-
-        // Lấy tên sản phẩm từ items
-        let productList = [];
-        if (Array.isArray(order.items) && order.items.length > 0) {
-          productList = order.items.map((item) => item.name).filter(Boolean);
-        }
-
-        const productsRender = (
-          <>
-            {productList.length === 0 && (
-              <div className="text-gray-400 text-xs italic">Không có sản phẩm</div>
-            )}
-            {productList.slice(0, 2).map((name, idx2) => (
-              <div key={orderId + "-prod-" + idx2} className="truncate leading-5">
-                {name}
-              </div>
-            ))}
-            {productList.length > 2 && (
-              <div className="text-gray-400 text-xs">
-                ...và {productList.length - 2} sản phẩm khác
-              </div>
-            )}
-          </>
-        );
+        const productList = Array.isArray(order.items)
+          ? order.items.map((item) => item.name).filter(Boolean)
+          : [];
 
         const user = order.user || order.userId || { name: "Không xác định", email: "" };
-        const userInfo = (
-          <>
-            <div className="truncate font-medium">{user.name || "Không xác định"}</div>
-            <div className="truncate text-gray-400 text-xs">{user.email || ""}</div>
-          </>
-        );
         const createdDate = formatDate(order.createdAt);
         const status = getStatusInfo(order.status);
         const availableStatus = getAvailableStatus(order.status);
@@ -130,25 +119,34 @@ export default function OrderBody({
               {orderId}
             </td>
             <td className="px-4 py-4 w-[380px] max-w-[380px]">
-              {productsRender}
+              {productList.length === 0 ? (
+                <div className="text-gray-400 text-xs italic">Không có sản phẩm</div>
+              ) : (
+                <>
+                  {productList.slice(0, 2).map((name, idx2) => (
+                    <div key={orderId + "-prod-" + idx2} className="truncate leading-5">
+                      {name}
+                    </div>
+                  ))}
+                  {productList.length > 2 && (
+                    <div className="text-gray-400 text-xs">
+                      ...và {productList.length - 2} sản phẩm khác
+                    </div>
+                  )}
+                </>
+              )}
             </td>
-            <td className="px-4 py-4 w-[200px] max-w-[200px]">{userInfo}</td>
+            <td className="px-4 py-4 w-[200px] max-w-[200px]">
+              <div className="truncate font-medium">{user.name}</div>
+              <div className="truncate text-gray-400 text-xs">{user.email}</div>
+            </td>
             <td className="px-4 py-4 w-[156px] font-semibold text-[#212121] max-w-[156px] truncate">
               {createdDate}
             </td>
             <td className="px-4 py-4 w-[156px] max-w-[156px] align-middle">
               <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
                 <span
-                  className={`
-                    inline-flex items-center justify-between
-                    rounded-[8px] font-normal
-                    ${status?.color ?? ""}
-                    min-h-[32px] px-2 py-1
-                    text-xs
-                    transition
-                    overflow-hidden
-                    hover:cursor-pointer
-                  `}
+                  className={`inline-flex items-center justify-between rounded-[8px] font-normal ${status?.color ?? ""} min-h-[32px] px-2 py-1 text-xs transition overflow-hidden hover:cursor-pointer`}
                   style={{
                     background: status?.color ? undefined : "#F5F5F5",
                     color: status?.color ? undefined : "#7c7c7c",
@@ -204,9 +202,7 @@ export default function OrderBody({
                 onClick={(e) => {
                   e.stopPropagation();
                   setActionDropdownId(
-                    actionDropdownId === orderId
-                      ? null
-                      : orderId
+                    actionDropdownId === orderId ? null : orderId
                   );
                 }}
                 className="text-xl font-semibold text-gray-500 cursor-pointer p-2"
@@ -226,6 +222,7 @@ export default function OrderBody({
                     onClick={() => {
                       setActionDropdownId(null);
                       onEdit?.(order);
+                      router.push(`/admin/order?edit=${orderId}`);
                     }}
                   >
                     Sửa đơn hàng

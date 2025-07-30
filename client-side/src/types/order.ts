@@ -20,11 +20,10 @@ export interface IOrder {
   _id: string;
   userId: string;
   couponId?: string | null;
-  address_id: string;
   shippingAddress: ShippingAddress;
   totalPrice: number;
   shipping: number;
-  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled" | "fake";
   paymentMethod: "cod" | "vnpay" | "momo" | "zalopay";
   paymentId?: string | null;
   items: OrderItem[];
@@ -38,11 +37,10 @@ export interface OrderDetail {
   _id: string;
   userId: string;
   couponId?: string | null;
-  address_id: string;
   shippingAddress: ShippingAddress;
   totalPrice: number;
   shipping: number;
-  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled" | "fake";
   paymentMethod: "cod" | "vnpay" | "momo" | "zalopay";
   paymentId?: string | null;
   items: OrderItem[];

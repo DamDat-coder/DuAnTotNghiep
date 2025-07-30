@@ -9,7 +9,8 @@ import { fetchProductById } from "@/services/productApi";
 import { Star } from "lucide-react";
 import ReviewPopup from "../modals/ReviewPopup";
 import { createReview } from "@/services/reviewApi";
-import toast, { Toast } from "react-hot-toast"; // hoặc react-toastify nếu bạn dùng
+import toast from "react-hot-toast";
+import { suggestedReviews } from "@/constants/suggestedReviews";
 
 interface OrderDetailProps {
   order: OrderDetail;
@@ -31,12 +32,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
   const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [suggestedReviews] = useState([
-    "Sản phẩm tuyệt vời, chất lượng tốt.",
-    "Sản phẩm như mô tả, rất hài lòng.",
-    "Giá cả hợp lý, sẽ mua lại.",
-    "Chất lượng sản phẩm rất tốt, giao hàng nhanh.",
-  ]); // Các gợi ý cho người dùng khi không biết viết gì
 
   // Lấy thông tin người dùng
   useEffect(() => {
@@ -158,8 +153,11 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     rating: number,
     images: File[]
   ) => {
-    if (!review || rating === 0) {
-      toast.error("Vui lòng nhập nội dung và chọn số sao đánh giá!");
+    const errors: string[] = [];
+    if (!review) errors.push("Vui lòng nhập nội dung đánh giá");
+    if (rating === 0) errors.push("Vui lòng chọn số sao đánh giá");
+    if (errors.length > 0) {
+      toast.error(errors.join(" và ") + "!");
       return;
     }
     if (!reviewProductId) return;
@@ -167,9 +165,9 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     try {
       const res = await createReview(
         reviewProductId,
-        order._id,
         review,
         rating,
+        order._id,
         images
       );
       if (res.success && !res.warning) {
@@ -349,6 +347,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         }}
         onSubmit={handleSubmitReview}
         suggestedReviews={suggestedReviews}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

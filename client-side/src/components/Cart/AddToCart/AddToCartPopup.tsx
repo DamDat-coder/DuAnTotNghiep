@@ -98,6 +98,11 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       toast.error("Sản phẩm không đủ hàng!");
       return;
     }
+    // Kiểm tra categoryId
+    if (!product.categoryId) {
+      toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
+      return;
+    }
 
     const cartItem = {
       id: product.id,
@@ -110,6 +115,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       color: selectedColor,
       liked: false,
       selected: false,
+      categoryId: product.categoryId, 
     };
 
     dispatch({ type: "add", item: cartItem });

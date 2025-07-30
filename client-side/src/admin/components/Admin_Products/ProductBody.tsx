@@ -139,25 +139,40 @@ export default function ProductBody({
               {confirmId === productId && (
                 <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[1000]">
                   <div className="bg-white rounded-xl p-6 w-[320px] shadow-xl flex flex-col items-center gap-4">
-                    <div className="text-lg font-semibold text-center">
-                      {isActive
-                        ? "Bạn có chắc muốn khóa sản phẩm này?"
-                        : "Bạn có chắc muốn mở khóa và hiển thị sản phẩm này?"}
-                    </div>
-                    <div className="flex gap-3 mt-2">
-                      <button
-                        className="px-4 py-2 rounded bg-[#2563EB] text-white font-semibold hover:bg-[#174bb7]"
-                        onClick={() => handleConfirm(productId, isActive)}
-                      >
-                        Có
-                      </button>
-                      <button
-                        className="px-4 py-2 rounded bg-gray-200 text-black font-semibold hover:bg-gray-300"
-                        onClick={handleCancel}
-                      >
-                        Không
-                      </button>
-                    </div>
+                    {confirmId === productId && (
+                      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[1000]">
+                        <div className="bg-white rounded-xl p-6 w-[320px] shadow-xl flex flex-col items-center gap-4">
+                          <div className="text-lg font-semibold text-center">
+                            {isActive ? (
+                              <>
+                                {calcTotalStock(product.variants) > 0 ? (
+                                  <>
+                                    Sản phẩm này vẫn còn tồn kho (<span className="text-pink-500">{calcTotalStock(product.variants)}</span> sản phẩm).<br />
+                                    Bạn có chắc muốn khóa sản phẩm không?
+                                  </>
+                                ) : (
+                                  "Bạn có chắc muốn khóa sản phẩm này?"
+                                )}
+                              </>
+                            ) : "Bạn có chắc muốn mở khóa và hiển thị sản phẩm này?"}
+                          </div>
+                          <div className="flex gap-3 mt-2">
+                            <button
+                              className="px-4 py-2 rounded bg-[#2563EB] text-white font-semibold hover:bg-[#174bb7]"
+                              onClick={() => handleConfirm(productId, isActive)}
+                            >
+                              Có
+                            </button>
+                            <button
+                              className="px-4 py-2 rounded bg-gray-200 text-black font-semibold hover:bg-gray-300"
+                              onClick={handleCancel}
+                            >
+                              Không
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

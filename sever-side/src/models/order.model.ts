@@ -21,7 +21,6 @@ export interface IShippingAddress {
 
 export interface IOrder extends Document {
   userId: Types.ObjectId;
-  address_id: Types.ObjectId;
   shippingAddress: IShippingAddress;
   totalPrice: number;
   discountAmount?: number;
@@ -63,7 +62,6 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
 const orderSchema = new Schema<IOrder>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    address_id: { type: Schema.Types.ObjectId, required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
     discountAmount: { type: Number, default: 0 }, 

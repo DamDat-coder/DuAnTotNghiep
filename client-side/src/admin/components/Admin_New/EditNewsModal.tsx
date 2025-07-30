@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import { toast } from "react-hot-toast";
 import { News, NewsPayload } from "@/types/new";
 import { updateNews } from "@/services/newApi";
@@ -13,37 +13,36 @@ import PreviewNew from "./PreviewNew";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
-const EditNewsModal = ({
-  newsData,
-  onClose,
-}: {
+interface EditNewsModalProps {
   newsData: News;
   onClose: () => void;
-}) => {
+}
+
+export default function EditNewsModal({
+  newsData,
+  onClose,
+}: EditNewsModalProps): JSX.Element {
   const [title, setTitle] = useState(newsData.title);
   const [content, setContent] = useState(newsData.content);
   const [tags, setTags] = useState(newsData.tags || []);
-  const [tagInput, setTagInput] = useState(""); // Thêm dòng này
+  const [tagInput, setTagInput] = useState("");
   const [category, setCategory] = useState(newsData.category_id._id);
-  const [thumbnail, setThumbnail] = useState<File | null>(null); // Store File for thumbnail
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
     newsData.thumbnail || null
-  ); // Store URL for preview
+  );
   const [categories, setCategories] = useState<ICategory[]>([]);
-  const [isPublished, setIsPublished] = useState<boolean>(
-    !!newsData.is_published
-  );
-  const [publishedAt, setPublishedAt] = useState<string>(
-    newsData.published_at
-      ? new Date(newsData.published_at).toISOString().slice(0, 16)
-      : ""
-  );
   const [action, setAction] = useState<"draft" | "publish" | "upcoming">(
     newsData.is_published
       ? "publish"
       : newsData.published_at && new Date(newsData.published_at) > new Date()
       ? "upcoming"
       : "draft"
+  );
+  const [publishedAt, setPublishedAt] = useState<string>(
+    newsData.published_at
+      ? new Date(newsData.published_at).toISOString().slice(0, 16)
+      : ""
   );
   const [meta_description, setMeta_description] = useState(
     newsData.meta_description || ""
@@ -53,20 +52,31 @@ const EditNewsModal = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const now = new Date();
+    now.setHours(now.getHours() + 7);
     setTitle(newsData.title);
     setContent(newsData.content);
     setTags(newsData.tags || []);
     setCategory(newsData.category_id._id);
-    setThumbnail(null); // Reset thumbnail file
-    setThumbnailPreview(newsData.thumbnail || null); // Set initial preview
-    setIsPublished(!!newsData.is_published);
+    setThumbnail(null);
+    setThumbnailPreview(newsData.thumbnail || null);
+    setMeta_description(newsData.meta_description || "");
+    setAction(
+      newsData.is_published
+        ? "publish"
+        : newsData.published_at && new Date(newsData.published_at) > now
+        ? "upcoming"
+        : "draft"
+    );
     setPublishedAt(
       newsData.published_at
-        ? new Date(newsData.published_at).toISOString().slice(0, 16)
+        ? new Date(
+            new Date(newsData.published_at).getTime() - 7 * 60 * 60 * 1000
+          )
+            .toISOString()
+            .slice(0, 16)
         : ""
     );
-    setMeta_description(newsData.meta_description || "");
-    setAction(newsData.is_published ? "publish" : "draft");
   }, [newsData]);
 
   useEffect(() => {
@@ -97,16 +107,8 @@ const EditNewsModal = ({
         return;
       }
       setThumbnail(file);
-      setThumbnailPreview(URL.createObjectURL(file)); // Update preview
+      setThumbnailPreview(URL.createObjectURL(file));
     }
-  };
-
-  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputTags = e.target.value
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag);
-    setTags(inputTags);
   };
 
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,54 +139,79 @@ const EditNewsModal = ({
   };
 
   const handleSave = async () => {
-    if (!title || !content || !category) {
-      setError("Vui lòng điền đầy đủ thông tin.");
+    if (!title) {
+      toast.error("Vui lòng nhập tên bài viết!");
+      return;
+    }
+    if (!content.trim()) {
+      toast.error("Vui lòng nhập nội dung bài viết!");
+      return;
+    }
+    if (!category) {
+      toast.error("Vui lòng chọn danh mục!");
+      return;
+    }
+    if (!meta_description) {
+      toast.error("Vui lòng nhập mô tả SEO!");
+      return;
+    }
+    if ((action === "publish" || action === "upcoming") && !publishedAt) {
+      toast.error("Vui lòng chọn ngày đăng!");
       return;
     }
 
     const selectedCategory = categories.find((cat) => cat._id === category);
     if (!selectedCategory) {
       setError("Danh mục không hợp lệ.");
+      toast.error("Danh mục không hợp lệ!");
       return;
     }
 
-    // Validate ngày đăng nếu cần
-    if ((action === "publish" || action === "upcoming") && !publishedAt) {
-      setError("Vui lòng chọn ngày đăng!");
-      return;
-    }
-
+    const slug = title.toLowerCase().replace(/\s+/g, "-");
     let published_at: Date | undefined = undefined;
-    if (action === "publish" && publishedAt) {
-      published_at = new Date(publishedAt);
-    } else if (action === "upcoming" && publishedAt) {
-      published_at = new Date(publishedAt);
+    if ((action === "publish" || action === "upcoming") && publishedAt) {
+      const dateObj = new Date(publishedAt);
+      if (isNaN(dateObj.getTime())) {
+        setError("Ngày đăng không hợp lệ!");
+        toast.error("Ngày đăng không hợp lệ!");
+        return;
+      }
+      // Điều chỉnh múi giờ sang UTC+7
+      dateObj.setHours(dateObj.getHours() + 7);
+      published_at = dateObj;
     }
 
-    const is_published = action === "publish";
+    const payload: Partial<NewsPayload> = {
+      title,
+      content,
+      slug,
+      category_id: { _id: category, name: selectedCategory.name },
+      tags,
+      thumbnail: thumbnail ?? undefined,
+      is_published: action === "publish",
+      published_at,
+      meta_description,
+      status: action === "publish" ? "published" : action,
+    };
+
+    console.log("Payload to send:", {
+      ...payload,
+      thumbnail: payload.thumbnail?.name,
+      published_at: payload.published_at?.toISOString(),
+    });
 
     try {
       setLoading(true);
-      await updateNews(newsData._id ?? "", {
-        title,
-        content,
-        tags,
-        category_id: {
-          _id: category,
-          name: categories.find((cat) => cat._id === category)?.name,
-        },
-        thumbnail: thumbnail ?? undefined,
-        is_published,
-        published_at,
-        meta_description,
-      });
+      await updateNews(newsData._id ?? "", payload);
       toast.success("Cập nhật tin tức thành công!");
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (err: any) {
-      setError("Lỗi khi cập nhật tin tức.");
-      toast.error("Cập nhật thất bại!");
+      setError(`Lỗi khi cập nhật tin tức: ${err.message}`);
+      toast.error(`Cập nhật thất bại: ${err.message}`, {
+        style: { background: "#FDECEA", color: "#D93025" },
+      });
       console.error("Update failed:", err);
     } finally {
       setLoading(false);
@@ -233,17 +260,18 @@ const EditNewsModal = ({
                   value={content || ""}
                   onChange={(newContent: string) => setContent(newContent)}
                 />
-              </div>
-              <div className="mt-6">
-                <label className="block font-bold mb-4">
-                  Mô tả SEO <span>(&lt;150 ký tự)</span>
-                </label>
-                <textarea
-                  placeholder="Nhập mô tả SEO"
-                  value={meta_description}
-                  onChange={(e) => setMeta_description(e.target.value)}
-                  className="w-full h-24 px-4 border border-gray-200 rounded-[12px] text-[#94A3B8]"
-                />
+                <div className="mt-6">
+                  <label className="block font-bold mb-4">
+                    Mô tả SEO <span>(&lt;150 ký tự)</span>
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <textarea
+                    placeholder="Nhập mô tả SEO"
+                    value={meta_description}
+                    onChange={(e) => setMeta_description(e.target.value)}
+                    className="w-full h-24 px-4 border border-gray-200 rounded-[12px] text-[#94A3B8]"
+                  />
+                </div>
               </div>
             </div>
 
@@ -253,7 +281,7 @@ const EditNewsModal = ({
                 <div className="space-y-6">
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
-                      Ngày đăng
+                      Ngày đăng (UTC+7)
                       {(action === "publish" || action === "upcoming") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
@@ -275,10 +303,7 @@ const EditNewsModal = ({
                     <div className="flex gap-2 mt-6">
                       <button
                         type="button"
-                        onClick={() => {
-                          setAction("draft");
-                          setIsPublished(false);
-                        }}
+                        onClick={() => setAction("draft")}
                         className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
                           action === "draft"
                             ? "bg-black text-white"
@@ -289,10 +314,7 @@ const EditNewsModal = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setAction("publish");
-                          setIsPublished(true);
-                        }}
+                        onClick={() => setAction("publish")}
                         className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm ${
                           action === "publish"
                             ? "bg-black text-white"
@@ -303,10 +325,7 @@ const EditNewsModal = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setAction("upcoming");
-                          setIsPublished(false);
-                        }}
+                        onClick={() => setAction("upcoming")}
                         className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
                           action === "upcoming"
                             ? "bg-black text-white"
@@ -424,27 +443,28 @@ const EditNewsModal = ({
                       placeholder="Nhập tag, nhấn Enter hoặc dấu phẩy để thêm"
                       className="w-full h-12 px-4 border border-gray-300 rounded-[12px] text-sm"
                     />
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center"
-                      >
-                        #{tag}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(index)}
-                          className="ml-2 text-red-500"
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center"
                         >
-                          &times;
-                        </button>
-                      </span>
-                    ))}
+                          #{tag}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(index)}
+                            className="ml-2 text-red-500"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
+
                   <button
                     type="button"
-                    onClick={() => handleSave()}
+                    onClick={handleSave}
                     className="w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6"
                     disabled={loading}
                   >
@@ -468,6 +488,4 @@ const EditNewsModal = ({
       </div>
     </div>
   );
-};
-
-export default EditNewsModal;
+}

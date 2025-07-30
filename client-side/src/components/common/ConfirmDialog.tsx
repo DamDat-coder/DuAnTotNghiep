@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -19,6 +19,19 @@ export default function ConfirmDialog({
   confirmText = "Có",
   cancelText = "Không",
 }: ConfirmDialogProps) {
+  // Ngăn cuộn khi mở dialog
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    // Cleanup khi unmount
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [open]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[1000]">

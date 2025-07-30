@@ -12,7 +12,7 @@ export interface Coupon {
   maxDiscountAmount: number | null;
   startDate: string | null;
   endDate: string | null;
-  usageLimit: number;
+  usageLimit: number | null;
   usedCount: number;
   is_active: boolean;
   applicableCategories: string[];

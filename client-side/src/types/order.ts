@@ -13,6 +13,7 @@ export interface ShippingAddress {
   ward: string;
   district: string;
   province: string;
+  phone: string;
   is_default?: boolean;
 }
 
@@ -23,7 +24,13 @@ export interface IOrder {
   shippingAddress: ShippingAddress;
   totalPrice: number;
   shipping: number;
-  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled" | "fake";
+  status:
+    | "pending"
+    | "confirmed"
+    | "shipping"
+    | "delivered"
+    | "cancelled"
+    | "fake";
   paymentMethod: "cod" | "vnpay" | "momo" | "zalopay";
   paymentId?: string | null;
   items: OrderItem[];
@@ -40,7 +47,13 @@ export interface OrderDetail {
   shippingAddress: ShippingAddress;
   totalPrice: number;
   shipping: number;
-  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled" | "fake";
+  status:
+    | "pending"
+    | "confirmed"
+    | "shipping"
+    | "delivered"
+    | "cancelled"
+    | "fake";
   paymentMethod: "cod" | "vnpay" | "momo" | "zalopay";
   paymentId?: string | null;
   items: OrderItem[];

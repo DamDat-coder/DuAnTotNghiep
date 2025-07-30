@@ -153,7 +153,7 @@ export default function Notification() {
                 let iconSrc = "/notification/default.svg";
 
                 if (notification.title === "Tin tức mới từ Style For You!") {
-                  iconSrc = "/notification/news.svg";
+                  iconSrc = "/public/notification/news.svg";
                 } else if (notification.title === "Sản phẩm mới vừa ra mắt!") {
                   iconSrc = "/notification/products.svg";
                 } else if (

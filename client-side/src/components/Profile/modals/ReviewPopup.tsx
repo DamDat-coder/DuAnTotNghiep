@@ -1,7 +1,7 @@
 // components/ReviewPopup.tsx
 "use client";
 import { Star, Upload } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Mousewheel } from "swiper/modules";
 import "swiper/css";
@@ -9,12 +9,20 @@ import "swiper/css/free-mode";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 
+interface IReview {
+  content: string;
+  rating: number;
+  images?: string[];
+}
+
 interface ReviewPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (review: string, rating: number, images: File[]) => void;
   suggestedReviews: string[];
   isSubmitting?: boolean; // thêm prop này
+  hasReviewed?: boolean;
+  reviewData?: IReview;
 }
 
 const ReviewPopup: React.FC<ReviewPopupProps> = ({
@@ -23,6 +31,8 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
   onSubmit,
   suggestedReviews,
   isSubmitting = false, // default
+  hasReviewed,
+  reviewData,
 }) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -41,7 +51,73 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
     }
   };
 
+  // Ngăn scroll khi mở popup
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  if (hasReviewed && reviewData) {
+    return (
+      <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
+        <div className="bg-white p-6 rounded-md w-[400px]">
+          <h2 className="text-xl font-semibold mb-4 text-center">
+            Bạn đã đánh giá sản phẩm này!
+          </h2>
+          <div className="mb-4">
+            <div className="flex gap-1 justify-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={26}
+                  fill={i < reviewData.rating ? "black" : "none"}
+                  stroke="black"
+                  className="cursor-pointer transition-colors duration-200"
+                />
+              ))}
+            </div>
+            <div className="mt-2 text-center">{reviewData.content}</div>
+          </div>
+
+          {reviewData.images && reviewData.images.length > 0 && (
+            <div className="flex gap-2 mb-4">
+              {reviewData.images.map((image, idx) => (
+                <div
+                  key={idx}
+                  className="relative w-16 h-16 rounded overflow-hidden border border-gray-200"
+                >
+                  <Image
+                    src={image}
+                    alt={`Ảnh đánh giá ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Nút Đóng */}
+          <div className="flex justify-center mt-4">
+            <button
+              className="bg-black text-white px-4 py-2 rounded-md"
+              onClick={onClose}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">

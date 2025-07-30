@@ -20,7 +20,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { isActive, search, page = "1", limit = "10" } = req.query;
-        yield coupon_model_1.default.updateMany({ is_active: true, expiry: { $lt: new Date() } }, { $set: { is_active: false } });
+        yield coupon_model_1.default.updateMany({ is_active: true, endDate: { $lt: new Date() } }, { $set: { is_active: false } });
         const filter = {};
         if (isActive !== undefined) {
             filter.is_active = isActive === "true";
@@ -28,8 +28,8 @@ const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (search) {
             filter.code = { $regex: search, $options: "i" };
         }
-        const pageNumber = parseInt(page) || 1;
-        const limitNumber = parseInt(limit) || 10;
+        const pageNumber = parseInt(page, 10);
+        const limitNumber = parseInt(limit, 10);
         const skip = (pageNumber - 1) * limitNumber;
         const total = yield coupon_model_1.default.countDocuments(filter);
         const coupons = yield coupon_model_1.default.find(filter)
@@ -50,10 +50,7 @@ const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
     catch (error) {
         console.error("Lỗi khi lấy danh sách coupon:", error);
-        res.status(500).json({
-            message: "Lỗi server",
-            error: error.message || error,
-        });
+        res.status(500).json({ message: "Lỗi server", error: error.message || error });
     }
 });
 exports.getAllCoupons = getAllCoupons;
@@ -69,15 +66,14 @@ const getCouponById = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(200).json(coupon);
     }
     catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        res.status(500).json({ message: "Lỗi server", error: error.message || error });
     }
 });
 exports.getCouponById = getCouponById;
 // Tạo coupon mới
 const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
     try {
-        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
+        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, perUserLimit, is_active, applicableCategories, applicableProducts, } = req.body;
         const existing = yield coupon_model_1.default.findOne({ code });
         if (existing) {
             return res.status(400).json({ message: "Mã giảm giá đã tồn tại" });
@@ -92,10 +88,11 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             startDate,
             endDate,
             usageLimit: usageLimit !== null && usageLimit !== void 0 ? usageLimit : null,
+            perUserLimit: perUserLimit !== null && perUserLimit !== void 0 ? perUserLimit : null,
             usedCount: 0,
             is_active: is_active !== null && is_active !== void 0 ? is_active : true,
-            applicableCategories: (_a = applicableCategories === null || applicableCategories === void 0 ? void 0 : applicableCategories.map((id) => new mongoose_1.default.Types.ObjectId(id))) !== null && _a !== void 0 ? _a : [],
-            applicableProducts: (_b = applicableProducts === null || applicableProducts === void 0 ? void 0 : applicableProducts.map((id) => new mongoose_1.default.Types.ObjectId(id))) !== null && _b !== void 0 ? _b : [],
+            applicableCategories: (applicableCategories || []).map((id) => new mongoose_1.default.Types.ObjectId(id)),
+            applicableProducts: (applicableProducts || []).map((id) => new mongoose_1.default.Types.ObjectId(id)),
         });
         yield newCoupon.save();
         yield notification_model_1.default.create({
@@ -106,21 +103,18 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             link: `/coupons`,
             isRead: false,
         });
-        res
-            .status(201)
-            .json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
+        res.status(201).json({ message: "Tạo mã giảm giá thành công", data: newCoupon });
     }
     catch (error) {
         console.error("Error creating coupon:", error);
-        res.status(500).json({ message: "Lỗi server", error });
+        res.status(500).json({ message: "Lỗi server", error: error.message || error });
     }
 });
 exports.createCoupon = createCoupon;
 // Cập nhật coupon
 const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
     try {
-        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
+        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, perUserLimit, is_active, applicableCategories, applicableProducts, } = req.body;
         const coupon = yield coupon_model_1.default.findById(req.params.id);
         if (!coupon) {
             return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
@@ -134,27 +128,26 @@ const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         coupon.startDate = startDate !== null && startDate !== void 0 ? startDate : coupon.startDate;
         coupon.endDate = endDate !== null && endDate !== void 0 ? endDate : coupon.endDate;
         coupon.usageLimit = usageLimit !== null && usageLimit !== void 0 ? usageLimit : coupon.usageLimit;
+        coupon.perUserLimit = perUserLimit !== null && perUserLimit !== void 0 ? perUserLimit : coupon.perUserLimit;
         coupon.is_active = is_active !== null && is_active !== void 0 ? is_active : coupon.is_active;
-        coupon.applicableCategories =
-            (_a = applicableCategories === null || applicableCategories === void 0 ? void 0 : applicableCategories.map((id) => new mongoose_1.default.Types.ObjectId(id))) !== null && _a !== void 0 ? _a : coupon.applicableCategories;
-        coupon.applicableProducts =
-            (_b = applicableProducts === null || applicableProducts === void 0 ? void 0 : applicableProducts.map((id) => new mongoose_1.default.Types.ObjectId(id))) !== null && _b !== void 0 ? _b : coupon.applicableProducts;
+        if (applicableCategories)
+            coupon.applicableCategories = applicableCategories.map((id) => new mongoose_1.default.Types.ObjectId(id));
+        if (applicableProducts)
+            coupon.applicableProducts = applicableProducts.map((id) => new mongoose_1.default.Types.ObjectId(id));
         yield coupon.save();
         res.status(200).json({ message: "Cập nhật thành công", data: coupon });
     }
     catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        res.status(500).json({ message: "Lỗi server", error: error.message || error });
     }
 });
 exports.updateCoupon = updateCoupon;
-// Ẩn coupon
+// Ẩn coupon (ngừng hoạt động)
 const hideCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const coupon = yield coupon_model_1.default.findById(req.params.id);
         if (!coupon) {
-            return res
-                .status(404)
-                .json({ message: "Không tìm thấy mã giảm giá để ẩn" });
+            return res.status(404).json({ message: "Không tìm thấy mã giảm giá để ẩn" });
         }
         if (!coupon.is_active) {
             return res.status(400).json({ message: "Mã giảm giá đã bị ẩn trước đó" });
@@ -164,7 +157,7 @@ const hideCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.status(200).json({ message: "Đã ẩn mã giảm giá thành công" });
     }
     catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        res.status(500).json({ message: "Lỗi server", error: error.message || error });
     }
 });
 exports.hideCoupon = hideCoupon;

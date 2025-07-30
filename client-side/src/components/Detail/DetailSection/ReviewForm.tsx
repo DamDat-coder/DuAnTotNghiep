@@ -210,6 +210,32 @@ export default function ReviewForm({
             {images.length} ảnh đã chọn
           </span>
         </div>
+          {images.length > 0 && (
+            <div className="flex gap-2 mt-2 mb-4">
+              {images.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="relative w-16 h-16 rounded overflow-hidden border border-gray-200"
+                >
+                  <Image
+                    src={URL.createObjectURL(file)}
+                    alt={`Ảnh ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1 right-0 bg-black bg-opacity-60 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                    onClick={() => {
+                      setImages((prev) => prev.filter((_, i) => i !== idx));
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
       </div>
 
       <button

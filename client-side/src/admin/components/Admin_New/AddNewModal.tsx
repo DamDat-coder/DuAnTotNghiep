@@ -5,7 +5,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ICategory } from "@/types/category";
 import { News, NewsPayload } from "@/types/new";
-import { createNews } from "@/services/newApi";
+import { createNews } from "@/services/newsApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";

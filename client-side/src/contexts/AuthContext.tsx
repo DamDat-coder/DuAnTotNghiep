@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshUser = async () => {
     try {
       const userData = await fetchUser();
-      console.log("DEBUG AuthContext - Refreshed user", userData);
       if (userData) {
         setUser(userData);
         await fetchWishlist(userData.id);
@@ -72,7 +71,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      console.log("No accessToken, clearing user state");
       setUser(null);
       setWishlist([]);
       return;
@@ -89,7 +87,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       if (error?.response?.status === 401) {
         try {
-          console.log("Access token expired, attempting to refresh...");
           const newToken = await refreshToken();
           if (newToken) {
             localStorage.setItem("accessToken", newToken);

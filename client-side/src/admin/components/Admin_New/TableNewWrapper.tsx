@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState, useMemo } from "react";
 import Image from "next/image";
-import { deleteNews, getNewsList } from "@/services/newApi";
+import { deleteNews, getNewsList } from "@/services/newsApi";
 import { News } from "@/types/new";
 import NewControlBar from "./NewControlBar";
 import EditNewsModal from "./EditNewsModal";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { Pagination } from "../ui/Panigation";
 
@@ -72,16 +72,13 @@ export default function TableNewWrapper({
         else if (filter === "draft") isPublished = false;
 
         const data = await getNewsList(currentPage, 10, search, isPublished);
-        console.log("getNewsList response:", data);
         if (data && Array.isArray(data.news)) {
           setNews(data.news);
           setTotalPage(data.totalPages || 1);
         } else {
-          console.error("No valid news data received:", data);
           setNews([]);
         }
       } catch (error) {
-        console.error("Failed to fetch news:", error);
         setNews([]);
       } finally {
         setIsLoading(false);
@@ -137,7 +134,7 @@ export default function TableNewWrapper({
 
   const filteredNews = useMemo(() => {
     if (!Array.isArray(news)) return [];
-    const now = new Date(); // Không điều chỉnh múi giờ
+    const now = new Date();
 
     return news
       .filter((item) => {
@@ -369,7 +366,10 @@ export default function TableNewWrapper({
           {showModal && selectedNews && (
             <EditNewsModal
               newsData={selectedNews}
-              onClose={() => setShowModal(false)}
+              onClose={() => {
+                setShowModal(false);
+                setSelectedNews(null);
+              }}
               onEditSuccess={handleEditSuccess}
             />
           )}

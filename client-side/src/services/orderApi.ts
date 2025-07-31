@@ -29,8 +29,6 @@ export async function initiatePayment(
         throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
-    console.log("Payment info sent to BE:", paymentInfo);
-
     const res = await fetchWithAuth<any>(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,7 +56,6 @@ export async function createOrder(
         body: JSON.stringify({ paymentId, userId }),
       }
     );
-    console.log("Order API response:", res);
     return res;
   } catch (error: any) {
     console.error("Error creating order:", error);
@@ -183,8 +180,6 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
     const response = await fetchWithAuth<any>(`${API_BASE_URL}/orders/${id}`, {
       cache: "no-store",
     });
-
-    console.log("fetchOrderByIdForUser response:", response);
 
     if (
       !response.success ||

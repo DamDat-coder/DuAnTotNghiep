@@ -41,13 +41,6 @@ export default function Checkout() {
     handleSelectAddress,
   } = useCheckout();
 
-  // Debug log để kiểm tra props trước khi truyền vào OrderItems
-  console.log("DEBUG Checkout - Props to OrderItems", {
-    orderItems,
-    applicableItemIds,
-    discountPerItem,
-    discountCode,
-  });
 
   if (isLoading) {
     return (

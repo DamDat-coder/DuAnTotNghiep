@@ -50,6 +50,7 @@ function SimpleSwitch({
     </button>
   );
 }
+
 export default function TableCouponWrapper({
   coupons,
   currentPage,

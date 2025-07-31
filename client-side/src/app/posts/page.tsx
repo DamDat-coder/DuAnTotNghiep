@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getAllNews } from '@/services/newApi';
+import { getAllNews } from '@/services/newsApi';
 import { News } from '@/types/new';
 
 export default function NewsPage() {

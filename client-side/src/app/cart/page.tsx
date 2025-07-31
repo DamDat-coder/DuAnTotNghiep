@@ -6,10 +6,9 @@ import { CartMobile, CartDesktop } from "@/components/Cart";
 import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
-import { fetchProducts } from "@/services/productApi";
-
+import { ICartItem } from "@/types/cart";
+import { fetchProducts, fetchProductsActiveStatus } from "@/services/productApi";
 import { Toaster } from "react-hot-toast";
-import CartTablet from "@/components/Cart/Layout/CartTablet";
 
 export default function Cart() {
   const cart = useCart();
@@ -17,44 +16,86 @@ export default function Cart() {
   const [suggestedProducts, setSuggestedProducts] = useState<IProduct[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [productsActiveStatus, setProductsActiveStatus] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  // Kiểm tra trạng thái is_active của sản phẩm trong giỏ hàng
   useEffect(() => {
-    setSelectAll(
-      cart.items.length > 0 && cart.items.every((item) => item.selected)
-    );
-  }, [cart.items]);
+    async function checkProductsActiveStatus() {
+      if (cart.items.length === 0) return;
 
-  // Tổng tiền các sản phẩm được chọn (selected: true)
+      const productIds = [...new Set(cart.items.map((item) => item.id))];
+      try {
+        const activeStatus = await fetchProductsActiveStatus(productIds);
+        const statusMap: { [key: string]: boolean } = activeStatus.reduce(
+          (acc, { id, is_active }) => ({
+            ...acc,
+            [id]: is_active,
+          }),
+          {} as { [key: string]: boolean }
+        );
+        console.log("DEBUG Cart - Products active status", { statusMap, productIds });
+        setProductsActiveStatus(statusMap);
+
+        // Tự động bỏ chọn sản phẩm is_active: false
+        cart.items.forEach((item) => {
+          if (statusMap[item.id] === false && item.selected) {
+            dispatch({
+              type: "update",
+              item: { ...item, selected: false },
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra trạng thái sản phẩm:", error);
+      }
+    }
+    checkProductsActiveStatus();
+  }, [cart.items, dispatch]);
+
+  // Cập nhật trạng thái selectAll dựa trên các sản phẩm hợp lệ
+  useEffect(() => {
+    const validItems = cart.items.filter(
+      (item) => productsActiveStatus[item.id] !== false
+    );
+    setSelectAll(
+      validItems.length > 0 && validItems.every((item) => item.selected)
+    );
+  }, [cart.items, productsActiveStatus]);
+
   const totalPrice = useMemo(
     () =>
       cart.items
-        .filter((item) => item.selected)
+        .filter((item) => item.selected && productsActiveStatus[item.id] !== false)
         .reduce(
           (sum, item) =>
             sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
           0
         ),
-    [cart.items]
+    [cart.items, productsActiveStatus]
   );
 
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
     cart.items.forEach((item) => {
-      dispatch({
-        type: "update",
-        item: { ...item, selected: newSelectAll },
-      });
+      if (productsActiveStatus[item.id] !== false) {
+        dispatch({
+          type: "update",
+          item: { ...item, selected: newSelectAll },
+        });
+      }
     });
   };
 
   const handleQuantityChange = (id: string, size: string, change: number) => {
     const item = cart.items.find((i) => i.id === id && i.size === size);
-    if (!item) return;
+    if (!item || productsActiveStatus[item.id] === false) return;
     const newQuantity = Math.max(1, item.quantity + change);
     dispatch({
       type: "update",
@@ -75,7 +116,6 @@ export default function Cart() {
     dispatch({ type: "remove", id, size, color });
   };
 
-  // Gợi ý sản phẩm
   useEffect(() => {
     async function getSuggestedProducts() {
       try {
@@ -115,13 +155,7 @@ export default function Cart() {
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
-              />
-              <CartTablet
-                cartItems={cart.items}
-                totalPrice={totalPrice}
-                onQuantityChange={handleQuantityChange}
-                onToggleLike={toggleLike}
-                onRemove={removeItem}
+                productsActiveStatus={productsActiveStatus}
               />
               <CartDesktop
                 cartItems={cart.items}
@@ -129,6 +163,7 @@ export default function Cart() {
                 onQuantityChange={handleQuantityChange}
                 onToggleLike={toggleLike}
                 onRemove={removeItem}
+                productsActiveStatus={productsActiveStatus}
               />
               <div className="mb-4 mt-9">
                 {suggestedProducts.length > 0 ? (

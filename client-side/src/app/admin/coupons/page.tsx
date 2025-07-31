@@ -20,6 +20,17 @@ export default function CouponsPage() {
   const pageSize = 10;
   const [coupons, setCoupons] = useState<Coupon[]>([]);
 
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [showModal]);
+
   const loadCoupons = async () => {
     setLoading(true);
     try {
@@ -52,6 +63,7 @@ export default function CouponsPage() {
   // Gọi API khi search, filter hoặc currentPage thay đổi
   useEffect(() => {
     loadCoupons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, filter, currentPage]);
 
   // Reset về trang 1 khi filter hoặc search thay đổi
@@ -69,15 +81,10 @@ export default function CouponsPage() {
         currentPage={currentPage}
         totalPage={totalPages}
         onPageChange={setCurrentPage}
-        filter={filter}
-        search={search}
-        setFilter={setFilter}
-        setSearch={setSearch}
         onUpdate={setCoupons}
         onDelete={(id: string) => {
           setCoupons((prev) => prev.filter((coupon) => coupon._id !== id));
         }}
-        // Truyền hàm mở modal xuống CouponControlBar
         renderControlBar={(props) => (
           <CouponControlBar {...props} onAddCoupon={() => setShowModal(true)} />
         )}

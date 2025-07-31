@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchCoupons } from "@/services/couponApi";
 import { Coupon } from "@/types/coupon";
-import TableCouponWrapper from "@/admin/components/Admin_Coupon/TableCouponWrapper";
+
 import AddCouponModal from "@/admin/components/Admin_Coupon/AddCouponModal";
 import CouponControlBar from "@/admin/components/Admin_Coupon/CouponControlBar";
+import TableCouponWrapper from "@/admin/components/Admin_Coupon/TableCouponWrapper";
 
 export default function CouponsPage() {
   const [filter, setFilter] = useState<string>("all");
@@ -16,6 +17,8 @@ export default function CouponsPage() {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [showModal, setShowModal] = useState(false);
+  const pageSize = 10;
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
 
   useEffect(() => {
     if (showModal) {
@@ -27,9 +30,6 @@ export default function CouponsPage() {
       document.body.classList.remove("overflow-hidden");
     };
   }, [showModal]);
-
-  const pageSize = 10;
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
 
   const loadCoupons = async () => {
     setLoading(true);
@@ -63,6 +63,7 @@ export default function CouponsPage() {
   // Gọi API khi search, filter hoặc currentPage thay đổi
   useEffect(() => {
     loadCoupons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, filter, currentPage]);
 
   // Reset về trang 1 khi filter hoặc search thay đổi
@@ -80,20 +81,12 @@ export default function CouponsPage() {
         currentPage={currentPage}
         totalPage={totalPages}
         onPageChange={setCurrentPage}
-        filter={filter}
-        search={search}
-        setFilter={setFilter}
-        setSearch={setSearch}
         onUpdate={setCoupons}
         onDelete={(id: string) => {
           setCoupons((prev) => prev.filter((coupon) => coupon._id !== id));
         }}
-        // Truyền hàm mở modal xuống CouponControlBar
         renderControlBar={(props) => (
-          <CouponControlBar
-            {...props}
-            onAddCoupon={() => setShowModal(true)}
-          />
+          <CouponControlBar {...props} onAddCoupon={() => setShowModal(true)} />
         )}
       />
 

@@ -7,6 +7,9 @@ export interface Address {
   district: string;
   province: string;
   is_default: boolean;
+  province_code?: string; // <-- thêm dòng này
+  district_code?: string; // <-- thêm dòng này
+  ward_code?: string;     // <-- thêm dòng này
 }
 export interface IUser {
   id: string;

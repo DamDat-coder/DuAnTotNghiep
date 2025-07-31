@@ -46,7 +46,13 @@ export default function NewsPage() {
         search,
         isPublished
       );
-      setNewsList(data.news ?? []);
+      // Sort theo updatedAt giảm dần
+      const sortedNews = (data.news ?? []).sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt).getTime() -
+          new Date(a.updatedAt || a.createdAt).getTime()
+      );
+      setNewsList(sortedNews);
       setTotal(data.total ?? 0);
       setTotalPages(data.totalPages ?? 0);
     } catch (error) {
@@ -72,6 +78,11 @@ export default function NewsPage() {
     setNewsList((prev) => prev.filter((news) => news.id !== id));
   };
 
+  const handleAddSuccess = (newNews: News) => {
+    setNewsList((prev) => [newNews, ...prev]);
+    setShowModal(false);
+  };
+
   if (loading) {
     return (
       <AdminLayout
@@ -91,7 +102,6 @@ export default function NewsPage() {
         newsList={newsList}
         token={""}
         onDelete={handleDelete}
-        // Custom renderControlBar để truyền hàm mở modal xuống
         renderControlBar={(props) => (
           <NewControlBar
             {...props}
@@ -100,7 +110,12 @@ export default function NewsPage() {
         )}
       />
 
-      {showModal && <AddNewModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <AddNewModal
+          onClose={() => setShowModal(false)}
+          onAddSuccess={handleAddSuccess} // truyền callback này
+        />
+      )}
 
       {/* Hiển thị trạng thái tải */}
       {loading && (

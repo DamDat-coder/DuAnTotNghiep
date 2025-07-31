@@ -264,6 +264,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
         ward: "",
         district: "",
         province: "",
+        phone: "",
         is_default: false,
       },
       totalPrice: 0,

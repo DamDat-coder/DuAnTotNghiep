@@ -312,8 +312,8 @@ export async function validateCoupon(
       console.log("DEBUG validateCoupon - Invalid discount value");
       return { success: false, message: "Giá trị giảm giá không hợp lệ." };
     }
-    if (coupon.discountType === "percentage" && coupon.discountValue > 100) {
-      console.log("DEBUG validateCoupon - Invalid percentage discount value");
+    if (coupon.discountType === "percent" && coupon.discountValue > 100) {
+      console.log("DEBUG validateCoupon - Invalid percent discount value");
       return {
         success: false,
         message: "Giá trị giảm giá phần trăm không hợp lệ.",

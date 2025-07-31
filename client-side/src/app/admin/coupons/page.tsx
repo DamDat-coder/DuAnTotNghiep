@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchCoupons } from "@/services/couponApi";
 import { Coupon } from "@/types/coupon";
-import TableCouponWrapper from "@/admin/components/Admin_Coupon/TableCouponWrapper";
+
 import AddCouponModal from "@/admin/components/Admin_Coupon/AddCouponModal";
 import CouponControlBar from "@/admin/components/Admin_Coupon/CouponControlBar";
+import TableCouponWrapper from "@/admin/components/Admin_Coupon/TableCouponWrapper";
 
 export default function CouponsPage() {
   const [filter, setFilter] = useState<string>("all");
@@ -16,18 +17,6 @@ export default function CouponsPage() {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    if (showModal) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
-  }, [showModal]);
-
   const pageSize = 10;
   const [coupons, setCoupons] = useState<Coupon[]>([]);
 
@@ -90,10 +79,7 @@ export default function CouponsPage() {
         }}
         // Truyền hàm mở modal xuống CouponControlBar
         renderControlBar={(props) => (
-          <CouponControlBar
-            {...props}
-            onAddCoupon={() => setShowModal(true)}
-          />
+          <CouponControlBar {...props} onAddCoupon={() => setShowModal(true)} />
         )}
       />
 

@@ -211,7 +211,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       },
       totalPrice: order.totalPrice || 0,
       shipping: order.shipping || 0,
-      status:
+status:
         order.status &&
         ["pending", "confirmed", "shipping", "delivered", "cancelled"].includes(
           order.status
@@ -320,7 +320,7 @@ export function getBestSellingProductsFromOrders(
       } else {
         const existing = productMap.get(key)!;
         existing.sold += item.quantity;
-        productMap.set(key, existing);
+productMap.set(key, existing);
       }
     });
   });

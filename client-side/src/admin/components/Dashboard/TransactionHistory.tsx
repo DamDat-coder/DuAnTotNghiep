@@ -67,7 +67,7 @@ export default function TransactionHistory() {
     );
   };
 
-  const shortId = (id: string) => id.slice(-6);
+  // const shortId = (id: string) => id.slice(-6);
 
   return (
     <div className="bg-white w-full h-[360px] rounded-xl p-6 flex flex-col justify-between">
@@ -122,7 +122,7 @@ export default function TransactionHistory() {
                         className="text-blue-600 font-medium cursor-pointer hover:underline"
                         onClick={() => router.push(`/admin/order?edit=${t.id}`)}
                       >
-                        #{shortId(t.id)}
+                        {/* #{shortId(t.id)} */}#{t.id}
                       </span>
                     </div>
                     <div className="text-xs text-gray-400">

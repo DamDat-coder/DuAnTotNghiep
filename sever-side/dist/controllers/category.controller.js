@@ -18,6 +18,7 @@ const slugify_1 = __importDefault(require("slugify"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 const mongoose_1 = require("mongoose");
 const mongoose_2 = __importDefault(require("mongoose"));
+const product_model_1 = __importDefault(require("../models/product.model"));
 // Tạo danh mục mới
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -172,19 +173,25 @@ const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const categoryId = req.params.id;
         const { is_active } = req.body;
         if (!mongoose_2.default.Types.ObjectId.isValid(categoryId)) {
-            res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
-            return;
+            return res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
         }
         if (typeof is_active !== 'boolean') {
-            res.status(400).json({ status: 'error', message: 'Trạng thái is_active phải là boolean' });
-            return;
+            return res.status(400).json({ status: 'error', message: 'Trạng thái is_active phải là boolean' });
+        }
+        if (!is_active) {
+            const count = yield product_model_1.default.countDocuments({ "category._id": new mongoose_2.default.Types.ObjectId(categoryId) });
+            if (count > 0) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Không thể khóa danh mục vì có sản phẩm đang sử dụng.',
+                });
+            }
         }
         const updatedCategory = yield category_model_1.default.findByIdAndUpdate(categoryId, { is_active }, { new: true, runValidators: true }).lean();
         if (!updatedCategory) {
-            res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
-            return;
+            return res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
         }
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `Danh mục đã được ${is_active ? 'mở khóa' : 'khóa'} thành công`,
             data: updatedCategory,
@@ -192,7 +199,7 @@ const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
     catch (error) {
         console.error('Lỗi khi khóa/mở khóa danh mục:', error);
-        res.status(500).json({ status: 'error', message: error.message });
+        return res.status(500).json({ status: 'error', message: error.message });
     }
 });
 exports.toggleActiveCategory = toggleActiveCategory;

@@ -6,7 +6,7 @@ import TableNewWrapper from "@/admin/components/Admin_New/TableNewWrapper";
 import { getNewsList } from "@/services/newsApi";
 import { News, NewsFilterStatus } from "@/types/new";
 import AddNewModal from "@/admin/components/Admin_New/AddNewModal";
-import NewControlBar from "@/admin/components/Admin_New/NewControlBar"; // nếu cần custom control bar
+import NewControlBar from "@/admin/components/Admin_New/NewControlBar";
 
 export default function NewsPage() {
   const [newsList, setNewsList] = useState<News[]>([]);
@@ -25,7 +25,6 @@ export default function NewsPage() {
     } else {
       document.body.classList.remove("overflow-hidden");
     }
-    // Cleanup khi unmount
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
@@ -46,7 +45,13 @@ export default function NewsPage() {
         search,
         isPublished
       );
-      setNewsList(data.news ?? []);
+      // Sort theo updatedAt giảm dần
+      const sortedNews = (data.news ?? []).sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt).getTime() -
+          new Date(a.updatedAt || a.createdAt).getTime()
+      );
+      setNewsList(sortedNews);
       setTotal(data.total ?? 0);
       setTotalPages(data.totalPages ?? 0);
     } catch (error) {
@@ -58,10 +63,11 @@ export default function NewsPage() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     loadNews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, filter, currentPage]);
-  // Client-side search preview
 
   useEffect(() => {
     setCurrentPage(1);
@@ -69,7 +75,12 @@ export default function NewsPage() {
 
   // Handle news deletion
   const handleDelete = (id: string) => {
-    setNewsList((prev) => prev.filter((news) => news.id !== id));
+    setNewsList((prev) => prev.filter((news) => news._id !== id));
+  };
+
+  const handleAddSuccess = (newNews: News) => {
+    setNewsList((prev) => [newNews, ...prev]);
+    setShowModal(false);
   };
 
   if (loading) {
@@ -82,6 +93,7 @@ export default function NewsPage() {
       </AdminLayout>
     );
   }
+
   return (
     <AdminLayout
       pageTitle="Tin tức"
@@ -91,7 +103,6 @@ export default function NewsPage() {
         newsList={newsList}
         token={""}
         onDelete={handleDelete}
-        // Custom renderControlBar để truyền hàm mở modal xuống
         renderControlBar={(props) => (
           <NewControlBar
             {...props}
@@ -100,20 +111,23 @@ export default function NewsPage() {
         )}
       />
 
-      {showModal && <AddNewModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <AddNewModal
+          onClose={() => setShowModal(false)}
+          onAddSuccess={handleAddSuccess}
+        />
+      )}
 
-      {/* Hiển thị trạng thái tải */}
       {loading && (
         <p className="text-center text-gray-500 mt-4">Đang tải dữ liệu...</p>
       )}
 
-      {/* Hiển thị thông báo khi không có người dùng */}
       {!loading && newsList.length === 0 && (
         <div className="text-center mt-6">
           <p className="text-gray-500 text-lg">Không tìm thấy tin tức</p>
           {search && (
             <p className="text-sm text-gray-400 mt-2">
-              Không có tin tức dùng nào khớp với từ khóa "{search}".
+              Không có tin tức nào khớp với từ khóa "{search}".
             </p>
           )}
         </div>

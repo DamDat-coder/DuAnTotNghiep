@@ -237,7 +237,11 @@ export async function validateCoupon(
     if (coupon.discountValue <= 0) {
       return { success: false, message: "Giá trị giảm giá không hợp lệ." };
     }
-    if (coupon.discountType === "percentage" && coupon.discountValue > 100) {
+    // Sửa conflict: chấp nhận cả "percent" và "percentage" là giảm giá phần trăm
+    if (
+      (coupon.discountType === "percent" || coupon.discountType === "percentage") &&
+      coupon.discountValue > 100
+    ) {
       return {
         success: false,
         message: "Giá trị giảm giá phần trăm không hợp lệ.",

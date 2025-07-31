@@ -5,7 +5,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ICategory } from "@/types/category";
 import { News, NewsPayload } from "@/types/new";
-import { createNews, updateNews } from "@/services/newsApi";
+import { createNews } from "@/services/newsApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
@@ -13,7 +13,13 @@ import PreviewNew from "./PreviewNew";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
-export default function AddNewModal({ onClose }: { onClose: () => void }) {
+export default function AddNewModal({
+  onClose,
+  onAddSuccess,
+}: {
+  onClose: () => void;
+  onAddSuccess?: (news: News) => void;
+}) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [date, setDate] = useState("");
@@ -30,6 +36,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [newsImages, setNewsImages] = useState<File[]>([]);
   const [meta_description, setMeta_description] = useState("");
+
   const handlePreview = () => {
     setIsPreviewVisible(true);
   };
@@ -87,6 +94,10 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       toast.error("Vui lòng nhập mô tả SEO!");
       return;
     }
+    if (!tags || tags.length === 0) {
+      toast.error("Vui lòng nhập ít nhất một tag!");
+      return;
+    }
     if ((action === "publish" || action === "upcoming") && !date) {
       toast.error("Vui lòng chọn ngày đăng khi xuất bản hoặc hẹn lịch!");
       return;
@@ -111,9 +122,25 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
         toast.error("Ngày đăng không hợp lệ!");
         return;
       }
-      // Điều chỉnh múi giờ sang UTC+7
-      dateObj.setHours(dateObj.getHours() + 7);
       publishedAtValue = dateObj;
+    }
+
+    if (action === "publish") {
+      if (publishedAtValue && publishedAtValue > new Date()) {
+        toast.error(
+          "Ngày xuất bản không được ở tương lai. Nếu muốn hẹn lịch, hãy chọn 'Hẹn ngày đăng'."
+        );
+        return;
+      }
+    }
+
+    if (action === "upcoming") {
+      const now = new Date();
+      const minUpcoming = new Date(now.getTime() + 2 * 60 * 1000);
+      if (!publishedAtValue || publishedAtValue < minUpcoming) {
+        toast.error("Thời gian hẹn đăng phải lớn hơn hiện tại ít nhất 2 phút!");
+        return;
+      }
     }
 
     const payload: NewsPayload = {
@@ -126,7 +153,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
       is_published: action === "publish",
       published_at:
         action === "publish"
-          ? publishedAtValue
+          ? new Date()
           : action === "upcoming"
           ? publishedAtValue
           : undefined,
@@ -147,25 +174,13 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
 
     try {
       setLoading(true);
-      // Gọi API tạo/sửa tin tức
       const createdNews = await createNews(payload);
-      toast.success("Tạo tin tức thành công!");
+      toast.success("Tin tức đã được tạo thành công!");
 
-      if (action === "publish") {
-        if (!createdNews.id) {
-          throw new Error("ID tin tức không hợp lệ sau khi tạo");
-        }
-        await updateNews(createdNews.id, {
-          is_published: true,
-          published_at: publishedAtValue,
-        });
-      }
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      if (onAddSuccess) onAddSuccess(createdNews); // Gọi callback để cập nhật danh sách
+      onClose(); // Đóng modal
     } catch (err: any) {
-      console.error("Lỗi khi tạo hoặc cập nhật tin tức:", err);
+      console.error("Lỗi khi tạo tin tức:", err);
       setError(err.message);
       toast.error(`Đã xảy ra lỗi khi tạo tin tức: ${err.message}`);
     } finally {
@@ -190,16 +205,6 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
   }, []);
 
   // Hàm hiển thị trạng thái tin tức
-  const getStatusLabel = (news: News) => {
-    if (news.is_published) return "Xuất bản";
-    if (
-      news.published_at &&
-      new Date(news.published_at) > new Date() &&
-      !news.is_published
-    )
-      return "Sắp xuất bản";
-    return "Bản nháp";
-  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
@@ -261,7 +266,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                 <div className="space-y-6">
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
-                      Ngày đăng (UTC+7)
+                      Ngày đăng
                       {(action === "publish" || action === "upcoming") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
@@ -270,7 +275,7 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       type="datetime-local"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      disabled={action !== "publish" && action !== "upcoming"}
+                      disabled={action === "publish"} // chỉ cho sửa khi là upcoming
                       className="w-full h-[46px] border border-[#D1D1D1] rounded-[12px] appearance-none"
                     />
                     <Image
@@ -294,7 +299,17 @@ export default function AddNewModal({ onClose }: { onClose: () => void }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setAction("publish")}
+                        onClick={() => {
+                          setAction("publish");
+                          setDate(
+                            new Date(
+                              Date.now() -
+                                new Date().getTimezoneOffset() * 60000
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          );
+                        }}
                         className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm ${
                           action === "publish"
                             ? "bg-black text-white"

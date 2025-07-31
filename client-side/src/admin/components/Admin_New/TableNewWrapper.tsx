@@ -5,7 +5,7 @@ import { deleteNews, getNewsList } from "@/services/newsApi";
 import { News } from "@/types/new";
 import NewControlBar from "./NewControlBar";
 import EditNewsModal from "./EditNewsModal";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { Pagination } from "../ui/Panigation";
 
@@ -70,19 +70,15 @@ export default function TableNewWrapper({
         let isPublished: boolean | undefined = undefined;
         if (filter === "published") isPublished = true;
         else if (filter === "draft") isPublished = false;
-        // Không cần xử lý filter "upcoming" ở đây vì đã xử lý trong filteredNews
 
         const data = await getNewsList(currentPage, 10, search, isPublished);
-        console.log("getNewsList response:", data);
         if (data && Array.isArray(data.news)) {
           setNews(data.news);
           setTotalPage(data.totalPages || 1);
         } else {
-          console.error("No valid news data received:", data);
           setNews([]);
         }
       } catch (error) {
-        console.error("Failed to fetch news:", error);
         setNews([]);
       } finally {
         setIsLoading(false);
@@ -90,6 +86,11 @@ export default function TableNewWrapper({
     };
     loadNews();
   }, [search, filter, currentPage]);
+
+  useEffect(() => {
+    // Đồng bộ lại state news khi prop newsList thay đổi (ví dụ: khi thêm mới)
+    setNews(Array.isArray(newsList) ? newsList : []);
+  }, [newsList]);
 
   const handleDelete = (id: string) => {
     setConfirmNewsId(id);
@@ -102,9 +103,7 @@ export default function TableNewWrapper({
       setNews((prevNews) => prevNews.filter((item) => item._id !== id));
       onDelete(id);
       setActionDropdownId(null);
-      toast.success("Xóa tin tức thành công!", {
-        style: { background: "#EDF7ED", color: "#2E7D32" },
-      });
+      toast.success("Xóa tin tức thành công!");
     } catch (err: any) {
       toast.error(`Lỗi khi xóa tin tức: ${err.message || "Không xác định"}`, {
         style: { background: "#FDECEA", color: "#D93025" },
@@ -123,10 +122,19 @@ export default function TableNewWrapper({
     setShowModal(true);
   };
 
+  const handleEditSuccess = (updatedNews: News) => {
+    setNews((prev) => {
+      // Loại bỏ bài cũ và thêm bài mới lên đầu
+      const filtered = prev.filter((item) => item._id !== updatedNews._id);
+      return [updatedNews, ...filtered];
+    });
+    setShowModal(false);
+    setSelectedNews(null);
+  };
+
   const filteredNews = useMemo(() => {
     if (!Array.isArray(news)) return [];
     const now = new Date();
-    now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
 
     return news
       .filter((item) => {
@@ -152,7 +160,6 @@ export default function TableNewWrapper({
       });
   }, [news, filter, search]);
 
-  // Thêm đoạn này để khóa scroll khi mở EditNewsModal
   useEffect(() => {
     if (showModal) {
       document.body.classList.add("overflow-hidden");
@@ -163,6 +170,18 @@ export default function TableNewWrapper({
       document.body.classList.remove("overflow-hidden");
     };
   }, [showModal]);
+
+  const getStatus = (news: News) => {
+    const now = new Date();
+    if (news.is_published) return "published";
+    if (
+      news.published_at &&
+      new Date(news.published_at) > now &&
+      !news.is_published
+    )
+      return "upcoming";
+    return "draft";
+  };
 
   return (
     <>
@@ -243,19 +262,8 @@ export default function TableNewWrapper({
                 </tr>
               )}
               {filteredNews.map((news) => {
-                const now = new Date();
-                now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
-                let status;
-                if (news.is_published) {
-                  status = statusMap.published;
-                } else if (
-                  news.published_at &&
-                  new Date(news.published_at) > now
-                ) {
-                  status = statusMap.upcoming;
-                } else {
-                  status = statusMap.draft;
-                }
+                const statusKey = getStatus(news);
+                const status = statusMap[statusKey];
 
                 return (
                   <tr
@@ -362,6 +370,7 @@ export default function TableNewWrapper({
                 setShowModal(false);
                 setSelectedNews(null);
               }}
+              onEditSuccess={handleEditSuccess}
             />
           )}
         </div>

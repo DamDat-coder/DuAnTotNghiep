@@ -259,6 +259,7 @@ status:
         ward: "",
         district: "",
         province: "",
+        phone: "",
         is_default: false,
       },
       totalPrice: 0,

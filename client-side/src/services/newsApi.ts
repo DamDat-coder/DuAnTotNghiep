@@ -138,15 +138,17 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
     // Xử lý published_at và is_published dựa trên status
     if (payload.status === "published") {
       formData.append("is_published", "true");
-      formData.append("published_at", new Date().toISOString());
-    } else if (payload.status === "upcoming" && payload.published_at) {
-      if (!isNaN(payload.published_at.getTime())) {
-        formData.append("is_published", "false");
+      // Nếu có published_at thì dùng, không thì lấy ngày hiện tại
+      if (payload.published_at && !isNaN(payload.published_at.getTime())) {
         formData.append("published_at", payload.published_at.toISOString());
       } else {
-        throw new Error("Ngày đăng không hợp lệ trong payload");
+        formData.append("published_at", new Date().toISOString());
       }
+    } else if (payload.status === "upcoming" && payload.published_at) {
+      formData.append("is_published", "false");
+      formData.append("published_at", payload.published_at.toISOString());
     } else {
+      // Draft: không gửi published_at
       formData.append("is_published", "false");
     }
 
@@ -229,15 +231,17 @@ export const updateNews = async (
     // Xử lý published_at và is_published dựa trên status
     if (payload.status === "published") {
       formData.append("is_published", "true");
-      formData.append("published_at", new Date().toISOString());
-    } else if (payload.status === "upcoming" && payload.published_at) {
-      if (!isNaN(payload.published_at.getTime())) {
-        formData.append("is_published", "false");
+      // Nếu có published_at thì dùng, không thì lấy ngày hiện tại
+      if (payload.published_at && !isNaN(payload.published_at.getTime())) {
         formData.append("published_at", payload.published_at.toISOString());
       } else {
-        throw new Error("Ngày đăng không hợp lệ trong payload");
+        formData.append("published_at", new Date().toISOString());
       }
+    } else if (payload.status === "upcoming" && payload.published_at) {
+      formData.append("is_published", "false");
+      formData.append("published_at", payload.published_at.toISOString());
     } else {
+      // Draft: không gửi published_at
       formData.append("is_published", "false");
     }
 

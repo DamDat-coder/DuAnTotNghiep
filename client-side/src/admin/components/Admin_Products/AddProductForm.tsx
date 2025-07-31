@@ -6,6 +6,7 @@ import { ICategory } from "@/types/category";
 import { addProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
+import { convertToSlug } from "@/utils/slugify";
 
 const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL"];
 const colorOptions = [
@@ -67,7 +68,7 @@ export default function AddProductForm({ onClose, onAdded }) {
       try {
         const result = await fetchCategoryTree();
         setCategories(filterOutBaiViet(result));
-      } catch (err) {
+      } catch {
         setCategories([]);
       }
     };
@@ -107,7 +108,7 @@ export default function AddProductForm({ onClose, onAdded }) {
   const handleRemoveVariant = (idx: number) => {
     setFormData((prev: any) => ({
       ...prev,
-      variants: prev.variants.filter((_: any, i: number) => i !== idx),
+      variants: prev.variants.filter((_, i) => i !== idx),
     }));
   };
 
@@ -119,36 +120,16 @@ export default function AddProductForm({ onClose, onAdded }) {
   };
 
   const handleAddVariant = () => {
-    if (
-      !newVariant.size ||
-      !newVariant.color ||
-      !newVariant.price ||
-      !newVariant.stock
-    ) {
+    if (!newVariant.size || !newVariant.color || !newVariant.price || !newVariant.stock) {
       setError("Vui lòng nhập đầy đủ biến thể mới trước khi thêm!");
       return;
     }
     setError(null);
     setFormData((prev: any) => ({
       ...prev,
-      variants: [
-        ...prev.variants,
-        {
-          size: newVariant.size,
-          color: newVariant.color,
-          price: newVariant.price,
-          discountPercent: newVariant.discountPercent,
-          stock: newVariant.stock,
-        },
-      ],
+      variants: [...prev.variants, { ...newVariant }],
     }));
-    setNewVariant({
-      size: "",
-      color: "",
-      price: "",
-      discountPercent: "",
-      stock: "",
-    });
+    setNewVariant({ size: "", color: "", price: "", discountPercent: "", stock: "" });
   };
 
   const renderImagesBlock = () => {
@@ -239,10 +220,7 @@ export default function AddProductForm({ onClose, onAdded }) {
 
     setIsSubmitting(true);
     try {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
+      const slug = convertToSlug(formData.name);
 
       const res = await addProduct({
         name: formData.name,
@@ -276,7 +254,8 @@ export default function AddProductForm({ onClose, onAdded }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full md:w-[613px] flex flex-col max-h-[95vh] overflow-y-auto">
+      {/* Popup container đồng nhất với EditProductForm */}
+      <div className="relative w-[613px] max-w-2xl max-h-[95vh] bg-white rounded-xl flex flex-col overflow-y-auto scroll-hidden p-0">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b rounded-t-xl">
           <h2 className="text-xl font-bold">Thêm sản phẩm</h2>
@@ -290,11 +269,13 @@ export default function AddProductForm({ onClose, onAdded }) {
             ×
           </button>
         </div>
+        {/* Nội dung form giống Edit */}
         <form
-          className="p-6 pt-4 space-y-6 overflow-y-auto"
-          style={{ maxWidth: 640 }}
+          className="p-6 pt-4 space-y-6 w-[613px]"
           onSubmit={handleSubmit}
+          style={{ maxWidth: 640 }}
         >
+          {/* Các trường nhập giữ nguyên như trên */}
           {/* Hình ảnh sản phẩm */}
           <div>
             <label className="block font-semibold mb-2">

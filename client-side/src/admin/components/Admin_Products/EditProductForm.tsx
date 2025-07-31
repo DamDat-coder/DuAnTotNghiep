@@ -7,6 +7,7 @@ import { ICategory } from "@/types/category";
 import { editProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
+import { convertToSlug } from "@/utils/slugify"; // Import slugify từ utils
 
 interface EditProductFormProps {
   product: IProduct;
@@ -242,7 +243,7 @@ export default function EditProductForm({
     );
   };
 
-  // Submit logic với hiệu ứng loading/toast/error
+  // Submit logic với chuẩn hóa slug từ name
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -259,7 +260,11 @@ export default function EditProductForm({
       if (v.discountPercent && (v.discountPercent < 0 || v.discountPercent > 100))
         return setError("Phần trăm giảm giá phải từ 0 đến 100.");
     }
-    if (formData.images && formData.images.length > 0 && typeof formData.images[0] !== "string") {
+    if (
+      formData.images &&
+      formData.images.length > 0 &&
+      typeof formData.images[0] !== "string"
+    ) {
       const validTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let img of formData.images) {
         if (!validTypes.includes(img.type)) return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
@@ -269,9 +274,12 @@ export default function EditProductForm({
 
     setIsSubmitting(true);
     try {
+      // CHUẨN HÓA SLUG TỪ NAME
+      const slug = convertToSlug(formData.name);
+
       const submitData = {
         name: formData.name,
-        slug: formData.slug,
+        slug,
         description: formData.description,
         categoryId: formData.categoryId,
         variants: formData.variants.map((v: any) => ({

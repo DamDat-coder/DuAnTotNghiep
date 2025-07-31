@@ -1,4 +1,4 @@
-import { CategoryInput, CategoryResponse, ICategory, SingleCategoryResponse } from "../types/category";
+import { CategoryInput, ToggleCategoryResponse, ICategory, SingleCategoryResponse } from "../types/category";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 
 // Lấy cây danh mục
@@ -116,10 +116,19 @@ export async function updateCategory(id: string, input: CategoryInput, imageFile
 }
 
 // Toggle trạng thái (hoặc update is_active)
-export async function toggleCategoryActive(id: string, isActive: boolean) {
-  return fetchWithAuth(`${API_BASE_URL}/categories/${id}/lock`, {
-    method: "PATCH",
-    body: JSON.stringify({ is_active: isActive }),
-    headers: { "Content-Type": "application/json" },
-  });
+export async function toggleCategoryActive(id: string, isActive: boolean, force = false) {
+  const json: ToggleCategoryResponse = await fetchWithAuth<ToggleCategoryResponse>(
+    `${API_BASE_URL}/categories/${id}/lock`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ is_active: isActive, force }),
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+
+  if (json.requiresConfirmation) {
+    throw { warning: true, message: json.message };
+  }
+
+  return json.data;
 }

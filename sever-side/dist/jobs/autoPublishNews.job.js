@@ -19,7 +19,6 @@ const notification_model_1 = __importDefault(require("../models/notification.mod
 const autoPublishNews = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const now = new Date();
-        now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
         const newsToPublish = yield news_model_1.default
             .find({ is_published: false, published_at: { $lte: now } })
             .select("title _id")
@@ -37,7 +36,7 @@ const autoPublishNews = () => __awaiter(void 0, void 0, void 0, function* () {
                 const users = yield user_model_1.default.find({}).select("_id").lean();
                 const notifications = newsToPublish.flatMap((news) => users.map((user) => ({
                     userId: user._id,
-                    title: "Tin tức mới từ Shop4Real!",
+                    title: "Tin tức mới từ Style For You",
                     message: `Tin tức "${news.title}" vừa được đăng, xem ngay nhé!`,
                     type: "news",
                     isRead: false,

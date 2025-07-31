@@ -609,7 +609,6 @@ export default function EditCouponModal({
                 onChange={handleChange}
                 placeholder="Nhập nội dung chương trình, điều kiện áp dụng..."
                 className="w-full min-h-[200px] px-4 py-3 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 

@@ -8,17 +8,11 @@ import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { Metadata } from "next";
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
-// ✅ Updated to await params
+// generateMetadata
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params; // Awaiting params
   const product = await fetchProductById(id);
@@ -34,8 +28,12 @@ export async function generateMetadata({
   };
 }
 
-// ✅ Trang chính
-export default async function ProductPage({ params }: Props) {
+// Trang chính
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params; // Awaiting params
 
   let product: IProduct | null = null;

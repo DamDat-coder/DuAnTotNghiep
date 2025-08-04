@@ -63,7 +63,7 @@ export default function BestSellerTable() {
                 <td className="py-2 px-2 flex items-center gap-2 font-medium truncate max-w-[400px] align-middle">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
                     <Image
-                      src={item.image || "/default-image.jpg"}
+                      src={item.image || "/no-image.png"}
                       alt={item.name}
                       fill
                       className="object-cover"

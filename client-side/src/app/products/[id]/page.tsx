@@ -1,5 +1,3 @@
-// app/products/[id]/page.tsx
-
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
@@ -8,19 +6,18 @@ import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { Metadata } from "next";
 
+// ⬇️ Định nghĩa props với Promise cho params
 type Props = {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 };
 
-// ✅ Updated to await params
+// ⬇️ generateMetadata cũng await params
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params; // Awaiting params
+  const { id } = await params;
   const product = await fetchProductById(id);
   if (!product) throw new Error("Not found");
 
@@ -34,9 +31,9 @@ export async function generateMetadata({
   };
 }
 
-// ✅ Trang chính
-export default async function ProductPage({ params }: Props) {
-  const { id } = await params; // Awaiting params
+// ⬇️ Trang chính sản phẩm (phải async và await props.params)
+export default async function ProductPage(props: Props) {
+  const { id } = await props.params; // phải await
 
   let product: IProduct | null = null;
   let suggestedProducts: IProduct[] = [];

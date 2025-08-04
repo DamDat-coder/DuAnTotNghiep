@@ -152,7 +152,7 @@ export default function EditCategoryForm({
     nodes: Category[],
     depth = 0,
     path = ""
-  ): JSX.Element[] => {
+  ): React.ReactElement[] => {
     return nodes.flatMap((cat) => {
       if (!cat._id || excludedIds.includes(cat._id)) return [];
       const optionKey = `${path}-${cat._id}`;

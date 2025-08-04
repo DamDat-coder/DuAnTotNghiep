@@ -6,19 +6,27 @@ import Image from "next/image";
 import { Pagination } from "../ui/Panigation";
 import { lockProduct, deleteProduct } from "@/services/productApi";
 import { toast } from "react-hot-toast";
+import { IProduct } from "@/types/product";
+
+interface ProductTableWrapperProps {
+  products: IProduct[];
+  onAddProduct: () => void;
+  onEditProduct: (prod: IProduct) => void;
+  onDeleteProduct: (id: string) => void;
+}
 
 export default function ProductTableWrapper({
   products,
   onAddProduct,
   onEditProduct,
   onDeleteProduct,
-}) {
-  const [localProducts, setLocalProducts] = useState(
+}: ProductTableWrapperProps) {
+  const [localProducts, setLocalProducts] = useState<IProduct[]>(
     Array.isArray(products) ? products : []
   );
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState<string>("");
+  const [filter, setFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const pageSize = 10;
 
@@ -27,19 +35,17 @@ export default function ProductTableWrapper({
   }, [products]);
 
   // Hàm tính tổng tồn kho của các variants
-  const calcTotalStock = (variants = []) =>
+  const calcTotalStock = (variants: IProduct["variants"] = []) =>
     Array.isArray(variants) ? variants.reduce((s, v) => s + (v.stock || 0), 0) : 0;
 
   // Lọc sản phẩm theo search và filter
   const filtered = localProducts.filter((p) => {
     const matchName = p.name?.toLowerCase().includes(search.toLowerCase());
-
     let matchFilter = true;
     if (filter === "active") matchFilter = p.is_active;
     else if (filter === "inactive") matchFilter = !p.is_active;
     else if (filter === "low_stock") matchFilter = calcTotalStock(p.variants) <= 30;
     // "all" thì giữ nguyên
-
     return matchName && matchFilter;
   });
 
@@ -47,28 +53,31 @@ export default function ProductTableWrapper({
   const pageData = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Xử lý xóa sản phẩm
-  const handleDeleteProduct = async (id) => {
+  const handleDeleteProduct = async (id: string) => {
     try {
       await deleteProduct(id);
-      setLocalProducts((prev) => prev.filter((p) => (p.id || p._id) !== id));
+      setLocalProducts((prev) => prev.filter((p) => (p.id || (p as any)._id) !== id));
       if (onDeleteProduct) onDeleteProduct(id);
       toast.success("Đã xóa sản phẩm!");
-    } catch (error) {
-      toast.error(error.message || "Lỗi khi xóa sản phẩm!");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Lỗi khi xóa sản phẩm!");
+      } else {
+        toast.error("Lỗi khi xóa sản phẩm!");
+      }
     }
   };
 
   // Xử lý sửa sản phẩm
-  const handleEditProduct = (prod) => {
+  const handleEditProduct = (prod: IProduct) => {
     if (onEditProduct) onEditProduct(prod);
   };
 
   // Xử lý bật/tắt trạng thái (từ ProductBody gọi sang)
-  const handleToggleStatus = async (id, currentActive) => {
-    // Optimistic update
+  const handleToggleStatus = async (id: string, currentActive: boolean) => {
     setLocalProducts((prev) =>
       prev.map((p) =>
-        (p.id || p._id) === id ? { ...p, is_active: !currentActive } : p
+        (p.id || (p as any)._id) === id ? { ...p, is_active: !currentActive } : p
       )
     );
     try {
@@ -78,18 +87,21 @@ export default function ProductTableWrapper({
       } else {
         toast.success("Đã khóa sản phẩm thành công!");
       }
-    } catch (error) {
-      // Revert nếu fail
+    } catch (error: unknown) {
       setLocalProducts((prev) =>
         prev.map((p) =>
-          (p.id || p._id) === id ? { ...p, is_active: currentActive } : p
+          (p.id || (p as any)._id) === id ? { ...p, is_active: currentActive } : p
         )
       );
-      toast.error(
-        !currentActive
-          ? "Lỗi khi mở khóa sản phẩm!"
-          : "Lỗi khi khóa sản phẩm!"
-      );
+      if (error instanceof Error) {
+        toast.error(
+          !currentActive
+            ? "Lỗi khi mở khóa sản phẩm!"
+            : "Lỗi khi khóa sản phẩm!"
+        );
+      } else {
+        toast.error("Lỗi khi cập nhật trạng thái sản phẩm!");
+      }
     }
   };
 

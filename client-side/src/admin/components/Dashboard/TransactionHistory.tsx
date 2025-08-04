@@ -14,8 +14,15 @@ import { fetchTransactionHistory } from "@/services/dashboardApi";
 
 const PAGE_SIZE = 5;
 
+interface Transaction {
+  id: string;
+  date?: string; // date là string hoặc undefined
+  amount: number;
+  status: string;
+}
+
 export default function TransactionHistory() {
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
@@ -23,8 +30,9 @@ export default function TransactionHistory() {
   useEffect(() => {
     fetchTransactionHistory()
       .then((data) => {
+        // Chỉ sort theo ngày, giữ nguyên kiểu date là string
         const sorted = [...data].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
         );
         setTransactions(sorted);
       })
@@ -54,7 +62,8 @@ export default function TransactionHistory() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
     const date = new Date(dateStr);
     return (
       date.toLocaleTimeString("vi-VN", {
@@ -66,8 +75,6 @@ export default function TransactionHistory() {
       date.toLocaleDateString("vi-VN")
     );
   };
-
-  // const shortId = (id: string) => id.slice(-6);
 
   return (
     <div className="bg-white w-full h-[360px] rounded-xl p-6 flex flex-col justify-between">
@@ -110,7 +117,7 @@ export default function TransactionHistory() {
           ) : (
             paginatedData.map((t, i) => (
               <div
-                key={i}
+                key={t.id}
                 className="flex justify-between items-start border-b last:border-b-0 pb-2"
               >
                 <div className="flex items-start gap-2 text-sm">
@@ -122,7 +129,7 @@ export default function TransactionHistory() {
                         className="text-blue-600 font-medium cursor-pointer hover:underline"
                         onClick={() => router.push(`/admin/order?edit=${t.id}`)}
                       >
-                        {/* #{shortId(t.id)} */}#{t.id}
+                        #{t.id}
                       </span>
                     </div>
                     <div className="text-xs text-gray-400">

@@ -154,7 +154,7 @@ exports.updateCategory = updateCategory;
 const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const categoryId = req.params.id;
-        const { is_active } = req.body;
+        const { is_active, force } = req.body;
         if (!mongoose_2.default.Types.ObjectId.isValid(categoryId)) {
             return res.status(400).json({
                 status: "error",

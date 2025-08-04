@@ -1,39 +1,15 @@
-// app/admin/category/edit/[id]/page.tsx
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import EditCategoryForm from "@/admin/components/Admin_Category/EditCategoryForm";
 
-// Định nghĩa kiểu dữ liệu cho danh mục
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  image?: string;
-}
-
-// Dữ liệu giả lập
-const getCategoryById = (id: string): Category => {
-  return {
-    id,
-    name: `Danh mục ${id}`,
-    description: `Mô tả cho danh mục ${id}`,
-    image: `category-${id}.jpg`,
-  };
-};
-
-export default async function EditCategoryPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params; // Lấy id từ params
-  const category = getCategoryById(id); // Lấy dữ liệu danh mục
-
+export default function EditCategoryPage() {
   return (
     <AdminLayout
-      pageTitle={`Sửa danh mục #${id}`}
-      pageSubtitle="Chỉnh sửa thông tin danh mục."
+      pageTitle="Không hỗ trợ sửa danh mục tại đây"
+      pageSubtitle="Hãy sử dụng popup tại trang danh sách danh mục để sửa."
     >
-      <EditCategoryForm category={category} />
+      <div className="text-center py-10 text-red-500">
+        Trang này không dùng để sửa trực tiếp!<br />
+        Hãy sửa danh mục tại giao diện danh sách.
+      </div>
     </AdminLayout>
   );
 }

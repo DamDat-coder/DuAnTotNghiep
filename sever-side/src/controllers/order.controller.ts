@@ -79,7 +79,7 @@ export const createOrder = async (req: Request, res: Response) => {
         productId: product._id,
         name: product.name,
         image: product.image[0] || '',
-        color: variantData.color,
+color: variantData.color,
         size: variantData.size,
         price: discountPrice,
         quantity: item.quantity,
@@ -193,7 +193,7 @@ export const getOrders = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Lỗi máy chủ.",
-      error: err.message,
+error: err.message,
     });
   }
 };
@@ -285,7 +285,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       }
 
       if (fakeOrderCount >= 3) {
-        await UserModel.findByIdAndUpdate(user._id, { is_active: false });
+await UserModel.findByIdAndUpdate(user._id, { is_active: false });
         await sendAccountBlockedEmail(user.email, user.name);
         await NotificationModel.create({
           userId: user._id,

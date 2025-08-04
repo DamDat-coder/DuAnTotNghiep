@@ -143,7 +143,6 @@ export async function register(
       } catch {
         errorData = {};
       }
-      console.error("Register failed:", res.status, errorData);
       throw new Error(
         errorData.message || "Email, mật khẩu hoặc tên không hợp lệ."
       );
@@ -160,13 +159,11 @@ export async function register(
       addresses: [],
       is_active: true,
     };
-    console.log("User - Register" + user.id);
-
-    console.log("AccessToken - Register" + data.data.accessToken);
     return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
-    console.error("Error registering:", error);
-    throw error;
+    throw {
+      message: error.message || "Không thể gửi đánh giá.",
+    };
   }
 }
 
@@ -254,8 +251,6 @@ export async function updateUser(
         body: JSON.stringify(data),
       }
     );
-    console.log("API response:", result);
-    // Kiểm tra xem API có trả về dữ liệu hợp lệ không
     if (result && result.user) {
       returnValue = result.user;
     }
@@ -635,9 +630,6 @@ export async function fetchAllUsersAdmin(
         updatedAt: (userData as any).updatedAt ?? undefined,
       })
     );
-    // Sau khi fetch users
-    console.log("API raw response:", response.data);
-    console.log("Fetched users:", users);
     return {
       users,
       total: response.total || 0,
@@ -656,7 +648,6 @@ export async function fetchUserById(userId: string): Promise<IUser | null> {
       `${API_BASE_URL}/users/${userId}`,
       { cache: "no-store" }
     );
-    console.log("API response:", response);
 
     // Sửa đoạn này để lấy đúng user object từ response.data
     const userData = response.data || response.user || response;

@@ -35,7 +35,7 @@ export const autoPublishNews = async () => {
         const notifications = newsToPublish.flatMap((news) =>
           users.map((user) => ({
             userId: user._id,
-            title: "Tin tức mới từ Shop4Real!",
+            title: "Tin tức mới từ Shop For You",
             message: `Tin tức "${news.title}" vừa được đăng, xem ngay nhé!`,
             type: "news",
             isRead: false,
@@ -52,6 +52,3 @@ export const autoPublishNews = async () => {
     console.error("[AutoPublish] Lỗi khi tự động đăng tin tức:", error);
   }
 };
-
-
-

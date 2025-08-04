@@ -73,7 +73,7 @@ export default function EditCouponModal({
           ? (coupon.applicableCategories[0] as { _id: string })._id
           : coupon.applicableCategories[0]
         : "",
-    type: coupon.discountType === "percentage" ? "%" : "vnd",
+    type: coupon.discountType === "percent" ? "%" : "vnd",
     value: coupon.discountValue?.toString() || "",
     minOrder: coupon.minOrderAmount?.toString() || "",
     maxDiscount: coupon.maxDiscountAmount?.toString() || "",
@@ -220,7 +220,7 @@ export default function EditCouponModal({
     const payload: Partial<Coupon> = {
       code: form.code,
       description: form.description,
-      discountType: form.type === "%" ? "percentage" : "fixed",
+      discountType: form.type === "%" ? "percent" : "fixed",
       discountValue: form.value
         ? parseInt(form.value.replace(/\./g, ""), 10)
         : 0,
@@ -230,8 +230,10 @@ export default function EditCouponModal({
       maxDiscountAmount: form.maxDiscount
         ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
-      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
+      startDate: form.startDate
+        ? new Date(form.startDate).toISOString()
+        : undefined,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
       usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
       is_active: form.is_active,
       applicableCategories: form.category
@@ -245,9 +247,6 @@ export default function EditCouponModal({
       const result = await updateCoupon(coupon._id, payload);
       toast.success("Cập nhật mã giảm giá thành công!");
       onSave(result);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (err: any) {
       const errorMessage =
         err.message || "Đã xảy ra lỗi khi cập nhật mã giảm giá.";
@@ -291,13 +290,51 @@ export default function EditCouponModal({
     isUsageValid &&
     form.description;
 
+  // Hàm so sánh dữ liệu form với coupon gốc
+  const isChanged = useMemo(() => {
+    // So sánh từng trường cần thiết
+    return (
+      form.code !== coupon.code ||
+      form.category !==
+        (coupon.applicableCategories && coupon.applicableCategories.length > 0
+          ? typeof coupon.applicableCategories[0] === "object" &&
+            coupon.applicableCategories[0] !== null &&
+            "_id" in coupon.applicableCategories[0]
+            ? (coupon.applicableCategories[0] as { _id: string })._id
+            : coupon.applicableCategories[0]
+          : "") ||
+      form.type !== (coupon.discountType === "percent" ? "%" : "vnd") ||
+      form.value !== (coupon.discountValue?.toString() || "") ||
+      form.minOrder !== (coupon.minOrderAmount?.toString() || "") ||
+      form.maxDiscount !== (coupon.maxDiscountAmount?.toString() || "") ||
+      form.startDate !==
+        (coupon.startDate
+          ? new Date(coupon.startDate).toISOString().split("T")[0]
+          : "") ||
+      form.endDate !==
+        (coupon.endDate
+          ? new Date(coupon.endDate).toISOString().split("T")[0]
+          : "") ||
+      form.usage !== (coupon.usageLimit?.toString() || "") ||
+      form.description !== (coupon.description || "") ||
+      form.is_active !== coupon.is_active ||
+      // So sánh mảng sản phẩm
+      JSON.stringify(selectedProducts) !==
+        JSON.stringify(
+          (coupon.applicableProducts || []).map((p: any) =>
+            typeof p === "object" ? p._id : p
+          )
+        )
+    );
+  }, [form, coupon, selectedProducts]);
+
   if (!mounted) {
     return null;
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-br-[16px] rounded-bl-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative">
+      <div className="bg-white rounded-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative scroll-hidden">
         {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px] mb-3">
@@ -337,7 +374,6 @@ export default function EditCouponModal({
                 onChange={handleChange}
                 placeholder="Nhập tên mã km"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 
@@ -439,7 +475,6 @@ export default function EditCouponModal({
                   onChange={(e) => handleNumberInput(e, setForm)}
                   placeholder="Vd: 20 hoặc 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                  required
                 />
                 {!isValueValid && (
                   <div className="text-red-500 text-xs mt-1">
@@ -534,7 +569,6 @@ export default function EditCouponModal({
                   onChange={handleChange}
                   placeholder="Để trống nếu không giới hạn"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                  required
                 />
                 {!isUsageValid && (
                   <div className="text-red-500 text-xs mt-1">
@@ -575,7 +609,6 @@ export default function EditCouponModal({
                 onChange={handleChange}
                 placeholder="Nhập nội dung chương trình, điều kiện áp dụng..."
                 className="w-full min-h-[200px] px-4 py-3 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 
@@ -641,11 +674,11 @@ export default function EditCouponModal({
             <button
               type="submit"
               className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6 ${
-                isSubmitting || !isFormValid
+                isSubmitting || !isFormValid || !isChanged
                   ? "opacity-50 cursor-not-allowed"
                   : ""
               }`}
-              disabled={isSubmitting || !isFormValid}
+              disabled={isSubmitting || !isFormValid || !isChanged}
             >
               {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
             </button>

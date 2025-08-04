@@ -6,7 +6,8 @@ import cloudinary from "../config/cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import { Types } from "mongoose";
 import mongoose from 'mongoose';
-import { MulterRequest } from "../middlewares/upload.middleware"; 
+import { MulterRequest } from "../middlewares/upload.middleware";
+import ProductModel from "../models/product.model"; 
 
 // Tạo danh mục mới
 export const createCategory = async (req: Request, res: Response) => {
@@ -160,7 +161,7 @@ export const updateCategory = async (req: Request, res: Response) => {
 export const toggleActiveCategory = async (req: Request, res: Response) => {
   try {
     const categoryId = req.params.id;
-    const { is_active } = req.body;
+    const { is_active, force } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
       return res.status(400).json({

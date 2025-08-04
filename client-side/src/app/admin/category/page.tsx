@@ -3,26 +3,16 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import CategoryTable from "@/admin/components/Admin_Category/CategoryTable";
 import { fetchCategoryTree } from "@/services/categoryApi";
-
-
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  parentId?: string | null;
-}
+import type { ICategory } from "@/types/category"; // Import type chuẩn
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const navigationItems = [
-    { label: "Danh sách danh mục", href: "/admin/category" },
-  ];
+  const [categories, setCategories] = useState<ICategory[]>([]);
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategoryTree();
-        setCategories(data);
+        setCategories(data); // data là ICategory[]
       } catch (error) {
         console.error("Lỗi khi fetch danh mục:", error);
       }
@@ -36,8 +26,6 @@ export default function CategoriesPage() {
       <div className="order-page w-full mx-auto h-full flex flex-col">
         <CategoryTable
           initialCategories={categories}
-          navigationItems={navigationItems}
-          addButton={{ label: "Thêm danh mục", href: "/admin/category/add" }}
         />
       </div>
     </AdminLayout>

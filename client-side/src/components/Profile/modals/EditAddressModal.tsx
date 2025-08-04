@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateAddress } from "@/services/userApi";
 import { Address } from "@/types/auth";
+import { ClipLoader } from "react-spinners";
 
 interface Props {
   address: Address;
@@ -35,6 +36,7 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
     isLoadingProvinces,
     isLoadingDistricts,
     isLoadingWards,
+    isLoadingAllAddress,
   } = useAddressData();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -69,6 +71,32 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
       }
     }
   }, [wards, isLoadingWards, setWardCode, address.ward]);
+
+  // State để kiểm soát khi nào đủ dữ liệu để render form
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Khi đã load xong cả 3 cấp và đều có dữ liệu thì mới cho phép render form
+    if (
+      !isLoadingProvinces &&
+      !isLoadingDistricts &&
+      !isLoadingWards &&
+      provinces.length > 0 &&
+      districts.length > 0 &&
+      wards.length > 0
+    ) {
+      setIsReady(true);
+    } else {
+      setIsReady(false);
+    }
+  }, [
+    isLoadingProvinces,
+    isLoadingDistricts,
+    isLoadingWards,
+    provinces,
+    districts,
+    wards,
+  ]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -156,16 +184,6 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
   const isFormValid =
     formData.street && formData.province && formData.district && formData.ward;
 
-  if (isLoadingProvinces || isLoadingDistricts || isLoadingWards) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
-        <div className="bg-white w-[536px] rounded-lg shadow-lg p-[48px] relative">
-          <div>Đang tải dữ liệu địa chỉ...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
       <div className="bg-white w-[536px] rounded-lg shadow-lg p-[48px] relative">
@@ -181,119 +199,128 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col items-center">
-          <input
-            type="text"
-            name="street"
-            placeholder="Địa chỉ"
-            value={formData.street}
-            onChange={handleChange}
-            className="w-[440px] h-[47px] px-3 border border-gray-300 rounded-[4px] mb-[16px] text-sm"
-            required
-          />
-
-          <div className="relative w-[440px] mb-[16px]">
-            <select
-              name="province"
-              value={formData.province}
-              onChange={handleChange}
-              className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
-              required
-            >
-              <option value="">Chọn tỉnh / thành</option>
-              {provinces.map((item) => (
-                <option key={item.code} value={item.name}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <Image
-              src="/profile/Vector (Stroke).svg"
-              alt="Dropdown icon"
-              width={16}
-              height={16}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-            />
+        {!isReady ? (
+          <div className="flex flex-col items-center py-8">
+            <ClipLoader color="#36d7b7" size={40} />
+            <div className="mt-4 text-sm text-gray-500">
+              Đang tải dữ liệu địa chỉ...
+            </div>
           </div>
-
-          <div className="relative w-[440px] mb-[16px]">
-            <select
-              name="district"
-              value={formData.district}
-              onChange={handleChange}
-              disabled={!formData.province}
-              className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
-              required
-            >
-              <option value="">Chọn quận / huyện</option>
-              {districts.map((item) => (
-                <option key={item.code} value={item.name}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <Image
-              src="/profile/Vector (Stroke).svg"
-              alt="Dropdown icon"
-              width={16}
-              height={16}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-            />
-          </div>
-
-          <div className="relative w-[440px] mb-[16px]">
-            <select
-              name="ward"
-              value={formData.ward}
-              onChange={handleChange}
-              disabled={!formData.district}
-              className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
-              required
-            >
-              <option value="">Chọn phường / xã</option>
-              {wards.map((item) => (
-                <option key={item.code} value={item.name}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <Image
-              src="/profile/Vector (Stroke).svg"
-              alt="Dropdown icon"
-              width={16}
-              height={16}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-            />
-          </div>
-
-          <label className="flex items-center w-[440px] mb-[16px]">
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col items-center">
             <input
-              type="checkbox"
-              name="isDefaultAddress"
-              checked={formData.isDefaultAddress}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  isDefaultAddress: e.target.checked,
-                }))
-              }
-              className="mr-2"
+              type="text"
+              name="street"
+              placeholder="Địa chỉ"
+              value={formData.street}
+              onChange={handleChange}
+              className="w-[440px] h-[47px] px-3 border border-gray-300 rounded-[4px] mb-[16px] text-sm"
+              required
             />
-            Đặt làm địa chỉ mặc định
-          </label>
 
-          <button
-            type="submit"
-            disabled={isSubmitting || !isFormValid}
-            className={`w-[440px] h-[40px] mt-[36px] rounded-[8px] text-sm text-[#F5F5F5] ${
-              isSubmitting || !isFormValid
-                ? "bg-gray-400"
-                : "bg-black hover:bg-opacity-90"
-            }`}
-          >
-            {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-          </button>
-        </form>
+            <div className="relative w-[440px] mb-[16px]">
+              <select
+                name="province"
+                value={formData.province}
+                onChange={handleChange}
+                className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
+                required
+              >
+                <option value="">Chọn tỉnh / thành</option>
+                {provinces.map((item) => (
+                  <option key={item.code} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <Image
+                src="/profile/Vector (Stroke).svg"
+                alt="Dropdown icon"
+                width={16}
+                height={16}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+              />
+            </div>
+
+            <div className="relative w-[440px] mb-[16px]">
+              <select
+                name="district"
+                value={formData.district}
+                onChange={handleChange}
+                disabled={!formData.province}
+                className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
+                required
+              >
+                <option value="">Chọn quận / huyện</option>
+                {districts.map((item) => (
+                  <option key={item.code} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <Image
+                src="/profile/Vector (Stroke).svg"
+                alt="Dropdown icon"
+                width={16}
+                height={16}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+              />
+            </div>
+
+            <div className="relative w-[440px] mb-[16px]">
+              <select
+                name="ward"
+                value={formData.ward}
+                onChange={handleChange}
+                disabled={!formData.district}
+                className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
+                required
+              >
+                <option value="">Chọn phường / xã</option>
+                {wards.map((item) => (
+                  <option key={item.code} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <Image
+                src="/profile/Vector (Stroke).svg"
+                alt="Dropdown icon"
+                width={16}
+                height={16}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+              />
+            </div>
+
+            <label className="flex items-center w-[440px] mb-[16px]">
+              <input
+                type="checkbox"
+                name="isDefaultAddress"
+                checked={formData.isDefaultAddress}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isDefaultAddress: e.target.checked,
+                  }))
+                }
+                className="mr-2"
+              />
+              Đặt làm địa chỉ mặc định
+            </label>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !isFormValid}
+              className={`w-[440px] h-[40px] mt-[36px] rounded-[8px] text-sm text-[#F5F5F5] ${
+                isSubmitting || !isFormValid
+                  ? "bg-gray-400"
+                  : "bg-black hover:bg-opacity-90"
+              }`}
+            >
+              {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

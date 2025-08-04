@@ -3,8 +3,20 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { getNewsDetail, getAllNews } from '@/services/newApi';
+import { getNewsDetail, getAllNews } from '@/services/newsApi';
 import { News } from '@/types/new';
+
+// Helper định dạng ngày an toàn
+function formatDateSafe(date?: string | Date) {
+  if (!date) return 'Không rõ ngày';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'Không rõ ngày';
+    return d.toLocaleDateString();
+  } catch {
+    return 'Không rõ ngày';
+  }
+}
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
@@ -31,7 +43,7 @@ export default function ArticleDetailPage() {
   useEffect(() => {
     if (article && article._id) {
       const localKey = 'recentPosts';
-      let recent = [];
+      let recent: any[] = [];
       try {
         recent = JSON.parse(localStorage.getItem(localKey) || '[]');
       } catch { recent = []; }
@@ -56,7 +68,7 @@ export default function ArticleDetailPage() {
     if (typeof window !== 'undefined') {
       try {
         const recent = JSON.parse(localStorage.getItem('recentPosts') || '[]');
-        setRecentPosts(recent);
+        setRecentPosts(Array.isArray(recent) ? recent : []);
       } catch {
         setRecentPosts([]);
       }
@@ -66,11 +78,13 @@ export default function ArticleDetailPage() {
   // Lấy tag hệ thống random 20 tag
   useEffect(() => {
     getAllNews().then((res) => {
-      if (res.status === 'success') {
+      if (res.status === 'success' && Array.isArray(res.data)) {
         const allTags = res.data.flatMap((news: News) => news.tags || []);
         const uniqueTags = Array.from(new Set(allTags));
         const shuffled = uniqueTags.sort(() => 0.5 - Math.random());
         setTags(shuffled.slice(0, 20));
+      } else {
+        setTags([]);
       }
     });
   }, []);
@@ -163,8 +177,8 @@ export default function ArticleDetailPage() {
                 {recentPosts.length === 0 && (
                   <span className="text-gray-400 text-xs">Chưa có bài nào</span>
                 )}
-                {recentPosts.map((item, idx) => (
-                  <Link key={item._id} href={`/posts/${item._id}`}>
+                {recentPosts.map((item: any, idx: number) => (
+                  <Link key={item._id || idx} href={`/posts/${item._id}`}>
                     <div className="flex gap-2 items-start cursor-pointer group">
                       <Image
                         src={item.thumbnail || '/default.jpg'}
@@ -175,7 +189,9 @@ export default function ArticleDetailPage() {
                       />
                       <div className="flex flex-col">
                         <span className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-blue-700">{item.title}</span>
-                        <span className="text-xs text-gray-400">{new Date(item.published_at || item.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-400">
+                          {formatDateSafe(item.published_at || item.createdAt)}
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -194,7 +210,7 @@ export default function ArticleDetailPage() {
 
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-4">
-              <span>📅 {publishDate ? new Date(publishDate).toLocaleDateString() : 'Không rõ ngày'}</span>
+              <span>📅 {formatDateSafe(publishDate)}</span>
               <span>👤 {authorName}</span>
             </div>
 

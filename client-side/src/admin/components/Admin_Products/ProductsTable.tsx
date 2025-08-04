@@ -4,12 +4,25 @@ import ProductTableWrapper from "./ProductTableWrapper";
 import EditProductForm from "./EditProductForm";
 import AddProductForm from "./AddProductForm";
 import { fetchProductById, fetchProductsAdmin } from "@/services/productApi";
+import { IProduct } from "@/types/product";
 
-export default function ProductsTable({ initialProducts, addButton }) {
-  const [products, setProducts] = useState(initialProducts || []);
+interface ProductsTableProps {
+  initialProducts: IProduct[];
+  addButton?: React.ReactNode; // Nếu không dùng prop này, có thể bỏ hẳn dòng này
+}
+
+interface EditPopupState {
+  visible: boolean;
+  productId: string | null;
+  productData: IProduct | null;
+  loading: boolean;
+}
+
+export default function ProductsTable({ initialProducts }: ProductsTableProps) {
+  const [products, setProducts] = useState<IProduct[]>(initialProducts || []);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const [editPopup, setEditPopup] = useState({
+  const [editPopup, setEditPopup] = useState<EditPopupState>({
     visible: false,
     productId: null,
     productData: null,
@@ -19,13 +32,19 @@ export default function ProductsTable({ initialProducts, addButton }) {
   // Khi vào trang, tự động load danh sách sản phẩm
   useEffect(() => {
     reloadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Xử lý khi bấm Sửa
-  const handleEditProduct = async (prod) => {
-    setEditPopup({ visible: true, productId: prod.id || prod._id, productData: null, loading: true });
-    const data = await fetchProductById(prod.id || prod._id);
-    setEditPopup((prev) => ({ ...prev, productData: data, loading: false }));
+  const handleEditProduct = async (prod: IProduct) => {
+    const id = prod.id || (prod as any)._id || "";
+    setEditPopup({ visible: true, productId: id, productData: null, loading: true });
+    const data = await fetchProductById(id);
+    setEditPopup((prev) => ({
+      ...prev,
+      productData: data,
+      loading: false,
+    }));
   };
 
   const handleCloseEdit = () => {
@@ -59,6 +78,7 @@ export default function ProductsTable({ initialProducts, addButton }) {
         products={Array.isArray(products) ? products : []}
         onAddProduct={() => setShowAddForm(true)}
         onEditProduct={handleEditProduct}
+        onDeleteProduct={reloadProducts} // Thêm callback này nếu ProductTableWrapper yêu cầu!
       />
 
       {showAddForm && (
@@ -73,7 +93,7 @@ export default function ProductsTable({ initialProducts, addButton }) {
             {editPopup.loading ? (
               <div className="p-8 text-center">Đang tải sản phẩm...</div>
             ) : (
-              editPopup.productData && (
+              editPopup.productData && editPopup.productId && (
                 <EditProductForm
                   product={editPopup.productData}
                   productId={editPopup.productId}

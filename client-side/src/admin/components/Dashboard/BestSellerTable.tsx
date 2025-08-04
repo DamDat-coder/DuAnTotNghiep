@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Tag } from "lucide-react";
+import Image from "next/image";
 import { fetchAllOrders, getBestSellingProductsFromOrders } from "@/services/orderApi";
 import type { IOrder } from "@/types/order";
 
@@ -11,7 +11,7 @@ export default function BestSellerTable() {
 
   useEffect(() => {
     fetchAllOrders({ limit: 9999 })
-      .then(res => {
+      .then((res) => {
         const best = getBestSellingProductsFromOrders(res.data as IOrder[], timeRange, 5);
         setData(best);
       })
@@ -60,16 +60,26 @@ export default function BestSellerTable() {
                 key={item.id + item.color + item.size}
                 className="border-b last:border-b-0 hover:bg-gray-50 text-base"
               >
-                <td className="py-2 px-2 flex items-center gap-2 font-medium truncate max-w-[220px] align-middle">
-                  <div className="bg-gray-200 p-2 rounded-lg">
-                    <Tag className="w-5 h-5 text-gray-800" />
+                <td className="py-2 px-2 flex items-center gap-2 font-medium truncate max-w-[400px] align-middle">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
+                    <Image
+                      src={item.image || "/no-image.png"}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
                   </div>
                   <span>{item.name}</span>
                 </td>
                 <td className="py-2 px-2 text-center align-middle">{item.color}</td>
                 <td className="py-2 px-2 text-center align-middle">{item.size}</td>
-                <td className="py-2 px-2 text-center align-middle">{item.sold.toLocaleString()}</td>
-                <td className="py-2 px-2 text-right font-semibold align-middle">{item.price.toLocaleString()}₫</td>
+                <td className="py-2 px-2 text-center align-middle">
+                  {item.sold.toLocaleString()}
+                </td>
+                <td className="py-2 px-2 text-right font-semibold align-middle">
+                  {item.price.toLocaleString()}₫
+                </td>
               </tr>
             ))
           )}

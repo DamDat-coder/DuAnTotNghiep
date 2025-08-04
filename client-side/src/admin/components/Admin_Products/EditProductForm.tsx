@@ -7,6 +7,15 @@ import { ICategory } from "@/types/category";
 import { editProduct } from "@/services/productApi";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
+import { convertToSlug } from "@/utils/slugify";
+
+type ProductVariant = {
+  price: number | string;
+  color: string;
+  size: string;
+  stock: number | string;
+  discountPercent: number | string;
+};
 
 interface EditProductFormProps {
   product: IProduct;
@@ -34,16 +43,12 @@ function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
     }));
 }
 
-function renderCategoryOptions(
-  nodes: ICategory[],
-  depth = 0,
-  path = ""
-): JSX.Element[] {
+function renderCategoryOptions(nodes: ICategory[], depth = 0, path = ""): React.ReactElement[] {
   return nodes.flatMap((cat) => [
-    <option key={path + (cat._id || cat.id)} value={cat._id || cat.id}>
+    <option key={path + (cat._id)} value={cat._id}>
       {"—".repeat(depth)} {cat.name}
     </option>,
-    ...(cat.children ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id || cat.id)) : []),
+    ...(cat.children ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id)) : []),
   ]);
 }
 
@@ -52,22 +57,33 @@ export default function EditProductForm({
   productId,
   onClose,
 }: EditProductFormProps) {
-  const [formData, setFormData] = useState<any>({
-    ...product,
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    categoryId: string;
+    variants: ProductVariant[];
+    images: (string | File)[];
+  }>({
     name: product?.name || "",
     description: product?.description || "",
     categoryId: product?.category?._id || "",
     variants: product?.variants
-      ? product.variants.map((v: any) => ({ ...v }))
+      ? product.variants.map((v: any) => ({
+          size: v.size,
+          color: v.color,
+          price: v.price,
+          discountPercent: v.discountPercent,
+          stock: v.stock,
+        }))
       : [],
-    images: product?.image || product?.images || [],
+    images: product?.images || [],
   });
 
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newVariant, setNewVariant] = useState<any>({
+  const [newVariant, setNewVariant] = useState<ProductVariant>({
     size: "",
     color: "",
     price: "",
@@ -97,20 +113,20 @@ export default function EditProductForm({
   ) => {
     const { name, value, files } = e.target as HTMLInputElement;
     if (files && files.length > 0) {
-      setFormData((prev: any) => ({
+      setFormData((prev) => ({
         ...prev,
         images: Array.from(files),
       }));
     } else {
-      setFormData((prev: any) => ({
+      setFormData((prev) => ({
         ...prev,
         [name]: value,
       }));
     }
   };
 
-  const handleVariantChange = (idx: number, field: string, value: any) => {
-    setFormData((prev: any) => {
+  const handleVariantChange = (idx: number, field: keyof ProductVariant, value: any) => {
+    setFormData((prev) => {
       const variants = [...prev.variants];
       variants[idx][field] = value;
       return { ...prev, variants };
@@ -118,63 +134,43 @@ export default function EditProductForm({
   };
 
   const handleRemoveVariant = (idx: number) => {
-    setFormData((prev: any) => ({
+    setFormData((prev) => ({
       ...prev,
-      variants: prev.variants.filter((_: any, i: number) => i !== idx),
+      variants: prev.variants.filter((_, i) => i !== idx),
     }));
   };
 
-  const handleNewVariantChange = (field: string, value: any) => {
-    setNewVariant((prev: any) => ({
+  const handleNewVariantChange = (field: keyof ProductVariant, value: any) => {
+    setNewVariant((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
   const handleAddVariant = () => {
-    if (
-      !newVariant.size ||
-      !newVariant.color ||
-      !newVariant.price ||
-      !newVariant.stock
-    ) {
+    if (!newVariant.size || !newVariant.color || !newVariant.price || !newVariant.stock) {
       setError("Vui lòng nhập đầy đủ biến thể mới trước khi thêm!");
       return;
     }
     setError(null);
-    setFormData((prev: any) => ({
+    setFormData((prev) => ({
       ...prev,
-      variants: [
-        ...prev.variants,
-        {
-          size: newVariant.size,
-          color: newVariant.color,
-          price: newVariant.price,
-          discountPercent: newVariant.discountPercent,
-          stock: newVariant.stock,
-        },
-      ],
+      variants: [...prev.variants, { ...newVariant }],
     }));
-    setNewVariant({
-      size: "",
-      color: "",
-      price: "",
-      discountPercent: "",
-      stock: "",
-    });
+    setNewVariant({ size: "", color: "", price: "", discountPercent: "", stock: "" });
   };
 
   const renderImagesBlock = () => {
     const previews =
       formData.images && formData.images.length > 0
-        ? formData.images.map((img: any, i: number) =>
+        ? formData.images.map((img, i) =>
             typeof img === "string" ? (
               <div
                 key={i}
                 className="w-[130px] h-[131px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
               >
                 <Image
-                  src={img}
+                  src={img.startsWith("http") ? img : `/product/img/${img}`}
                   alt={formData.name || ""}
                   width={130}
                   height={131}
@@ -233,6 +229,7 @@ export default function EditProductForm({
             type="button"
             className="w-[130px] h-[131px] flex flex-col items-center justify-center rounded-xl bg-[#F8F9FB] border border-dashed border-gray-200 hover:bg-[#f3f4f6] transition cursor-pointer"
             onClick={handleImageUploadClick}
+            disabled={isSubmitting}
           >
             <Image src="/admin/upload.png" width={60} height={60} alt="Upload" />
             <span className="font-medium text-black text-sm mt-2">New Image</span>
@@ -242,62 +239,72 @@ export default function EditProductForm({
     );
   };
 
-  // Submit logic với hiệu ứng loading/toast/error
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
 
-    if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
-    if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
-    if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
-    if (!formData.variants.length) return setError("Phải có ít nhất một biến thể.");
-    for (let v of formData.variants) {
-      if (!v.size || !v.color || !v.price || !v.stock)
-        return setError("Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể.");
-      if (Number(v.price) < 0) return setError("Giá không được nhỏ hơn 0.");
-      if (Number(v.stock) < 0) return setError("Tồn kho không được nhỏ hơn 0.");
-      if (v.discountPercent && (v.discountPercent < 0 || v.discountPercent > 100))
-        return setError("Phần trăm giảm giá phải từ 0 đến 100.");
+  if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
+  if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
+  if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
+  if (!formData.variants.length) return setError("Phải có ít nhất một biến thể.");
+  for (let v of formData.variants) {
+    if (!v.size || !v.color || !v.price || !v.stock)
+      return setError("Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể.");
+    if (Number(v.price) < 0) return setError("Giá không được nhỏ hơn 0.");
+    if (Number(v.stock) < 0) return setError("Tồn kho không được nhỏ hơn 0.");
+    if (v.discountPercent && (Number(v.discountPercent) < 0 || Number(v.discountPercent) > 100))
+      return setError("Phần trăm giảm giá phải từ 0 đến 100.");
+  }
+  if (
+    formData.images &&
+    formData.images.length > 0 &&
+    typeof formData.images[0] !== "string"
+  ) {
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    for (let img of formData.images) {
+      if (
+        typeof img !== "string" &&
+        (!validTypes.includes((img as File).type) ||
+          (img as File).size > 5 * 1024 * 1024)
+      )
+        return setError("Chỉ hỗ trợ ảnh jpg, png, webp và dưới 5MB.");
     }
-    if (formData.images && formData.images.length > 0 && typeof formData.images[0] !== "string") {
-      const validTypes = ["image/jpeg", "image/png", "image/webp"];
-      for (let img of formData.images) {
-        if (!validTypes.includes(img.type)) return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
-        if (img.size > 5 * 1024 * 1024) return setError("File ảnh không quá 5MB.");
-      }
-    }
+  }
 
-    setIsSubmitting(true);
-    try {
-      const submitData = {
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description,
-        categoryId: formData.categoryId,
-        variants: formData.variants.map((v: any) => ({
-          price: Number(v.price),
-          color: v.color,
-          size: v.size,
-          stock: Number(v.stock),
-          discountPercent: Number(v.discountPercent) || 0,
-        })),
-        images: formData.images,
-      };
+  setIsSubmitting(true);
+  try {
+    const slug = convertToSlug(formData.name);
 
-      const res = await editProduct(productId, submitData);
-      if (!res) throw new Error("Không thể cập nhật sản phẩm.");
-      toast.success("Cập nhật sản phẩm thành công!");
-      onClose();
-    } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
-      toast.error(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
-    }
-    setIsSubmitting(false);
-  };
+    const newImages = formData.images.filter(img => typeof img !== "string") as File[];
+
+    const submitData = {
+      name: formData.name,
+      slug,
+      description: formData.description,
+      categoryId: formData.categoryId,
+      variants: formData.variants.map((v) => ({
+        price: Number(v.price),
+        color: v.color,
+        size: v.size,
+        stock: Number(v.stock),
+        discountPercent: Number(v.discountPercent) || 0,
+      })),
+      images: newImages,
+    };
+    const res = await editProduct(productId, submitData);
+    if (!res) throw new Error("Không thể cập nhật sản phẩm.");
+    toast.success("Cập nhật sản phẩm thành công!");
+    onClose();
+  } catch (err: any) {
+    setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
+    toast.error(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
+  }
+  setIsSubmitting(false);
+};
+
 
   return (
-    <div className="relative w-full h-full max-h-[95vh] flex flex-col overflow-y-auto p-0 rounded-xl max-w-2xl bg-white max-w-full overflow-x-hidden">
-      {/* Header */}
+    <div className="relative w-full h-full max-h-[95vh] flex flex-col overflow-y-auto p-0 rounded-xl max-w-2xl bg-white overflow-x-hidden">
       <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b rounded-t-xl">
         <h2 className="text-xl font-bold">Sửa sản phẩm</h2>
         <button
@@ -309,6 +316,7 @@ export default function EditProductForm({
             lineHeight: 1,
           }}
           aria-label="Đóng"
+          disabled={isSubmitting}
         >
           ×
         </button>
@@ -346,6 +354,7 @@ export default function EditProductForm({
             onChange={handleChange}
             className="w-full border rounded p-3"
             placeholder="Nhập tên sản phẩm"
+            disabled={isSubmitting}
           />
         </div>
         {/* Mô tả */}
@@ -362,6 +371,7 @@ export default function EditProductForm({
             onChange={handleChange}
             className="w-full border rounded p-3 min-h-[120px]"
             placeholder="Nhập mô tả..."
+            disabled={isSubmitting}
           />
         </div>
         {/* Danh mục */}
@@ -374,6 +384,7 @@ export default function EditProductForm({
             value={formData.categoryId}
             onChange={handleChange}
             className="w-full border rounded p-3"
+            disabled={isSubmitting}
           >
             <option value="">Chọn danh mục</option>
             {renderCategoryOptions(categories)}
@@ -402,13 +413,14 @@ export default function EditProductForm({
                     </td>
                   </tr>
                 ) : (
-                  formData.variants.map((variant: any, idx: number) => (
+                  formData.variants.map((variant, idx) => (
                     <tr key={idx}>
                       <td className="p-2 border">
                         <select
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.size}
                           onChange={e => handleVariantChange(idx, "size", e.target.value)}
+                          disabled={isSubmitting}
                         >
                           {sizeOptions.map(s => (
                             <option key={s} value={s}>{s}</option>
@@ -420,6 +432,7 @@ export default function EditProductForm({
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.color}
                           onChange={e => handleVariantChange(idx, "color", e.target.value)}
+                          disabled={isSubmitting}
                         >
                           {colorOptions.map(c => (
                             <option key={c.value} value={c.value}>{c.label}</option>
@@ -434,6 +447,7 @@ export default function EditProductForm({
                           value={variant.price}
                           onChange={e => handleVariantChange(idx, "price", e.target.value)}
                           placeholder="Giá"
+                          disabled={isSubmitting}
                         />
                       </td>
                       <td className="p-2 border w-[80px]">
@@ -444,6 +458,7 @@ export default function EditProductForm({
                           value={variant.discountPercent || ""}
                           onChange={e => handleVariantChange(idx, "discountPercent", e.target.value)}
                           placeholder="Giảm"
+                          disabled={isSubmitting}
                         />
                       </td>
                       <td className="p-2 border w-[80px]">
@@ -454,6 +469,7 @@ export default function EditProductForm({
                           value={variant.stock}
                           onChange={e => handleVariantChange(idx, "stock", e.target.value)}
                           placeholder="Kho"
+                          disabled={isSubmitting}
                         />
                       </td>
                       <td className="p-2 border text-center">
@@ -462,6 +478,7 @@ export default function EditProductForm({
                           className="text-red-500 hover:underline"
                           onClick={() => handleRemoveVariant(idx)}
                           title="Xóa biến thể"
+                          disabled={isSubmitting}
                         >
                           Xóa
                         </button>
@@ -489,6 +506,7 @@ export default function EditProductForm({
                           : "bg-white border-gray-200 text-black hover:bg-gray-100")
                       }
                       onClick={() => handleNewVariantChange("size", size)}
+                      disabled={isSubmitting}
                     >
                       {size}
                     </button>
@@ -501,6 +519,7 @@ export default function EditProductForm({
                   className="border rounded-lg p-2 w-full text-sm"
                   value={newVariant.color}
                   onChange={e => handleNewVariantChange("color", e.target.value)}
+                  disabled={isSubmitting}
                 >
                   <option value="">Chọn màu sắc</option>
                   {colorOptions.map(c => (
@@ -517,6 +536,7 @@ export default function EditProductForm({
                   value={newVariant.price}
                   onChange={e => handleNewVariantChange("price", e.target.value)}
                   placeholder="Giá (đ)"
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
@@ -528,6 +548,7 @@ export default function EditProductForm({
                   value={newVariant.discountPercent || ""}
                   onChange={e => handleNewVariantChange("discountPercent", e.target.value)}
                   placeholder="Giảm (%)"
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="col-span-2">
@@ -539,6 +560,7 @@ export default function EditProductForm({
                   value={newVariant.stock}
                   onChange={e => handleNewVariantChange("stock", e.target.value)}
                   placeholder="Số lượng sản phẩm"
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -546,6 +568,7 @@ export default function EditProductForm({
               type="button"
               className="flex items-center justify-center gap-2 font-semibold text-base text-black mt-3 mx-auto hover:opacity-70"
               onClick={handleAddVariant}
+              disabled={isSubmitting}
             >
               <span className="text-2xl font-bold">+</span>
               Thêm biến thể

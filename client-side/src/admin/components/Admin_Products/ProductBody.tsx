@@ -3,13 +3,21 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { deleteProduct } from "@/services/productApi";
 import { toast } from "react-hot-toast";
+import { IProduct } from "@/types/product";
+
+interface ProductBodyProps {
+  products: IProduct[];
+  onEdit: (product: IProduct) => void;
+  onDelete: (id: string) => void;
+  onToggleStatus: (id: string, currentActive: boolean) => void;
+}
 
 export default function ProductBody({
   products,
   onEdit,
   onDelete,
   onToggleStatus,
-}) {
+}: ProductBodyProps) {
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
@@ -27,7 +35,7 @@ export default function ProductBody({
   };
 
   // Sửa
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: IProduct) => {
     if (onEdit) onEdit(product);
   };
 
@@ -60,9 +68,13 @@ export default function ProductBody({
     return () => window.removeEventListener("mousedown", handler);
   }, []);
 
-  const calcTotalStock = (variants: any[]) =>
-    Array.isArray(variants) ? variants.reduce((s, v) => s + (v.stock || 0), 0) : "--";
-  const getFirstPrice = (variants: any[]) =>
+  // Luôn trả về number (nếu không phải array thì trả về 0)
+  const calcTotalStock = (variants: IProduct["variants"]) =>
+    Array.isArray(variants)
+      ? variants.reduce((s, v) => s + (v.stock || 0), 0)
+      : 0;
+
+  const getFirstPrice = (variants: IProduct["variants"]) =>
     Array.isArray(variants) && variants[0] && variants[0].price
       ? variants[0].price.toLocaleString("vi-VN") + "đ"
       : "--";
@@ -70,8 +82,10 @@ export default function ProductBody({
   return (
     <>
       {products.map(product => {
-        const productId = product.id || product._id;
+        const productId = product.id || (product as any)._id;
         const isActive = product.is_active ?? true;
+        const totalStock = calcTotalStock(product.variants);
+
         return (
           <tr
             key={productId}
@@ -106,8 +120,8 @@ export default function ProductBody({
             </td>
             {/* Tồn kho */}
             <td className="px-4 py-4 min-w-[70px] align-middle">
-              <span className={calcTotalStock(product.variants) <= 30 ? "text-pink-500 font-semibold" : ""}>
-                {calcTotalStock(product.variants)}
+              <span className={totalStock <= 30 ? "text-pink-500 font-semibold" : ""}>
+                {totalStock}
               </span>
             </td>
             {/* Lượt bán */}
@@ -139,40 +153,34 @@ export default function ProductBody({
               {confirmId === productId && (
                 <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[1000]">
                   <div className="bg-white rounded-xl p-6 w-[320px] shadow-xl flex flex-col items-center gap-4">
-                    {confirmId === productId && (
-                      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[1000]">
-                        <div className="bg-white rounded-xl p-6 w-[320px] shadow-xl flex flex-col items-center gap-4">
-                          <div className="text-lg font-semibold text-center">
-                            {isActive ? (
-                              <>
-                                {calcTotalStock(product.variants) > 0 ? (
-                                  <>
-                                    Sản phẩm này vẫn còn tồn kho (<span className="text-pink-500">{calcTotalStock(product.variants)}</span> sản phẩm).<br />
-                                    Bạn có chắc muốn khóa sản phẩm không?
-                                  </>
-                                ) : (
-                                  "Bạn có chắc muốn khóa sản phẩm này?"
-                                )}
-                              </>
-                            ) : "Bạn có chắc muốn mở khóa và hiển thị sản phẩm này?"}
-                          </div>
-                          <div className="flex gap-3 mt-2">
-                            <button
-                              className="px-4 py-2 rounded bg-[#2563EB] text-white font-semibold hover:bg-[#174bb7]"
-                              onClick={() => handleConfirm(productId, isActive)}
-                            >
-                              Có
-                            </button>
-                            <button
-                              className="px-4 py-2 rounded bg-gray-200 text-black font-semibold hover:bg-gray-300"
-                              onClick={handleCancel}
-                            >
-                              Không
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <div className="text-lg font-semibold text-center">
+                      {isActive ? (
+                        <>
+                          {totalStock > 0 ? (
+                            <>
+                              Sản phẩm này vẫn còn tồn kho (<span className="text-pink-500">{totalStock}</span> sản phẩm).<br />
+                              Bạn có chắc muốn khóa sản phẩm không?
+                            </>
+                          ) : (
+                            "Bạn có chắc muốn khóa sản phẩm này?"
+                          )}
+                        </>
+                      ) : "Bạn có chắc muốn mở khóa và hiển thị sản phẩm này?"}
+                    </div>
+                    <div className="flex gap-3 mt-2">
+                      <button
+                        className="px-4 py-2 rounded bg-[#2563EB] text-white font-semibold hover:bg-[#174bb7]"
+                        onClick={() => handleConfirm(productId, isActive)}
+                      >
+                        Có
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded bg-gray-200 text-black font-semibold hover:bg-gray-300"
+                        onClick={handleCancel}
+                      >
+                        Không
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

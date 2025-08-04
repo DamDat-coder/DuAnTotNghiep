@@ -54,6 +54,9 @@ export default function ReviewsPage() {
         setFilter={setFilter}
         setSearch={setSearch}
         onUpdate={setReviews}
+        currentPage={currentPage}
+        totalPage={totalPage}
+        onPageChange={setCurrentPage}
       />
     </AdminLayout>
   );

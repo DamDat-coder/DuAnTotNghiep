@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useState } from "react";
 import {
   BarChart,
@@ -16,8 +15,6 @@ interface CustomerChartItem {
   value: number;
 }
 
-const weekdayLabels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-
 export default function CustomerChart() {
   const [data, setData] = useState<CustomerChartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,24 +23,15 @@ export default function CustomerChart() {
     change: "",
   });
 
-  // Map dữ liệu về dạng label là thứ
-  const formatChartData = (rawData: { day: string; value: number }[]) => {
-    // rawData luôn đủ 7 ngày, thứ tự từ thứ 2 đến CN
-    return rawData.map((item, idx) => ({
-      label: weekdayLabels[idx], // "T2"..."CN"
-      value: item.value,
-    }));
-  };
-
   useEffect(() => {
     setLoading(true);
     fetchCustomerChart()
-      .then((raw) => setData(formatChartData(raw)))
+      .then((raw) => setData(raw)) // <-- SỬA CHỖ NÀY, bỏ formatChartData
       .finally(() => setLoading(false));
 
     fetchStats().then((stats) => {
       const cus = stats.find((item: any) => item.label === "Khách hàng mới");
-      setStat({ value: cus?.value || 0, change: cus?.change || "" });
+      setStat({ value: Number(cus?.value || 0), change: cus?.change || "" });
     });
   }, []);
 
@@ -87,14 +75,14 @@ export default function CustomerChart() {
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
-                dataKey="label" // Trục X là T2, T3, ..., CN
+                dataKey="label"
                 tickLine={false}
                 axisLine={false}
                 interval={0}
               />
               <YAxis tickLine={false} axisLine={false} />
               <Tooltip
-                formatter={(val) => `${val} khách`}
+                formatter={(val: number) => `${val} khách`}
                 labelFormatter={(label) => `Thứ: ${label}`}
               />
               <Bar

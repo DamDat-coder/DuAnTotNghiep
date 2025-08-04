@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_cron_1 = __importDefault(require("node-cron"));
 const autoPublishNews_job_1 = require("./autoPublishNews.job");
-node_cron_1.default.schedule("*/5 * * * *", () => __awaiter(void 0, void 0, void 0, function* () {
+const schedule = "* * * * *";
+node_cron_1.default.schedule(schedule, () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, autoPublishNews_job_1.autoPublishNews)();
 }));

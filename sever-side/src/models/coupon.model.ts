@@ -6,6 +6,7 @@ export interface ICoupon extends Document {
   discountType: string;
   discountValue: number;
   minOrderAmount?: number | null;
+  maxOrderAmount?: number | null;
   maxDiscountAmount?: number | null;
   startDate: Date | null;
   endDate: Date | null;
@@ -26,15 +27,16 @@ const couponSchema = new Schema<ICoupon>(
     discountType: { type: String, required: true },
     discountValue: { type: Number, required: true },
     minOrderAmount: { type: Number, default: null },
+    maxOrderAmount: { type: Number, default: null },
     maxDiscountAmount: { type: Number, default: null },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
     usageLimit: { type: Number, default: null },
     usedCount: { type: Number, default: 0 },
     perUserLimit: { type: Number, default: null },
-    is_active:  { type: Boolean, default: true },
-    applicableCategories: [{ type: Schema.Types.ObjectId, ref: 'categories', default: null }],
-    applicableProducts: [{ type: Schema.Types.ObjectId, ref: 'Product', default: null }],
+    is_active: { type: Boolean, default: true },
+    applicableCategories: [{ type: Schema.Types.ObjectId, ref: 'categories', default: [] }],
+    applicableProducts: [{ type: Schema.Types.ObjectId, ref: 'Product', default: [] }],
   },
   { timestamps: true }
 );

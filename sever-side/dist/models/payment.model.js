@@ -34,6 +34,31 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
+const orderItemSchema = new mongoose_1.Schema({
+    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+    quantity: { type: Number, required: true },
+    color: { type: String, required: true },
+    size: { type: String, required: true },
+}, { _id: false });
+const shippingAddressSchema = new mongoose_1.Schema({
+    street: { type: String, required: true },
+    ward: { type: String, required: true },
+    district: { type: String, required: true },
+    province: { type: String, required: true },
+    phone: { type: String, required: true },
+}, { _id: false });
+const orderInfoSchema = new mongoose_1.Schema({
+    shippingAddress: { type: shippingAddressSchema, required: true },
+    items: { type: [orderItemSchema], required: true },
+    paymentMethod: {
+        type: String,
+        enum: ['vnpay', 'zalopay', 'cod'],
+        required: true,
+    },
+    shipping: { type: Number, required: true },
+    code: { type: String, default: null },
+    email: { type: String, default: null },
+}, { _id: false });
 const paymentSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
@@ -55,7 +80,8 @@ const paymentSchema = new mongoose_1.Schema({
         default: {},
     },
     paid_at: { type: Date, default: null },
-    order_info: { type: mongoose_1.Schema.Types.Mixed, default: null },
+    order_info: { type: orderInfoSchema, default: null },
+    couponCode: { type: String, default: null },
 }, {
     timestamps: {
         createdAt: 'created_at',

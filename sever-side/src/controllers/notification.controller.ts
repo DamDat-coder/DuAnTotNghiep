@@ -42,3 +42,5 @@ export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Res
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
+
+//

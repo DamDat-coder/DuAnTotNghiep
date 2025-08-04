@@ -12,8 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
+exports.calculateRevenue = exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
+const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
@@ -31,6 +32,8 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         let items;
         let shipping = 0;
         let discountAmount = 0;
+        let email = undefined;
+        let couponCode = null;
         if (paymentId) {
             const payment = yield payment_model_1.default.findById(paymentId);
             if (!payment || !payment.order_info || !payment.userId) {
@@ -43,14 +46,15 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             if (existed) {
                 return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
             }
-            ({ paymentMethod, shippingAddress, items, shipping = 0, discountAmount = 0 } = payment.order_info);
+            ({ paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info);
+            discountAmount = payment.discount_amount || 0;
             userId = payment.userId;
         }
         else {
             if (!order_info) {
                 return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
             }
-            ({ paymentMethod, userId, shippingAddress, items, shipping = 0, discountAmount = 0 } = order_info);
+            ({ paymentMethod, userId, shippingAddress, items, shipping = 0, code: couponCode, email } = order_info);
             if (paymentMethod !== 'cod') {
                 return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
             }
@@ -82,9 +86,8 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             product.salesCount += item.quantity;
             yield product.save();
         }
-        totalPrice -= discountAmount;
-        totalPrice += shipping;
-        const orderCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("CD");
+        totalPrice = totalPrice - discountAmount + shipping;
+        const orderCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("4U");
         const order = yield order_model_1.default.create({
             userId,
             shippingAddress,
@@ -95,7 +98,12 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             items: orderItems,
             paymentId: paymentId || null,
             orderCode,
+            email: email || null,
+            couponCode: couponCode || null,
         });
+        if (couponCode) {
+            yield coupon_model_1.default.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
+        }
         yield notification_model_1.default.create({
             userId,
             title: 'Đơn hàng của bạn đã được tạo thành công!',
@@ -283,3 +291,94 @@ const cancelOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.cancelOrder = cancelOrder;
+// Tính doanh thu
+const dayjs_1 = __importDefault(require("dayjs"));
+const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { range = "today", from, to } = req.query;
+        let startDate;
+        let endDate;
+        const now = (0, dayjs_1.default)();
+        switch (range) {
+            case "today":
+                startDate = now.startOf("day").toDate();
+                endDate = now.endOf("day").toDate();
+                break;
+            case "7days":
+                startDate = now.subtract(7, "day").startOf("day").toDate();
+                endDate = now.endOf("day").toDate();
+                break;
+            case "month":
+                startDate = now.startOf("month").toDate();
+                endDate = now.endOf("day").toDate();
+                break;
+            case "year":
+                startDate = now.startOf("year").toDate();
+                endDate = now.endOf("day").toDate();
+                break;
+            case "custom":
+                if (from && to) {
+                    startDate = new Date(from);
+                    endDate = new Date(to);
+                }
+                else {
+                    res.status(400).json({
+                        status: "error",
+                        message: "Phải truyền đủ 'from' và 'to' khi dùng kiểu custom",
+                    });
+                    return;
+                }
+                break;
+            default:
+                res.status(400).json({
+                    status: "error",
+                    message: "Giá trị 'range' không hợp lệ",
+                });
+                return;
+        }
+        const match = {
+            $or: [
+                { status: "delivered" },
+                { status: "confirmed" }
+            ],
+            createdAt: { $gte: startDate, $lte: endDate }
+        };
+        const result = yield order_model_1.default.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalPrice" },
+                    totalShippingFee: { $sum: { $ifNull: ["$shippingFee", 0] } },
+                    orderCount: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalRevenue: 1,
+                    totalShippingFee: 1,
+                    grandTotal: { $add: ["$totalRevenue", "$totalShippingFee"] },
+                    orderCount: 1
+                }
+            }
+        ]);
+        res.json({
+            status: "success",
+            data: result[0] || {
+                totalRevenue: 0,
+                totalShippingFee: 0,
+                grandTotal: 0,
+                orderCount: 0
+            }
+        });
+    }
+    catch (error) {
+        console.error("Error calculating total revenue:", error);
+        res.status(500).json({
+            status: "error",
+            message: "Lỗi máy chủ khi tính tổng doanh thu"
+        });
+    }
+});
+exports.calculateRevenue = calculateRevenue;

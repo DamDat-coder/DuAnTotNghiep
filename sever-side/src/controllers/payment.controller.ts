@@ -3,6 +3,7 @@ import { ProductCode, VnpLocale } from "vnpay";
 import moment from "moment";
 import type { ReturnQueryFromVNPay } from "vnpay";
 import Payment from "../models/payment.model";
+import type { IOrderInfo } from "../models/payment.model";
 import { Types } from "mongoose";
 import axios from "axios";
 import crypto from "crypto";
@@ -18,7 +19,7 @@ export const createVNPayPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Thiếu thông tin!" });
     }
 
-    const transactionCode = await generateUniqueTransactionCode("VN");
+    const transactionCode = await generateUniqueTransactionCode("4U");
 
     const payment = await Payment.create({
       userId: new Types.ObjectId(userId),
@@ -29,7 +30,7 @@ export const createVNPayPayment = async (req: Request, res: Response) => {
       transaction_data: {},
       transaction_summary: {},
       order_info: {
-        ...orderInfo,
+        ...(orderInfo as IOrderInfo),
         paymentMethod: "vnpay",
       },
       gateway: "vnpay",
@@ -197,7 +198,7 @@ export const createZaloPayPayment = async (req: Request, res: Response) => {
       transaction_data: order,
       transaction_summary: {},
       order_info: {
-        ...orderInfo,
+    ...(orderInfo as IOrderInfo),
         paymentMethod: "zalopay",
       },
       gateway: "zalopay",
@@ -386,22 +387,24 @@ export const redirectZaloPayReturn = async (req: Request, res: Response) => {
   }
 };
 
+// COD - Tạo thanh toán
 export const createCodPayment = async (req: Request, res: Response) => {
   try {
-    const { orderId, totalPrice, userId, orderInfo } = req.body;
+    const { orderId, totalPrice, discountAmount, userId, orderInfo } = req.body;
 
     if (!userId || !totalPrice || !orderInfo) {
       return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
     }
-
     const payment = await Payment.create({
       userId: new Types.ObjectId(userId),
       amount: totalPrice,
+      discount_amount: discountAmount || 0,
       status: "success",
       transaction_code: orderId,
       gateway: "cod",
       transaction_data: {},
       order_info: orderInfo,
+      couponCode: orderInfo.code || null,
       paid_at: new Date(),
     });
 

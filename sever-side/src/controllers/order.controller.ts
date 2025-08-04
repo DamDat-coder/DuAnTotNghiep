@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import { Types } from "mongoose";
 import mongoose from "mongoose";
+import Coupon from "../models/coupon.model";
 import OrderModel from "../models/order.model";
 import ProductModel from "../models/product.model";
 import PaymentModel from "../models/payment.model";
@@ -13,12 +15,14 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { paymentId, order_info } = req.body;
 
-    let userId;
+    let userId: Types.ObjectId;
     let paymentMethod: 'cod' | 'vnpay' | 'zalopay';
     let shippingAddress;
     let items;
     let shipping = 0;
     let discountAmount = 0;
+    let email: string | undefined = undefined;
+    let couponCode: string | null | undefined = null;
 
     if (paymentId) {
       const payment = await PaymentModel.findById(paymentId);
@@ -35,14 +39,15 @@ export const createOrder = async (req: Request, res: Response) => {
         return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
       }
 
-      ({ paymentMethod,  shippingAddress, items, shipping = 0, discountAmount = 0 } = payment.order_info);
-      userId = payment.userId;
+      ({ paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info);
+      discountAmount = payment.discount_amount || 0;
+      userId = payment.userId as Types.ObjectId;
     } else {
       if (!order_info) {
         return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
       }
 
-      ({ paymentMethod, userId, shippingAddress, items, shipping = 0, discountAmount = 0 } = order_info);
+      ({ paymentMethod, userId, shippingAddress, items, shipping = 0, code: couponCode, email } = order_info);
 
       if (paymentMethod !== 'cod') {
         return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
@@ -58,7 +63,7 @@ export const createOrder = async (req: Request, res: Response) => {
         return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm.' });
       }
 
-      const variantData = item.variant || item; 
+      const variantData = item.variant || item;
 
       const variant = product.variants.find(
         v => v.color === variantData.color && v.size === variantData.size
@@ -85,10 +90,9 @@ color: variantData.color,
       await product.save();
     }
 
-    totalPrice -= discountAmount;
-    totalPrice += shipping;
+    totalPrice = totalPrice - discountAmount + shipping;
 
-    const orderCode = await generateUniqueTransactionCode("CD");
+    const orderCode = await generateUniqueTransactionCode("4U");
 
     const order = await OrderModel.create({
       userId,
@@ -100,8 +104,15 @@ color: variantData.color,
       items: orderItems,
       paymentId: paymentId || null,
       orderCode,
+      email: email || null,
+      couponCode: couponCode || null,
     });
-
+    if (couponCode) {
+      await Coupon.updateOne(
+        { code: couponCode },
+        { $inc: { usedCount: 1 } }
+      );
+    }
     await NotificationModel.create({
       userId,
       title: 'Đơn hàng của bạn đã được tạo thành công!',
@@ -314,5 +325,101 @@ export const cancelOrder = async (req: Request, res: Response) => {
     res.status(200).json({ success: true, message: "Huỷ đơn hàng thành công.", data: order });
   } catch (err) {
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+  }
+};
+
+// Tính doanh thu
+import dayjs from "dayjs";
+
+export const calculateRevenue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { range = "today", from, to } = req.query;
+
+    let startDate: Date;
+    let endDate: Date;
+
+    const now = dayjs();
+
+    switch (range) {
+      case "today":
+        startDate = now.startOf("day").toDate();
+        endDate = now.endOf("day").toDate();
+        break;
+      case "7days":
+        startDate = now.subtract(7, "day").startOf("day").toDate();
+        endDate = now.endOf("day").toDate();
+        break;
+      case "month":
+        startDate = now.startOf("month").toDate();
+        endDate = now.endOf("day").toDate();
+        break;
+      case "year":
+        startDate = now.startOf("year").toDate();
+        endDate = now.endOf("day").toDate();
+        break;
+      case "custom":
+        if (from && to) {
+          startDate = new Date(from as string);
+          endDate = new Date(to as string);
+        } else {
+          res.status(400).json({
+            status: "error",
+            message: "Phải truyền đủ 'from' và 'to' khi dùng kiểu custom",
+          });
+          return;
+        }
+        break;
+      default:
+        res.status(400).json({
+          status: "error",
+          message: "Giá trị 'range' không hợp lệ",
+        });
+        return;
+    }
+
+    const match: any = {
+      $or: [
+        { status: "delivered" },
+        { status: "confirmed" }
+      ],
+      createdAt: { $gte: startDate, $lte: endDate }
+    };
+
+    const result = await OrderModel.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalPrice" },
+          totalShippingFee: { $sum: { $ifNull: ["$shippingFee", 0] } },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalRevenue: 1,
+          totalShippingFee: 1,
+          grandTotal: { $add: ["$totalRevenue", "$totalShippingFee"] },
+          orderCount: 1
+        }
+      }
+    ]);
+
+    res.json({
+      status: "success",
+      data: result[0] || {
+        totalRevenue: 0,
+        totalShippingFee: 0,
+        grandTotal: 0,
+        orderCount: 0
+      }
+    });
+  } catch (error) {
+    console.error("Error calculating total revenue:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Lỗi máy chủ khi tính tổng doanh thu"
+    });
   }
 };

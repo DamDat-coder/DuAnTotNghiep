@@ -12,13 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleActiveCategory = exports.deleteCategory = exports.updateCategory = exports.getCategoryById = exports.getCategoryTree = exports.createCategory = void 0;
+exports.toggleActiveCategory = exports.updateCategory = exports.getCategoryById = exports.getCategoryTree = exports.createCategory = void 0;
 const category_model_1 = __importDefault(require("../models/category.model"));
+const product_model_1 = __importDefault(require("../models/product.model"));
 const slugify_1 = __importDefault(require("slugify"));
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 const mongoose_1 = require("mongoose");
 const mongoose_2 = __importDefault(require("mongoose"));
-const product_model_1 = __importDefault(require("../models/product.model"));
 // Tạo danh mục mới
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -150,52 +150,49 @@ const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.updateCategory = updateCategory;
-// Xoá danh mục
-const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { id } = req.params;
-        const hasChildren = yield category_model_1.default.findOne({ parentId: id });
-        if (hasChildren)
-            return res.status(400).json({ success: false, message: "Không thể xoá vì có danh mục con." });
-        const deleted = yield category_model_1.default.findByIdAndDelete(id);
-        if (!deleted)
-            return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
-        res.status(200).json({ success: true, message: "Xoá danh mục thành công." });
-    }
-    catch (error) {
-        res.status(500).json({ success: false, message: "Lỗi khi xoá danh mục." });
-    }
-});
-exports.deleteCategory = deleteCategory;
-// Trong category.controller.ts
+// Khóa hoặc mở khóa danh mục
 const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const categoryId = req.params.id;
         const { is_active, force } = req.body;
         if (!mongoose_2.default.Types.ObjectId.isValid(categoryId)) {
-            return res.status(400).json({ status: "error", message: "ID danh mục không hợp lệ" });
+            return res.status(400).json({
+                status: "error",
+                message: "ID danh mục không hợp lệ",
+            });
         }
         if (typeof is_active !== "boolean") {
-            return res.status(400).json({ status: "error", message: "Trạng thái is_active phải là boolean" });
-        }
-        if (!is_active && !force) {
-            const count = yield product_model_1.default.countDocuments({
-                $or: [
-                    { "category._id": new mongoose_2.default.Types.ObjectId(categoryId) },
-                    { "category._id": categoryId },
-                ],
+            return res.status(400).json({
+                status: "error",
+                message: "Trạng thái is_active phải là boolean",
             });
-            if (count > 0) {
-                return res.status(200).json({
-                    status: "warning",
-                    message: "Danh mục đang chứa sản phẩm. Bạn có chắc chắn muốn khóa không?",
-                    requiresConfirmation: true,
+        }
+        if (!is_active) {
+            const productCount = yield product_model_1.default.countDocuments({
+                "category._id": new mongoose_2.default.Types.ObjectId(categoryId),
+            });
+            if (productCount > 0) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Không thể khóa vì danh mục đang chứa sản phẩm",
+                });
+            }
+            const childCategoryCount = yield category_model_1.default.countDocuments({
+                parentId: categoryId,
+            });
+            if (childCategoryCount > 0) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Không thể khóa vì danh mục đang có danh mục con",
                 });
             }
         }
         const updatedCategory = yield category_model_1.default.findByIdAndUpdate(categoryId, { is_active }, { new: true, runValidators: true }).lean();
         if (!updatedCategory) {
-            return res.status(404).json({ status: "error", message: "Danh mục không tồn tại" });
+            return res.status(404).json({
+                status: "error",
+                message: "Danh mục không tồn tại",
+            });
         }
         return res.status(200).json({
             status: "success",
@@ -205,7 +202,10 @@ const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
     catch (error) {
         console.error("Lỗi khi khóa/mở khóa danh mục:", error);
-        return res.status(500).json({ status: "error", message: error.message });
+        return res.status(500).json({
+            status: "error",
+            message: error.message,
+        });
     }
 });
 exports.toggleActiveCategory = toggleActiveCategory;

@@ -4,8 +4,8 @@ import {
   getCategoryTree,
   getCategoryById,
   updateCategory,
-  deleteCategory,
   toggleActiveCategory,
+
 } from "../controllers/category.controller";
 import { upload } from "../middlewares/upload.middleware";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
@@ -17,6 +17,6 @@ router.patch("/:id/lock", verifyToken, verifyAdmin, toggleActiveCategory);
 router.get("/:id", verifyToken, verifyAdmin, getCategoryById);
 router.post("/", verifyToken, verifyAdmin, upload.single("image"), createCategory);
 router.put("/:id", verifyToken, verifyAdmin, upload.single("image"), updateCategory);
-router.delete("/:id", verifyToken, verifyAdmin, deleteCategory);
+router.patch("/:id/lock", verifyToken, verifyAdmin, toggleActiveCategory);
 
 export default router;

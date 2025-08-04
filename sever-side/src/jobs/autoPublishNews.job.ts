@@ -5,13 +5,13 @@ import NotificationModel from "../models/notification.model";
 export const autoPublishNews = async () => {
   try {
     const now = new Date();
+    now.setHours(now.getHours() + 7); 
     const newsToPublish = await newsModel
       .find({ is_published: false, published_at: { $lte: now } })
       .select("title _id")
       .lean();
 
     if (newsToPublish.length === 0) {
-      console.log("[AutoPublish] Không có bài nào cần đăng.");
       return;
     }
 
@@ -35,7 +35,7 @@ export const autoPublishNews = async () => {
         const notifications = newsToPublish.flatMap((news) =>
           users.map((user) => ({
             userId: user._id,
-            title: "Tin tức mới từ Style For You",
+            title: "Tin tức mới từ Shop For You",
             message: `Tin tức "${news.title}" vừa được đăng, xem ngay nhé!`,
             type: "news",
             isRead: false,

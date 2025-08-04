@@ -40,12 +40,12 @@ const reviewSchema = new mongoose_1.Schema({
     productId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
     content: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
+    images: [{ type: String }],
     status: {
         type: String,
         enum: ["approved", "spam"],
         default: "approved",
     },
-    images: [{ type: String }],
 }, { timestamps: true });
 const ReviewModel = mongoose_1.default.model("Review", reviewSchema);
 exports.default = ReviewModel;

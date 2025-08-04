@@ -30,6 +30,8 @@ export interface IOrder extends Document {
   paymentId?: Types.ObjectId | null;
   items: IOrderItem[];
   orderCode: string;
+  email?: string;
+  couponCode?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -53,7 +55,7 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
     ward: { type: String, required: true },
     district: { type: String, required: true },
     province: { type: String, required: true },
-     phone: { type: String, required: true },
+    phone: { type: String, required: true },
     is_default: { type: Boolean, default: false },
   },
   { _id: false }
@@ -64,7 +66,7 @@ const orderSchema = new Schema<IOrder>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
     totalPrice: { type: Number, required: true },
-    discountAmount: { type: Number, default: 0 }, 
+    discountAmount: { type: Number, default: 0 },
     shipping: { type: Number, default: 0 },
     paymentMethod: {
       type: String,
@@ -73,7 +75,7 @@ const orderSchema = new Schema<IOrder>(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled', 'fake' ],
+      enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled', 'fake'],
       default: 'pending',
     },
     paymentId: {
@@ -83,6 +85,8 @@ const orderSchema = new Schema<IOrder>(
     },
     items: { type: [orderItemSchema], required: true },
     orderCode: { type: String, required: true, unique: true },
+    email: { type: String, default: null },
+    couponCode: { type: String, default: null },
   },
   { timestamps: true }
 );

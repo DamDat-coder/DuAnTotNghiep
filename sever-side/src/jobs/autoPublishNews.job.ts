@@ -5,14 +5,13 @@ import NotificationModel from "../models/notification.model";
 export const autoPublishNews = async () => {
   try {
     const now = new Date();
-    now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
+    now.setHours(now.getHours() + 7); 
     const newsToPublish = await newsModel
       .find({ is_published: false, published_at: { $lte: now } })
       .select("title _id")
       .lean();
 
     if (newsToPublish.length === 0) {
-      console.log("[AutoPublish] Không có bài nào cần đăng.");
       return;
     }
 

@@ -12,10 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hideCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
+exports.applyCoupon = exports.hideCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const validateCoupon_1 = require("../utils/validateCoupon");
+const mongoose_2 = require("mongoose");
 // Lấy tất cả coupon
 const getAllCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -161,3 +163,40 @@ const hideCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.hideCoupon = hideCoupon;
+// Áp dụng coupon
+const applyCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const userIdString = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+        if (!userIdString) {
+            return res.status(400).json({ message: "Thiếu userId từ token" });
+        }
+        const userId = new mongoose_2.Types.ObjectId(userIdString);
+        const { code, items, totalAmount } = req.body;
+        if (!code || !items || !totalAmount) {
+            return res.status(400).json({ message: "Thiếu thông tin mã giảm giá" });
+        }
+        const productIds = items.map((item) => new mongoose_2.Types.ObjectId(item.productId));
+        const categoryIds = items.map((item) => new mongoose_2.Types.ObjectId(item.categoryId));
+        const { coupon, discountAmount, finalPrice } = yield (0, validateCoupon_1.validateCoupon)({
+            code,
+            userId,
+            totalAmount,
+            productIds,
+            categoryIds,
+        });
+        return res.status(200).json({
+            message: "Áp dụng mã giảm giá thành công",
+            data: {
+                code: coupon.code,
+                description: coupon.description,
+                discountAmount,
+                finalPrice,
+            },
+        });
+    }
+    catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+});
+exports.applyCoupon = applyCoupon;

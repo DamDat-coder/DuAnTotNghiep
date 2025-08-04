@@ -46,15 +46,23 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             const result = yield new Promise((resolve, reject) => {
                 const stream = cloudinary_1.v2.uploader.upload_stream({ folder: "news" }, (error, result) => {
                     if (error || !result)
-                        return reject(error);
+                        return reject(error || new Error("Upload failed"));
                     resolve(result.secure_url);
                 });
+                stream.on("error", (error) => reject(error));
                 stream.end(files[0].buffer);
             });
             thumbnail = result;
         }
         const parsedPublishedAt = published_at ? new Date(published_at) : null;
         const shouldPublishNow = is_published === "true" || is_published === true;
+        if (published_at && (!parsedPublishedAt || isNaN(parsedPublishedAt.getTime()))) {
+            res.status(400).json({
+                status: "error",
+                message: `Thời gian đăng bài không hợp lệ: ${published_at}`,
+            });
+            return;
+        }
         const newsData = {
             title,
             content,
@@ -65,7 +73,7 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             thumbnail,
             meta_description,
             is_published: shouldPublishNow && !parsedPublishedAt ? true : false,
-            published_at: parsedPublishedAt !== null && parsedPublishedAt !== void 0 ? parsedPublishedAt : (shouldPublishNow ? new Date() : null),
+            published_at: parsedPublishedAt && !isNaN(parsedPublishedAt.getTime()) ? parsedPublishedAt : null,
         };
         const createdNews = new news_model_1.default(newsData);
         const savedNews = yield createdNews.save();
@@ -98,11 +106,9 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             message: "Tạo tin tức thành công",
             data: populated,
         });
-        console.log("Tin tức tạo mới:");
-        console.log("published_at:", parsedPublishedAt);
-        console.log("is_published:", newsData.is_published);
     }
     catch (error) {
+        console.error("Error in createNews:", error);
         if (error.code === 11000) {
             res.status(409).json({ status: "error", message: "Slug đã tồn tại" });
         }
@@ -116,14 +122,20 @@ exports.createNews = createNews;
 const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { title, content, slug, category_id, tags, is_published, meta_description, } = req.body;
+        const { title, content, slug, category_id, tags, is_published, meta_description, published_at, } = req.body;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
-            res.status(400).json({ status: "error", message: "ID tin tức không hợp lệ" });
+            res.status(400).json({
+                status: "error",
+                message: "ID tin tức không hợp lệ",
+            });
             return;
         }
         const existingNews = yield news_model_1.default.findById(id);
         if (!existingNews) {
-            res.status(404).json({ status: "error", message: "Tin tức không tồn tại" });
+            res.status(404).json({
+                status: "error",
+                message: "Tin tức không tồn tại",
+            });
             return;
         }
         const updates = {};
@@ -137,6 +149,20 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             updates.tags = tags.split(",");
         if (meta_description)
             updates.meta_description = meta_description;
+        if (published_at) {
+            const parsedPublishedAt = new Date(published_at);
+            if (isNaN(parsedPublishedAt.getTime())) {
+                res.status(400).json({
+                    status: "error",
+                    message: `Thời gian đăng bài không hợp lệ: ${published_at}`,
+                });
+                return;
+            }
+            updates.published_at = parsedPublishedAt;
+        }
+        else if (is_published === "false") {
+            updates.published_at = null;
+        }
         if (typeof is_published === "boolean" ||
             is_published === "true" ||
             is_published === "false") {
@@ -149,20 +175,27 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 updates.published_at = null;
             }
         }
+        // Handle category update
         if (category_id && mongoose_1.default.Types.ObjectId.isValid(category_id)) {
             updates.category_id = new mongoose_1.default.Types.ObjectId(category_id);
         }
+        // Handle thumbnail update
         const files = (0, upload_middleware_1.normalizeFiles)(req.files);
         if (files.length > 0) {
-            const result = yield new Promise((resolve, reject) => {
-                const stream = cloudinary_1.v2.uploader.upload_stream({ folder: "news" }, (error, result) => {
+            const file = files[0];
+            const uploadedImageUrl = yield new Promise((resolve, reject) => {
+                const stream = cloudinary_1.v2.uploader.upload_stream({
+                    folder: "news",
+                    resource_type: "image",
+                }, (error, result) => {
                     if (error || !result)
-                        return reject(error);
+                        return reject(error || new Error("Upload failed"));
                     resolve(result.secure_url);
                 });
-                stream.end(files[0].buffer);
+                stream.on("error", (err) => reject(err));
+                stream.end(file.buffer);
             });
-            updates.thumbnail = result;
+            updates.thumbnail = uploadedImageUrl;
         }
         const updatedNews = yield news_model_1.default
             .findByIdAndUpdate(id, { $set: updates }, { new: true })
@@ -175,6 +208,7 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
     }
     catch (error) {
+        console.error("Error in updateNews:", error);
         if (error.code === 11000) {
             res.status(409).json({ status: "error", message: "Slug đã tồn tại" });
         }
@@ -184,7 +218,7 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.updateNews = updateNews;
-// Xoá tin tức
+// Xóa tin tức
 const deleteNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;

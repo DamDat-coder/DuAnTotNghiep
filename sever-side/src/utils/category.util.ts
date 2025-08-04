@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import categoryModel from "../models/category.model";
 
 export const getAllChildCategoryIds = async (parentId: string): Promise<string[]> => {

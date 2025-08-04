@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import Coupon from "../models/coupon.model";
 import NotificationModel from "../models/notification.model";
 import mongoose from "mongoose";
+import { validateCoupon } from "../utils/validateCoupon";
+import { Types } from "mongoose";
 
 // Lấy tất cả coupon
 export const getAllCoupons = async (req: Request, res: Response) => {
@@ -199,5 +201,50 @@ export const hideCoupon = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Đã ẩn mã giảm giá thành công" });
   } catch (error: any) {
     res.status(500).json({ message: "Lỗi server", error: error.message || error });
+  }
+};
+
+// Áp dụng coupon
+export const applyCoupon = async (req: Request, res: Response) => {
+  try {
+    const userIdString = (req as any).user?.userId;
+
+    if (!userIdString) {
+      return res.status(400).json({ message: "Thiếu userId từ token" });
+    }
+
+    const userId = new Types.ObjectId(userIdString);
+    const { code, items, totalAmount } = req.body;
+
+    if (!code || !items || !totalAmount) {
+      return res.status(400).json({ message: "Thiếu thông tin mã giảm giá" });
+    }
+
+    const productIds: Types.ObjectId[] = items.map((item: any) =>
+      new Types.ObjectId(item.productId)
+    );
+    const categoryIds: Types.ObjectId[] = items.map((item: any) =>
+      new Types.ObjectId(item.categoryId)
+    );
+
+    const { coupon, discountAmount, finalPrice } = await validateCoupon({
+      code,
+      userId,
+      totalAmount,
+      productIds,
+      categoryIds,
+    });
+
+    return res.status(200).json({
+      message: "Áp dụng mã giảm giá thành công",
+      data: {
+        code: coupon.code,
+        description: coupon.description,
+        discountAmount,
+        finalPrice,
+      },
+    });
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message });
   }
 };

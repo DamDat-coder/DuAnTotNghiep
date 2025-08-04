@@ -46,7 +46,6 @@ const reviewSchema = new mongoose_1.Schema({
         enum: ["approved", "spam"],
         default: "approved",
     },
-    images: [{ type: String }],
 }, { timestamps: true });
 const ReviewModel = mongoose_1.default.model("Review", reviewSchema);
 exports.default = ReviewModel;

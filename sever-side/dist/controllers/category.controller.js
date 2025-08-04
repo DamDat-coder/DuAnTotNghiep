@@ -171,35 +171,41 @@ exports.deleteCategory = deleteCategory;
 const toggleActiveCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const categoryId = req.params.id;
-        const { is_active } = req.body;
+        const { is_active, force } = req.body;
         if (!mongoose_2.default.Types.ObjectId.isValid(categoryId)) {
-            return res.status(400).json({ status: 'error', message: 'ID danh mục không hợp lệ' });
+            return res.status(400).json({ status: "error", message: "ID danh mục không hợp lệ" });
         }
-        if (typeof is_active !== 'boolean') {
-            return res.status(400).json({ status: 'error', message: 'Trạng thái is_active phải là boolean' });
+        if (typeof is_active !== "boolean") {
+            return res.status(400).json({ status: "error", message: "Trạng thái is_active phải là boolean" });
         }
-        if (!is_active) {
-            const count = yield product_model_1.default.countDocuments({ "category._id": new mongoose_2.default.Types.ObjectId(categoryId) });
+        if (!is_active && !force) {
+            const count = yield product_model_1.default.countDocuments({
+                $or: [
+                    { "category._id": new mongoose_2.default.Types.ObjectId(categoryId) },
+                    { "category._id": categoryId },
+                ],
+            });
             if (count > 0) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Không thể khóa danh mục vì có sản phẩm đang sử dụng.',
+                return res.status(200).json({
+                    status: "warning",
+                    message: "Danh mục đang chứa sản phẩm. Bạn có chắc chắn muốn khóa không?",
+                    requiresConfirmation: true,
                 });
             }
         }
         const updatedCategory = yield category_model_1.default.findByIdAndUpdate(categoryId, { is_active }, { new: true, runValidators: true }).lean();
         if (!updatedCategory) {
-            return res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+            return res.status(404).json({ status: "error", message: "Danh mục không tồn tại" });
         }
         return res.status(200).json({
-            status: 'success',
-            message: `Danh mục đã được ${is_active ? 'mở khóa' : 'khóa'} thành công`,
+            status: "success",
+            message: `Danh mục đã được ${is_active ? "mở khóa" : "khóa"} thành công`,
             data: updatedCategory,
         });
     }
     catch (error) {
-        console.error('Lỗi khi khóa/mở khóa danh mục:', error);
-        return res.status(500).json({ status: 'error', message: error.message });
+        console.error("Lỗi khi khóa/mở khóa danh mục:", error);
+        return res.status(500).json({ status: "error", message: error.message });
     }
 });
 exports.toggleActiveCategory = toggleActiveCategory;

@@ -12,4 +12,5 @@ router.get("/:id", coupon_controller_1.getCouponById);
 router.post("/", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, coupon_controller_1.createCoupon);
 router.put("/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, coupon_controller_1.updateCoupon);
 router.put("/hide/:id", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, coupon_controller_1.hideCoupon);
+router.post("/apply", auth_middleware_1.verifyToken, coupon_controller_1.applyCoupon);
 exports.default = router;

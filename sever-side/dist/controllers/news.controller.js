@@ -107,9 +107,6 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             message: "Tạo tin tức thành công",
             data: populated,
         });
-        console.log("Tin tức tạo mới:");
-        console.log("published_at:", parsedPublishedAt);
-        console.log("is_published:", newsData.is_published);
     }
     catch (error) {
         console.error("Error in createNews:", error);
@@ -127,18 +124,19 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const { id } = req.params;
         const { title, content, slug, category_id, tags, is_published, meta_description, published_at, } = req.body;
-        console.log("Received update request body:", req.body);
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
-            res
-                .status(400)
-                .json({ status: "error", message: "ID tin tức không hợp lệ" });
+            res.status(400).json({
+                status: "error",
+                message: "ID tin tức không hợp lệ",
+            });
             return;
         }
         const existingNews = yield news_model_1.default.findById(id);
         if (!existingNews) {
-            res
-                .status(404)
-                .json({ status: "error", message: "Tin tức không tồn tại" });
+            res.status(404).json({
+                status: "error",
+                message: "Tin tức không tồn tại",
+            });
             return;
         }
         const updates = {};
@@ -178,21 +176,27 @@ const updateNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 updates.published_at = null;
             }
         }
+        // Handle category update
         if (category_id && mongoose_1.default.Types.ObjectId.isValid(category_id)) {
             updates.category_id = new mongoose_1.default.Types.ObjectId(category_id);
         }
+        // Handle thumbnail update
         const files = (0, upload_middleware_1.normalizeFiles)(req.files);
         if (files.length > 0) {
-            const result = yield new Promise((resolve, reject) => {
-                const stream = cloudinary_1.v2.uploader.upload_stream({ folder: "news" }, (error, result) => {
+            const file = files[0];
+            const uploadedImageUrl = yield new Promise((resolve, reject) => {
+                const stream = cloudinary_1.v2.uploader.upload_stream({
+                    folder: "news",
+                    resource_type: "image",
+                }, (error, result) => {
                     if (error || !result)
                         return reject(error || new Error("Upload failed"));
                     resolve(result.secure_url);
                 });
-                stream.on("error", (error) => reject(error));
-                stream.end(files[0].buffer);
+                stream.on("error", (err) => reject(err));
+                stream.end(file.buffer);
             });
-            updates.thumbnail = result;
+            updates.thumbnail = uploadedImageUrl;
         }
         const updatedNews = yield news_model_1.default
             .findByIdAndUpdate(id, { $set: updates }, { new: true })

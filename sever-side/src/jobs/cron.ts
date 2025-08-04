@@ -6,6 +6,5 @@ const schedule = "* * * * *";
 
 cron.schedule(schedule, async () => {
   await autoPublishNews();
-  console.log("Đã kiểm tra và tự động đăng tin tức theo lịch.");
 });
 

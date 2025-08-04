@@ -6,12 +6,7 @@ import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { Metadata } from "next";
 
-// ⬇️ Định nghĩa props với Promise cho params
-type Props = {
-  params: Promise<{ id: string }>;
-};
-
-// ⬇️ generateMetadata cũng await params
+// generateMetadata
 export async function generateMetadata({
   params,
 }: {
@@ -31,9 +26,13 @@ export async function generateMetadata({
   };
 }
 
-// ⬇️ Trang chính sản phẩm (phải async và await props.params)
-export default async function ProductPage(props: Props) {
-  const { id } = await props.params; // phải await
+// Trang chính
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params; // Awaiting params
 
   let product: IProduct | null = null;
   let suggestedProducts: IProduct[] = [];

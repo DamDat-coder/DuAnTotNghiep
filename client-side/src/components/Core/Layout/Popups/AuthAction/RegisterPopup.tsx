@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../../../contexts/AuthContext";
 import GoogleLoginButton from "@/components/Auth/GoogleLoginButton";
+import toast from "react-hot-toast";
 
 interface RegisterPopupProps {
   isOpen: boolean;
@@ -116,6 +117,7 @@ export default function RegisterPopup({
         formData.password,
         formData.keepLoggedIn
       );
+
       if (success) {
         setFormData({
           name: "",
@@ -128,10 +130,7 @@ export default function RegisterPopup({
         onClose();
       }
     } catch (err: any) {
-      setErrors((prev) => ({
-        ...prev,
-        email: err.message || "Có lỗi xảy ra khi đăng ký.",
-      }));
+      toast.error(err.message || "Có lỗi xảy ra khi đăng ký.");
     } finally {
       setLoading(false);
     }

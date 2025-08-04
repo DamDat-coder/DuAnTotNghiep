@@ -143,7 +143,6 @@ export async function register(
       } catch {
         errorData = {};
       }
-      console.error("Register failed:", res.status, errorData);
       throw new Error(
         errorData.message || "Email, mật khẩu hoặc tên không hợp lệ."
       );
@@ -162,8 +161,9 @@ export async function register(
     };
     return { user, accessToken: data.data.accessToken };
   } catch (error: any) {
-    console.error("Error registering:", error);
-    throw error;
+    throw {
+      message: error.message || "Không thể gửi đánh giá.",
+    };
   }
 }
 

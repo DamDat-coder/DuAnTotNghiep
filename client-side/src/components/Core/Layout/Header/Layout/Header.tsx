@@ -56,7 +56,7 @@ export default function Header() {
 
   useEffect(() => {
     if (openLoginWithData) {
-      setIsLoginOpen(true);
+      setIsLoginOpen(false);
       setOpenLoginWithData(false);
     }
   }, [openLoginWithData, setOpenLoginWithData]);

@@ -54,28 +54,22 @@ export default function EditOrderForm({
   };
 
   const getAvailableStatus = (currentStatusKey: string) => {
-    if (currentStatusKey === "delivered") {
-      return STATUS.filter((s) => s.key === "delivered");
-    }
-
-    if (["cancelled", "fake"].includes(currentStatusKey)) {
+    // Đã ở trạng thái kết thúc, chỉ cho hiện đúng trạng thái đó
+    if (["delivered", "cancelled", "fake"].includes(currentStatusKey)) {
       return STATUS.filter((s) => s.key === currentStatusKey);
     }
-
+    // Đang shipping, cho phép chuyển sang 3 trạng thái
     if (currentStatusKey === "shipping") {
       return STATUS.filter((s) =>
         ["shipping", "delivered", "cancelled", "fake"].includes(s.key)
       );
     }
-
+    // Các trạng thái khác: chỉ được chuyển tới trạng thái tiếp theo
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
-    return STATUS.filter(
-      (s, idx) =>
-        s.key === currentStatusKey ||
-        (idx > currentStatusIndex && s.key !== "fake") ||
-        s.key === "cancelled" ||
-        s.key === "fake"
-    );
+    const next = STATUS[currentStatusIndex + 1];
+    return next
+      ? STATUS.filter((s) => s.key === currentStatusKey || s.key === next.key)
+      : STATUS.filter((s) => s.key === currentStatusKey);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {

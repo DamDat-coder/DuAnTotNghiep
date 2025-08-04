@@ -1,5 +1,3 @@
-// app/products/[id]/page.tsx
-
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
@@ -14,7 +12,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params; // Awaiting params
+  const { id } = await params;
   const product = await fetchProductById(id);
   if (!product) throw new Error("Not found");
 

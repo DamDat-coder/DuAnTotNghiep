@@ -8,6 +8,15 @@ import { fetchCategoryTree } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
 import { convertToSlug } from "@/utils/slugify";
 
+// Bạn có thể định nghĩa lại type cho variant nếu muốn, còn không thì vẫn để any như cũ
+type ProductVariant = {
+  price: number | string;
+  color: string;
+  size: string;
+  stock: number | string;
+  discountPercent: number | string;
+};
+
 const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL"];
 const colorOptions = [
   { value: "Đen", label: "Đen" },
@@ -32,30 +41,37 @@ function renderCategoryOptions(
   nodes: ICategory[],
   depth = 0,
   path = ""
-): JSX.Element[] {
+): React.ReactElement[] {
   return nodes.flatMap((cat) => [
-    <option key={path + (cat._id || cat.id)} value={cat._id || cat.id}>
+    <option key={path + (cat._id)} value={cat._id}>
       {"—".repeat(depth)} {cat.name}
     </option>,
     ...(cat.children
-      ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id || cat.id))
+      ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id))
       : []),
   ]);
 }
 
-export default function AddProductForm({ onClose, onAdded }) {
-  const [formData, setFormData] = useState({
+export default function AddProductForm({ onClose, onAdded }: any) {
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    categoryId: string;
+    variants: ProductVariant[];
+    images: File[];
+  }>({
     name: "",
     description: "",
     categoryId: "",
     variants: [],
     images: [],
   });
+
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newVariant, setNewVariant] = useState<any>({
+  const [newVariant, setNewVariant] = useState<ProductVariant>({
     size: "",
     color: "",
     price: "",
@@ -85,20 +101,20 @@ export default function AddProductForm({ onClose, onAdded }) {
   ) => {
     const { name, value, files } = e.target as HTMLInputElement;
     if (files && files.length > 0) {
-      setFormData((prev: any) => ({
+      setFormData((prev) => ({
         ...prev,
-        images: Array.from(files),
+        images: Array.from(files) as File[],
       }));
     } else {
-      setFormData((prev: any) => ({
+      setFormData((prev) => ({
         ...prev,
         [name]: value,
       }));
     }
   };
 
-  const handleVariantTableChange = (idx: number, field: string, value: any) => {
-    setFormData((prev: any) => {
+  const handleVariantTableChange = (idx: number, field: keyof ProductVariant, value: any) => {
+    setFormData((prev) => {
       const variants = [...prev.variants];
       variants[idx][field] = value;
       return { ...prev, variants };
@@ -106,14 +122,14 @@ export default function AddProductForm({ onClose, onAdded }) {
   };
 
   const handleRemoveVariant = (idx: number) => {
-    setFormData((prev: any) => ({
+    setFormData((prev) => ({
       ...prev,
       variants: prev.variants.filter((_, i) => i !== idx),
     }));
   };
 
-  const handleNewVariantChange = (field: string, value: any) => {
-    setNewVariant((prev: any) => ({
+  const handleNewVariantChange = (field: keyof ProductVariant, value: any) => {
+    setNewVariant((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -125,7 +141,7 @@ export default function AddProductForm({ onClose, onAdded }) {
       return;
     }
     setError(null);
-    setFormData((prev: any) => ({
+    setFormData((prev) => ({
       ...prev,
       variants: [...prev.variants, { ...newVariant }],
     }));
@@ -135,7 +151,7 @@ export default function AddProductForm({ onClose, onAdded }) {
   const renderImagesBlock = () => {
     const previews =
       formData.images && formData.images.length > 0
-        ? (formData.images as File[]).map((file: File, i: number) => (
+        ? formData.images.map((file: File, i: number) => (
             <div
               key={i}
               className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
@@ -182,6 +198,7 @@ export default function AddProductForm({ onClose, onAdded }) {
             type="button"
             className="w-[130px] h-[131px] flex flex-col items-center justify-center rounded-xl bg-[#F8F9FB] border border-dashed border-gray-200 hover:bg-[#f3f4f6] transition cursor-pointer"
             onClick={handleImageUploadClick}
+            disabled={isSubmitting}
           >
             <Image src="/admin/upload.png" width={60} height={60} alt="Upload" />
             <span className="font-medium text-black text-sm mt-2">New Image</span>
@@ -205,17 +222,17 @@ export default function AddProductForm({ onClose, onAdded }) {
         return setError("Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể.");
       if (Number(v.price) < 0) return setError("Giá không được nhỏ hơn 0.");
       if (Number(v.stock) < 0) return setError("Tồn kho không được nhỏ hơn 0.");
-      if (v.discountPercent && (v.discountPercent < 0 || v.discountPercent > 100))
+      if (v.discountPercent && (Number(v.discountPercent) < 0 || Number(v.discountPercent) > 100))
         return setError("Phần trăm giảm giá phải từ 0 đến 100.");
     }
-    if (formData.images && formData.images.length > 0) {
+    if (formData.images.length === 0) {
+      return setError("Vui lòng chọn ít nhất một ảnh.");
+    } else {
       const validTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let img of formData.images) {
         if (!validTypes.includes(img.type)) return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
         if (img.size > 5 * 1024 * 1024) return setError("File ảnh không quá 5MB.");
       }
-    } else {
-      return setError("Vui lòng chọn ít nhất một ảnh.");
     }
 
     setIsSubmitting(true);
@@ -227,14 +244,14 @@ export default function AddProductForm({ onClose, onAdded }) {
         slug,
         description: formData.description,
         categoryId: formData.categoryId,
-        variants: formData.variants.map((v: any) => ({
+        variants: formData.variants.map((v) => ({
           price: Number(v.price),
           color: v.color,
           size: v.size,
           stock: Number(v.stock),
           discountPercent: Number(v.discountPercent) || 0,
         })),
-        images: formData.images,
+        images: formData.images, // Đã đúng type File[]
       });
       if (!res) throw new Error("Không thể thêm sản phẩm.");
       toast.success("Thêm sản phẩm thành công!");
@@ -254,9 +271,7 @@ export default function AddProductForm({ onClose, onAdded }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
-      {/* Popup container đồng nhất với EditProductForm */}
       <div className="relative w-[613px] max-w-2xl max-h-[95vh] bg-white rounded-xl flex flex-col overflow-y-auto scroll-hidden p-0">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b rounded-t-xl">
           <h2 className="text-xl font-bold">Thêm sản phẩm</h2>
           <button
@@ -269,13 +284,11 @@ export default function AddProductForm({ onClose, onAdded }) {
             ×
           </button>
         </div>
-        {/* Nội dung form giống Edit */}
         <form
           className="p-6 pt-4 space-y-6 w-[613px]"
           onSubmit={handleSubmit}
           style={{ maxWidth: 640 }}
         >
-          {/* Các trường nhập giữ nguyên như trên */}
           {/* Hình ảnh sản phẩm */}
           <div>
             <label className="block font-semibold mb-2">
@@ -287,7 +300,7 @@ export default function AddProductForm({ onClose, onAdded }) {
             {renderImagesBlock()}
             {formData.images && formData.images.length > 0 && (
               <p className="mt-1 text-sm text-gray-500">
-                Đã chọn: {(formData.images as File[]).map((f) => f.name).join(", ")}
+                Đã chọn: {formData.images.map((f) => f.name).join(", ")}
               </p>
             )}
           </div>
@@ -362,7 +375,7 @@ export default function AddProductForm({ onClose, onAdded }) {
                       </td>
                     </tr>
                   ) : (
-                    formData.variants.map((variant: any, idx: number) => (
+                    formData.variants.map((variant, idx) => (
                       <tr key={idx}>
                         <td className="p-2 border">
                           <select

@@ -9,7 +9,7 @@ interface CategoryBodyProps {
   categories: ICategory[];
   idToNameMap: Record<string, string>;
   onEdit?: (cat: ICategory) => void;
-  getCategoryById: (id: string) => Promise<ICategory | null>;
+  getCategoryById: (id: string) => ICategory | null;
   perPage?: number;
   onChanged?: () => void;
 }
@@ -57,8 +57,9 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
     return () => window.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleEdit = async (id: string) => {
-    const cat = await getCategoryById(id);
+  // Hàm lấy category (sync, không async nữa)
+  const handleEdit = (id: string) => {
+    const cat = getCategoryById(id);
     if (cat) {
       onEdit?.(cat);
     } else {
@@ -74,10 +75,8 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
     setConfirmId(null);
 
     try {
-      // Gọi API lần đầu
       await toggleCategoryActive(id, !currentActive);
 
-      // Thành công thì cập nhật UI
       setLocalCategories((prev) =>
         prev.map((cat) =>
           cat._id === id ? { ...cat, is_active: !currentActive } : cat
@@ -174,9 +173,9 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
               </button>
               {actionDropdownId === cat._id && (
                 <div ref={popupRef} className="absolute right-2 top-14 z-50 min-w-[110px] rounded-lg bg-white shadow border border-gray-100 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-lg" onClick={async () => {
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-lg" onClick={() => {
                     setActionDropdownId(null);
-                    await handleEdit(cat._id);
+                    handleEdit(cat._id);
                   }}>Sửa</button>
                 </div>
               )}

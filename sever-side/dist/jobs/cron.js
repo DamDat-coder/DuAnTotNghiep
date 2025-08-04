@@ -17,5 +17,4 @@ const autoPublishNews_job_1 = require("./autoPublishNews.job");
 const schedule = "* * * * *";
 node_cron_1.default.schedule(schedule, () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, autoPublishNews_job_1.autoPublishNews)();
-    console.log("Đã kiểm tra và tự động đăng tin tức theo lịch.");
 }));

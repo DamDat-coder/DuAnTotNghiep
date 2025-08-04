@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Category from "../models/category.model";
+import Product from "../models/product.model";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary";
 import { UploadApiResponse } from "cloudinary";
@@ -154,50 +155,48 @@ export const updateCategory = async (req: Request, res: Response) => {
   }
 };
 
-// Xoá danh mục
-export const deleteCategory = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const hasChildren = await Category.findOne({ parentId: id });
-    if (hasChildren)
-      return res.status(400).json({ success: false, message: "Không thể xoá vì có danh mục con." });
 
-    const deleted = await Category.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ success: false, message: "Không tìm thấy danh mục." });
+// Khóa hoặc mở khóa danh mục
 
-    res.status(200).json({ success: true, message: "Xoá danh mục thành công." });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Lỗi khi xoá danh mục." });
-  }
-};
-
-// Trong category.controller.ts
 export const toggleActiveCategory = async (req: Request, res: Response) => {
   try {
     const categoryId = req.params.id;
     const { is_active, force } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(400).json({ status: "error", message: "ID danh mục không hợp lệ" });
+      return res.status(400).json({
+        status: "error",
+        message: "ID danh mục không hợp lệ",
+      });
     }
 
     if (typeof is_active !== "boolean") {
-      return res.status(400).json({ status: "error", message: "Trạng thái is_active phải là boolean" });
+      return res.status(400).json({
+        status: "error",
+        message: "Trạng thái is_active phải là boolean",
+      });
     }
 
-    if (!is_active && !force) {
-      const count = await ProductModel.countDocuments({
-        $or: [
-          { "category._id": new mongoose.Types.ObjectId(categoryId) },
-          { "category._id": categoryId },
-        ],
+    if (!is_active) {
+      const productCount = await Product.countDocuments({
+        "category._id": new mongoose.Types.ObjectId(categoryId),
       });
 
-      if (count > 0) {
-        return res.status(200).json({
-          status: "warning",
-          message: "Danh mục đang chứa sản phẩm. Bạn có chắc chắn muốn khóa không?",
-          requiresConfirmation: true,
+      if (productCount > 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "Không thể khóa vì danh mục đang chứa sản phẩm",
+        });
+      }
+
+      const childCategoryCount = await Category.countDocuments({
+        parentId: categoryId,
+      });
+
+      if (childCategoryCount > 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "Không thể khóa vì danh mục đang có danh mục con",
         });
       }
     }
@@ -209,7 +208,10 @@ export const toggleActiveCategory = async (req: Request, res: Response) => {
     ).lean();
 
     if (!updatedCategory) {
-      return res.status(404).json({ status: "error", message: "Danh mục không tồn tại" });
+      return res.status(404).json({
+        status: "error",
+        message: "Danh mục không tồn tại",
+      });
     }
 
     return res.status(200).json({
@@ -219,6 +221,9 @@ export const toggleActiveCategory = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Lỗi khi khóa/mở khóa danh mục:", error);
-    return res.status(500).json({ status: "error", message: error.message });
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
   }
 };

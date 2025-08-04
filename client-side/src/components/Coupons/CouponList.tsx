@@ -54,8 +54,9 @@ export default function CouponList({ initialCoupons }: Props) {
                       : `Giảm ${coupon.discountValue.toLocaleString("vi-VN")}đ`}
                   </p>
                   <p className="text-sm text-black">
-                    Còn: {coupon.usageLimit - coupon.usedCount}/
-                    {coupon.usageLimit}
+                    Còn: {coupon.usageLimit !== null && coupon.usageLimit !== undefined
+                      ? `${coupon.usageLimit - coupon.usedCount}/${coupon.usageLimit}`
+                      : "Không giới hạn"}
                   </p>
                   <p className="text-sm text-black">
                     HSD: {new Date(coupon.endDate).toLocaleDateString("vi-VN")}

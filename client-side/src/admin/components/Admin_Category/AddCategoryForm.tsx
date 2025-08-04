@@ -3,6 +3,7 @@ import { useState, useEffect, ChangeEvent } from "react";
 import Image from "next/image";
 import { fetchCategoryTree, addCategory } from "@/services/categoryApi";
 import { toast } from "react-hot-toast";
+import * as React from "react";
 
 interface Category {
   id: string;
@@ -121,7 +122,7 @@ export default function AddCategoryForm({ onClose, onSuccess }: AddCategoryFormP
     nodes: Category[],
     depth = 0,
     path = ""
-  ): JSX.Element[] => {
+  ): React.ReactElement[] => {
     return nodes.flatMap((cat) => {
       if (!cat.id) return [];
       const optionKey = `${path}-${cat.id}`;

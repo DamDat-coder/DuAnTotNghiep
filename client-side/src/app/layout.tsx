@@ -49,12 +49,7 @@ export default function RootLayout({
                   <ActiveTabProvider>
                     <CategoriesProvider>
                       {!isAdminRoute && (
-                        <Header
-                          title="My App"
-                          setActiveTab={function (tab: string): void {
-                            throw new Error("Function not implemented.");
-                          }}
-                        />
+                        <Header/>
                       )}
                       <CartProvider>
                         <WishlistProvider>
@@ -73,7 +68,7 @@ export default function RootLayout({
         <Toaster
           position="top-right"
           toastOptions={{
-            duration: 3000,
+            duration: 2000,
             style: {
               background: "#fff",
               color: "#363636",

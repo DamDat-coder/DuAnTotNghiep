@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = void 0;
+exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductsActiveStatus = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const category_model_1 = __importDefault(require("../models/category.model"));
@@ -189,6 +189,49 @@ const getProductById = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.getProductById = getProductById;
+const getProductsActiveStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { productIds } = req.body;
+        if (!Array.isArray(productIds) || productIds.length === 0) {
+            res.status(400).json({
+                status: 'error',
+                message: 'Danh sách productIds phải là mảng và không được rỗng',
+            });
+            return;
+        }
+        // Lọc các ID hợp lệ
+        const validIds = productIds.filter((id) => mongoose_1.default.Types.ObjectId.isValid(id));
+        if (validIds.length === 0) {
+            res.status(400).json({
+                status: 'error',
+                message: 'Không có ID sản phẩm hợp lệ',
+            });
+            return;
+        }
+        const products = yield product_model_1.default
+            .find({ _id: { $in: validIds } }, { _id: 1, is_active: 1 })
+            .lean();
+        const result = productIds.map((id) => {
+            var _a, _b;
+            return ({
+                id,
+                is_active: (_b = (_a = products.find((p) => p._id.toString() === id)) === null || _a === void 0 ? void 0 : _a.is_active) !== null && _b !== void 0 ? _b : false,
+            });
+        });
+        res.status(200).json({
+            status: 'success',
+            data: result,
+        });
+    }
+    catch (error) {
+        console.error('Lỗi khi kiểm tra trạng thái sản phẩm:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Lỗi server khi kiểm tra trạng thái sản phẩm',
+        });
+    }
+});
+exports.getProductsActiveStatus = getProductsActiveStatus;
 // Lấy sản phẩm theo slug 
 const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;

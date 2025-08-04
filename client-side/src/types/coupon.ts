@@ -10,9 +10,9 @@ export interface Coupon {
   discountValue: number;
   minOrderAmount: number | null;
   maxDiscountAmount: number | null;
-  startDate: string | null;
-  endDate: string | null;
-  usageLimit: number;
+  startDate: string;
+  endDate: string;
+  usageLimit: number | null;
   usedCount: number;
   is_active: boolean;
   applicableCategories: string[];

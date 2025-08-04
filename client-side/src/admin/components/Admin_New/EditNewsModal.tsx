@@ -3,13 +3,14 @@
 import { useState, useEffect, JSX } from "react";
 import { toast } from "react-hot-toast";
 import { News, NewsPayload } from "@/types/new";
-import { updateNews } from "@/services/newApi";
+import { updateNews } from "@/services/newsApi";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { ICategory } from "@/types/category";
 import { fetchCategoryTree } from "@/services/categoryApi";
 import { ClipLoader } from "react-spinners";
 import PreviewNew from "./PreviewNew";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const Editor = dynamic(() => import("../ui/Editor"), { ssr: false });
 
@@ -21,7 +22,8 @@ interface EditNewsModalProps {
 export default function EditNewsModal({
   newsData,
   onClose,
-}: EditNewsModalProps): JSX.Element {
+  onEditSuccess, // thêm prop này
+}: EditNewsModalProps & { onEditSuccess?: (news: News) => void }): JSX.Element {
   const [title, setTitle] = useState(newsData.title);
   const [content, setContent] = useState(newsData.content);
   const [tags, setTags] = useState(newsData.tags || []);
@@ -41,7 +43,12 @@ export default function EditNewsModal({
   );
   const [publishedAt, setPublishedAt] = useState<string>(
     newsData.published_at
-      ? new Date(newsData.published_at).toISOString().slice(0, 16)
+      ? new Date(
+          new Date(newsData.published_at).getTime() -
+            new Date(newsData.published_at).getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16)
       : ""
   );
   const [meta_description, setMeta_description] = useState(
@@ -50,10 +57,10 @@ export default function EditNewsModal({
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"draft" | null>(null);
 
   useEffect(() => {
-    const now = new Date();
-    now.setHours(now.getHours() + 7);
     setTitle(newsData.title);
     setContent(newsData.content);
     setTags(newsData.tags || []);
@@ -64,14 +71,15 @@ export default function EditNewsModal({
     setAction(
       newsData.is_published
         ? "publish"
-        : newsData.published_at && new Date(newsData.published_at) > now
+        : newsData.published_at && new Date(newsData.published_at) > new Date()
         ? "upcoming"
         : "draft"
     );
     setPublishedAt(
       newsData.published_at
         ? new Date(
-            new Date(newsData.published_at).getTime() - 7 * 60 * 60 * 1000
+            new Date(newsData.published_at).getTime() -
+              new Date(newsData.published_at).getTimezoneOffset() * 60000
           )
             .toISOString()
             .slice(0, 16)
@@ -155,6 +163,10 @@ export default function EditNewsModal({
       toast.error("Vui lòng nhập mô tả SEO!");
       return;
     }
+    if (!tags || tags.length === 0) {
+      toast.error("Vui lòng nhập ít nhất một tag!");
+      return;
+    }
     if ((action === "publish" || action === "upcoming") && !publishedAt) {
       toast.error("Vui lòng chọn ngày đăng!");
       return;
@@ -176,8 +188,6 @@ export default function EditNewsModal({
         toast.error("Ngày đăng không hợp lệ!");
         return;
       }
-      // Điều chỉnh múi giờ sang UTC+7
-      dateObj.setHours(dateObj.getHours() + 7);
       published_at = dateObj;
     }
 
@@ -202,11 +212,10 @@ export default function EditNewsModal({
 
     try {
       setLoading(true);
-      await updateNews(newsData._id ?? "", payload);
+      const updated = await updateNews(newsData._id ?? "", payload);
       toast.success("Cập nhật tin tức thành công!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      if (onEditSuccess) onEditSuccess(updated);
+      else setTimeout(() => window.location.reload(), 1000);
     } catch (err: any) {
       setError(`Lỗi khi cập nhật tin tức: ${err.message}`);
       toast.error(`Cập nhật thất bại: ${err.message}`, {
@@ -220,7 +229,7 @@ export default function EditNewsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-[#F8FAFC] shadow-xl w-[1086px] max-w-full max-h-[90vh] overflow-y-auto relative">
+      <div className="bg-[#F8FAFC] rounded-[16px] shadow-xl w-[1086px] max-w-full max-h-[90vh] overflow-y-auto relative scroll-hidden">
         {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px]">
@@ -281,7 +290,7 @@ export default function EditNewsModal({
                 <div className="space-y-6">
                   <div className="relative mb-8">
                     <label className="block font-bold mb-4">
-                      Ngày đăng (UTC+7)
+                      Ngày đăng
                       {(action === "publish" || action === "upcoming") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
@@ -303,7 +312,15 @@ export default function EditNewsModal({
                     <div className="flex gap-2 mt-6">
                       <button
                         type="button"
-                        onClick={() => setAction("draft")}
+                        onClick={() => {
+                          if (action === "publish") {
+                            setPendingAction("draft");
+                            setShowConfirm(true);
+                          } else {
+                            setAction("draft");
+                            setPublishedAt(""); // Xóa ngày đăng khi chuyển sang bản nháp
+                          }
+                        }}
                         className={`flex-1 w-[120px] h-10 rounded-[4px] text-sm ${
                           action === "draft"
                             ? "bg-black text-white"
@@ -314,7 +331,18 @@ export default function EditNewsModal({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setAction("publish")}
+                        onClick={() => {
+                          setAction("publish");
+                          // Khi chuyển sang publish, set ngày đăng là thời điểm hiện tại
+                          setPublishedAt(
+                            new Date(
+                              Date.now() -
+                                new Date().getTimezoneOffset() * 60000
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          );
+                        }}
                         className={`flex-1 w-[91px] h-10 rounded-[4px] text-sm ${
                           action === "publish"
                             ? "bg-black text-white"
@@ -485,6 +513,24 @@ export default function EditNewsModal({
             </div>
           </div>
         </div>
+
+        {/* Confirm Dialog */}
+        <ConfirmDialog
+          open={showConfirm}
+          title="Chuyển sang bản nháp?"
+          description="Bạn có chắc chắn muốn chuyển bài viết đã xuất bản về trạng thái bản nháp? Bài viết sẽ không còn hiển thị công khai."
+          onConfirm={() => {
+            setAction("draft");
+            setPublishedAt(""); // Xóa ngày đăng khi chuyển sang bản nháp
+            setShowConfirm(false);
+            setPendingAction(null);
+            toast.success("Đã chuyển sang bản nháp!");
+          }}
+          onCancel={() => {
+            setShowConfirm(false);
+            setPendingAction(null);
+          }}
+        />
       </div>
     </div>
   );

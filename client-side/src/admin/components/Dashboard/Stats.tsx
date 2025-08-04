@@ -15,7 +15,7 @@ interface Stat {
   change: string;
 }
 
-const icons: Record<string, JSX.Element> = {
+const icons: Record<string, React.ReactElement> = {
   "Khách hàng mới": <User className="w-6 h-6 text-pink-500" />,
   "Đơn hàng": <ShoppingCart className="w-6 h-6 text-yellow-500" />,
   "Doanh thu": <DollarSign className="w-6 h-6 text-blue-500" />,

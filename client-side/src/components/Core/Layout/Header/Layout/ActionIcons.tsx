@@ -11,7 +11,6 @@ interface ActionIconsProps {
   user: any;
   setIsLoginOpen: (isOpen: boolean) => void;
   setIsMenuOpen: (isOpen: boolean) => void;
-  setActiveTab: (tab: string) => void;
   isMenuOpen: boolean;
 }
 
@@ -20,7 +19,6 @@ export default function ActionIcons({
   user,
   setIsLoginOpen,
   setIsMenuOpen,
-  setActiveTab,
   isMenuOpen,
 }: ActionIconsProps) {
   const router = useRouter();

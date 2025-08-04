@@ -89,11 +89,14 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
   }
 
   // Hàm chỉ cho nhập số
-  function handleNumberInput(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleNumberInput(
+    e: React.ChangeEvent<HTMLInputElement>,
+    setForm: React.Dispatch<React.SetStateAction<any>>
+  ) {
     const { name, value } = e.target;
-    // Loại bỏ ký tự không phải số
-    const numericValue = value.replace(/\D/g, "");
-    setForm((prev) => ({
+    let numericValue = value.replace(/\D/g, "");
+    // Không slice ở đây nữa!
+    setForm((prev: any) => ({
       ...prev,
       [name]: numericValue,
     }));
@@ -104,6 +107,52 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     setIsSubmitting(true);
     setError(null);
 
+    // Validate từng trường và toast lỗi cụ thể
+    if (!form.code) {
+      toast.error("Vui lòng nhập mã khuyến mãi!");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!form.value) {
+      toast.error("Vui lòng nhập giá trị giảm!");
+      setIsSubmitting(false);
+      return;
+    }
+    if (isPercent) {
+      if (
+        !/^\d{1,2}$/.test(form.value) ||
+        +form.value < 1 ||
+        +form.value > 99
+      ) {
+        toast.error("Giá trị giảm phần trăm phải từ 1 đến 99!");
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (isVnd) {
+      if (!/^\d+$/.test(form.value) || +form.value < 1000) {
+        toast.error("Giá trị giảm tiền phải lớn hơn hoặc bằng 1.000đ!");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    // Bắt buộc nhập ít nhất 1 trong 2 trường ngày
+    if (!form.startDate && !form.endDate) {
+      toast.error("Vui lòng nhập ngày bắt đầu hoặc ngày kết thúc!");
+      setIsSubmitting(false);
+      return;
+    }
+    // Validate lượt dùng
+    if (form.usage && (!/^\d+$/.test(form.usage) || +form.usage < 1)) {
+      toast.error("Lượt dùng phải là số dương hoặc để trống!");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!form.description) {
+      toast.error("Vui lòng nhập mô tả chương trình!");
+      setIsSubmitting(false);
+      return;
+    }
+
     // Get child category IDs for the selected parent category
     const childCategoryIds = filteredCategories
       .filter((cat) => cat.parentId === form.category)
@@ -113,7 +162,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     const couponData: Partial<Coupon> = {
       code: form.code,
       description: form.description,
-      discountType: form.type === "%" ? "percentage" : "fixed",
+      discountType: form.type === "%" ? "percent" : "fixed",
       discountValue: form.value
         ? parseInt(form.value.replace(/\./g, ""), 10)
         : 0,
@@ -127,7 +176,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
         ? new Date(form.startDate).toISOString()
         : undefined,
       endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-      usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
+      usageLimit: form.usage ? parseInt(form.usage, 10) : null,
       is_active: form.is_active,
       applicableCategories: form.category
         ? [form.category, ...childCategoryIds]
@@ -137,7 +186,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     };
 
     try {
-      console.log("Coupon data being sent:", couponData);
       const createdCoupon = await createCoupon(couponData);
       toast.success("Mã giảm giá được tạo thành công!");
       setTimeout(() => {
@@ -147,7 +195,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
       const errorMessage =
         error.message ||
         "Không thể tạo mã giảm giá. Vui lòng kiểm tra dữ liệu.";
-      console.error("Lỗi khi tạo mã giảm giá:", error);
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -235,7 +282,10 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
 
   // Validate giá trị giảm giá
   const isValueValid =
-    (isPercent && /^\d{1,2}$/.test(form.value) && +form.value > 0 && +form.value < 100) ||
+    (isPercent &&
+      /^\d{1,2}$/.test(form.value) &&
+      +form.value > 0 &&
+      +form.value < 100) ||
     (isVnd && /^\d+$/.test(form.value) && +form.value >= 1000);
 
   // Validate ngày
@@ -248,7 +298,8 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
     (!!form.startDate && !!form.endDate);
 
   // Validate lượt dùng: có thể bỏ trống hoặc là số > 0
-  const isUsageValid = !form.usage || (/^\d+$/.test(form.usage) && +form.usage > 0);
+  const isUsageValid =
+    !form.usage || (/^\d+$/.test(form.usage) && +form.usage > 0);
 
   // Validate tổng thể
   const isFormValid =
@@ -260,7 +311,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-br-[16px] rounded-bl-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative">
+      <div className="bg-white rounded-[16px] shadow-xl w-[613px] max-w-full max-h-[90vh] overflow-y-auto pb-10 relative scroll-hidden">
         {/* Header */}
         <div className="pl-6 pr-6">
           <div className="flex justify-between items-center h-[73px] mb-3">
@@ -300,7 +351,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 onChange={handleChange}
                 placeholder="Nhập tên mã km"
                 className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 
@@ -386,7 +436,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                   width={14}
                   height={14}
                   alt="arrow down"
-                  className="absolute right-3 top-[calc(50%+19px)] transform -translate-y-1/2 pointer-events-none"
+                  className="absolute right-3 top-[calc(42%+19px)] transform -translate-y-1/2 pointer-events-none"
                 />
               </div>
               <div>
@@ -396,10 +446,10 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 <input
                   name="value"
                   value={formatNumber(form.value)}
-                  onChange={handleNumberInput}
+                  onChange={(e) => handleNumberInput(e, setForm)}
                   placeholder={isPercent ? "Vd: 10, 20, 99" : "Vd: 50.000"}
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
-                  required
+                  maxLength={isPercent ? 2 : undefined} // Thêm dòng này
                 />
                 {!isValueValid && (
                   <div className="text-red-500 text-xs mt-1">
@@ -419,7 +469,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 <input
                   name="minOrder"
                   value={formatNumber(form.minOrder)}
-                  onChange={handleNumberInput}
+                  onChange={(e) => handleNumberInput(e, setForm)}
                   placeholder="Vd: 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                 />
@@ -429,7 +479,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 <input
                   name="maxDiscount"
                   value={formatNumber(form.maxDiscount)}
-                  onChange={handleNumberInput}
+                  onChange={(e) => handleNumberInput(e, setForm)}
                   placeholder="Vd: 50.000"
                   className="w-full h-[56px] px-4 border border-[#E2E8F0] rounded-[12px]"
                 />
@@ -438,9 +488,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="relative">
-                <label className="block font-bold mb-4">
-                  Ngày bắt đầu
-                </label>
+                <label className="block font-bold mb-4">Ngày bắt đầu</label>
                 <input
                   ref={startDateRef}
                   type="date"
@@ -463,9 +511,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 </button>
               </div>
               <div className="relative">
-                <label className="block font-bold mb-4">
-                  Ngày kết thúc
-                </label>
+                <label className="block font-bold mb-4">Ngày kết thúc</label>
                 <input
                   ref={endDateRef}
                   type="date"
@@ -491,9 +537,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div>
-                <label className="block font-bold mb-4">
-                  Lượt dùng
-                </label>
+                <label className="block font-bold mb-4">Lượt dùng</label>
                 <input
                   name="usage"
                   value={form.usage}
@@ -540,7 +584,6 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
                 onChange={handleChange}
                 placeholder="Nhập nội dung chương trình, điều kiện áp dụng..."
                 className="w-full min-h-[200px] px-4 py-3 border border-[#E2E8F0] rounded-[12px]"
-                required
               />
             </div>
 
@@ -548,11 +591,9 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
             <button
               type="submit"
               className={`w-full bg-black text-white h-[56px] rounded-lg font-semibold hover:opacity-90 mt-6 ${
-                isSubmitting || !isFormValid
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
+                isSubmitting ? "opacity-50 cursor-not-allowed" : ""
               }`}
-              disabled={isSubmitting || !isFormValid}
+              disabled={isSubmitting}
             >
               {isSubmitting ? "Đang tạo..." : "Tạo mã giảm giá"}
             </button>

@@ -29,8 +29,6 @@ export async function initiatePayment(
         throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
-    console.log("Payment info sent to BE:", paymentInfo);
-
     const res = await fetchWithAuth<any>(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,7 +56,6 @@ export async function createOrder(
         body: JSON.stringify({ paymentId, userId }),
       }
     );
-    console.log("Order API response:", res);
     return res;
   } catch (error: any) {
     console.error("Error creating order:", error);
@@ -184,8 +181,6 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       cache: "no-store",
     });
 
-    console.log("fetchOrderByIdForUser response:", response);
-
     if (
       !response.success ||
       !response.data ||
@@ -216,7 +211,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       },
       totalPrice: order.totalPrice || 0,
       shipping: order.shipping || 0,
-      status:
+status:
         order.status &&
         ["pending", "confirmed", "shipping", "delivered", "cancelled"].includes(
           order.status
@@ -264,6 +259,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
         ward: "",
         district: "",
         province: "",
+        phone: "",
         is_default: false,
       },
       totalPrice: 0,
@@ -324,7 +320,7 @@ export function getBestSellingProductsFromOrders(
       } else {
         const existing = productMap.get(key)!;
         existing.sold += item.quantity;
-        productMap.set(key, existing);
+productMap.set(key, existing);
       }
     });
   });

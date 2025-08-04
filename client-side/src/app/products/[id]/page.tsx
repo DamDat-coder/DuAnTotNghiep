@@ -1,5 +1,3 @@
-// app/products/[id]/page.tsx
-
 import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
@@ -8,19 +6,13 @@ import { fetchProductById, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { Metadata } from "next";
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
-// ✅ Updated to await params
+// generateMetadata
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params; // Awaiting params
+  const { id } = await params;
   const product = await fetchProductById(id);
   if (!product) throw new Error("Not found");
 
@@ -34,8 +26,12 @@ export async function generateMetadata({
   };
 }
 
-// ✅ Trang chính
-export default async function ProductPage({ params }: Props) {
+// Trang chính
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params; // Awaiting params
 
   let product: IProduct | null = null;

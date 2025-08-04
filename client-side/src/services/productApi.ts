@@ -34,9 +34,9 @@ function mapToIProduct(e: any): IProduct {
       size: v.size,
       stock: v.stock,
       discountPercent: v.discountPercent ?? 0,
-      discountedPrice: v.discountedPrice ?? Math.round(
-        v.price * (1 - (v.discountPercent ?? 0) / 100)
-      ),
+      discountedPrice:
+        v.discountedPrice ??
+        Math.round(v.price * (1 - (v.discountPercent ?? 0) / 100)),
     })),
     images: Array.isArray(e.image) ? e.image : e.images || [],
     is_active: e.is_active ?? true,
@@ -130,7 +130,8 @@ export async function addProduct(product: {
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("slug", product.slug);
-    if (product.description) formData.append("description", product.description);
+    if (product.description)
+      formData.append("description", product.description);
     formData.append("category._id", product.categoryId);
 
     formData.append("variants", JSON.stringify(product.variants));
@@ -150,10 +151,9 @@ export async function addProduct(product: {
     // Nếu dùng fetchWithAuth trả về error.response.status hoặc BE trả về message trùng slug
     if (
       (error?.response && error.response.status === 409) ||
-      (typeof error?.message === "string" && (
-        error.message.includes("slug") ||
-        error.message.includes("đã tồn tại")
-      ))
+      (typeof error?.message === "string" &&
+        (error.message.includes("slug") ||
+          error.message.includes("đã tồn tại")))
     ) {
       throw new Error("SLUG_EXISTS");
     }
@@ -162,7 +162,6 @@ export async function addProduct(product: {
     throw error;
   }
 }
-
 
 export async function fetchProductById(id: string): Promise<IProduct | null> {
   try {
@@ -200,6 +199,28 @@ export async function fetchProductById(id: string): Promise<IProduct | null> {
     return null;
   }
 }
+export async function fetchProductsActiveStatus(
+  productIds: string[]
+): Promise<{ id: string; is_active: boolean }[]> {
+  try {
+    const response = await fetchWithAuth<any>(
+      `${API_BASE_URL}/products/active-status`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ productIds }),
+      },
+      false
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra trạng thái sản phẩm:", error);
+    return productIds.map((id) => ({ id, is_active: true }));
+  }
+}
 
 export async function editProduct(
   id: string,
@@ -223,7 +244,8 @@ export async function editProduct(
     const formData = new FormData();
     if (product.name) formData.append("name", product.name);
     if (product.slug) formData.append("slug", product.slug);
-    if (product.description) formData.append("description", product.description);
+    if (product.description)
+      formData.append("description", product.description);
     // ĐÚNG: nên gửi category._id đúng BE mong đợi
     if (product.categoryId) formData.append("category._id", product.categoryId);
     if (product.variants) {
@@ -309,11 +331,15 @@ export async function fetchProductBySlug(
 
 export async function lockProduct(id: string, is_active: boolean) {
   try {
-    const res = await fetchWithAuth<any>(`${API_BASE_URL}/products/${id}/lock`, { // <-- Sửa ở đây!
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active }),
-    });
+    const res = await fetchWithAuth<any>(
+      `${API_BASE_URL}/products/${id}/lock`,
+      {
+        // <-- Sửa ở đây!
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active }),
+      }
+    );
     return res.data;
   } catch (error: any) {
     throw new Error(error.message || "Lỗi cập nhật trạng thái!");
@@ -336,10 +362,9 @@ export async function fetchProductsAdmin(
       success: boolean;
       total: number;
       data: any[];
-    }>(
-      `${API_BASE_URL}/products/admin?${params.toString()}`,
-      { cache: "no-store" }
-    );
+    }>(`${API_BASE_URL}/products/admin?${params.toString()}`, {
+      cache: "no-store",
+    });
 
     // Loại bỏ sản phẩm trùng lặp dựa trên _id
     const uniqueProducts = Array.from(
@@ -381,13 +406,15 @@ export async function fetchProductsAdmin(
 }
 
 // Hàm lấy categoryId từ API nếu thiếu
-export const fetchProductCategory = async (productId: string): Promise<string> => {
+export const fetchProductCategory = async (
+  productId: string
+): Promise<string> => {
   try {
     const response = await fetch(`${API_BASE_URL}/products/${productId}`);
     const product = await response.json();
     return product.category._id || "";
   } catch (error) {
-    console.error('DEBUG fetchProductCategory - Error', { productId, error });
+    console.error("DEBUG fetchProductCategory - Error", { productId, error });
     return "";
   }
 };

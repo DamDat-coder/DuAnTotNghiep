@@ -55,8 +55,7 @@ export async function createReview(
     }>(`${API_BASE_URL}/reviews`, {
       method: "POST",
       body: formData,
-      headers: {
-      },
+      headers: {},
     });
 
     return response;
@@ -110,4 +109,24 @@ export async function updateReviewStatus(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
+}
+
+export async function fetchProductOrderReviews(
+  productId: string,
+  userId: string
+): Promise<IReview[]> {
+  const url = `${API_BASE_URL}/reviews/product/${productId}?userId=${userId}`;
+  try {
+    const response = await fetchWithAuth<{ success: boolean; data: IReview[] }>(
+      url,
+      { cache: "no-store" }
+    );
+    if (!response.success) {
+      throw new Error("Không thể lấy danh sách đánh giá.");
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching product reviews with user:", error);
+    throw error;
+  }
 }

@@ -11,8 +11,15 @@ import {
 } from "recharts";
 import { fetchAllOrders } from "@/services/orderApi";
 
+// Interface cho 1 điểm dữ liệu trên chart
+interface RevenueChartData {
+  label: string;
+  orders: number;
+  revenue: number;
+}
+
 export default function RevenueChart() {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<RevenueChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -34,7 +41,7 @@ export default function RevenueChart() {
           );
         });
 
-        let result: any[] = [];
+        let result: RevenueChartData[] = [];
 
         if (selectedMonth === 0) {
           const monthMap = new Map<number, { count: number; revenue: number }>();
@@ -116,7 +123,7 @@ export default function RevenueChart() {
             dataKey="label"
             tickLine={false}
             tick={{ fontSize: 12 }}
-            interval={0} 
+            interval={0}
           />
           <YAxis
             yAxisId="left"
@@ -127,14 +134,14 @@ export default function RevenueChart() {
           <YAxis
             yAxisId="right"
             orientation="right"
-            tickFormatter={(val) => `${Math.round(val / 1e6)} tr`}
+            tickFormatter={(val) => `${Math.round(Number(val) / 1e6)} tr`}
             tickLine={false}
             domain={[0, 'auto']}
           />
           <Tooltip
             formatter={(val, name) => {
               if (name === "Doanh thu") {
-                return [`${val.toLocaleString("vi-VN")}`, "Doanh thu"];
+                return [`${Number(val).toLocaleString("vi-VN")}`, "Doanh thu"];
               }
               return [`${val} đơn`, "Số đơn"];
             }}

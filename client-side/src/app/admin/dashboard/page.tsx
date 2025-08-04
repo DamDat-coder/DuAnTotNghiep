@@ -34,7 +34,7 @@ export default function DashboardPage() {
   return (
     <AdminLayout pageTitle="Dashboard" pageSubtitle="Đây là trang tổng quan.">
       <div className="dashboard-page w-full h-auto mx-auto flex flex-col gap-8">
-        <DashboardContent navigationItems={[]} />
+        <DashboardContent />
       </div>
     </AdminLayout>
   );

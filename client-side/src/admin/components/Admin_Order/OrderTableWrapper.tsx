@@ -7,21 +7,23 @@ import OrderControlBar from "./OrderControlBar";
 import OrderBody from "./OrderBody";
 import dynamic from "next/dynamic";
 
-// ✅ Tối ưu: Load EditOrderForm chỉ khi cần (giảm render double)
+// Load EditOrderForm chỉ khi cần
 const EditOrderForm = dynamic(() => import("./OrderEditForm"), { ssr: false });
+
+interface OrderTableWrapperProps {
+  orders: IOrder[];
+  setOrders: React.Dispatch<React.SetStateAction<IOrder[]>>;
+  STATUS: { key: IOrder["status"]; label: string; color: string }[];
+}
 
 export default function OrderTableWrapper({
   orders,
   setOrders,
   STATUS,
-}: {
-  orders: IOrder[];
-  setOrders: React.Dispatch<React.SetStateAction<IOrder[]>>;
-  STATUS: any[];
-}) {
-  const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+}: OrderTableWrapperProps) {
+  const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -30,22 +32,22 @@ export default function OrderTableWrapper({
 
   const PAGE_SIZE = 10;
 
+  // --- Lọc/ Tìm kiếm ---
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const name = order.user?.name || order.userId?.name || "";
-      const email = order.user?.email || order.userId?.email || "";
-      let products = "";
-      if (Array.isArray(order.items) && order.items.length > 0) {
-        products = order.items.map((item: any) => item.name).join(", ");
-      }
+      // Tìm theo orderCode, _id, note
+      const keyword =
+        (order.orderCode || "") +
+        " " +
+        (order._id || "") +
+        " " +
+        (order.note || "");
+      // Tìm theo tên sản phẩm
+      const products = order.items?.map((item) => item.name).join(", ") || "";
+
       const matchStatus = filter === "all" || order.status === filter;
       const matchSearch =
-        (order._id?.$oid || order._id || order.id || "")
-          .toString()
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        name.toLowerCase().includes(search.toLowerCase()) ||
-        email.toLowerCase().includes(search.toLowerCase()) ||
+        keyword.toLowerCase().includes(search.toLowerCase()) ||
         products.toLowerCase().includes(search.toLowerCase());
       return matchStatus && matchSearch;
     });
@@ -61,23 +63,24 @@ export default function OrderTableWrapper({
     [filteredOrders, currentPage]
   );
 
+  // --- Đổi trang ---
   function handleChangePage(page: number) {
     setCurrentPage(page);
   }
 
+  // --- Sửa đơn ---
   function handleEdit(order: IOrder) {
-    const orderId = order._id?.$oid || order._id || order.id;
+    const orderId = order._id;
     const params = new URLSearchParams(window.location.search);
     params.set("edit", orderId);
     router.push(`/admin/order?${params.toString()}`);
   }
 
+  // --- Đóng popup edit ---
   function handleCloseEditForm() {
     const params = new URLSearchParams(window.location.search);
     params.delete("edit");
-    const newUrl = `${window.location.pathname}${
-      params.toString() ? "?" + params.toString() : ""
-    }`;
+    const newUrl = `${window.location.pathname}${params.toString() ? "?" + params.toString() : ""}`;
     router.replace(newUrl);
   }
 

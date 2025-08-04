@@ -15,15 +15,16 @@ interface CategoryTableProps {
 function normalizeCategory(cat: any): ICategory {
   return {
     _id: String(cat._id || cat.id),
-    id: String(cat._id || cat.id),
     name: cat.name,
+    slug: cat.slug || "",
     description: cat.description ?? "",
     parentId: cat.parentId ?? cat.parentid ?? null,
     image: cat.image ?? null,
-    is_active:
-      typeof cat.is_active === "string"
-        ? cat.is_active === "true"
-        : !!cat.is_active,
+    is_active: typeof cat.is_active === "string"
+      ? cat.is_active === "true"
+      : !!cat.is_active,
+    createdAt: cat.createdAt || "",
+    updatedAt: cat.updatedAt || "",
     children: Array.isArray(cat.children)
       ? cat.children.map(normalizeCategory)
       : [],
@@ -37,14 +38,13 @@ export default function CategoryTable({
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [editCategory, setEditCategory] = useState<ICategory | null>(null);
 
-  // Reload từ backend (nếu muốn gọi lại sau khi sửa, thêm,...)
+  // Reload từ backend
   const reloadCategories = async () => {
     const data = await fetchCategoryTree();
     setCategories(data.map(normalizeCategory));
   };
 
   useEffect(() => {
-    // CHUẨN HÓA dữ liệu về đúng _id, parentId, children...
     if (Array.isArray(initialCategories)) {
       setCategories(initialCategories.map(normalizeCategory));
     } else {

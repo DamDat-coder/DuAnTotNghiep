@@ -12,14 +12,14 @@ interface CategoryTableWrapperProps {
   categories: ICategory[];
   onAddCategory?: () => void;
   onEditCategory?: (cat: ICategory) => void;
-  reloadCategories?: () => void; // <-- truyền xuống từ cha
+  reloadCategories?: () => void;
 }
 
 export default function CategoryTableWrapper({
   categories = [],
   onEditCategory,
   onAddCategory,
-  reloadCategories, // <-- truyền xuống từ cha
+  reloadCategories,
 }: CategoryTableWrapperProps) {
   const [search, setSearch] = useState("");
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -36,7 +36,7 @@ export default function CategoryTableWrapper({
   );
 
   const totalRoot = filteredRootNodes.length;
-  const totalPage = Math.ceil(totalRoot / PAGE_SIZE);
+  const totalPage = Math.max(1, Math.ceil(totalRoot / PAGE_SIZE)); // Không thể nhỏ hơn 1
 
   // Vẫn truyền đủ children và parentId cho node con
   const paginatedTree = filteredRootNodes.slice(
@@ -57,8 +57,8 @@ export default function CategoryTableWrapper({
     return map;
   }, [categories]);
 
-  // Hàm lấy category theo id trong toàn bộ cây
-  const findCategoryById = async (id: string): Promise<ICategory | null> => {
+  // Hàm sync lấy category theo id trong toàn bộ cây
+  const findCategoryById = (id: string): ICategory | null => {
     function find(nodes: ICategory[]): ICategory | null {
       for (const cat of nodes) {
         if (cat._id === id) return cat;

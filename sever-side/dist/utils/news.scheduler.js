@@ -23,7 +23,7 @@ const scheduleNewsPublishing = () => {
         try {
             const scheduledNews = yield news_model_1.default.find({
                 is_published: false,
-                published_at: { $ne: null, $lte: now }
+                published_at: { $ne: null, $lte: now },
             });
             for (const news of scheduledNews) {
                 news.is_published = true;
@@ -31,7 +31,7 @@ const scheduleNewsPublishing = () => {
                 const users = yield user_model_1.default.find({}).select("_id").lean();
                 const notifications = users.map((user) => ({
                     userId: user._id,
-                    title: "Tin tức mới từ Shop4Real!",
+                    title: "Tin tức mới từ Style For You!",
                     message: `Tin tức "${news.title}" đã được đăng, xem ngay nhé!`,
                     type: "news",
                     isRead: false,

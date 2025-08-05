@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ICategory } from "@/types/category";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useCategories } from "@/contexts/CategoriesContext";
 
 export default function DesktopNav() {
@@ -46,13 +46,17 @@ export default function DesktopNav() {
     };
   }, []);
 
-  const dropdownVariants = {
+  const dropdownVariants: Variants = {
     initial: { y: -64, opacity: 0 },
     animate: { y: 0, opacity: 1 },
     exit: {
       y: -64,
       opacity: 0,
-      transition: { type: "spring", stiffness: 300, damping: 25 },
+      transition: {
+        type: "spring" as const, // ép kiểu chính xác để tránh lỗi
+        stiffness: 300,
+        damping: 25,
+      },
     },
   };
 
@@ -109,14 +113,7 @@ export default function DesktopNav() {
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                      transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 40,
-                      }}
-                      className={
-                        "fixed top-16 left-0 right-0 w-[100%] bg-white shadow-lg z-[80] overflow-x-hidden"
-                      }
+                      className="fixed top-16 left-0 right-0 w-[100%] bg-white shadow-lg z-[80] overflow-x-hidden"
                       onMouseLeave={handleMouseLeave}
                     >
                       <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-3 gap-4">

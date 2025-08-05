@@ -63,7 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setWishlist([]);
       }
     } catch (error) {
-      console.error("DEBUG AuthContext - Error refreshing user", error);
       setUser(null);
       setWishlist([]);
     }
@@ -179,10 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       return true;
     } catch (error) {
-      console.error("Lỗi đăng ký:", error);
-      setRegisterFormData({ name, email, password, confirmPassword: password });
-      setOpenLoginWithData(true);
-      throw new Error("Có lỗi xảy ra khi đăng ký.");
+      throw (error);
     }
   };
 

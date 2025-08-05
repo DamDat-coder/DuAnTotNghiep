@@ -38,11 +38,25 @@ const markNotificationAsRead = (req, res) => __awaiter(void 0, void 0, void 0, f
     try {
         const notificationId = req.params.id;
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
-        const updated = yield notification_model_1.default.findOneAndUpdate({ _id: notificationId, userId }, { is_read: true }, { new: true });
+        const updated = yield notification_model_1.default.findOneAndUpdate({
+            _id: notificationId,
+            $or: [
+                { userId: userId },
+                { userId: null },
+            ],
+        }, { is_read: true }, { new: true });
         if (!updated) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy thông báo." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy thông báo." });
         }
-        res.status(200).json({ success: true, message: "Đã đánh dấu là đã đọc.", data: updated });
+        res
+            .status(200)
+            .json({
+            success: true,
+            message: "Đã đánh dấu là đã đọc.",
+            data: updated,
+        });
     }
     catch (error) {
         console.error("Lỗi đánh dấu đọc:", error);
@@ -50,3 +64,4 @@ const markNotificationAsRead = (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.markNotificationAsRead = markNotificationAsRead;
+//

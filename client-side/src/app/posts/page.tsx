@@ -3,8 +3,20 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getAllNews } from '@/services/newsApi';
+import { getAllNews } from '@/services/newsApi'; // Đổi lại đúng path nếu cần
 import { News } from '@/types/new';
+
+// Helper để định dạng ngày an toàn
+function formatDateSafe(date?: string | Date) {
+  if (!date) return 'Không rõ ngày';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'Không rõ ngày';
+    return d.toLocaleDateString();
+  } catch {
+    return 'Không rõ ngày';
+  }
+}
 
 export default function NewsPage() {
   const [newsList, setNewsList] = useState<News[]>([]);
@@ -18,7 +30,7 @@ export default function NewsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Breadcrumb (laptop)
+  // Breadcrumb
   const breadcrumb = (
     <div className="mb-4 mt-2 flex justify-center laptop:justify-start">
       <span className="text-xs text-gray-400">
@@ -38,7 +50,7 @@ export default function NewsPage() {
   // Lấy danh sách bài viết & tags (unique)
   useEffect(() => {
     getAllNews().then((res) => {
-      if (res.status === 'success') {
+      if (res.status === 'success' && Array.isArray(res.data)) {
         setNewsList(res.data);
 
         // Tag: unique, random tối đa 20 tag
@@ -60,6 +72,10 @@ export default function NewsPage() {
         } else {
           setSearchResults(res.data);
         }
+      } else {
+        setNewsList([]);
+        setTags([]);
+        setSearchResults([]);
       }
     });
     // eslint-disable-next-line
@@ -90,7 +106,7 @@ export default function NewsPage() {
     if (typeof window !== 'undefined') {
       try {
         const recent = JSON.parse(localStorage.getItem('recentPosts') || '[]');
-        setRecentPosts(recent.slice(0, 5));
+        setRecentPosts(Array.isArray(recent) ? recent.slice(0, 5) : []);
       } catch {
         setRecentPosts([]);
       }
@@ -128,7 +144,6 @@ export default function NewsPage() {
     currentPage * postsPerPage
   );
 
-  // Responsive: mobile và desktop đều chuẩn
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="max-w-[1320px] mx-auto px-2 laptop:px-6">
@@ -195,8 +210,8 @@ export default function NewsPage() {
                 {recentPosts.length === 0 && (
                   <span className="text-gray-400 text-xs">Chưa có bài nào</span>
                 )}
-                {recentPosts.map((item, idx) => (
-                  <Link key={item._id} href={`/posts/${item._id}`}>
+                {recentPosts.map((item: any, idx) => (
+                  <Link key={item._id || idx} href={`/posts/${item._id}`}>
                     <div className="flex gap-2 items-start cursor-pointer group">
                       <Image
                         src={item.thumbnail || '/default.jpg'}
@@ -207,7 +222,7 @@ export default function NewsPage() {
                       />
                       <div className="flex flex-col">
                         <span className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-blue-700">{item.title}</span>
-                        <span className="text-xs text-gray-400">{new Date(item.published_at || item.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-400">{formatDateSafe(item.published_at || item.createdAt)}</span>
                       </div>
                     </div>
                   </Link>
@@ -262,7 +277,7 @@ export default function NewsPage() {
                       {featuredPost.title}
                     </h3>
                     <p className="text-xs text-gray-500 text-center">
-                      {new Date(featuredPost.published_at || featuredPost.createdAt).toLocaleDateString()}
+                      {formatDateSafe(featuredPost.published_at || featuredPost.createdAt)}
                     </p>
                   </div>
                 </Link>
@@ -282,7 +297,7 @@ export default function NewsPage() {
                       {news.title}
                     </h3>
                     <p className="text-xs text-gray-500 text-center">
-                      {new Date(news.published_at || news.createdAt).toLocaleDateString()}
+                      {formatDateSafe(news.published_at || news.createdAt)}
                     </p>
                   </div>
                 </Link>

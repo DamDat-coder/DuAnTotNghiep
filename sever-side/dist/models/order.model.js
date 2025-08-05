@@ -74,6 +74,8 @@ const orderSchema = new mongoose_1.Schema({
     },
     items: { type: [orderItemSchema], required: true },
     orderCode: { type: String, required: true, unique: true },
+    email: { type: String, default: null },
+    couponCode: { type: String, default: null },
 }, { timestamps: true });
 const OrderModel = mongoose_1.default.model('Order', orderSchema);
 exports.default = OrderModel;

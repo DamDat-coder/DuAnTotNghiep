@@ -16,12 +16,7 @@ import ActionIcons from "./ActionIcons";
 import SearchSection from "./SearchSection";
 import { throttle } from "lodash";
 
-interface HeaderProps {
-  title: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export default function Header({ title, setActiveTab }: HeaderProps) {
+export default function Header() {
   const { isOpen: isMenuOpen, setIsOpen: setIsMenuOpen } = useMenu();
   const { user, openLoginWithData, setOpenLoginWithData, registerFormData } =
     useAuth();
@@ -61,7 +56,7 @@ export default function Header({ title, setActiveTab }: HeaderProps) {
 
   useEffect(() => {
     if (openLoginWithData) {
-      setIsLoginOpen(true);
+      setIsLoginOpen(false);
       setOpenLoginWithData(false);
     }
   }, [openLoginWithData, setOpenLoginWithData]);
@@ -107,7 +102,6 @@ export default function Header({ title, setActiveTab }: HeaderProps) {
                     user={user}
                     setIsLoginOpen={setIsLoginOpen}
                     setIsMenuOpen={setIsMenuOpen}
-                    setActiveTab={setActiveTab}
                     isMenuOpen={isMenuOpen}
                   />
                 </div>

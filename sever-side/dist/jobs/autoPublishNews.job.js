@@ -19,13 +19,12 @@ const notification_model_1 = __importDefault(require("../models/notification.mod
 const autoPublishNews = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const now = new Date();
-        now.setHours(now.getHours() + 7); // Điều chỉnh sang UTC+7
+        now.setHours(now.getHours() + 7);
         const newsToPublish = yield news_model_1.default
             .find({ is_published: false, published_at: { $lte: now } })
             .select("title _id")
             .lean();
         if (newsToPublish.length === 0) {
-            console.log("[AutoPublish] Không có bài nào cần đăng.");
             return;
         }
         const newsIds = newsToPublish.map((news) => news._id);

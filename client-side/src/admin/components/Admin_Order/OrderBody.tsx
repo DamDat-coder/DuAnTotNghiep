@@ -2,86 +2,96 @@
 import React, { useState, useRef, useEffect } from "react";
 import { updateOrderStatus } from "@/services/orderApi";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast"; // ✅ dùng toast giống EditOrderForm
+import toast from "react-hot-toast";
+import type { IOrder } from "@/types/order";
+
+type StatusOption = { key: IOrder["status"]; label: string; color: string };
+
+interface OrderBodyProps {
+  orders: IOrder[];
+  setOrders: React.Dispatch<React.SetStateAction<IOrder[]>>;
+  STATUS: StatusOption[];
+  onEdit?: (order: IOrder) => void;
+}
 
 export default function OrderBody({
   orders,
   setOrders,
   STATUS,
   onEdit,
-  onView,
-}) {
-  const [actionDropdownId, setActionDropdownId] = useState(null);
-  const [statusDropdownId, setStatusDropdownId] = useState(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState(null);
-  const actionPopupRef = useRef(null);
-  const statusPopupRef = useRef(null);
+}: OrderBodyProps) {
+  const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
+  const [statusDropdownId, setStatusDropdownId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const actionPopupRef = useRef<HTMLDivElement | null>(null);
+  const statusPopupRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const handler = (event) => {
+    function handler(event: MouseEvent) {
       if (
         statusPopupRef.current &&
-        !statusPopupRef.current.contains(event.target)
+        !statusPopupRef.current.contains(event.target as Node)
       ) {
         setStatusDropdownId(null);
       }
       if (
         actionPopupRef.current &&
-        !actionPopupRef.current.contains(event.target)
+        !actionPopupRef.current.contains(event.target as Node)
       ) {
         setActionDropdownId(null);
       }
-    };
+    }
     window.addEventListener("mousedown", handler);
     return () => window.removeEventListener("mousedown", handler);
   }, []);
 
-  const getStatusInfo = (key) => STATUS.find((s) => s.key === key);
+  const getStatusInfo = (key: IOrder["status"]) => STATUS.find((s) => s.key === key);
 
-  const getAvailableStatus = (currentStatusKey) => {
-    if (currentStatusKey === "delivered") {
-      return STATUS.filter((s) => s.key === "delivered");
-    }
-    if (["cancelled", "fake"].includes(currentStatusKey)) {
+  const getAvailableStatus = (currentStatusKey: IOrder["status"]) => {
+    // Nếu là trạng thái cuối cùng, chỉ cho hiện trạng thái hiện tại
+    if (["delivered", "cancelled", "fake"].includes(currentStatusKey)) {
       return STATUS.filter((s) => s.key === currentStatusKey);
     }
+    // Nếu đang shipping, cho phép chuyển sang 3 trạng thái đặc biệt
     if (currentStatusKey === "shipping") {
       return STATUS.filter((s) =>
         ["delivered", "cancelled", "fake"].includes(s.key)
       );
     }
+    // Các trạng thái khác: chỉ cho phép chuyển tới trạng thái tiếp theo
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
-    return STATUS.filter(
-      (s, idx) =>
-        (idx > currentStatusIndex && s.key !== "fake") ||
-        s.key === "cancelled"
-    );
+    const next = STATUS[currentStatusIndex + 1];
+    return next ? [next] : STATUS.filter((s) => s.key === currentStatusKey);
   };
 
-const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
-  if (oldStatus === newStatus) return;
-  setUpdatingStatusId(orderId);
-  try {
-    const sendStatus = newStatus; // ✅ giữ nguyên fake
-    await updateOrderStatus(orderId, sendStatus);
-    setOrders((prev) =>
-      prev.map((order) =>
-        (order._id === orderId || order.id === orderId)
-          ? { ...order, status: sendStatus }
-          : order
-      )
-    );
-    toast.success("Cập nhật trạng thái đơn hàng thành công.");
-  } catch (err) {
-    toast.error("Cập nhật trạng thái thất bại.");
-  } finally {
-    setUpdatingStatusId(null);
-    setStatusDropdownId(null);
-  }
-};
+  const handleQuickStatusChange = async (
+    orderId: string,
+    oldStatus: IOrder["status"],
+    newStatus: IOrder["status"]
+  ) => {
+    if (oldStatus === newStatus) return;
+    setUpdatingStatusId(orderId);
+    try {
+      const sendStatus = newStatus as IOrder["status"];
+      await updateOrderStatus(orderId, sendStatus);
+      setOrders((prev) =>
+        prev.map((order) =>
+          (order._id === orderId || (order as any).id === orderId)
+            ? { ...order, status: sendStatus }
+            : order
+        )
+      );
+      toast.success("Cập nhật trạng thái đơn hàng thành công.");
+    } catch (err) {
+      toast.error("Cập nhật trạng thái thất bại.");
+    } finally {
+      setUpdatingStatusId(null);
+      setStatusDropdownId(null);
+    }
+  };
 
-  function formatDate(dateString) {
+  function formatDate(dateString?: string | Date) {
     if (!dateString) return "Không xác định";
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN");
@@ -100,12 +110,13 @@ const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
   return (
     <>
       {orders.map((order, idx) => {
-        const orderId = order._id?.$oid || order._id || order.id || String(idx);
+        const orderId =
+          (order as any)._id?.$oid || order._id || (order as any).id || String(idx);
         const productList = Array.isArray(order.items)
           ? order.items.map((item) => item.name).filter(Boolean)
           : [];
-
-        const user = order.user || order.userId || { name: "Không xác định", email: "" };
+        const user =
+          (order as any).user || (order as any).userId || { name: "Không xác định", email: "" };
         const createdDate = formatDate(order.createdAt);
         const status = getStatusInfo(order.status);
         const availableStatus = getAvailableStatus(order.status);
@@ -185,7 +196,9 @@ const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
                       <button
                         key={s.key}
                         disabled={updatingStatusId === orderId || s.key === order.status}
-                        className={`w-full text-left px-4 py-2 rounded-lg font-medium text-xs hover:bg-gray-100 transition-colors mb-1 ${s.key === order.status ? "text-blue-600 bg-gray-50" : ""}`}
+                        className={`w-full text-left px-4 py-2 rounded-lg font-medium text-xs hover:bg-gray-100 transition-colors mb-1 ${
+                          s.key === order.status ? "text-blue-600 bg-gray-50" : ""
+                        }`}
                         onClick={() =>
                           handleQuickStatusChange(orderId, order.status, s.key)
                         }
@@ -222,7 +235,6 @@ const handleQuickStatusChange = async (orderId, oldStatus, newStatus) => {
                     onClick={() => {
                       setActionDropdownId(null);
                       onEdit?.(order);
-                      router.push(`/admin/order?edit=${orderId}`);
                     }}
                   >
                     Sửa đơn hàng

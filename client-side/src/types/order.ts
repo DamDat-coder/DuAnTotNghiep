@@ -36,8 +36,8 @@ export interface IOrder {
   items: OrderItem[];
   note?: string;
   orderCode: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OrderDetail {
@@ -59,6 +59,6 @@ export interface OrderDetail {
   items: OrderItem[];
   note?: string;
   orderCode: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }

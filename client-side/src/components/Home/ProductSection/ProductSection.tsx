@@ -7,6 +7,7 @@ import BuyNowPopup from "../../Core/Layout/BuyNowButton/BuyNowPopup";
 import AddToCartPopup from "../../Cart/AddToCart/AddToCartPopup";
 import ProductCard from "./ProductCard";
 import ProductSwiper from "./ProductSwiper";
+import { Suspense } from "react";
 
 interface ProductSectionProps {
   products: { data: IProduct[] } | IProduct[];
@@ -29,7 +30,9 @@ export default function ProductSection({
   const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
     productList.slice(0, PRODUCTS_PER_PAGE)
   );
-  const [hasMore, setHasMore] = useState(productList.length > PRODUCTS_PER_PAGE);
+  const [hasMore, setHasMore] = useState(
+    productList.length > PRODUCTS_PER_PAGE
+  );
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
@@ -168,14 +171,17 @@ export default function ProductSection({
 
       {selectedProduct && (
         <>
-          <BuyNowPopup
-            product={selectedProduct}
-            isOpen={isBuyNowPopupOpen}
-            onClose={() => {
-              setIsBuyNowPopupOpen(false);
-              setSelectedProduct(null);
-            }}
-          />
+          <Suspense fallback={null}>
+            <BuyNowPopup
+              product={selectedProduct}
+              isOpen={isBuyNowPopupOpen}
+              onClose={() => {
+                setIsBuyNowPopupOpen(false);
+                setSelectedProduct(null);
+              }}
+            />
+          </Suspense>
+
           <AddToCartPopup
             product={selectedProduct}
             isOpen={isAddToCartPopupOpen}

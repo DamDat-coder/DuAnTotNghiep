@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import CartItem from "./CartItem";
 import { CartProps, ICartItem } from "@/types/cart";
 import { useCartDispatch } from "@/contexts/CartContext";
@@ -14,7 +13,6 @@ export default function CartDesktop({
   onRemove,
   productsActiveStatus,
 }: CartProps) {
-  const router = useRouter();
   const dispatch = useCartDispatch();
 
   const handleSelectItem = (id: string, size: string, selected: boolean) => {
@@ -57,7 +55,7 @@ export default function CartDesktop({
       return;
     }
 
-    router.push("/checkout");
+     window.location.href = "/checkout";
   };
 
   return (

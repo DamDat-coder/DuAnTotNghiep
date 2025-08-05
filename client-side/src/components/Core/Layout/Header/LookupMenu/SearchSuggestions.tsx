@@ -1,5 +1,3 @@
-import { useRouter } from "next/navigation";
-
 interface Suggestion {
   name: string;
   id: string;
@@ -11,8 +9,6 @@ interface SearchSuggestionsProps {
 }
 
 export default function SearchSuggestions({ suggestions, onClick }: SearchSuggestionsProps) {
-  const router = useRouter();
-
   if (suggestions.length === 0) return null;
 
   return (
@@ -25,7 +21,7 @@ export default function SearchSuggestions({ suggestions, onClick }: SearchSugges
             className="text-base text-black py-2 px-3 rounded cursor-pointer hover:shadow-lg hover:bg-gray-100"
             onClick={() => {
               onClick(suggestion);
-              router.push(`/products/${suggestion.id}`);
+               window.location.href = `/products/${suggestion.id}`;
             }}
           >
             {suggestion.name}

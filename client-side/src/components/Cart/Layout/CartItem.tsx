@@ -6,7 +6,7 @@ import { Heart, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface CartItemProps {
-  item: ICartItem & { stock: number }; // Thêm stock vào ICartItem
+  item: ICartItem & { stock: number };
   onQuantityChange: (id: string, change: number) => void;
   onToggleLike: () => void;
   onRemove: () => void;

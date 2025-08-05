@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import NotificationIcon from "./Notification";
 import UserDropdown from "./UserDropdown";
-import { useRouter } from "next/navigation";
 
 interface ActionIconsProps {
   isClient: boolean;
@@ -21,11 +20,9 @@ export default function ActionIcons({
   setIsMenuOpen,
   isMenuOpen,
 }: ActionIconsProps) {
-  const router = useRouter();
-
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push("/profile?tab=favorite");
+     window.location.href = "/profile?tab=favorite";
   };
 
   return (

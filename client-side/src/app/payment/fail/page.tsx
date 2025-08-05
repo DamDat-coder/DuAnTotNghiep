@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Container from "@/components/Core/Container";
 
 export default function PaymentFail() {
-  const router = useRouter();
-
   useEffect(() => {
     const paymentId = localStorage.getItem("pendingPaymentId"); // Lấy paymentId từ localStorage
 
@@ -20,11 +17,11 @@ export default function PaymentFail() {
 
     // Chuyển hướng về giỏ hàng sau 3 giây
     const timer = setTimeout(() => {
-      router.push("/cart");
+      window.location.href = "/cart"
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [router]);
+  }, []);
 
   return (
     <Container>

@@ -3,7 +3,7 @@ import { fetchProducts } from "../services/productApi";
 import { fetchUser } from "../services/userApi";
 import { fetchFeaturedSection } from "../services/featuredSectionApi";
 import { fetchMemberBenefits } from "../services/memberBenefitApi";
-import { fetchCategories } from "../services/categoryApi";
+import { fetchCategoryTree } from "../services/categoryApi";
 import { IProduct, IMemberBenefit, IFeaturedProducts } from "../types/product";
 import { ICategory } from "../types/category";
 import { IUser } from "../types/auth";
@@ -31,13 +31,13 @@ export function useApiData() {
           userData,
         ] = await Promise.all([
           fetchProducts(),
-          fetchCategories(),
+          fetchCategoryTree(),
           fetchMemberBenefits(),
           fetchFeaturedSection(),
           fetchUser(),
         ]);
 
-        setProducts(productsData.products);
+        setProducts(productsData.data);
         setCategories(categoriesData);
         setMemberBenefits(benefitsData);
         setFeaturedSection(featuredData);

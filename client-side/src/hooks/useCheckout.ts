@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
@@ -13,7 +12,7 @@ import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
 import { fetchProductCategory } from "@/services/productApi";
-import { IProduct } from "@/types/product"; // Import IProduct
+import { IProduct } from "@/types/product";
 
 const generateOrderId = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -28,7 +27,6 @@ export const useCheckout = () => {
   const { user, refreshUser } = useAuth();
   const state = useCart();
   const dispatch = useCartDispatch();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const orderItems: ICartItem[] = state.items.filter((item) => item.selected);
 
@@ -160,6 +158,7 @@ export const useCheckout = () => {
           liked: false,
           selected: true, // Đặt selected thành true
           categoryId: product.categoryId,
+          stock: selectedVariant.stock,
         };
 
         dispatch({ type: "add", item: cartItem });
@@ -482,13 +481,13 @@ export const useCheckout = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
       toast.error("Vui lòng đăng nhập trước khi đặt hàng!");
-      router.push("/login");
+      window.location.href = "/login";
       return;
     }
 
     if (orderItems.length === 0) {
       toast.error("Vui lòng chọn ít nhất một sản phẩm!");
-      router.push("/cart");
+      window.location.href = "/cart";
       return;
     }
 
@@ -572,7 +571,7 @@ export const useCheckout = () => {
       if (paymentInfo.orderInfo.paymentMethod === "cod") {
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
-        router.push("/payment/success");
+        window.location.href = "/payment/success";
       } else {
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);

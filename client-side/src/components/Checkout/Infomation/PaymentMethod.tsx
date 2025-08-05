@@ -36,26 +36,6 @@ export default function PaymentMethod({
             <span className="text-[1rem]">Thanh toán qua cổng VNPay</span>
           </div>
         </label>
-        {/* <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="momo"
-            checked={paymentMethod === "momo"}
-            onChange={handlePaymentChange}
-            className="h-5 w-5 accent-black focus:ring-black"
-          />
-          <div className="flex items-center gap-2">
-            <Image
-              src={"/checkout/checkout_momo.svg"}
-              alt={"logo"}
-              width={40}
-              height={40}
-              className="w-[2.5rem] h-[2.5rem] object-cover rounded"
-            />
-            <span className="text-[1rem]">Thanh toán qua ví MoMo</span>
-          </div>
-        </label> */}
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="radio"

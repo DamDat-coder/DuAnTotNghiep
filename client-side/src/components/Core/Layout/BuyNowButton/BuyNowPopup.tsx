@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { IProduct } from "@/types/product";
@@ -18,7 +17,6 @@ interface BuyNowPopupProps {
 }
 
 const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
-  const router = useRouter();
   const dispatch = useCartDispatch();
   const { login, user } = useAuth();
   const firstAvailableVariant = product.variants.find((v) => v.stock > 0);
@@ -141,6 +139,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       liked: false,
       selected: true,
       categoryId: product.categoryId,
+      stock: selectedVariant.stock,
     };
 
     if (applyCoupon && couponId) {
@@ -149,7 +148,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
     dispatch({ type: "add", item: cartItem });
     toast.success("Đã thêm vào giỏ hàng!");
-    router.push("/checkout");
+     window.location.href = "/checkout";
     onClose();
   };
 

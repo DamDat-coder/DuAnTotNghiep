@@ -28,7 +28,7 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
         if (!totalPrice || !userId || !orderInfo) {
             return res.status(400).json({ message: "Thiếu thông tin!" });
         }
-        const transactionCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("VN");
+        const transactionCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("4U");
         const payment = yield payment_model_1.default.create({
             userId: new mongoose_1.Types.ObjectId(userId),
             amount: totalPrice,
@@ -326,20 +326,23 @@ const redirectZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.redirectZaloPayReturn = redirectZaloPayReturn;
+// COD - Tạo thanh toán
 const createCodPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { orderId, totalPrice, userId, orderInfo } = req.body;
+        const { orderId, totalPrice, discountAmount, userId, orderInfo } = req.body;
         if (!userId || !totalPrice || !orderInfo) {
             return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
         }
         const payment = yield payment_model_1.default.create({
             userId: new mongoose_1.Types.ObjectId(userId),
             amount: totalPrice,
+            discount_amount: discountAmount || 0,
             status: "success",
             transaction_code: orderId,
             gateway: "cod",
             transaction_data: {},
             order_info: orderInfo,
+            couponCode: orderInfo.code || null,
             paid_at: new Date(),
         });
         return res.status(200).json({

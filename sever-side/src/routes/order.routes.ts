@@ -6,11 +6,13 @@ import {
   getOrdersByUser,
   updateOrderStatus,
   cancelOrder,
+  calculateRevenue,
 } from "../controllers/order.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+router.get("/valid", verifyToken, verifyAdmin, calculateRevenue);
 router.post("/", verifyToken, createOrder);
 router.get("/user/:userId", verifyToken, getOrdersByUser);
 router.get("/", verifyToken, verifyAdmin, getOrders);

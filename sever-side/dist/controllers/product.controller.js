@@ -372,7 +372,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 const notifications = users.map((user) => ({
                     userId: user._id,
                     title: "Sản phẩm mới vừa ra mắt!",
-                    message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Style For You, khám phá ngay!`,
+                    message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop For You, khám phá ngay!`,
                     type: "product",
                     isRead: false,
                     link: `/products/${savedProduct._id}`,

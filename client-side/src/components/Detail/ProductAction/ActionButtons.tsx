@@ -54,8 +54,9 @@ export default function ActionButtons({
       size: selectedSize,
       color: selectedColor,
       liked: isLiked,
-      selected: false, // Thêm selected để nhất quán với ICartItem
-      categoryId: product.categoryId, // Đã kiểm tra không null ở trên
+      selected: false,
+      categoryId: product.categoryId,
+      stock: selectedVariant.stock,
     };
 
     dispatch({ type: "add", item: cartItem });

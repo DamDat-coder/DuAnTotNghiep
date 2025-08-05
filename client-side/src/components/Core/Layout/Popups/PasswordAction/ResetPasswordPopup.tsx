@@ -6,7 +6,6 @@ import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { login, resetPassword } from "@/services/userApi";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 type ResetPasswordPopupProps = {
@@ -31,7 +30,6 @@ export default function ResetPasswordPopup({
     password?: string;
     confirmPassword?: string;
   }>({});
-  const router = useRouter();
   const { setOpenLoginWithData, setRegisterFormData } = useAuth();
   const [storedEmail, setStoredEmail] = useState<string | null>(null);
   const validateField = (name: string, value: string) => {
@@ -92,7 +90,7 @@ export default function ResetPasswordPopup({
           const loginSuccess = await login(storedEmail, formData.password);
           if (loginSuccess) {
             toast.success("Đăng nhập thành công với mật khẩu mới!");
-            router.push("/");
+             window.location.href = "/";
           }
         } catch {
           toast.error("Đặt lại mật khẩu thành công, nhưng đăng nhập thất bại.");

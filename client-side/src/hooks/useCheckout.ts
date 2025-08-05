@@ -13,6 +13,7 @@ import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
 import { fetchProductCategory } from "@/services/productApi";
+import { IProduct } from "@/types/product"; // Import IProduct
 
 const generateOrderId = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -104,9 +105,83 @@ export const useCheckout = () => {
     return result;
   };
 
+  // Xử lý pendingBuyNow từ localStorage
+  useEffect(() => {
+    const handlePendingBuyNow = () => {
+      const pendingBuyNow = localStorage.getItem("pendingBuyNow");
+      if (pendingBuyNow && user) {
+        const {
+          product,
+          selectedSize,
+          selectedColor,
+          quantity,
+          applyCoupon,
+        }: {
+          product: IProduct;
+          selectedSize: string;
+          selectedColor: string;
+          quantity: number;
+          applyCoupon: string | null;
+        } = JSON.parse(pendingBuyNow);
+
+        const selectedVariant = product.variants.find(
+          (v) => v.size === selectedSize && v.color === selectedColor
+        );
+
+        if (!selectedVariant) {
+          toast.error("Không tìm thấy thông tin sản phẩm!");
+          localStorage.removeItem("pendingBuyNow");
+          return;
+        }
+
+        if (selectedVariant.stock < quantity) {
+          toast.error("Sản phẩm không đủ hàng!");
+          localStorage.removeItem("pendingBuyNow");
+          return;
+        }
+
+        if (!product.categoryId) {
+          toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
+          localStorage.removeItem("pendingBuyNow");
+          return;
+        }
+
+        dispatch({ type: "resetSelected" });
+
+        const cartItem: ICartItem = {
+          id: product.id,
+          name: product.name,
+          price: selectedVariant.discountedPrice,
+          discountPercent: selectedVariant.discountPercent,
+          image: product.images[0] || "",
+          quantity,
+          size: selectedSize,
+          color: selectedColor,
+          liked: false,
+          selected: true, // Đặt selected thành true
+          categoryId: product.categoryId,
+        };
+
+        dispatch({ type: "add", item: cartItem });
+        toast.success("Đã thêm sản phẩm vào giỏ hàng!");
+
+        if (applyCoupon) {
+          localStorage.setItem("pendingCouponCode", applyCoupon);
+        }
+
+        localStorage.removeItem("pendingBuyNow"); // Xóa sau khi thêm vào giỏ hàng
+      }
+    };
+
+    handlePendingBuyNow();
+  }, [user, dispatch]);
+
   useEffect(() => {
     if (user && user.addresses) {
-      console.log("DEBUG useCheckout - Syncing user addresses", { userAddresses: user.addresses, selectedAddress });
+      console.log("DEBUG useCheckout - Syncing user addresses", {
+        userAddresses: user.addresses,
+        selectedAddress,
+      });
       setFormData((prev) => ({
         ...prev,
         fullName: user.name || "",
@@ -117,7 +192,6 @@ export const useCheckout = () => {
       const defaultAddr =
         user.addresses.find((addr) => addr.is_default) || null;
       setDefaultAddress(defaultAddr);
-      // Chỉ đặt selectedAddress nếu chưa có giá trị
       if (!selectedAddress) {
         let addressToSelect: Address | null = null;
         if (user.addresses.length === 1) {
@@ -127,7 +201,9 @@ export const useCheckout = () => {
         } else if (user.addresses.length > 1) {
           addressToSelect = user.addresses[0];
         }
-        console.log("DEBUG useCheckout - Setting initial selectedAddress", { addressToSelect });
+        console.log("DEBUG useCheckout - Setting initial selectedAddress", {
+          addressToSelect,
+        });
         setSelectedAddress(addressToSelect);
         if (addressToSelect) {
           setFormData((prev) => ({
@@ -384,7 +460,10 @@ export const useCheckout = () => {
   };
 
   const handleSelectAddress = async (address: Address) => {
-    console.log("DEBUG useCheckout - handleSelectAddress", { address, selectedAddress });
+    console.log("DEBUG useCheckout - handleSelectAddress", {
+      address,
+      selectedAddress,
+    });
     setSelectedAddress(address);
     setIsAddressPopupOpen(false);
 
@@ -402,7 +481,7 @@ export const useCheckout = () => {
 
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
-      toast.error("Vui lòng đăng nhập trước khi thanh toán!");
+      toast.error("Vui lòng đăng nhập trước khi đặt hàng!");
       router.push("/login");
       return;
     }

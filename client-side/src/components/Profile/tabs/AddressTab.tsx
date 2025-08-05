@@ -167,7 +167,7 @@ export default function AddressTab({
         ) : addresses.length === 0 ? (
           <p className="text-gray-700 mb-6">
             Hiện tại bạn chưa lưu địa chỉ giao hàng nào. Hãy thêm địa chỉ ở đây
-            để điền trước nhằm thanh toán nhanh hơn.
+            để điền trước nhằm đặt hàng nhanh hơn.
           </p>
         ) : (
           <div className="max-h-96 overflow-y-auto">

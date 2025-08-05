@@ -43,7 +43,7 @@ export default function CartDesktop({
 
   const checkSelect = () => {
     if (selectedItemsCount === 0) {
-      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      toast.error("Vui lòng chọn ít nhất một sản phẩm để đặt hàng!");
       return;
     }
 
@@ -53,7 +53,7 @@ export default function CartDesktop({
         : null;
 
     if (!accessToken) {
-      toast.error("Bạn vui lòng đăng nhập trước khi thanh toán!");
+      toast.error("Bạn vui lòng đăng nhập trước khi đặt hàng!");
       return;
     }
 
@@ -121,7 +121,7 @@ export default function CartDesktop({
           className="w-full py-3 bg-black text-white text-[1rem] font-medium rounded-lg hover:bg-gray-800 mt-4"
           disabled={selectedItemsCount === 0}
         >
-          Thanh toán
+          Đặt hàng
         </button>
       </div>
     </div>

@@ -12,7 +12,7 @@ export default function PaymentFail() {
     const paymentId = localStorage.getItem("pendingPaymentId"); // Lấy paymentId từ localStorage
 
     toast.error(
-      `Thanh toán thất bại cho giao dịch ${paymentId || "không xác định"}.`
+      `Đặt hàng thất bại cho giao dịch ${paymentId || "không xác định"}.`
     );
     // Xóa thông tin pending từ localStorage
     localStorage.removeItem("pendingPaymentId");
@@ -30,7 +30,7 @@ export default function PaymentFail() {
     <Container>
       <div className="flex flex-col justify-center items-center text-center"></div>
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold text-red-600">Thanh toán thất bại</h1>
+        <h1 className="text-2xl font-bold text-red-600">Đặt hàng thất bại</h1>
         <p>Bạn sẽ được chuyển hướng về giỏ hàng trong giây lát...</p>
       </div>
     </Container>

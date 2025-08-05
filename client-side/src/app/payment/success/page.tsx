@@ -74,7 +74,7 @@ export default function PaymentSuccess() {
     <Container>
       <div className="flex flex-col justify-center items-center text-center">
         <h1 className="text-2xl font-bold text-green-600">
-          Thanh toán thành công
+          Đặt hàng thành công
         </h1>
         <p>Bạn sẽ được chuyển hướng trong giây lát...</p>
       </div>

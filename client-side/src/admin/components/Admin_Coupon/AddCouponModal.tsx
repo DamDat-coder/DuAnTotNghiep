@@ -172,10 +172,8 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
       maxDiscountAmount: form.maxDiscount
         ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
-      startDate: form.startDate
-        ? new Date(form.startDate).toISOString()
-        : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : "",
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : "",
       usageLimit: form.usage ? parseInt(form.usage, 10) : null,
       is_active: form.is_active,
       applicableCategories: form.category

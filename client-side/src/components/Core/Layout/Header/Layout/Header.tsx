@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
 import { useMenu } from "@/contexts/MenuContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,7 +92,9 @@ export default function Header() {
                 />
               </Link>
               <div className="flex-1 flex justify-center mr-[6.9375rem]">
-                <DesktopNav />
+                <Suspense fallback={null}>
+                  <DesktopNav />
+                </Suspense>
               </div>
               <div className="flex items-center gap-3 w-[14.5rem] justify-end absolute right-0">
                 <div className="flex items-center gap-3 relative">

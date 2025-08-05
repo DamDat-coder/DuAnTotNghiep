@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/services/api";
 import { IUser } from "@/types/auth";
 
@@ -20,7 +19,6 @@ export function useUserForm({ initialData, isEdit, userId }: UseUserFormProps) {
       : ("" as "admin" | "user" | ""),
   });
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -43,14 +41,14 @@ export function useUserForm({ initialData, isEdit, userId }: UseUserFormProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        router.push("/admin/users");
+         window.location.href = "/admin/users";
       } else {
         await fetchWithAuth(`/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        router.push("/admin/users");
+         window.location.href = "/admin/users";
       }
     } catch (err) {
       console.error("Error submitting user form:", err);

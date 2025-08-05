@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchProducts } from "@/services/productApi";
 import { fetchMemberBenefits } from "@/services/memberBenefitApi";
@@ -214,13 +214,17 @@ export default function ProductsPage() {
         <Toaster position="top-right" />
         <div>
           <Breadcrumb />
-          <CategorySwiper categories={categories} />
-          <ProductGrid
-            products={products}
-            totalProducts={products.length}
-            onApplyFilters={handleApplyFilters}
-            currentFilters={currentFilters}
-          />
+          <Suspense fallback={null}>
+            <CategorySwiper categories={categories} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ProductGrid
+              products={products}
+              totalProducts={products.length}
+              onApplyFilters={handleApplyFilters}
+              currentFilters={currentFilters}
+            />
+          </Suspense>
         </div>
         <NewsSection />
       </Container>

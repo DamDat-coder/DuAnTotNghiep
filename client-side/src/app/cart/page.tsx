@@ -6,7 +6,6 @@ import { CartMobile, CartDesktop } from "@/components/Cart";
 import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
-import { ICartItem } from "@/types/cart";
 import { fetchProducts, fetchProductsActiveStatus } from "@/services/productApi";
 import { Toaster } from "react-hot-toast";
 

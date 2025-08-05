@@ -8,7 +8,6 @@ import {
 import { AuthContextType, IUser } from "../types/auth";
 import { login, register, fetchUser } from "../services/userApi";
 import { refreshToken } from "@/services/api";
-
 import toast from "react-hot-toast";
 import {
   addProductToWishlistApi,
@@ -16,8 +15,8 @@ import {
   getWishlistFromApi,
 } from "@/services/userApi";
 import { IProduct } from "@/types/product";
-
 import { googleLogin } from "@/services/userApi";
+import { useRouter } from "next/navigation";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -39,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   } | null>(null);
   const [openLoginWithData, setOpenLoginWithData] = useState(false);
   const [wishlist, setWishlist] = useState<IProduct[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setWishlist([]);
     }
   };
+
   const checkAuth = async () => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await fetchUser();
       if (userData) {
         setUser(userData);
-        await fetchWishlist(userData.id); // Lấy wishlist khi có user
+        await fetchWishlist(userData.id);
       } else {
         throw new Error("No user data returned");
       }
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userData = await fetchUser();
             if (userData) {
               setUser(userData);
-              await fetchWishlist(userData.id); // Lấy wishlist sau khi refresh token
+              await fetchWishlist(userData.id);
             } else {
               throw new Error("No user data after token refresh");
             }
@@ -116,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   };
+
   const loginHandler = async (
     identifier: string,
     password: string,
@@ -136,8 +138,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       await fetchWishlist(userData.id);
 
-      if (userData.role === "admin") {
-        window.location.assign("/admin/dashboard");
+      // Kiểm tra pendingBuyNow và chuyển hướng
+      const pendingBuyNow = localStorage.getItem("pendingBuyNow");
+      const cartItems = localStorage.getItem("cartItems");
+      if (pendingBuyNow) {
+        window.location.href = "/checkout";
+      } else if (cartItems) {
+        window.location.href = "/cart";
+      } else if (userData.role === "admin") {
+        window.location.href = "/admin/dashboard";
+      } else {
+        window.location.href = "/";
       }
 
       return true;
@@ -164,8 +175,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (keepLoggedIn) {
         setUser(userData);
         localStorage.setItem("accessToken", accessToken);
-        // Fetch wishlist after successful registration
         await fetchWishlist(userData.id);
+        // Kiểm tra pendingBuyNow và chuyển hướng
+        const pendingBuyNow = localStorage.getItem("pendingBuyNow");
+        if (pendingBuyNow) {
+          window.location.href = "/checkout"; // Sử dụng window.location.href
+        } else {
+          window.location.href = "/";
+        }
       } else {
         setRegisterFormData({
           name,
@@ -178,14 +195,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       return true;
     } catch (error) {
-      throw (error);
+      throw error;
     }
   };
 
   const logoutHandler = () => {
     setUser(null);
-    setWishlist([]); // Reset wishlist khi logout
+    setWishlist([]);
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("pendingBuyNow");
     document.cookie = "refreshToken=; path=/; max-age=0";
     window.location.href = "/";
   };
@@ -196,7 +214,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { user: userData, accessToken } = data;
       setUser(userData);
       localStorage.setItem("accessToken", accessToken);
-      await fetchWishlist(userData.id); // Lấy wishlist sau khi đăng nhập bằng Google
+      await fetchWishlist(userData.id);
+      // Kiểm tra pendingBuyNow và chuyển hướng
+      const pendingBuyNow = localStorage.getItem("pendingBuyNow");
+      if (pendingBuyNow) {
+        window.location.href = "/checkout"; // Sử dụng window.location.href
+      } else {
+        window.location.href = "/";
+      }
       return true;
     } catch (err) {
       console.error("Google login error", err);
@@ -204,7 +229,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Hàm lấy wishlist
   const fetchWishlist = async (userId: string) => {
     try {
       const products = await getWishlistFromApi(userId);
@@ -214,24 +238,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Thêm sản phẩm vào wishlist
   const addWishlist = async (productId: string) => {
     if (!user) return;
     try {
-      await addProductToWishlistApi(user.id, productId); // Gọi API thêm sản phẩm vào wishlist
-      await fetchWishlist(user.id); // Refresh wishlist để có dữ liệu đầy đủ
+      await addProductToWishlistApi(user.id, productId);
+      await fetchWishlist(user.id);
       toast.success("Sản phẩm đã được thêm vào danh sách yêu thích.");
     } catch (error) {
       toast.error("Không thể thêm sản phẩm vào danh sách yêu thích.");
     }
   };
 
-  // Xoá sản phẩm khỏi wishlist
   const removeWishlist = async (productId: string) => {
     if (!user) return;
     try {
-      await removeFromWishlistApi(user.id, productId); // Gọi API xoá sản phẩm khỏi wishlist
-      const updatedWishlist = wishlist.filter((item) => item.id !== productId); // Cập nhật wishlist
+      await removeFromWishlistApi(user.id, productId);
+      const updatedWishlist = wishlist.filter((item) => item.id !== productId);
       setWishlist(updatedWishlist);
       toast.success("Sản phẩm đã được xoá khỏi danh sách yêu thích.");
     } catch (error) {

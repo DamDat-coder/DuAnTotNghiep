@@ -10,6 +10,7 @@ export interface ICartItem {
   liked: boolean;
   selected?: boolean;
   categoryId: string;
+  stock: number;
 }
 
 export interface CartProps {

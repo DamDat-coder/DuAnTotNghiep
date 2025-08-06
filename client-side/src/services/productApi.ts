@@ -8,6 +8,7 @@ interface ProductQuery {
   maxPrice?: number;
   sort_by?: "newest" | "oldest" | "price_asc" | "price_desc" | "best_selling";
   is_active?: boolean;
+  limit?: number;
 }
 
 interface ProductResponse {

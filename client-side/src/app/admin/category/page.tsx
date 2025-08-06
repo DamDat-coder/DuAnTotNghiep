@@ -1,33 +1,10 @@
-"use client";
-import { useEffect, useState } from "react";
-import AdminLayout from "@/admin/layouts/AdminLayout";
-import CategoryTable from "@/admin/components/Admin_Category/CategoryTable";
-import { fetchCategoryTree } from "@/services/categoryApi";
-import type { ICategory } from "@/types/category"; // Import type chuẩn
+import AdminCategoryContent from "@/admin/components/Admin_Category/AdminCategoryContent";
+import { Suspense } from "react";
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<ICategory[]>([]);
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await fetchCategoryTree();
-        setCategories(data); // data là ICategory[]
-      } catch (error) {
-        console.error("Lỗi khi fetch danh mục:", error);
-      }
-    };
-
-    loadCategories();
-  }, []);
-
+export default function AdminCategoryContentPage() {
   return (
-    <AdminLayout pageTitle="Danh mục" pageSubtitle="Quản lý danh mục.">
-      <div className="order-page w-full mx-auto h-full flex flex-col">
-        <CategoryTable
-          initialCategories={categories}
-        />
-      </div>
-    </AdminLayout>
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminCategoryContent />
+    </Suspense>
   );
 }

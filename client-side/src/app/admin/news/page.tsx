@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 export default function AdminNewsContentPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={null}>
       <AdminNewsContent />
     </Suspense>
   );

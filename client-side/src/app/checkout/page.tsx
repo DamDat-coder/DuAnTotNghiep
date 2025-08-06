@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={null}>
       <Checkout />
     </Suspense>
   );

@@ -1,19 +1,27 @@
-// app/admin/products/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
 import ProductsTable from "@/admin/components/Admin_Products/ProductsTable";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { fetchProducts } from "@/services/productApi";
+import { IProduct } from "@/types/product";
 
-async function fetchProductsData() {
-  try {
-    const { data } = await fetchProducts();
-    return { products: data, error: null };
-  } catch (err) {
-    return { products: [], error: "Không thể tải danh sách sản phẩm." };
-  }
-}
+export default function ProductsPage() {
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function ProductsPage() {
-  const { products, error } = await fetchProductsData();
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await fetchProducts();
+        setProducts(data);
+      } catch (err) {
+        setError("Không thể tải danh sách sản phẩm.");
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <AdminLayout pageTitle="Sản phẩm" pageSubtitle="Quản lý sản phẩm.">

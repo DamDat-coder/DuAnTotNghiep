@@ -160,6 +160,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         quantity,
       };
       localStorage.setItem("pendingCart", JSON.stringify(pendingCart));
+      localStorage.setItem("redirectToCart", "true");
       setIsLoginPopupOpen(true);
       toast.error("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
       return;

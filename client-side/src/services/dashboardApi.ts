@@ -56,31 +56,39 @@ export async function fetchNewUsersThisWeek(): Promise<IUser[]> {
   });
 }
 
-// ----------- HÀM THỐNG KÊ DASHBOARD -----------
+// ----------- HÀM THỐNG KÊ DASHBOARD TRONG NGÀY -----------
 export async function fetchStats() {
   checkClient();
   const now = new Date();
-  const day = now.getDay();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-  startOfWeek.setHours(0, 0, 0, 0);
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
 
   try {
-    // Đơn hàng tuần này
-    // Users mới tuần này
-    const usersThisWeek = await fetchNewUsersThisWeek();
+    // Users mới hôm nay
+    const res = await fetchAllUsersAdmin("", 1, 9999);
+    const usersRaw = res.users || [];
+    const users: IUser[] = usersRaw.map((u: any) => ({
+      ...u,
+      addresses: u.addresses ?? [],
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    }));
 
-    // Đơn hàng tuần này
+    const usersToday = users.filter(u => {
+      if (!u.createdAt) return false;
+      const created = new Date(u.createdAt);
+      return created >= startOfDay && created <= endOfDay;
+    });
+
+    // Đơn hàng hôm nay
     const ordersRes = await fetchAllOrders({ limit: 9999 });
-    // Đảm bảo lấy đúng trường trả về từ BE (data hoặc orders)
     const allOrders: IOrder[] = ordersRes.data || [];
     const newOrders = allOrders.filter((o) => {
       if (!o.createdAt) return false;
       const created = new Date(o.createdAt);
-      return created >= startOfWeek && created <= endOfWeek;
+      return created >= startOfDay && created <= endOfDay;
     });
 
     const revenue = newOrders.reduce(
@@ -99,7 +107,7 @@ export async function fetchStats() {
     const result = [
       {
         label: "Khách hàng mới",
-        value: usersThisWeek.length,
+        value: usersToday.length,
         change: "",
       },
       {
@@ -181,24 +189,64 @@ export async function fetchRevenueChart() {
 }
 
 // ----------- TOP 5 SẢN PHẨM BÁN CHẠY -----------
-export async function fetchBestSellers() {
-  checkClient();
-  const res = await fetchProducts({ sort_by: "best_selling", is_active: true });
-  // Đảm bảo lấy đúng trường trả về từ BE
-  const products = res.data || [];
-  return products
-    .slice(0, 5)
-    .map((product: any) => ({
-      id: product.id,
-      name: product.name,
-      category: product.category?.name || "",
-      stock: product.variants?.reduce((s: number, v: any) => s + (v.stock || 0), 0) ?? 0,
-      sold: product.salesCount || 0,
-      price:
-        product.variants && product.variants.length > 0
-          ? product.variants[0].price.toLocaleString("vi-VN") + "đ"
-          : "0đ",
-    }));
+export async function getBestSellingProductsFromOrders(
+  orders: IOrder[],
+  timeRange: "today" | "week" | "month" = "today",
+  top: number = 5
+) {
+  // Lọc đơn theo timeRange
+  const now = new Date();
+  let start: Date, end: Date = new Date(now);
+  if (timeRange === "today") {
+    start = new Date(now); start.setHours(0,0,0,0);
+    end = new Date(now); end.setHours(23,59,59,999);
+  } else if (timeRange === "week") {
+    const day = now.getDay();
+    start = new Date(now); start.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); start.setHours(0,0,0,0);
+    end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+  } else { // "month"
+    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
+
+  // Lọc các order đã giao thành công trong khoảng thời gian này
+  const filteredOrders = orders.filter(order => {
+    if (!order.createdAt) return false;
+    const created = new Date(order.createdAt);
+    return (
+      order.status === "delivered" &&
+      created >= start &&
+      created <= end
+    );
+  });
+
+  // Gom nhóm và đếm số lượng bán của từng sản phẩm/variant
+  const productMap = new Map<string, any>();
+  filteredOrders.forEach(order => {
+    (order.items || []).forEach(item => {
+      // key unique theo productId, color, size
+      const key = `${item.productId}_${item.color}_${item.size}`;
+      if (!productMap.has(key)) {
+        productMap.set(key, {
+          id: item.productId,
+          name: item.name,
+          image: item.image,
+          color: item.color,
+          size: item.size,
+          price: item.price,
+          sold: 0,
+        });
+      }
+      productMap.get(key).sold += item.quantity;
+    });
+  });
+
+  // Sắp xếp và lấy top N
+  const list = Array.from(productMap.values())
+    .sort((a, b) => b.sold - a.sold)
+    .slice(0, top);
+
+  return list;
 }
 
 // ----------- GIAO DỊCH GẦN NHẤT -----------
@@ -219,5 +267,6 @@ export async function fetchTransactionHistory() {
       date: order.createdAt,
       amount: order.totalPrice || 0,
       status: order.status,
+      orderCode: order.orderCode || "",
     }));
 }

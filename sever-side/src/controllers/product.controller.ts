@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
-import mongoose from 'mongoose';
-import productModel, { IProduct } from '../models/product.model';
-import categoryModel from '../models/category.model';
-import cloudinary from '../config/cloudinary';
-import { UploadApiResponse } from 'cloudinary';
+import { Request, Response } from "express";
+import mongoose from "mongoose";
+import productModel, { IProduct } from "../models/product.model";
+import categoryModel from "../models/category.model";
+import cloudinary from "../config/cloudinary";
+import { UploadApiResponse } from "cloudinary";
 import UserModel from "../models/user.model";
 import NotificationModel from "../models/notification.model";
 import slugify from "slugify";
@@ -13,7 +13,16 @@ import { removeVietnameseTones } from "../utils/string.util";
 // Lấy tất cả sản phẩm cho người dùng
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by } = req.query;
+    const {
+      id_cate,
+      color,
+      size,
+      minPrice,
+      maxPrice,
+      is_active,
+      sort_by,
+      limit,
+    } = req.query;
 
     const filter: Record<string, any> = {};
 
@@ -68,7 +77,15 @@ export const getAllProducts = async (req: Request, res: Response) => {
         break;
     }
 
-    const products = await productModel.find(filter).sort(sort);
+    // Thêm limit vào truy vấn
+    const limitNumber =
+      limit && !isNaN(Number(limit)) ? Number(limit) : undefined;
+    let query = productModel.find(filter).sort(sort);
+    if (limitNumber) {
+      query = query.limit(limitNumber);
+    }
+
+    const products = await query;
     const total = await productModel.countDocuments(filter);
 
     res.json({
@@ -86,13 +103,12 @@ export const getAllProducts = async (req: Request, res: Response) => {
 };
 
 // Lấy tất cả sản phẩm cho admin
-export const getAllProductsAdmin = async (req: Request, res: Response): Promise<Response> => {
+export const getAllProductsAdmin = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
-    const {
-      name,        
-      is_active,
-      sort,
-    } = req.query;
+    const { name, is_active, sort } = req.query;
 
     const query: Record<string, any> = {};
 
@@ -112,7 +128,7 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
     }
 
     const sortMap: Record<string, any> = {
-      "newest": { _id: -1 },
+      newest: { _id: -1 },
       "best-seller": { salesCount: -1 },
       "name-asc": { name: 1 },
       "name-desc": { name: -1 },
@@ -170,19 +186,24 @@ export const getAllProductsAdmin = async (req: Request, res: Response): Promise<
 };
 
 // Lấy sản phẩm theo ID
-export const getProductById = async (req: Request, res: Response): Promise<void> => {
+export const getProductById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID sản phẩm không hợp lệ" });
       return;
     }
 
-    const product = await productModel
-      .findById(req.params.id)
-      .lean();
+    const product = await productModel.findById(req.params.id).lean();
 
     if (!product) {
-      res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+      res
+        .status(404)
+        .json({ status: "error", message: "Sản phẩm không tồn tại" });
       return;
     }
 
@@ -194,21 +215,24 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
       },
     };
 
-    res.status(200).json({ status: 'success', data: result });
+    res.status(200).json({ status: "success", data: result });
   } catch (error: any) {
-    console.error('Lỗi khi lấy sản phẩm theo ID:', error);
-    res.status(500).json({ status: 'error', message: error.message });
+    console.error("Lỗi khi lấy sản phẩm theo ID:", error);
+    res.status(500).json({ status: "error", message: error.message });
   }
 };
 
-export const getProductsActiveStatus = async (req: Request, res: Response): Promise<void> => {
+export const getProductsActiveStatus = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { productIds } = req.body;
 
     if (!Array.isArray(productIds) || productIds.length === 0) {
       res.status(400).json({
-        status: 'error',
-        message: 'Danh sách productIds phải là mảng và không được rỗng',
+        status: "error",
+        message: "Danh sách productIds phải là mảng và không được rỗng",
       });
       return;
     }
@@ -220,39 +244,40 @@ export const getProductsActiveStatus = async (req: Request, res: Response): Prom
 
     if (validIds.length === 0) {
       res.status(400).json({
-        status: 'error',
-        message: 'Không có ID sản phẩm hợp lệ',
+        status: "error",
+        message: "Không có ID sản phẩm hợp lệ",
       });
       return;
     }
 
     const products = await productModel
-      .find(
-        { _id: { $in: validIds } },
-        { _id: 1, is_active: 1 }
-      )
+      .find({ _id: { $in: validIds } }, { _id: 1, is_active: 1 })
       .lean();
 
     const result = productIds.map((id: string) => ({
       id,
-      is_active: products.find((p) => p._id.toString() === id)?.is_active ?? false,
+      is_active:
+        products.find((p) => p._id.toString() === id)?.is_active ?? false,
     }));
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: result,
     });
   } catch (error: any) {
-    console.error('Lỗi khi kiểm tra trạng thái sản phẩm:', error);
+    console.error("Lỗi khi kiểm tra trạng thái sản phẩm:", error);
     res.status(500).json({
-      status: 'error',
-      message: error.message || 'Lỗi server khi kiểm tra trạng thái sản phẩm',
+      status: "error",
+      message: error.message || "Lỗi server khi kiểm tra trạng thái sản phẩm",
     });
   }
 };
 
-// Lấy sản phẩm theo slug 
-export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
+// Lấy sản phẩm theo slug
+export const getProductBySlug = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { slug } = req.params;
     const isExact = req.query.exact === "true";
@@ -262,7 +287,9 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const normalizedSlug = slugify(removeVietnameseTones(slug), { lower: true });
+    const normalizedSlug = slugify(removeVietnameseTones(slug), {
+      lower: true,
+    });
 
     if (isExact) {
       const product = await productModel
@@ -307,7 +334,7 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const matchedExactly = products.some(p => p.slug === normalizedSlug);
+    const matchedExactly = products.some((p) => p.slug === normalizedSlug);
 
     const result = products.map((product) => ({
       ...product,
@@ -331,9 +358,11 @@ export const getProductBySlug = async (req: Request, res: Response): Promise<voi
   }
 };
 
-
 // Thêm sản phẩm mới
-export const createProduct = async (req: Request, res: Response): Promise<void> => {
+export const createProduct = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const body = req.body;
 
@@ -342,13 +371,13 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       variantsParsed = JSON.parse(body.variants);
     } catch {
       res.status(400).json({
-        status: 'error',
-        message: 'Trường variants phải là chuỗi JSON hợp lệ',
+        status: "error",
+        message: "Trường variants phải là chuỗi JSON hợp lệ",
       });
       return;
     }
 
-    const categoryId = body['category._id'] || body.category_id;
+    const categoryId = body["category._id"] || body.category_id;
 
     if (
       !body.name ||
@@ -359,20 +388,25 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       variantsParsed.length === 0
     ) {
       res.status(400).json({
-        status: 'error',
-        message: 'Thiếu thông tin bắt buộc: name, slug, category._id, hoặc variants',
+        status: "error",
+        message:
+          "Thiếu thông tin bắt buộc: name, slug, category._id, hoặc variants",
       });
       return;
     }
 
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      res.status(400).json({ status: 'error', message: 'Vui lòng upload ít nhất một ảnh' });
+      res
+        .status(400)
+        .json({ status: "error", message: "Vui lòng upload ít nhất một ảnh" });
       return;
     }
 
     const category = await categoryModel.findById(categoryId).lean();
     if (!category) {
-      res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+      res
+        .status(404)
+        .json({ status: "error", message: "Danh mục không tồn tại" });
       return;
     }
 
@@ -381,7 +415,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         (file) =>
           new Promise<string>((resolve, reject) => {
             const stream = cloudinary.uploader.upload_stream(
-              { resource_type: 'image', folder: 'products' },
+              { resource_type: "image", folder: "products" },
               (error, result) => {
                 if (error || !result) return reject(error);
                 resolve(result.secure_url);
@@ -395,7 +429,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
     const product: Partial<IProduct> = {
       name: body.name,
       slug: body.slug,
-      description: body.description || '',
+      description: body.description || "",
       image: imageUrls,
       category: {
         _id: category._id,
@@ -410,8 +444,8 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
     const savedProduct = await newProduct.save();
 
     res.status(201).json({
-      status: 'success',
-      message: 'Tạo sản phẩm thành công',
+      status: "success",
+      message: "Tạo sản phẩm thành công",
       data: savedProduct,
     });
 
@@ -432,11 +466,15 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         console.error("Gửi thông báo thất bại:", notiError);
       }
     });
-
   } catch (error: any) {
     console.error("Lỗi khi tạo sản phẩm:", error);
     if (error.code === 11000) {
-      res.status(409).json({ status: "error", message: "Tên hoặc slug sản phẩm đã tồn tại" });
+      res
+        .status(409)
+        .json({
+          status: "error",
+          message: "Tên hoặc slug sản phẩm đã tồn tại",
+        });
     } else {
       res.status(500).json({ status: "error", message: error.message });
     }
@@ -444,19 +482,26 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 };
 
 // Cập nhật sản phẩm
-export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+export const updateProduct = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const productId = req.params.id;
     const product = req.body as any;
 
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID sản phẩm không hợp lệ" });
       return;
     }
 
     const existingProduct = await productModel.findById(productId);
     if (!existingProduct) {
-      res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+      res
+        .status(404)
+        .json({ status: "error", message: "Sản phẩm không tồn tại" });
       return;
     }
 
@@ -464,7 +509,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       if (existingProduct.image && existingProduct.image.length > 0) {
         for (const img of existingProduct.image) {
-          const publicId = img.split('/').pop()?.split('.')[0];
+          const publicId = img.split("/").pop()?.split(".")[0];
           if (publicId) {
             try {
               await cloudinary.uploader.destroy(`products/${publicId}`);
@@ -476,16 +521,18 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       }
       const imageUrls: string[] = [];
       for (const file of req.files as Express.Multer.File[]) {
-        const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { resource_type: 'image', folder: 'products' },
-            (error, result) => {
-              if (error || !result) return reject(error);
-              resolve(result);
-            }
-          );
-          stream.end(file.buffer);
-        });
+        const result = await new Promise<UploadApiResponse>(
+          (resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              { resource_type: "image", folder: "products" },
+              (error, result) => {
+                if (error || !result) return reject(error);
+                resolve(result);
+              }
+            );
+            stream.end(file.buffer);
+          }
+        );
         imageUrls.push(result.secure_url);
       }
       product.image = imageUrls;
@@ -493,21 +540,28 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       product.image = existingProduct.image;
     }
 
-    if (typeof product.variants === 'string') {
+    if (typeof product.variants === "string") {
       try {
         product.variants = JSON.parse(product.variants);
       } catch (error) {
-        res.status(400).json({ status: 'error', message: 'Định dạng variants không hợp lệ' });
+        res
+          .status(400)
+          .json({
+            status: "error",
+            message: "Định dạng variants không hợp lệ",
+          });
         return;
       }
     }
 
     let newCategory = existingProduct.category;
-    const categoryId = product.categoryId || product['category._id'];
+    const categoryId = product.categoryId || product["category._id"];
     if (categoryId) {
       const category = await categoryModel.findById(categoryId).lean();
       if (!category) {
-        res.status(404).json({ status: 'error', message: 'Danh mục không tồn tại' });
+        res
+          .status(404)
+          .json({ status: "error", message: "Danh mục không tồn tại" });
         return;
       }
       newCategory = {
@@ -518,18 +572,24 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 
     delete product.category;
     delete product.categoryId;
-    delete product['category._id'];
+    delete product["category._id"];
     const updateData: any = {
       ...product,
       category: newCategory,
     };
 
     const updatedProduct = await productModel
-      .findByIdAndUpdate(productId, { $set: updateData }, { new: true, runValidators: true })
+      .findByIdAndUpdate(
+        productId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      )
       .lean();
 
     if (!updatedProduct) {
-      res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+      res
+        .status(404)
+        .json({ status: "error", message: "Sản phẩm không tồn tại" });
       return;
     }
 
@@ -542,8 +602,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     };
 
     res.status(200).json({
-      status: 'success',
-      message: 'Cập nhật sản phẩm thành công',
+      status: "success",
+      message: "Cập nhật sản phẩm thành công",
       data: result,
     });
 
@@ -566,30 +626,44 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         }
       })();
     });
-
   } catch (error: any) {
-    console.error('Lỗi khi cập nhật sản phẩm:', error);
+    console.error("Lỗi khi cập nhật sản phẩm:", error);
     if (error.code === 11000) {
-      res.status(409).json({ status: 'error', message: 'Tên hoặc slug sản phẩm đã tồn tại' });
+      res
+        .status(409)
+        .json({
+          status: "error",
+          message: "Tên hoặc slug sản phẩm đã tồn tại",
+        });
     } else {
-      res.status(500).json({ status: 'error', message: error.message });
+      res.status(500).json({ status: "error", message: error.message });
     }
   }
 };
 
 // Khóa/Mở khóa sản phẩm
-export const lockProduct = async (req: Request, res: Response): Promise<void> => {
+export const lockProduct = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const productId = req.params.id;
     const { is_active } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ status: 'error', message: 'ID sản phẩm không hợp lệ' });
+      res
+        .status(400)
+        .json({ status: "error", message: "ID sản phẩm không hợp lệ" });
       return;
     }
 
-    if (typeof is_active !== 'boolean') {
-      res.status(400).json({ status: 'error', message: 'Trạng thái is_active phải là boolean' });
+    if (typeof is_active !== "boolean") {
+      res
+        .status(400)
+        .json({
+          status: "error",
+          message: "Trạng thái is_active phải là boolean",
+        });
       return;
     }
 
@@ -602,7 +676,9 @@ export const lockProduct = async (req: Request, res: Response): Promise<void> =>
       .lean();
 
     if (!updatedProduct) {
-      res.status(404).json({ status: 'error', message: 'Sản phẩm không tồn tại' });
+      res
+        .status(404)
+        .json({ status: "error", message: "Sản phẩm không tồn tại" });
       return;
     }
 
@@ -615,12 +691,12 @@ export const lockProduct = async (req: Request, res: Response): Promise<void> =>
     };
 
     res.status(200).json({
-      status: 'success',
-      message: `Sản phẩm đã được ${is_active ? 'mở khóa' : 'khóa'} thành công`,
+      status: "success",
+      message: `Sản phẩm đã được ${is_active ? "mở khóa" : "khóa"} thành công`,
       data: result,
     });
   } catch (error: any) {
-    console.error('Lỗi khi khóa/mở khóa sản phẩm:', error);
-    res.status(500).json({ status: 'error', message: error.message });
+    console.error("Lỗi khi khóa/mở khóa sản phẩm:", error);
+    res.status(500).json({ status: "error", message: error.message });
   }
-}; 
+};

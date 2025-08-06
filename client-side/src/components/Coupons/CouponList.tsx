@@ -48,6 +48,7 @@ export default function CouponList() {
 
   return (
     <Container>
+      <h1 className="py-16 text-2xl font-bold pb-6">Danh sách mã giảm giá</h1>
       <div className="flex gap-6 pb-16">
         {/* DANH SÁCH MÃ */}
         <div className="w-[70%]">

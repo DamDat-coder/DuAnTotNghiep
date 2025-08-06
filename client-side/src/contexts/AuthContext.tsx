@@ -140,10 +140,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Kiểm tra pendingBuyNow và chuyển hướng
       const pendingBuyNow = localStorage.getItem("pendingBuyNow");
-      const cartItems = localStorage.getItem("cartItems");
+      const redirectToCart = localStorage.getItem("redirectToCart");
       if (pendingBuyNow) {
         window.location.href = "/checkout";
-      } else if (cartItems) {
+      } else if (redirectToCart) {
+        localStorage.removeItem("redirectToCart"); // ✅ xóa sau redirect
         window.location.href = "/cart";
       } else if (userData.role === "admin") {
         window.location.href = "/admin/dashboard";

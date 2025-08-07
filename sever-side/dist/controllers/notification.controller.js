@@ -64,4 +64,3 @@ const markNotificationAsRead = (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.markNotificationAsRead = markNotificationAsRead;
-//

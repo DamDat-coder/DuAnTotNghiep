@@ -22,6 +22,7 @@ const review_routes_1 = __importDefault(require("./routes/review.routes"));
 const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
 const error_middleware_1 = require("./middlewares/error.middleware");
 require("./jobs/cron");
+require("./jobs/notifyFreeship.job");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const limiter = (0, express_rate_limit_1.default)({

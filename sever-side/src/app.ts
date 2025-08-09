@@ -17,6 +17,7 @@ import reviewRoutes from './routes/review.routes';
 import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import "./jobs/cron";
+import "./jobs/notifyFreeship.job";
 dotenv.config();
 
 const app = express();

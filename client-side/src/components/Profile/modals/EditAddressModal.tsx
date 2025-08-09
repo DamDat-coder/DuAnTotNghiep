@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { useAddressData } from "@/hooks/useAddressData";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateAddress } from "@/services/userApi";
 import { Address } from "@/types/auth";
 import { ClipLoader } from "react-spinners";
+import { useAddressData } from "@/hooks/useAddressData";
 
 interface Props {
   address: Address;
@@ -16,91 +16,30 @@ interface Props {
 
 export default function EditAddressModal({ address, onClose, onEdit }: Props) {
   const { user } = useAuth();
+  const { provinces, wards, setProvinceCode, setWardCode, isLoadingAllAddress } = useAddressData();
+
+  // Pre-populate form data with address prop
   const [formData, setFormData] = useState({
     street: address.street,
-    province: address.province,
-    district: address.district,
-    ward: address.ward,
+    province: address.province.replace("Thành phố ", "").replace("Tỉnh ", ""),
+    ward: address.ward.replace("Phường ", "").replace("Xã ", ""),
     isDefaultAddress: address.is_default,
   });
-  const {
-    provinces,
-    districts,
-    wards,
-    provinceCode,
-    districtCode,
-    wardCode,
-    setProvinceCode,
-    setDistrictCode,
-    setWardCode,
-    isLoadingProvinces,
-    isLoadingDistricts,
-    isLoadingWards,
-    isLoadingAllAddress,
-  } = useAddressData();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Khởi tạo provinceCode, districtCode, wardCode dựa trên địa chỉ
+  // Set province and ward codes based on initial address
   useEffect(() => {
-    if (!isLoadingProvinces && provinces.length > 0) {
-      const selectedProvince = provinces.find(
-        (p) => p.name === address.province
-      );
-      if (selectedProvince) {
-        setProvinceCode(selectedProvince.code);
-      }
+    const provinceObj = provinces.find((p) => p.name_with_type === address.province || p.name === address.province);
+    if (provinceObj) {
+      setProvinceCode(provinceObj.code);
     }
-  }, [provinces, isLoadingProvinces, setProvinceCode, address.province]);
 
-  useEffect(() => {
-    if (!isLoadingDistricts && districts.length > 0) {
-      const selectedDistrict = districts.find(
-        (d) => d.name === address.district
-      );
-      if (selectedDistrict) {
-        setDistrictCode(selectedDistrict.code);
-      }
+    const wardObj = wards.find((w) => w.name_with_type === address.ward || w.name === address.ward);
+    if (wardObj) {
+      setWardCode(wardObj.code);
     }
-  }, [districts, isLoadingDistricts, setDistrictCode, address.district]);
+  }, [provinces, wards, address.province, address.ward]);
 
-  useEffect(() => {
-    if (!isLoadingWards && wards.length > 0) {
-      const selectedWard = wards.find((w) => w.name === address.ward);
-      if (selectedWard) {
-        setWardCode(selectedWard.code);
-      }
-    }
-  }, [wards, isLoadingWards, setWardCode, address.ward]);
-
-  // State để kiểm soát khi nào đủ dữ liệu để render form
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    // Khi đã load xong cả 3 cấp và đều có dữ liệu thì mới cho phép render form
-    if (
-      !isLoadingProvinces &&
-      !isLoadingDistricts &&
-      !isLoadingWards &&
-      provinces.length > 0 &&
-      districts.length > 0 &&
-      wards.length > 0
-    ) {
-      setIsReady(true);
-    } else {
-      setIsReady(false);
-    }
-  }, [
-    isLoadingProvinces,
-    isLoadingDistricts,
-    isLoadingWards,
-    provinces,
-    districts,
-    wards,
-  ]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -110,12 +49,6 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
     if (name === "province") {
       const selectedProvince = provinces.find((p) => p.name === value);
       setProvinceCode(selectedProvince?.code ?? null);
-      setFormData((prev) => ({ ...prev, district: "", ward: "" }));
-      setDistrictCode(null);
-      setWardCode(null);
-    } else if (name === "district") {
-      const selectedDistrict = districts.find((d) => d.name === value);
-      setDistrictCode(selectedDistrict?.code ?? null);
       setFormData((prev) => ({ ...prev, ward: "" }));
       setWardCode(null);
     } else if (name === "ward") {
@@ -135,10 +68,6 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
       toast.error("Vui lòng chọn tỉnh/thành phố.");
       return;
     }
-    if (!formData.district) {
-      toast.error("Vui lòng chọn quận/huyện.");
-      return;
-    }
     if (!formData.ward) {
       toast.error("Vui lòng chọn phường/xã.");
       return;
@@ -150,11 +79,13 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
 
     setIsSubmitting(true);
 
+    const provinceObj = provinces.find((p) => p.name === formData.province || p.name_with_type === `Thành phố ${formData.province}` || p.name_with_type === `Tỉnh ${formData.province}`);
+    const wardObj = wards.find((w) => w.name === formData.ward || w.name_with_type === `Phường ${formData.ward}` || w.name_with_type === `Xã ${formData.ward}`);
+
     const addressData = {
       street: formData.street,
-      ward: formData.ward,
-      district: formData.district,
-      province: formData.province,
+      ward: wardObj?.name_with_type || formData.ward,
+      province: provinceObj?.name_with_type || formData.province,
       is_default: formData.isDefaultAddress,
     };
 
@@ -166,23 +97,22 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
           _id: address._id,
           street: addressData.street,
           ward: addressData.ward,
-          district: addressData.district,
           province: addressData.province,
           is_default: addressData.is_default,
         });
         onClose();
       } else {
-        toast.error("Chỉnh sửa địa chỉ thất bại. Vui lòng thử lại.");
+        toast.error("Thêm địa chỉ thất bại. Vui lòng thử lại.");
       }
     } catch (error: any) {
-      toast.error(error.message || "Có lỗi xảy ra khi chỉnh sửa địa chỉ.");
+      toast.error(error.message || "Có lỗi xảy ra khi thêm địa chỉ.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isFormValid =
-    formData.street && formData.province && formData.district && formData.ward;
+  const isFormValid = formData.street && formData.province && formData.ward;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
@@ -199,7 +129,7 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
           </button>
         </div>
 
-        {!isReady ? (
+        {isLoadingAllAddress ? (
           <div className="flex flex-col items-center py-8">
             <ClipLoader color="#36d7b7" size={40} />
             <div className="mt-4 text-sm text-gray-500">
@@ -244,35 +174,10 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
 
             <div className="relative w-[440px] mb-[16px]">
               <select
-                name="district"
-                value={formData.district}
-                onChange={handleChange}
-                disabled={!formData.province}
-                className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
-                required
-              >
-                <option value="">Chọn quận / huyện</option>
-                {districts.map((item) => (
-                  <option key={item.code} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              <Image
-                src="/profile/Vector (Stroke).svg"
-                alt="Dropdown icon"
-                width={16}
-                height={16}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-              />
-            </div>
-
-            <div className="relative w-[440px] mb-[16px]">
-              <select
                 name="ward"
                 value={formData.ward}
                 onChange={handleChange}
-                disabled={!formData.district}
+                disabled={!formData.province}
                 className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
                 required
               >

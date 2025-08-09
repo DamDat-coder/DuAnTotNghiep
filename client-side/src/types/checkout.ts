@@ -3,7 +3,6 @@ export interface CheckoutFormData {
   email: string;
   phone: string;
   province: string;
-  district: string;
   ward: string;
   address: string;
 }
@@ -13,7 +12,6 @@ export interface CheckoutErrors {
   email: string;
   phone: string;
   province: string;
-  district: string;
   ward: string;
   address: string;
 }

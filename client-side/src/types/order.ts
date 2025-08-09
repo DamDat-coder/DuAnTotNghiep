@@ -11,7 +11,6 @@ export interface OrderItem {
 export interface ShippingAddress {
   street: string;
   ward: string;
-  district: string;
   province: string;
   phone: string;
   is_default?: boolean;

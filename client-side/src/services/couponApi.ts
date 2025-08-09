@@ -165,10 +165,8 @@ export async function validateCoupon(
 
     const now = new Date();
     if (
-      !coupon.startDate ||
-      !coupon.endDate ||
-      new Date(coupon.startDate) > now ||
-      new Date(coupon.endDate) < now
+      (coupon.startDate && new Date(coupon.startDate) > now) ||
+      (coupon.endDate && new Date(coupon.endDate) < now)
     ) {
       return { success: false, message: "Mã giảm giá hết hiệu lực." };
     }
@@ -237,7 +235,11 @@ export async function validateCoupon(
     if (coupon.discountValue <= 0) {
       return { success: false, message: "Giá trị giảm giá không hợp lệ." };
     }
-    if (coupon.discountType === "percent" && coupon.discountValue > 100) {
+    // Sửa conflict: chấp nhận cả "percent" và "percentage" là giảm giá phần trăm
+    if (
+      (coupon.discountType === "percent" || coupon.discountType === "percentage") &&
+      coupon.discountValue > 100
+    ) {
       return {
         success: false,
         message: "Giá trị giảm giá phần trăm không hợp lệ.",

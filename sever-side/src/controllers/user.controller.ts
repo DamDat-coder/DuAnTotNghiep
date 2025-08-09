@@ -431,7 +431,7 @@ export const addAddress = async (
   next: NextFunction
 ) => {
   try {
-    const { street, ward, district, province, is_default } = req.body;
+    const { street, ward, province, is_default } = req.body;
 
     const user = await UserModel.findById(req.params.id);
     if (!user) {
@@ -444,7 +444,6 @@ export const addAddress = async (
       (addr) =>
         addr.street === street &&
         addr.ward === ward &&
-        addr.district === district &&
         addr.province === province
     );
 
@@ -462,7 +461,6 @@ export const addAddress = async (
     user.addresses.push({
       street,
       ward,
-      district,
       province,
       is_default: !!is_default,
     });
@@ -485,7 +483,7 @@ export const updateAddress = async (
   next: NextFunction
 ) => {
   try {
-    const { street, ward, district, province, is_default } = req.body;
+    const { street, ward, province, is_default } = req.body;
     const user = await UserModel.findById(req.params.id);
     if (!user)
       return res
@@ -504,7 +502,6 @@ export const updateAddress = async (
 
     address.street = street ?? address.street;
     address.ward = ward ?? address.ward;
-    address.district = district ?? address.district;
     address.province = province ?? address.province;
     address.is_default = is_default ?? address.is_default;
 

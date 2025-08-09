@@ -12,22 +12,8 @@ export default function ProfileTab() {
   const { user, setUser } = useAuth();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [addresses, setAddresses] = useState(user?.addresses || []);
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [street, setStreet] = useState("");
-  const [district, setDistrict] = useState("");
-  const [ward, setWard] = useState("");
-  const [province, setProvince] = useState("");
-  const [isDefaultAddress, setIsDefaultAddress] = useState(false);
-  const {
-    provinces,
-    districts,
-    wards,
-    setProvinceCode,
-    setDistrictCode,
-    setWardCode,
-  } = useAddressData();
   useEffect(() => {
     if (user) {
       setEmail(user.email || "");
@@ -39,70 +25,8 @@ export default function ProfileTab() {
 
       setName(user.name || "");
       setPhone(user.phone || "");
-      const defaultAddress = user.addresses?.find((addr) => addr.is_default);
-
-      // console.log(defaultAddress);
-
-      if (defaultAddress) {
-        setStreet(defaultAddress.street);
-        setWard(defaultAddress.ward);
-        setDistrict(defaultAddress.district);
-        setProvince(defaultAddress.province);
-        setIsDefaultAddress(defaultAddress.is_default);
-      }
-      // console.log("Địa chỉ của người dùng:", user.addresses);
     }
   }, [user]);
-
-  // Hàm thêm địa chỉ
-  const handleAddAddress = async () => {
-    try {
-      const addressData = {
-        street,
-        ward,
-        district,
-        province,
-        is_default: isDefaultAddress,
-      };
-      const result = await addAddress(user?.id || "", addressData);
-      if (result) {
-        setAddresses(result.addresses || []);
-        alert("Địa chỉ đã được thêm!");
-      } else {
-        alert("Có lỗi xảy ra khi thêm địa chỉ.");
-      }
-    } catch (error) {
-      console.error("Thêm địa chỉ thất bại:", error);
-      alert("Có lỗi xảy ra khi thêm địa chỉ.");
-    }
-  };
-
-  // Hàm cập nhật địa chỉ
-  const handleUpdateAddress = async (addressId: string) => {
-    try {
-      const addressData = {
-        street,
-        ward,
-        district,
-        province,
-        is_default: isDefaultAddress,
-      };
-      const updatedUser = await updateAddress(
-        user?.id || "",
-        addressId,
-        addressData
-      );
-      if (updatedUser) {
-        alert("Cập nhật địa chỉ thành công!");
-        setUser(updatedUser);
-      } else {
-        alert("Có lỗi xảy ra khi cập nhật địa chỉ.");
-      }
-    } catch (error) {
-      console.error("Cập nhật địa chỉ thất bại:", error);
-      alert("Có lỗi xảy ra khi cập nhật địa chỉ.");
-    }
-  };
 
   const handleSave = async () => {
     try {
@@ -183,7 +107,6 @@ export default function ProfileTab() {
               className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
               onClick={() => {
                 handleSave();
-                handleAddAddress();
               }}
             >
               Lưu thay đổi

@@ -43,7 +43,6 @@ const orderItemSchema = new mongoose_1.Schema({
 const shippingAddressSchema = new mongoose_1.Schema({
     street: { type: String, required: true },
     ward: { type: String, required: true },
-    district: { type: String, required: true },
     province: { type: String, required: true },
     phone: { type: String, required: true },
 }, { _id: false });

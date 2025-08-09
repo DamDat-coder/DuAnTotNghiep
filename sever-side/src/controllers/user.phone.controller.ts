@@ -23,8 +23,8 @@ export const sendSmsOTP = async (req: Request, res: Response) => {
         
       const response = await vonage.sms.send({
         to: toPhone,
-        from: process.env.VONAGE_FROM || "Shop For You",
-        text: `Mã OTP Shop For You của bạn là: ${otp}`,
+        from: process.env.VONAGE_FROM || "Shop For Real",
+        text: `Mã OTP Shop For Real của bạn là: ${otp}`,
       });
       console.log("Vonage response:", response);
     } catch (error) {

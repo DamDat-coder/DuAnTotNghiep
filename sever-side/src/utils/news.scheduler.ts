@@ -20,7 +20,7 @@ export const scheduleNewsPublishing = () => {
         const users = await UserModel.find({}).select("_id").lean();
         const notifications = users.map((user: { _id: string }) => ({
           userId: user._id,
-          title: "Tin tức mới từ Style For You!",
+          title: "Tin tức mới từ Shop For Real!",
           message: `Tin tức "${news.title}" đã được đăng, xem ngay nhé!`,
           type: "news",
           isRead: false,

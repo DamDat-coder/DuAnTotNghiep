@@ -35,7 +35,7 @@ export const autoPublishNews = async () => {
         const notifications = newsToPublish.flatMap((news) =>
           users.map((user) => ({
             userId: user._id,
-            title: "Tin tức mới từ Shop For You",
+            title: "Tin tức mới từ Shop For Real",
             message: `Tin tức "${news.title}" vừa được đăng, xem ngay nhé!`,
             type: "news",
             isRead: false,

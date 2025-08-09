@@ -12,7 +12,6 @@ import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
 import { fetchProductCategory } from "@/services/productApi";
-import { IProduct } from "@/types/product";
 
 const generateOrderId = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -30,14 +29,10 @@ export const useCheckout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const orderItems: ICartItem[] = state.items.filter((item) => item.selected);
 
-const subtotal = useMemo(
-  () =>
-    orderItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    ),
-  [orderItems]
-);
+  const subtotal = useMemo(
+    () => orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [orderItems]
+  );
   const [discountCode, setDiscountCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [applicableItemIds, setApplicableItemIds] = useState<string[]>([]);
@@ -73,30 +68,27 @@ const subtotal = useMemo(
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isAddressPopupOpen, setIsAddressPopupOpen] = useState(false);
 
+  // Hàm phân bổ giảm giá cho từng sản phẩm
   const calculateDiscountPerItem = (
     items: ICartItem[],
-    discount: number,
-    applicableItemIds: string[]
+    couponData: {
+      items: {
+        productId: string;
+        isDiscounted: boolean;
+        itemDiscount: number;
+      }[];
+    }
   ) => {
     const result: { [itemKey: string]: number } = {};
-    const applicableItems = items.filter((item) =>
-      applicableItemIds.includes(item.id)
-    );
-    if (applicableItems.length === 0) return result;
-
-    const totalApplicablePrice = applicableItems.reduce(
-      (sum, item) =>
-        sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-      0
-    );
-
-    applicableItems.forEach((item) => {
-      const itemKey = `${item.id}-${item.size}-${item.color}`;
-      const itemPrice =
-        item.price * (1 - item.discountPercent / 100) * item.quantity;
-      result[itemKey] = (itemPrice / totalApplicablePrice) * discount;
+    couponData.items.forEach((item) => {
+      if (item.isDiscounted) {
+        const cartItem = items.find((cart) => cart.id === item.productId);
+        if (cartItem) {
+          const itemKey = `${cartItem.id}-${cartItem.size}-${cartItem.color}`;
+          result[itemKey] = item.itemDiscount || 0;
+        }
+      }
     });
-
     return result;
   };
 
@@ -149,7 +141,7 @@ const subtotal = useMemo(
       if (shippingMethod === "standard") {
         newShippingFee = 0;
         if (!isFreeShipping) {
-          toast.success("Đơn hàng của bạn được miễn phí vận chuyển!");
+          toast.success("Đơn hàng của bạn được miễn phí vận chuyển theo phương thức tiêu chuẩn!");
           setIsFreeShipping(true);
         }
       } else if (shippingMethod === "express") {
@@ -182,8 +174,8 @@ const subtotal = useMemo(
             id: item.id,
             categoryId:
               item.categoryId || (await fetchProductCategory(item.id)),
-            price: item.price,
-            discountPercent: item.discountPercent,
+            price: item.originPrice || item.price,
+            discountPercent: item.discountPercent || 0,
             quantity: item.quantity,
           }))
         );
@@ -198,6 +190,7 @@ const subtotal = useMemo(
           );
           return;
         }
+
         const response = await validateCoupon(
           savedCouponCode,
           subtotal,
@@ -205,32 +198,15 @@ const subtotal = useMemo(
         );
         if (response.success && response.data) {
           const {
-            discountValue,
-            discountType,
-            applicableTotal,
+            discount: couponDiscount,
             applicableItemIds,
+            items,
           } = response.data;
-          let discountAmount =
-            discountType === "percent"
-              ? applicableTotal * (discountValue / 100)
-              : discountValue;
-
-          if (response.data.maxDiscountAmount) {
-            discountAmount = Math.min(
-              discountAmount,
-              response.data.maxDiscountAmount
-            );
-          }
-
-          setDiscount(discountAmount);
+          setDiscount(couponDiscount);
           setDiscountCode(response.data.code);
           setApplicableItemIds(applicableItemIds);
           setDiscountPerItem(
-            calculateDiscountPerItem(
-              orderItems,
-              discountAmount,
-              applicableItemIds
-            )
+            calculateDiscountPerItem(orderItems, response.data)
           );
           toast.success(
             `Áp dụng mã giảm giá ${response.data.code} thành công cho ${applicableItemIds.length} sản phẩm!`
@@ -292,6 +268,7 @@ const subtotal = useMemo(
       setDiscount(0);
       setApplicableItemIds([]);
       setDiscountPerItem({});
+      toast.success("Đã xóa mã giảm giá.");
       return null;
     }
 
@@ -300,8 +277,8 @@ const subtotal = useMemo(
         orderItems.map(async (item) => ({
           id: item.id,
           categoryId: item.categoryId || (await fetchProductCategory(item.id)),
-          price: item.price,
-          discountPercent: item.discountPercent,
+          price: item.originPrice || item.price,
+          discountPercent: item.discountPercent || 0,
           quantity: item.quantity,
         }))
       );
@@ -324,32 +301,13 @@ const subtotal = useMemo(
       );
       if (response.success && response.data) {
         const {
-          discountValue,
-          discountType,
-          applicableTotal,
+          discount: couponDiscount,
           applicableItemIds,
+          items,
         } = response.data;
-        let discountAmount =
-          discountType === "percent"
-            ? applicableTotal * (discountValue / 100)
-            : discountValue;
-
-        if (response.data.maxDiscountAmount) {
-          discountAmount = Math.min(
-            discountAmount,
-            response.data.maxDiscountAmount
-          );
-        }
-
-        setDiscount(discountAmount);
+        setDiscount(couponDiscount);
         setApplicableItemIds(applicableItemIds);
-        setDiscountPerItem(
-          calculateDiscountPerItem(
-            orderItems,
-            discountAmount,
-            applicableItemIds
-          )
-        );
+        setDiscountPerItem(calculateDiscountPerItem(orderItems, response.data));
         toast.success(
           `Áp dụng mã giảm giá ${response.data.code} thành công cho ${applicableItemIds.length} sản phẩm!`
         );
@@ -464,6 +422,7 @@ const subtotal = useMemo(
             quantity: item.quantity,
             color: item.color,
             size: item.size,
+            price: item.originPrice || item.price,
           })),
           paymentMethod,
           shipping: shippingFee,

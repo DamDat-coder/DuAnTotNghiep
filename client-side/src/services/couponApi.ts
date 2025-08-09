@@ -125,6 +125,13 @@ export async function validateCoupon(
     applicableTotal: number;
     discount: number;
     finalAmount: number;
+    items: {
+      productId: string;
+      isDiscounted: boolean;
+      itemDiscount: number;
+      priceAfterDiscount: number;
+      totalAfterDiscount: number;
+    }[];
   };
 }> {
   try {
@@ -136,7 +143,10 @@ export async function validateCoupon(
       return { success: false, message: "Tổng đơn hàng không hợp lệ." };
     }
     if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
-      return { success: false, message: "Không có sản phẩm nào trong đơn hàng." };
+      return {
+        success: false,
+        message: "Không có sản phẩm nào trong đơn hàng.",
+      };
     }
     if (
       orderItems.some(
@@ -154,24 +164,30 @@ export async function validateCoupon(
       code,
       items: orderItems.map((item) => ({
         productId: item.id,
-        price: item.price * (1 - item.discountPercent / 100),
+        price: item.price, // Giá gốc đã được xử lý ở useCheckout
         quantity: item.quantity,
       })),
     };
 
     // Gọi API apply coupon của backend
-    const response = await fetchWithAuth<{ status: string; message?: string; data?: any }>(
-      `${API_BASE_URL}/coupons/apply`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-      }
-    );
+    const response = await fetchWithAuth<{
+      status: string;
+      message?: string;
+      data?: any;
+    }>(`${API_BASE_URL}/coupons/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
 
     if (response.status !== "success" || !response.data) {
-      return { success: false, message: response.message || "Mã giảm giá không hợp lệ hoặc không áp dụng được." };
+      return {
+        success: false,
+        message:
+          response.message ||
+          "Mã giảm giá không hợp lệ hoặc không áp dụng được.",
+      };
     }
 
     const { data } = response;
@@ -179,9 +195,9 @@ export async function validateCoupon(
     return {
       success: true,
       data: {
-        id: data.couponCode, // Dùng couponCode thay vì _id để đồng bộ với backend
-        discountValue: data.discountValue || data.discount, // Lấy từ backend
-        discountType: data.discountType || "fixed", // Mặc định fixed nếu không có
+        id: data.couponCode,
+        discountValue: data.discountValue || data.discount,
+        discountType: data.discountType || "fixed",
         code: data.couponCode,
         maxDiscountAmount: data.maxDiscountAmount,
         applicableItemIds: data.items
@@ -190,6 +206,13 @@ export async function validateCoupon(
         applicableTotal: data.applicableAmount,
         discount: data.discount,
         finalAmount: data.finalAmount,
+        items: data.items.map((item: any) => ({
+          productId: item.productId,
+          isDiscounted: item.isDiscounted,
+          itemDiscount: item.itemDiscount,
+          priceAfterDiscount: item.priceAfterDiscount,
+          totalAfterDiscount: item.totalAfterDiscount,
+        })),
       },
     };
   } catch (error: any) {

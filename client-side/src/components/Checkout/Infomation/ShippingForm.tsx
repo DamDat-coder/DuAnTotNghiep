@@ -232,7 +232,7 @@ export default function ShippingForm({
         </div>
 
         {/* Địa chỉ chi tiết */}
-        <div>
+        <div className="desktop:col-span-2 laptop:col-span-2">
           <label className="text-[1rem] font-medium">
             Địa chỉ<span className="text-red-600">*</span>
           </label>

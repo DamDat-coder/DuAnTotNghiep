@@ -168,7 +168,7 @@ export default function Checkout() {
                     ĐƠN HÀNG ({orderItems.length} SẢN PHẨM)
                   </h1>
                   <span className="text-[1rem] font-bold">
-                    {subtotal.toLocaleString("vi-VN")}₫
+                    {total.toLocaleString("vi-VN")}₫
                   </span>
                 </div>
                 <OrderItems

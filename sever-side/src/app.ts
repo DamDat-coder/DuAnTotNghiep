@@ -18,6 +18,8 @@ import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import "./jobs/cron";
 import addressRoutes from "./routes/address.routes";
+import "./jobs/notifyFreeship.job";
+
 dotenv.config();
 
 const app = express();

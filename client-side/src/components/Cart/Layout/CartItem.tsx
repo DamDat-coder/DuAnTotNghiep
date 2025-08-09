@@ -3,15 +3,16 @@
 import Image from "next/image";
 import { ICartItem } from "@/types/cart";
 import { Heart, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface CartItemProps {
-  item: ICartItem;
+  item: ICartItem & { stock: number };
   onQuantityChange: (id: string, change: number) => void;
   onToggleLike: () => void;
   onRemove: () => void;
   onSelect: (selected: boolean) => void;
-  isDisabled?: boolean; // Thêm prop isDisabled
-  isOutOfStock?: boolean; // Thêm prop isOutOfStock
+  isDisabled?: boolean;
+  isOutOfStock?: boolean;
 }
 
 export default function CartItem({
@@ -20,9 +21,25 @@ export default function CartItem({
   onToggleLike,
   onRemove,
   onSelect,
-  isDisabled = false, // Giá trị mặc định
-  isOutOfStock = false, // Giá trị mặc định
+  isDisabled = false,
+  isOutOfStock = false,
 }: CartItemProps) {
+  console.log(item.stock);
+  const maxQuantity = item.stock || 0;
+
+  const handleQuantityChange = (change: number) => {
+    const newQuantity = item.quantity + change;
+    if (newQuantity > maxQuantity) {
+      toast.error(`Số lượng tối đa là ${maxQuantity}!`);
+      return;
+    }
+    if (newQuantity < 1) {
+      toast.error("Số lượng phải lớn hơn 0!");
+      return;
+    }
+    onQuantityChange(item.id, change);
+  };
+
   return (
     <div className="flex items-center gap-4 py-4 border-b">
       <input
@@ -45,24 +62,32 @@ export default function CartItem({
       <div className="flex-1">
         <h3 className="text-sm font-semibold text-[#374151]">
           {item.name}{" "}
-          {isOutOfStock && <span className="text-red-500">(Hết hàng)</span>}
+          {isOutOfStock && <span className="text-red-500">(Tạm ngưng bán)</span>}
         </h3>
         <p className="text-sm text-[#374151]">
           {item.color}/{item.size}
         </p>
         <div className="flex items-center gap-2 mt-2">
           <button
-            onClick={() => onQuantityChange(item.id, -1)}
+            onClick={() => handleQuantityChange(-1)}
             disabled={item.quantity <= 1 || isDisabled}
-            className="px-3 py-1 border cursor-pointer rounded flex justify-center items-center"
+            className={`px-3 py-1 border rounded flex justify-center items-center ${
+              item.quantity <= 1 || isDisabled
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer hover:bg-gray-100"
+            }`}
           >
             -
           </button>
           <span>{item.quantity}</span>
           <button
-            onClick={() => onQuantityChange(item.id, 1)}
-            disabled={isDisabled}
-            className="px-3 py-1 border cursor-pointer rounded flex justify-center items-center"
+            onClick={() => handleQuantityChange(1)}
+            disabled={item.quantity >= maxQuantity || isDisabled}
+            className={`px-3 py-1 border rounded flex justify-center items-center ${
+              item.quantity >= maxQuantity || isDisabled
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer hover:bg-gray-100"
+            }`}
           >
             +
           </button>

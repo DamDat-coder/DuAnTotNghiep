@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginPopup from "../Popups/AuthAction/LoginPopup";
 
 interface BuyNowPopupProps {
   product: IProduct;
@@ -16,9 +17,8 @@ interface BuyNowPopupProps {
 }
 
 const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
-  const router = useRouter();
   const dispatch = useCartDispatch();
-  // Tìm variant đầu tiên có stock > 0
+  const { login, user } = useAuth();
   const firstAvailableVariant = product.variants.find((v) => v.stock > 0);
 
   const [selectedSize, setSelectedSize] = useState(
@@ -29,14 +29,13 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   );
   const [quantity, setQuantity] = useState(1);
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
-
+  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
   const searchParams = useSearchParams();
   const couponId = searchParams.get("coupon");
   const [applyCoupon, setApplyCoupon] = useState(!!couponId);
 
-  // Ngăn scroll khi popup hoặc bảng kích thước mở
   useEffect(() => {
-    if (isOpen || isSizeChartOpen) {
+    if (isOpen || isSizeChartOpen || isLoginPopupOpen) {
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
@@ -44,9 +43,8 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isOpen, isSizeChartOpen]);
+  }, [isOpen, isSizeChartOpen, isLoginPopupOpen]);
 
-  // Lấy danh sách kích thước và màu sắc từ variants
   const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
     (size) => ({
       value: size,
@@ -56,7 +54,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
   const colors = Array.from(new Set(product.variants.map((v) => v.color)));
 
-  // Ánh xạ màu sắc
   const colorMap: { [key: string]: string } = {
     Trắng: "#FFFFFF",
     "Xanh navy": "#000080",
@@ -65,13 +62,18 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     Xám: "#808080",
   };
 
-  // Lấy variant hiện tại
   const selectedVariant = product.variants.find(
     (v) => v.size === selectedSize && v.color === selectedColor
   );
 
-  // Giới hạn số lượng dựa trên stock
   const maxQuantity = selectedVariant ? selectedVariant.stock : 0;
+
+  // Tính toán các size khả dụng dựa trên selectedColor
+  const availableSizes = selectedColor
+    ? product.variants
+        .filter((v) => v.color === selectedColor && v.stock > 0)
+        .map((v) => v.size)
+    : sizes.map((s) => s.value);
 
   useEffect(() => {
     if (quantity > maxQuantity) {
@@ -79,16 +81,29 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     }
   }, [maxQuantity, quantity]);
 
-  // Xử lý xác nhận mua ngay
+  // Reset selectedSize nếu nó không có trong availableSizes
+  useEffect(() => {
+    if (selectedSize && !availableSizes.includes(selectedSize)) {
+      setSelectedSize("");
+    }
+  }, [selectedColor, availableSizes, selectedSize]);
+
   const handleConfirm = () => {
-    const accessToken =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken")
-        : null;
+    const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      toast.error("Bạn vui lòng đăng nhập trước khi mua hàng!");
+      const pendingBuyNow = {
+        product,
+        selectedSize,
+        selectedColor,
+        quantity,
+        applyCoupon: applyCoupon && couponId ? couponId : null,
+      };
+      localStorage.setItem("pendingBuyNow", JSON.stringify(pendingBuyNow));
+      setIsLoginPopupOpen(true);
+      toast.error("Vui lòng đăng nhập để tiếp tục mua hàng!");
       return;
     }
+
     if (!selectedColor) {
       toast.error("Vui lòng chọn màu sắc!");
       return;
@@ -105,7 +120,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       toast.error("Sản phẩm không đủ hàng!");
       return;
     }
-    // Kiểm tra categoryId
     if (!product.categoryId) {
       toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
       return;
@@ -113,7 +127,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
     dispatch({ type: "resetSelected" });
 
-    // Tạo cartItem
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -125,35 +138,45 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       color: selectedColor,
       liked: false,
       selected: true,
-      categoryId: product.categoryId, // Đã kiểm tra không null ở trên
+      categoryId: product.categoryId,
+      stock: selectedVariant.stock,
     };
+
     if (applyCoupon && couponId) {
       localStorage.setItem("pendingCouponCode", couponId);
     }
-    // Thêm vào giỏ hàng
+
     dispatch({ type: "add", item: cartItem });
-
     toast.success("Đã thêm vào giỏ hàng!");
-
-    // Chuyển hướng đến checkout
-    router.push("/checkout");
+     window.location.href = "/checkout";
     onClose();
   };
 
-  // Xử lý mở bảng kích thước
   const handleOpenSizeChart = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsSizeChartOpen(true);
   };
 
-  // Xử lý đóng bảng kích thước
   const handleCloseSizeChart = () => {
     setIsSizeChartOpen(false);
   };
 
+  const handleCloseLoginPopup = () => {
+    setIsLoginPopupOpen(false);
+  };
+
+  const handleOpenRegister = () => {
+    setIsLoginPopupOpen(false);
+    // Logic để mở RegisterPopup nếu cần
+  };
+
+  const handleOpenForgotPassword = () => {
+    setIsLoginPopupOpen(false);
+    // Logic để mở ForgotPasswordPopup nếu cần
+  };
+
   return (
     <>
-      {/* Popup chính */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -171,7 +194,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
               className="w-[80%] max-w-full flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Nút đóng */}
               <button
                 onClick={onClose}
                 className="absolute top-5 right-5 text-gray-500 hover:text-gray-700 text-xl font-bold"
@@ -179,14 +201,13 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
               >
                 <Image
                   src="/nav/nav_clear.svg"
-                  alt="Add Icon"
+                  alt="Close Icon"
                   width={16}
                   height={16}
                   className="w-4 h-4"
                 />
               </button>
 
-              {/* Hình ảnh sản phẩm */}
               <Image
                 src={product.images[0]}
                 alt={product.name || "Sản phẩm"}
@@ -196,7 +217,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                 draggable={false}
               />
               <div className="laptop:w-full laptop:flex laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex desktop:flex-col desktop:gap-3">
-                {/* Thông tin cơ bản */}
                 <div className="flex flex-col gap-3">
                   <h2 className="text-xl font-bold text-black mt-4 truncate">
                     {product.name || "Sản phẩm"}
@@ -218,7 +238,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </div>
                 </div>
 
-                {/* Chọn màu sắc */}
                 <div className="">
                   <label className="block text-lg font-bold text-black mb-2">
                     Màu sắc:
@@ -275,7 +294,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   )}
                 </div>
 
-                {/* Chọn size */}
                 <div className="">
                   <label className="text-lg text-black mb-2">
                     <div className="flex w-full justify-between items-center">
@@ -299,37 +317,46 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </label>
                   {sizes.length > 0 ? (
                     <div className="flex gap-3 flex-wrap">
-                      {sizes.map((size) => (
-                        <div
-                          key={size.value}
-                          onClick={() =>
-                            size.inStock && setSelectedSize(size.value)
-                          }
-                          className={`w-auto h-auto rounded-sm p-3 flex items-center justify-center border-2 cursor-pointer ${
-                            selectedSize === size.value
-                              ? "border-black bg-black text-white border-2 border-solid"
-                              : "border-gray-300 border-2 border-solid"
-                          } ${
-                            !size.inStock
-                              ? "opacity-50 bg-[#CACACA] cursor-not-allowed"
-                              : ""
-                          }`}
-                          aria-label={`Chọn size ${size.value}${
-                            size.inStock ? "" : " (Hết hàng)"
-                          }`}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              size.inStock && setSelectedSize(size.value);
+                      {sizes.map((size) => {
+                        const isAvailable = selectedColor
+                          ? product.variants.some(
+                              (v) =>
+                                v.size === size.value &&
+                                v.color === selectedColor &&
+                                v.stock > 0
+                            )
+                          : size.inStock;
+                        console.log(
+                          `Size: ${size.value}, Color: ${selectedColor}, isAvailable: ${isAvailable}`
+                        );
+                        return (
+                          <div
+                            key={size.value}
+                            onClick={() =>
+                              isAvailable && setSelectedSize(size.value)
                             }
-                          }}
-                        >
-                          <span className="text-sm font-medium">
-                            Size {size.value} {!size.inStock}
-                          </span>
-                        </div>
-                      ))}
+                            className={`px-4 py-2 border border-solid rounded-sm text-sm font-medium ${
+                              selectedSize === size.value && isAvailable
+                                ? "bg-black text-white border-black"
+                                : !isAvailable
+                                ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
+                                : "hover:bg-gray-100"
+                            }`}
+                            aria-label={`Chọn size ${size.value}${
+                              isAvailable ? "" : " (Hết hàng)"
+                            }`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                isAvailable && setSelectedSize(size.value);
+                              }
+                            }}
+                          >
+                            <span>Size {size.value}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">
@@ -338,7 +365,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   )}
                 </div>
 
-                {/* Chọn số lượng */}
                 <div className="">
                   <label className="block text-lg font-bold text-black mb-2">
                     Số lượng:
@@ -385,7 +411,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                     </label>
                   </div>
                 )}
-                {/* Nút xác nhận */}
                 <button
                   onClick={handleConfirm}
                   className="w-full bg-black text-white font-bold text-lg px-3 py-3 rounded-md hover:bg-gray-800 transition-colors"
@@ -399,7 +424,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
         )}
       </AnimatePresence>
 
-      {/* Popup bảng kích thước */}
       <AnimatePresence>
         {isSizeChartOpen && (
           <motion.div
@@ -440,6 +464,17 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
               />
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isLoginPopupOpen && (
+          <LoginPopup
+            isOpen={isLoginPopupOpen}
+            onClose={handleCloseLoginPopup}
+            onOpenRegister={handleOpenRegister}
+            onOpenForgotPassword={handleOpenForgotPassword}
+          />
         )}
       </AnimatePresence>
     </>

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import FeaturedSection from "@/components/Home/FeatureSection/FeaturedSection";
 import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import MemberBenefitsBanner from "@/components/Home/MemberBenefits/MemberBenefitsBanner";
@@ -51,26 +52,7 @@ async function getHomeData(): Promise<HomeData> {
 
 // PAGE COMPONENT
 export default async function Home() {
-  const { products, featuredSection, benefits, error } = await getHomeData();
-
-  if (error) {
-    return (
-      <div className="py-8">
-        <Container>
-          <div className="text-center text-red-500" role="alert">
-            <p>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              aria-label="Thử lại tải dữ liệu"
-            >
-              Thử lại
-            </button>
-          </div>
-        </Container>
-      </div>
-    );
-  }
+  const { products, featuredSection, benefits } = await getHomeData();
 
   return (
     <div

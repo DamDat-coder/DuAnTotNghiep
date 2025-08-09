@@ -52,12 +52,6 @@ export interface IFeaturedProducts {
   gender: string;
   description: string;
 }
-export interface IFeaturedProducts {
-  id: string;
-  banner: string;
-  gender: string;
-  description: string;
-}
 
 export interface IMemberBenefit {
   id: string;
@@ -74,3 +68,5 @@ export interface Suggestion {
   name: string;
   id: string;
 }
+
+

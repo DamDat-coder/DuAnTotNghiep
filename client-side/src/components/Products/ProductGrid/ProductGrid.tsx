@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import FilterPopup from "../Filter/FilterPopup";
@@ -14,7 +14,9 @@ export default function ProductGrid({
   onApplyFilters,
 }: ProductGridProps) {
   // Các state quản lý hiển thị sản phẩm
-  const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(products.slice(0, 8));
+  const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
+    products.slice(0, 8)
+  );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(products.length > 8);
 
@@ -40,11 +42,17 @@ export default function ProductGrid({
   // Lấy bộ lọc từ query string
   const currentFilters = {
     id_cate: searchParams.get("id_cate") || undefined,
-    sort_by: VALID_SORT_OPTIONS.includes(searchParams.get("sort_by") as SortOption)
+    sort_by: VALID_SORT_OPTIONS.includes(
+      searchParams.get("sort_by") as SortOption
+    )
       ? (searchParams.get("sort_by") as SortOption)
       : undefined,
-    minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
-    maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
+    minPrice: searchParams.get("minPrice")
+      ? Number(searchParams.get("minPrice"))
+      : undefined,
+    maxPrice: searchParams.get("maxPrice")
+      ? Number(searchParams.get("maxPrice"))
+      : undefined,
     color: searchParams.get("color") || undefined,
     size: searchParams.get("size") || undefined,
   };
@@ -86,7 +94,10 @@ export default function ProductGrid({
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = products.slice(currentLength, currentLength + PRODUCTS_PER_PAGE);
+    const nextProducts = products.slice(
+      currentLength,
+      currentLength + PRODUCTS_PER_PAGE
+    );
 
     setTimeout(() => {
       setDisplayedProducts((prev) => [...prev, ...nextProducts]);
@@ -111,14 +122,22 @@ export default function ProductGrid({
           onClick={() => setIsFilterOpen(true)}
         >
           Lọc sản phẩm
-          <Image src="/product/product_filter.svg" alt="filter" width={16} height={16} />
+          <Image
+            src="/product/product_filter.svg"
+            alt="filter"
+            width={16}
+            height={16}
+          />
         </button>
       </div>
 
       <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4 desktop:grid-cols-4 laptop:grid-cols-4 pt-2">
         {displayedProducts.map((product) => (
           <div key={product.id} className="w-full">
-            <ProductCardWithWishlist product={product} onBuyNow={handleBuyNow} />
+            <ProductCardWithWishlist
+              product={product}
+              onBuyNow={handleBuyNow}
+            />
           </div>
         ))}
       </div>
@@ -142,12 +161,14 @@ export default function ProductGrid({
       </div>
 
       {/* Popup bộ lọc */}
-      <FilterPopup
-        isOpen={isFilterOpen}
-        setIsOpen={setIsFilterOpen}
-        onApplyFilters={onApplyFilters ?? (() => {})}
-        currentFilters={currentFilters}
-      />
+      <Suspense fallback={null}>
+        <FilterPopup
+          isOpen={isFilterOpen}
+          setIsOpen={setIsFilterOpen}
+          onApplyFilters={onApplyFilters ?? (() => {})}
+          currentFilters={currentFilters}
+        />
+      </Suspense>
 
       {/* Popup mua ngay */}
       {selectedProduct && (

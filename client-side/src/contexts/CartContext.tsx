@@ -60,6 +60,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return { ...state, items: [...state.items, action.item] };
 
     case "update":
+      if (!action.item) return state;
       return {
         ...state,
         items: state.items.map((item) =>
@@ -68,7 +69,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             : item
         ),
       };
+
     case "remove":
+      if (!action.id || !action.size || !action.color) return state;
       return {
         ...state,
         items: state.items.filter(
@@ -82,6 +85,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
 
     case "updateQuantity":
+      if (!action.id || !action.size || !action.color || action.quantity === undefined) return state;
       return {
         ...state,
         items: state.items.map((item) =>
@@ -94,6 +98,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
 
     case "toggleSelect":
+      if (!action.id || !action.size || !action.color) return state;
       return {
         ...state,
         items: state.items.map((item) =>
@@ -122,7 +127,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         ...state,
         items: state.items.map((item) => ({ ...item, selected: false })),
       };
+
     case "restoreSelection":
+      if (!action.selectedIds) return state;
       return {
         ...state,
         items: state.items.map((item) => ({
@@ -130,6 +137,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           selected: action.selectedIds?.includes(item.id) ?? false,
         })),
       };
+
     default:
       return state;
   }
@@ -137,7 +145,6 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, dispatch] = useReducer(cartReducer, { items: [] }, () => {
-    // Khôi phục giỏ hàng từ localStorage khi khởi tạo
     if (typeof window !== "undefined") {
       const savedCart = localStorage.getItem("cartItems");
       return savedCart ? { items: JSON.parse(savedCart) } : { items: [] };
@@ -145,7 +152,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return { items: [] };
   });
 
-  // Lưu giỏ hàng vào localStorage mỗi khi state thay đổi
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("cartItems", JSON.stringify(state.items));
@@ -158,6 +164,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     </CartContext.Provider>
   );
 };
+
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {

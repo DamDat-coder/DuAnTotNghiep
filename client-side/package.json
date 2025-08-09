@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env PORT=3300 next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=1024 PORT=3300 next dev --webpack",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=1024 next build",
+    "start": "next start -p 3300",
     "lint": "next lint"
   },
   "dependencies": {

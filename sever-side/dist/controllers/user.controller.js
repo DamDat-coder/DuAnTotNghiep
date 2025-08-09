@@ -418,7 +418,7 @@ exports.addAddress = addAddress;
 // Cập nhật địa chỉ
 const updateAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { street, ward , province, is_default } = req.body;
+        const { street, ward, province, is_default } = req.body;
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
             return res

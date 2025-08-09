@@ -17,7 +17,9 @@ import reviewRoutes from './routes/review.routes';
 import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import "./jobs/cron";
+import addressRoutes from "./routes/address.routes";
 import "./jobs/notifyFreeship.job";
+
 dotenv.config();
 
 const app = express();
@@ -57,6 +59,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/address", addressRoutes);
 app.use(errorHandler);
 
 export default app;

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchOrderById, updateOrderStatus } from "@/services/orderApi";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 type StatusOption = { key: string; label: string; color: string };
 
@@ -47,8 +48,8 @@ export default function EditOrderForm({
 
   const formatAddress = (addr: any) => {
     if (!addr) return "";
-    const { street, ward, district, province } = addr;
-    return [street, ward, district, province, "Việt Nam"]
+    const { street, ward, province } = addr;
+    return [street, ward, province, "Việt Nam"]
       .filter((x) => x && x.trim())
       .join(", ");
   };
@@ -125,7 +126,7 @@ export default function EditOrderForm({
         className="bg-white w-full max-w-xl shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="max-h-[90vh] overflow-y-auto p-6">
+        <div className="max-h-[90vh] overflow-y-auto p-6 scroll-hidden">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Sửa đơn hàng</h2>
             <button
@@ -145,7 +146,7 @@ export default function EditOrderForm({
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Mã đơn hàng</label>
-                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl" value={order._id} disabled />
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-l-xl" value={order.orderCode} disabled />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Ngày đặt hàng</label>
@@ -157,7 +158,7 @@ export default function EditOrderForm({
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Số điện thoại người mua</label>
-                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl" value={user.phone || ""} disabled />
+                <input className="w-full bg-gray-100 px-4 py-2 outline-none rounded-r-xl" value={order.shippingAddress.phone || ""} disabled />
               </div>
             </div>
 
@@ -168,6 +169,10 @@ export default function EditOrderForm({
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Địa chỉ</label>
               <textarea className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none" rows={2} value={formatAddress(order.shippingAddress)} disabled />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Note</label>
+              <textarea className="w-full bg-gray-100 rounded-xl px-4 py-2 outline-none" rows={2} value={order.note || ""} disabled />
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -203,15 +208,26 @@ export default function EditOrderForm({
             </div>
             <div className="mb-2 font-medium">Sản phẩm</div>
             <div className="rounded-xl bg-gray-50 mb-4">
-              <div className="grid grid-cols-6 gap-2 text-gray-500 text-sm py-2 px-4 border-b border-gray-100">
-                <div className="col-span-3">Tên sản phẩm</div>
+              <div className="grid grid-cols-7 gap-2 text-gray-500 text-sm py-2 px-4 border-b border-gray-100">
+                <div className="col-span-4">Tên sản phẩm</div>
                 <div>Màu</div>
                 <div>Size</div>
                 <div>SL</div>
               </div>
               {(order.items || []).map((prod: any, idx: number) => (
-                <div key={idx} className="grid grid-cols-6 gap-2 py-2 px-4 items-center border-b border-gray-100">
-                  <div className="col-span-3 font-medium">{prod.name}</div>
+                <div key={idx} className="grid grid-cols-7 gap-2 py-2 px-4 items-center border-b border-gray-100">
+                  <div className="col-span-4 font-medium flex items-center gap-2">
+                    {prod.image && (
+                      <Image
+                        src={prod.image}
+                        alt={prod.name}
+                        width={40}
+                        height={40}
+                        className="rounded object-cover"
+                      />
+                    )}
+                    <span className="whitespace-pre-line">{prod.name}</span>
+                  </div>
                   <div>{prod.color}</div>
                   <div>{prod.size}</div>
                   <div>{prod.quantity}</div>

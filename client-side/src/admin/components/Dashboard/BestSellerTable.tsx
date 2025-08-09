@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { fetchAllOrders, getBestSellingProductsFromOrders } from "@/services/orderApi";
@@ -7,9 +6,10 @@ import type { IOrder } from "@/types/order";
 export default function BestSellerTable() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<"week" | "month">("week");
+  const [timeRange, setTimeRange] = useState<"today" | "week" | "month">("today");
 
   useEffect(() => {
+    setLoading(true);
     fetchAllOrders({ limit: 9999 })
       .then((res) => {
         const best = getBestSellingProductsFromOrders(res.data as IOrder[], timeRange, 5);
@@ -25,8 +25,9 @@ export default function BestSellerTable() {
         <select
           className="text-xs text-gray-500 border border-gray-300 rounded px-2 py-1 bg-white hover:border-gray-400"
           value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value as "week" | "month")}
+          onChange={(e) => setTimeRange(e.target.value as "today" | "week" | "month")}
         >
+          <option value="today">Hôm nay</option>
           <option value="week">7 ngày gần nhất</option>
           <option value="month">30 ngày gần nhất</option>
         </select>

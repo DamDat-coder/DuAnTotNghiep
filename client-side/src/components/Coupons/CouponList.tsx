@@ -84,7 +84,9 @@ export default function CouponList() {
                     </p>
                     <p className="text-sm text-black">
                       HSD:{" "}
-                      {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
+                      {coupon.endDate
+                        ? new Date(coupon.endDate).toLocaleDateString("vi-VN")
+                        : "Không giới hạn thời gian"}
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -169,13 +171,21 @@ export default function CouponList() {
                 </p>
                 <p>
                   <span>Hiệu lực:</span>{" "}
-                  {new Date(selectedCoupon.startDate).toLocaleDateString(
-                    "vi-VN"
-                  )}{" "}
-                  -{" "}
-                  {new Date(selectedCoupon.endDate).toLocaleDateString(
-                    "vi-VN"
-                  )}
+                  {selectedCoupon.startDate && selectedCoupon.endDate
+                    ? `${new Date(selectedCoupon.startDate).toLocaleDateString(
+                        "vi-VN"
+                      )} - ${new Date(selectedCoupon.endDate).toLocaleDateString(
+                        "vi-VN"
+                      )}`
+                    : selectedCoupon.startDate
+                    ? `Từ ngày ${new Date(selectedCoupon.startDate).toLocaleDateString(
+                        "vi-VN"
+                      )}, vô thời hạn`
+                    : selectedCoupon.endDate
+                    ? `Hiệu lực đến ngày ${new Date(selectedCoupon.endDate).toLocaleDateString(
+                        "vi-VN"
+                      )}`
+                    : "Không giới hạn thời gian"}
                 </p>
                 <p>
                   <span>Trạng thái:</span>{" "}

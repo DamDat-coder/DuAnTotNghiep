@@ -111,7 +111,7 @@ export default function OrderBody({
     <>
       {orders.map((order, idx) => {
         const orderId =
-          (order as any)._id?.$oid || order._id || (order as any).id || String(idx);
+          (order as any).orderCode;
         const productList = Array.isArray(order.items)
           ? order.items.map((item) => item.name).filter(Boolean)
           : [];

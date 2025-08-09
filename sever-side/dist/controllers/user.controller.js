@@ -378,7 +378,7 @@ exports.toggleUserStatus = toggleUserStatus;
 // Thêm địa chỉ
 const addAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { street, ward, district, province, is_default } = req.body;
+        const { street, ward, province, is_default } = req.body;
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user) {
             return res
@@ -387,7 +387,6 @@ const addAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         }
         const isDuplicate = user.addresses.some((addr) => addr.street === street &&
             addr.ward === ward &&
-            addr.district === district &&
             addr.province === province);
         if (isDuplicate) {
             return res.status(400).json({
@@ -401,7 +400,6 @@ const addAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         user.addresses.push({
             street,
             ward,
-            district,
             province,
             is_default: !!is_default,
         });
@@ -420,7 +418,7 @@ exports.addAddress = addAddress;
 // Cập nhật địa chỉ
 const updateAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { street, ward, district, province, is_default } = req.body;
+        const { street, ward , province, is_default } = req.body;
         const user = yield user_model_1.default.findById(req.params.id);
         if (!user)
             return res
@@ -436,7 +434,6 @@ const updateAddress = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         }
         address.street = street !== null && street !== void 0 ? street : address.street;
         address.ward = ward !== null && ward !== void 0 ? ward : address.ward;
-        address.district = district !== null && district !== void 0 ? district : address.district;
         address.province = province !== null && province !== void 0 ? province : address.province;
         address.is_default = is_default !== null && is_default !== void 0 ? is_default : address.is_default;
         yield user.save();

@@ -3,7 +3,7 @@ export interface PaymentInfo {
   totalPrice: number;
   userId: string;
   orderInfo: {
-    shippingAddress: { street: string; ward: string; district: string; province: string };
+    shippingAddress: { street: string; ward: string; province: string };
     couponId?: string;
     items: { productId: string; quantity: number; color: string; size: string }[];
     paymentMethod: string;

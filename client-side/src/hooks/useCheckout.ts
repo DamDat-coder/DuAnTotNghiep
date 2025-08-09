@@ -56,7 +56,6 @@ export const useCheckout = () => {
     email: "",
     phone: "",
     province: "",
-    district: "",
     ward: "",
     address: "",
   });
@@ -66,7 +65,6 @@ export const useCheckout = () => {
     email: "",
     phone: "",
     province: "",
-    district: "",
     ward: "",
     address: "",
   });
@@ -177,10 +175,6 @@ export const useCheckout = () => {
 
   useEffect(() => {
     if (user && user.addresses) {
-      console.log("DEBUG useCheckout - Syncing user addresses", {
-        userAddresses: user.addresses,
-        selectedAddress,
-      });
       setFormData((prev) => ({
         ...prev,
         fullName: user.name || "",
@@ -200,15 +194,11 @@ export const useCheckout = () => {
         } else if (user.addresses.length > 1) {
           addressToSelect = user.addresses[0];
         }
-        console.log("DEBUG useCheckout - Setting initial selectedAddress", {
-          addressToSelect,
-        });
         setSelectedAddress(addressToSelect);
         if (addressToSelect) {
           setFormData((prev) => ({
             ...prev,
             province: addressToSelect.province,
-            district: addressToSelect.district,
             ward: addressToSelect.ward,
             address: addressToSelect.street,
           }));
@@ -216,13 +206,11 @@ export const useCheckout = () => {
       }
       setIsLoading(false);
     } else if (user && !user.addresses) {
-      console.log("DEBUG useCheckout - No addresses found", { user });
       setAddresses([]);
       setDefaultAddress(null);
       setSelectedAddress(null);
       setIsLoading(false);
     } else {
-      console.log("DEBUG useCheckout - No user", { user });
       setIsLoading(false);
     }
   }, [user, selectedAddress]);
@@ -363,8 +351,6 @@ export const useCheckout = () => {
     setFormData((prev) => ({ ...prev, [name]: option ? option.value : "" }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
     if (name === "province") {
-      setFormData((prev) => ({ ...prev, district: "", ward: "" }));
-    } else if (name === "district") {
       setFormData((prev) => ({ ...prev, ward: "" }));
     }
     setSelectedAddress(null);
@@ -459,17 +445,12 @@ export const useCheckout = () => {
   };
 
   const handleSelectAddress = async (address: Address) => {
-    console.log("DEBUG useCheckout - handleSelectAddress", {
-      address,
-      selectedAddress,
-    });
     setSelectedAddress(address);
     setIsAddressPopupOpen(false);
 
     setFormData((prev) => ({
       ...prev,
       province: address.province,
-      district: address.district,
       ward: address.ward,
       address: address.street,
     }));
@@ -496,7 +477,6 @@ export const useCheckout = () => {
       email: "",
       phone: "",
       province: "",
-      district: "",
       ward: "",
       address: "",
     };
@@ -508,7 +488,6 @@ export const useCheckout = () => {
     else if (!/^\d{10,11}$/.test(formData.phone))
       newErrors.phone = "Số điện thoại không hợp lệ";
     if (!formData.province) newErrors.province = "Vui lòng chọn tỉnh thành";
-    if (!formData.district) newErrors.district = "Vui lòng chọn quận huyện";
     if (!formData.ward) newErrors.ward = "Vui lòng chọn phường xã";
     if (!formData.address) newErrors.address = "Vui lòng nhập địa chỉ";
 
@@ -525,7 +504,6 @@ export const useCheckout = () => {
         selectedAddress &&
         formData.address === selectedAddress.street &&
         formData.ward === selectedAddress.ward &&
-        formData.district === selectedAddress.district &&
         formData.province === selectedAddress.province
       ) {
         addressId = selectedAddress._id;
@@ -533,7 +511,6 @@ export const useCheckout = () => {
         const newAddress = await addAddressWhenCheckout(user.id, {
           street: formData.address,
           ward: formData.ward,
-          district: formData.district,
           province: formData.province,
           is_default: addresses.length === 0,
         });
@@ -551,7 +528,6 @@ export const useCheckout = () => {
           shippingAddress: {
             street: formData.address,
             ward: formData.ward,
-            district: formData.district,
             province: formData.province,
             phone: formData.phone,
           },

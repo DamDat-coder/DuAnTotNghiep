@@ -19,6 +19,7 @@ interface Transaction {
   date?: string; // date là string hoặc undefined
   amount: number;
   status: string;
+  orderCode: string;
 }
 
 export default function TransactionHistory() {
@@ -129,7 +130,7 @@ export default function TransactionHistory() {
                         className="text-blue-600 font-medium cursor-pointer hover:underline"
                         onClick={() => router.push(`/admin/order?edit=${t.id}`)}
                       >
-                        #{t.id}
+                        #{t.orderCode}
                       </span>
                     </div>
                     <div className="text-xs text-gray-400">

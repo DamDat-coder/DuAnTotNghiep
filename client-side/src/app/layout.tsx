@@ -17,6 +17,7 @@ import ChatBotBox from "@/components/Chat/ChatBotBox";
 import { CategoriesProvider } from "@/contexts/CategoriesContext";
 import { Toaster } from "react-hot-toast";
 import { SuggestionsProvider } from "@/contexts/SuggestionsContext";
+import { AddressDataProvider } from "@/contexts/AddressDataContext";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -48,16 +49,16 @@ export default function RootLayout({
                 <SuggestionsProvider>
                   <ActiveTabProvider>
                     <CategoriesProvider>
-                      {!isAdminRoute && (
-                        <Header/>
-                      )}
-                      <CartProvider>
-                        <WishlistProvider>
-                          <main className={mainClassName}>{children}</main>
-                          {!isAdminRoute && <ChatBotBox />}
-                        </WishlistProvider>
-                      </CartProvider>
-                      {!isAdminRoute && <Footer />}
+                      <AddressDataProvider>
+                        {!isAdminRoute && <Header />}
+                        <CartProvider>
+                          <WishlistProvider>
+                            <main className={mainClassName}>{children}</main>
+                            {!isAdminRoute && <ChatBotBox />}
+                          </WishlistProvider>
+                        </CartProvider>
+                        {!isAdminRoute && <Footer />}
+                      </AddressDataProvider>
                     </CategoriesProvider>
                   </ActiveTabProvider>
                 </SuggestionsProvider>

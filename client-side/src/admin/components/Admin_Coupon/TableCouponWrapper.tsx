@@ -183,7 +183,7 @@ export default function TableCouponWrapper({
                   Mã KM
                 </th>
                 <th className="w-[360px] px-4 h-[64px] align-middle py-0">
-                  Giảm giá
+                  Mô tả giảm giá
                 </th>
                 <th className="w-[224px] px-4 h-[64px] align-middle py-0">
                   Thời gian
@@ -219,13 +219,13 @@ export default function TableCouponWrapper({
                     {coupon.description || "Không có mô tả"}
                   </td>
                   <td className="px-4 h-[64px] whitespace-normal break-words">
-                    {coupon.startDate
-                      ? new Date(coupon.startDate).toLocaleDateString("vi-VN")
-                      : "Không xác định"}{" "}
-                    -{" "}
-                    {coupon.endDate
-                      ? new Date(coupon.endDate).toLocaleDateString("vi-VN")
-                      : "Không giới hạn"}
+                    {coupon.startDate && coupon.endDate
+                      ? `${new Date(coupon.startDate).toLocaleDateString("vi-VN")} - ${new Date(coupon.endDate).toLocaleDateString("vi-VN")}`
+                      : coupon.startDate
+                      ? `Từ ngày ${new Date(coupon.startDate).toLocaleDateString("vi-VN")}, vô thời hạn`
+                      : coupon.endDate
+                      ? `Hiệu lực đến ngày ${new Date(coupon.endDate).toLocaleDateString("vi-VN")}`
+                      : "Không giới hạn thời gian"}
                   </td>
                   <td className="px-4 h-[64px] whitespace-normal break-words">
                     {coupon.usedCount || 0}/{coupon.usageLimit || "∞"}

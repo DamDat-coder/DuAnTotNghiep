@@ -527,7 +527,6 @@ export async function addAddressWhenCheckout(
   address: {
     street: string;
     ward: string;
-    district: string;
     province: string;
     is_default: boolean;
   }
@@ -668,7 +667,6 @@ export async function fetchUserById(userId: string): Promise<IUser | null> {
             _id: addr._id,
             street: addr.street || "",
             ward: addr.ward || "",
-            district: addr.district || "",
             province: addr.province || "",
             is_default: addr.is_default ?? false,
           }))

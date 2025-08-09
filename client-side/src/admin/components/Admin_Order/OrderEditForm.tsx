@@ -48,8 +48,8 @@ export default function EditOrderForm({
 
   const formatAddress = (addr: any) => {
     if (!addr) return "";
-    const { street, ward, district, province } = addr;
-    return [street, ward, district, province, "Việt Nam"]
+    const { street, ward, province } = addr;
+    return [street, ward, province, "Việt Nam"]
       .filter((x) => x && x.trim())
       .join(", ");
   };

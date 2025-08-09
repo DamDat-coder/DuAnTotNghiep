@@ -205,7 +205,6 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       shippingAddress: order.shippingAddress || {
         street: "",
         ward: "",
-        district: "",
         province: "",
         is_default: false,
       },
@@ -257,7 +256,6 @@ status:
       shippingAddress: {
         street: "",
         ward: "",
-        district: "",
         province: "",
         phone: "",
         is_default: false,

@@ -30,15 +30,14 @@ export const useCheckout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const orderItems: ICartItem[] = state.items.filter((item) => item.selected);
 
-  const subtotal = useMemo(
-    () =>
-      orderItems.reduce(
-        (sum, item) =>
-          sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-        0
-      ),
-    [orderItems]
-  );
+const subtotal = useMemo(
+  () =>
+    orderItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    ),
+  [orderItems]
+);
   const [discountCode, setDiscountCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [applicableItemIds, setApplicableItemIds] = useState<string[]>([]);
@@ -100,78 +99,6 @@ export const useCheckout = () => {
 
     return result;
   };
-
-  // Xử lý pendingBuyNow từ localStorage
-  useEffect(() => {
-    const handlePendingBuyNow = () => {
-      const pendingBuyNow = localStorage.getItem("pendingBuyNow");
-      if (pendingBuyNow && user) {
-        const {
-          product,
-          selectedSize,
-          selectedColor,
-          quantity,
-          applyCoupon,
-        }: {
-          product: IProduct;
-          selectedSize: string;
-          selectedColor: string;
-          quantity: number;
-          applyCoupon: string | null;
-        } = JSON.parse(pendingBuyNow);
-
-        const selectedVariant = product.variants.find(
-          (v) => v.size === selectedSize && v.color === selectedColor
-        );
-
-        if (!selectedVariant) {
-          toast.error("Không tìm thấy thông tin sản phẩm!");
-          localStorage.removeItem("pendingBuyNow");
-          return;
-        }
-
-        if (selectedVariant.stock < quantity) {
-          toast.error("Sản phẩm không đủ hàng!");
-          localStorage.removeItem("pendingBuyNow");
-          return;
-        }
-
-        if (!product.categoryId) {
-          toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
-          localStorage.removeItem("pendingBuyNow");
-          return;
-        }
-
-        dispatch({ type: "resetSelected" });
-
-        const cartItem: ICartItem = {
-          id: product.id,
-          name: product.name,
-          price: selectedVariant.discountedPrice,
-          discountPercent: selectedVariant.discountPercent,
-          image: product.images[0] || "",
-          quantity,
-          size: selectedSize,
-          color: selectedColor,
-          liked: false,
-          selected: true, // Đặt selected thành true
-          categoryId: product.categoryId,
-          stock: selectedVariant.stock,
-        };
-
-        dispatch({ type: "add", item: cartItem });
-        toast.success("Đã thêm sản phẩm vào giỏ hàng!");
-
-        if (applyCoupon) {
-          localStorage.setItem("pendingCouponCode", applyCoupon);
-        }
-
-        localStorage.removeItem("pendingBuyNow"); // Xóa sau khi thêm vào giỏ hàng
-      }
-    };
-
-    handlePendingBuyNow();
-  }, [user, dispatch]);
 
   useEffect(() => {
     if (user && user.addresses) {

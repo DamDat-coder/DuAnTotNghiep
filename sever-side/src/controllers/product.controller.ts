@@ -421,7 +421,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         const notifications = users.map((user) => ({
           userId: user._id,
           title: "Sản phẩm mới vừa ra mắt!",
-          message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop For You, khám phá ngay!`,
+          message: `Sản phẩm "${savedProduct.name}" đã có mặt trên Shop For Real, khám phá ngay!`,
           type: "product",
           isRead: false,
           link: `/products/${savedProduct._id}`,

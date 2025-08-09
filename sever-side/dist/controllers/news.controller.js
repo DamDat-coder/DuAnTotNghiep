@@ -24,7 +24,6 @@ const createNews = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     var _a;
     try {
         const { title, content, slug, category_id, tags, meta_description, published_at, is_published, } = req.body;
-        console.log("Received request body:", req.body);
         const user_id = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
         if (!title || !content || !slug || !category_id || !user_id) {
             res.status(400).json({

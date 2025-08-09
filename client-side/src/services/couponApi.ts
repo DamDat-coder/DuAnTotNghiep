@@ -165,10 +165,8 @@ export async function validateCoupon(
 
     const now = new Date();
     if (
-      !coupon.startDate ||
-      !coupon.endDate ||
-      new Date(coupon.startDate) > now ||
-      new Date(coupon.endDate) < now
+      (coupon.startDate && new Date(coupon.startDate) > now) ||
+      (coupon.endDate && new Date(coupon.endDate) < now)
     ) {
       return { success: false, message: "Mã giảm giá hết hiệu lực." };
     }

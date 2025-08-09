@@ -37,7 +37,6 @@ const mongoose_1 = __importStar(require("mongoose"));
 const addressSchema = new mongoose_1.Schema({
     street: { type: String, required: false, trim: true },
     ward: { type: String, required: false, trim: true },
-    district: { type: String, required: false, trim: true },
     province: { type: String, required: false, trim: true },
     is_default: { type: Boolean, default: false },
 }, {

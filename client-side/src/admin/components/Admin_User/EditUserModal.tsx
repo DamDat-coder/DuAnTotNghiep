@@ -197,13 +197,10 @@ export default function EditUserModal({
                     className="p-2 border-b last:border-b-0 flex items-center"
                   >
                     <span
-                      className={`flex-1${
-                        address.is_default ? " text-green-600" : ""
-                      }`}
+                      className={`flex-1${address.is_default ? " text-green-600" : ""}`}
                     >
                       {address.street || "Chưa có đường"},{" "}
                       {address.ward || "Chưa có phường/xã"},{" "}
-                      {address.district || "Chưa có quận/huyện"},{" "}
                       {address.province || "Chưa có tỉnh/thành"}, Việt Nam
                     </span>
                   </div>
@@ -272,7 +269,6 @@ export default function EditUserModal({
                   >
                     {address.street || "Chưa có đường"},{" "}
                     {address.ward || "Chưa có phường/xã"},{" "}
-                    {address.district || "Chưa có quận/huyện"},{" "}
                     {address.province || "Chưa có tỉnh/thành"}, Việt Nam
                   </span>
                 </div>

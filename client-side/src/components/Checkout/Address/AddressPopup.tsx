@@ -54,8 +54,7 @@ export default function AddressPopup({
                     className="flex items-baseline justify-center w-9 h-full accent-black"
                   />
                   <span>
-                    {address.street}, {address.ward}, {address.district},{" "}
-                    {address.province}, Việt Nam
+                    {address.street}, {address.ward}, {address.province}, Việt Nam
                     {address.is_default && (
                       <span className="ml-2 text-green-600">(Mặc định)</span>
                     )}

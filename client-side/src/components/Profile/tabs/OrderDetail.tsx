@@ -13,13 +13,20 @@ import toast from "react-hot-toast";
 import { suggestedReviews } from "@/constants/suggestedReviews";
 import type { IReview } from "@/types/review";
 
+// Định nghĩa kiểu User để tránh dùng any
+interface User {
+  _id: string;
+  name: string;
+  [key: string]: any; // Cho phép các thuộc tính khác
+}
+
 interface OrderDetailProps {
   order: OrderDetail;
   setActiveTab?: (tab: string) => void;
 }
 
 export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<
     (IProduct & {
@@ -31,7 +38,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   >([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [reviewProductId, setReviewProductId] = useState<string | null>(null);
-  const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productReviews, setProductReviews] = useState<
     Record<string, IReview[]>
@@ -40,8 +46,8 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
 
   // Hàm logout
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Xóa token hoặc thông tin xác thực
-    router.push("/login"); // Điều hướng về trang đăng nhập
+    localStorage.removeItem("token");
+    router.push("/login");
   };
 
   // Lấy thông tin người dùng
@@ -49,9 +55,18 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     async function fetchUserData() {
       try {
         const fetchedUser = await fetchUser();
-        setUser(fetchedUser);
+        console.log("Fetched user:", fetchedUser); // Log để debug
+        if (fetchedUser) {
+          setUser({
+            ...fetchedUser,
+            _id: fetchedUser.id, // chuyển id thành _id
+          });
+        } else {
+          setUser(null);
+        }
       } catch (error) {
-        console.error("Lỗi khi fetch user:", error); // Log lỗi để debug
+        console.error("Lỗi khi fetch user:", error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -90,7 +105,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
           )
         );
       } catch (error) {
-        console.error("Lỗi khi fetch sản phẩm:", error); // Log lỗi để debug
+        console.error("Lỗi khi fetch sản phẩm:", error);
       }
     }
     if (order.items.length > 0) {
@@ -98,24 +113,27 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     }
   }, [order.items]);
 
-  // Fetch review cho từng sản phẩm khi products thay đổi
+  // Fetch review cho từng sản phẩm khi products hoặc user thay đổi
   useEffect(() => {
     if (products.length === 0 || !user?._id) return;
     async function fetchAllProductReviews() {
+      if (!user || !user._id) return;
       const reviewsObj: Record<string, IReview[]> = {};
       await Promise.all(
         products.map(async (product) => {
           try {
             const reviews = await fetchProductOrderReviews(
               product._id,
-              user._id
+              user?._id
             );
             reviewsObj[product._id] = reviews;
           } catch (error) {
+            console.error(`Lỗi fetch đánh giá cho sản phẩm ${product._id}:`, error);
             reviewsObj[product._id] = [];
           }
         })
       );
+      console.log("Product reviews:", reviewsObj); // Log để debug
       setProductReviews(reviewsObj);
     }
     fetchAllProductReviews();
@@ -166,28 +184,24 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   // Kiểm tra đã đánh giá
   const hasProductReviewed = (productId: string) => {
     const reviews = productReviews[productId] || [];
-    return reviews.some(
-      (review) =>
-        (typeof review.userId === "string"
+    return reviews.some((review) => {
+      const reviewUserId =
+        typeof review.userId === "string"
           ? review.userId
-          : review.userId?._id) === user?._id
-    );
+          : review.userId?._id;
+      return (
+        reviewUserId === user?._id &&
+        (typeof review.orderId === "string"
+          ? review.orderId === order._id
+          : review.orderId?._id === order._id) // So sánh đúng kiểu dữ liệu
+      );
+    });
   };
 
-  // Nếu đang tải hoặc không tìm thấy người dùng
-  if (isLoading) {
-    return (
-      <div className="text-center py-10 text-gray-500 font-medium">
-        Đang tải đơn hàng...
-      </div>
-    );
-  }
-
-  // Hàm mở popup đánh giá cho từng sản phẩm
+  // Hàm mở popup đánh giá
   const handleOpenReview = (productId: string) => {
     setReviewProductId(productId);
     setIsPopupOpen(true);
-    setReviewImages([]); // reset ảnh khi mở popup mới
   };
 
   // Hàm xử lý gửi đánh giá
@@ -215,16 +229,15 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
       );
       if (res.success && !res.warning) {
         toast.success(res.message);
-        // Fetch lại review cho sản phẩm này ngay lập tức
         const reviews = await fetchProductOrderReviews(
           reviewProductId,
-          user._id
+          user!._id
         );
+        console.log("Đánh giá đã gửi thành công:", reviews);
         setProductReviews((prev) => ({
           ...prev,
           [reviewProductId]: reviews,
         }));
-        // Đóng popup sau khi gửi thành công
         setIsPopupOpen(false);
         setReviewProductId(null);
       } else if (res.accountBlocked) {
@@ -255,7 +268,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
           handleLogout();
         }, 2000);
       } else {
-        console.error("Lỗi khi gửi đánh giá:", err); // Log lỗi để debug
+        console.error("Lỗi khi gửi đánh giá:", err);
         toast.error(err?.message || "Không thể gửi đánh giá.");
         setIsPopupOpen(false);
         setReviewProductId(null);
@@ -265,6 +278,14 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="text-center py-10 text-gray-500 font-medium">
+        Đang tải đơn hàng...
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="text-center py-10 text-gray-500 font-medium">
@@ -273,21 +294,30 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     );
   }
 
-  // Lấy userId hiện tại
-  const userId = user?._id;
-
   // Lấy review của user cho sản phẩm đang mở popup
   const userReview =
-    reviewProductId && productReviews[reviewProductId]
+    reviewProductId && productReviews[reviewProductId] && user
       ? productReviews[reviewProductId].find(
-          (r) =>
-            (typeof r.userId === "string" ? r.userId : r.userId?._id) === userId
+          (r) => {
+            const reviewUserId =
+              typeof r.userId === "string"
+                ? r.userId
+                : r.userId?._id;
+            // So sánh cả userId, productId và orderId
+            return (
+              reviewUserId === user._id &&
+              (typeof r.orderId === "string"
+                ? r.orderId === order._id
+                : r.orderId?._id === order._id)
+            );
+          }
         )
       : undefined;
+  console.log("User Review:", userReview);
 
   return (
     <>
-      <div className="w-[894px] mx-auto px-4 py-6 space-y-5">
+      <div className="w-[894px] mx-auto space-y-5">
         <h1 className="text-xl font-bold border-b pb-2">ĐƠN HÀNG</h1>
         <div className="flex justify-between items-center text-sm">
           <button
@@ -386,7 +416,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
                 <strong>Địa chỉ nhận hàng:</strong>{" "}
                 {order.shippingAddress?.street || ""},{" "}
                 {order.shippingAddress?.ward || ""},{" "}
-                {order.shippingAddress?.district || ""},{" "}
                 {order.shippingAddress?.province || ""}
               </p>
               <p>

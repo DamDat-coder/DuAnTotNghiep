@@ -17,7 +17,7 @@ interface ShippingFormProps {
   selectedAddress: Address | null;
   setIsAddressPopupOpen: (isOpen: boolean) => void;
   addresses: Address[];
-  isLoading: boolean; // <-- dùng từ prop, không khai báo lại
+  isLoading: boolean;
 }
 
 export default function ShippingForm({
@@ -32,38 +32,29 @@ export default function ShippingForm({
 }: ShippingFormProps) {
   const {
     provinces,
-    districts,
     wards,
     provinceCode,
-    districtCode,
     setProvinceCode,
-    setDistrictCode,
     setWardCode,
   } = useAddressData();
 
-  // Đồng bộ code khi user đã có selectedAddress (địa chỉ được chọn từ popup)
+  // Đồng bộ code khi user đã có selectedAddress
   useEffect(() => {
     if (selectedAddress) {
       const provinceObj = provinces.find(
         (p) => p.name === selectedAddress.province
-      );
-      const districtObj = districts.find(
-        (d) => d.name === selectedAddress.district
       );
       const wardObj = wards.find((w) => w.name === selectedAddress.ward);
 
       if (provinceObj) setProvinceCode(provinceObj.code);
       else console.warn("Province not found:", selectedAddress.province);
 
-      if (districtObj) setDistrictCode(districtObj.code);
-      else console.warn("District not found:", selectedAddress.district);
-
       if (wardObj) setWardCode(wardObj.code);
       else console.warn("Ward not found:", selectedAddress.ward);
     }
-  }, [selectedAddress, provinces, districts, wards]);
+  }, [selectedAddress, provinces, wards]);
 
-  // Đồng bộ provinceCode khi formData thay đổi (ví dụ khi nhập tay)
+  // Đồng bộ provinceCode khi formData thay đổi
   useEffect(() => {
     if (formData.province && provinces.length > 0) {
       const selectedProvince = provinces.find(
@@ -75,34 +66,14 @@ export default function ShippingForm({
     }
   }, [formData.province, provinces]);
 
-  // Đồng bộ districtCode
-  useEffect(() => {
-    if (formData.district && districts.length > 0) {
-      const selectedDistrict = districts.find(
-        (d) => d.name === formData.district
-      );
-      if (selectedDistrict && selectedDistrict.code !== districtCode) {
-        setDistrictCode(selectedDistrict.code);
-      }
-    }
-  }, [formData.district, districts]);
-
   // Custom select change để reset logic form và cập nhật code
   const customHandleSelectChange = (name: string, option: any) => {
     const value = option ? option.value : "";
 
-    // Cập nhật form
     handleSelectChange(name, option);
 
-    // Reset các trường phụ thuộc
     if (name === "province") {
       setProvinceCode(provinces.find((p) => p.name === value)?.code || null);
-      setDistrictCode(null);
-      setWardCode(null);
-      handleSelectChange("district", null);
-      handleSelectChange("ward", null);
-    } else if (name === "district") {
-      setDistrictCode(districts.find((d) => d.name === value)?.code || null);
       setWardCode(null);
       handleSelectChange("ward", null);
     } else if (name === "ward") {
@@ -128,7 +99,7 @@ export default function ShippingForm({
           ) : selectedAddress ? (
             <span className="text-slate-500">
               {selectedAddress.street}, {selectedAddress.ward},{" "}
-              {selectedAddress.district}, {selectedAddress.province}, Việt Nam
+              {selectedAddress.province}, Việt Nam
               {selectedAddress.is_default && (
                 <span className="ml-2 text-green-600">(Mặc định)</span>
               )}
@@ -232,34 +203,6 @@ export default function ShippingForm({
           )}
         </div>
 
-        {/* Quận huyện */}
-        <div>
-          <label className="text-[1rem] font-medium">
-            Quận huyện<span className="text-red-600">*</span>
-          </label>
-          <Select
-            name="district"
-            value={
-              formData.district
-                ? { value: formData.district, label: formData.district }
-                : null
-            }
-            onChange={(option) => customHandleSelectChange("district", option)}
-            options={districts.map((d) => ({
-              value: d.name,
-              label: d.name,
-            }))}
-            placeholder="Chọn quận huyện"
-            className="mt-2"
-            classNamePrefix="react-select"
-            isDisabled={!formData.province || districts.length === 0}
-            isClearable
-          />
-          {errors.district && (
-            <p className="text-red-500 text-sm mt-1">{errors.district}</p>
-          )}
-        </div>
-
         {/* Phường xã */}
         <div>
           <label className="text-[1rem] font-medium">
@@ -280,7 +223,7 @@ export default function ShippingForm({
             placeholder="Chọn phường xã"
             className="mt-2"
             classNamePrefix="react-select"
-            isDisabled={!formData.district || wards.length === 0}
+            isDisabled={!formData.province || wards.length === 0}
             isClearable
           />
           {errors.ward && (

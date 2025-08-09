@@ -4,12 +4,10 @@ export interface Address {
   _id: string;
   street: string;
   ward: string;
-  district: string;
   province: string;
   is_default: boolean;
-  province_code?: string; // <-- thêm dòng này
-  district_code?: string; // <-- thêm dòng này
-  ward_code?: string;     // <-- thêm dòng này
+  province_code?: string; 
+  ward_code?: string;    
 }
 export interface IUser {
   id: string;

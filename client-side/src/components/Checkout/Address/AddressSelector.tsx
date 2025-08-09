@@ -18,8 +18,7 @@ export default function AddressSelector({
       >
         {defaultAddress ? (
           <p className="text-gray-700">
-            {defaultAddress.street}, {defaultAddress.ward},{" "}
-            {defaultAddress.district}, {defaultAddress.province}, Việt Nam
+            {defaultAddress.street}, {defaultAddress.ward}, {defaultAddress.province}, Việt Nam
           </p>
         ) : (
           <p className="text-gray-500">Chưa chọn địa chỉ mặc định</p>

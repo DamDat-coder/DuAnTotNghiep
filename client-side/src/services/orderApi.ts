@@ -272,20 +272,36 @@ status:
     } as OrderDetail;
   }
 }
-// Lấy 5 sản phẩm bán chạy nhất
+
+// Lấy 5 sản phẩm bán chạy nhất theo time range (today, week, month)
 export function getBestSellingProductsFromOrders(
   orders: IOrder[],
-  time: "week" | "month" = "week",
+  time: "today" | "week" | "month" = "week",
   limit = 5
 ) {
   const now = new Date();
+  let start: Date, end: Date;
+  if (time === "today") {
+    start = new Date(now); start.setHours(0, 0, 0, 0);
+    end = new Date(now); end.setHours(23, 59, 59, 999);
+  } else if (time === "week") {
+    const day = now.getDay();
+    start = new Date(now); start.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); start.setHours(0, 0, 0, 0);
+    end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999);
+  } else { // month
+    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
 
-  const filteredOrders = orders.filter((order) => {
+  // Lọc các order đã giao thành công trong khoảng thời gian này
+  const filteredOrders = orders.filter(order => {
     if (!order.createdAt) return false;
-    const createdAt = new Date(order.createdAt);
-    const diffDays =
-      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-    return time === "week" ? diffDays <= 7 : diffDays <= 30;
+    const created = new Date(order.createdAt);
+    return (
+      order.status === "delivered" && // Chỉ tính đơn giao thành công!
+      created >= start &&
+      created <= end
+    );
   });
 
   const productMap = new Map<
@@ -303,8 +319,7 @@ export function getBestSellingProductsFromOrders(
 
   filteredOrders.forEach((order) => {
     order.items.forEach((item) => {
-      const key = `${item.productId}-${item.color}-${item.size}`; // nếu cần phân biệt theo biến thể
-
+      const key = `${item.productId}-${item.color}-${item.size}`;
       if (!productMap.has(key)) {
         productMap.set(key, {
           id: item.productId,
@@ -318,7 +333,7 @@ export function getBestSellingProductsFromOrders(
       } else {
         const existing = productMap.get(key)!;
         existing.sold += item.quantity;
-productMap.set(key, existing);
+        productMap.set(key, existing);
       }
     });
   });

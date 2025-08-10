@@ -61,7 +61,7 @@ export default function CouponList() {
                   key={coupon._id}
                   className="flex flex-col gap-4 rounded-lg p-4 shadow-custom-order transition-all border"
                 >
-                  <div>
+                  <div className="h-[4.5rem]">
                     <h2 className="text-xl font-semibold">{coupon.code}</h2>
                     <p className="text-gray-600 text-sm line-clamp-2">
                       {coupon.description || "Không có mô tả"}
@@ -71,7 +71,9 @@ export default function CouponList() {
                     <p className="text-black font-bold">
                       {coupon.discountType === "percent"
                         ? `Giảm ${coupon.discountValue}%`
-                        : `Giảm ${coupon.discountValue.toLocaleString("vi-VN")}đ`}
+                        : `Giảm ${coupon.discountValue.toLocaleString(
+                            "vi-VN"
+                          )}đ`}
                     </p>
                     <p className="text-sm text-black">
                       Còn:{" "}
@@ -174,17 +176,17 @@ export default function CouponList() {
                   {selectedCoupon.startDate && selectedCoupon.endDate
                     ? `${new Date(selectedCoupon.startDate).toLocaleDateString(
                         "vi-VN"
-                      )} - ${new Date(selectedCoupon.endDate).toLocaleDateString(
-                        "vi-VN"
-                      )}`
+                      )} - ${new Date(
+                        selectedCoupon.endDate
+                      ).toLocaleDateString("vi-VN")}`
                     : selectedCoupon.startDate
-                    ? `Từ ngày ${new Date(selectedCoupon.startDate).toLocaleDateString(
-                        "vi-VN"
-                      )}, vô thời hạn`
+                    ? `Từ ngày ${new Date(
+                        selectedCoupon.startDate
+                      ).toLocaleDateString("vi-VN")}, vô thời hạn`
                     : selectedCoupon.endDate
-                    ? `Hiệu lực đến ngày ${new Date(selectedCoupon.endDate).toLocaleDateString(
-                        "vi-VN"
-                      )}`
+                    ? `Hiệu lực đến ngày ${new Date(
+                        selectedCoupon.endDate
+                      ).toLocaleDateString("vi-VN")}`
                     : "Không giới hạn thời gian"}
                 </p>
                 <p>

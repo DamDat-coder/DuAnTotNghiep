@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { initiatePayment, createOrder } from "@/services/orderApi";
-import { validateCoupon } from "@/services/couponApi";
+import { fetchAllCoupons, validateCoupon } from "@/services/couponApi";
 import {
   addAddressWhenCheckout,
   setDefaultAddress as setDefaultAddressApi,
@@ -12,7 +12,8 @@ import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
 import { fetchProductCategory } from "@/services/productApi";
-
+import { useSearchParams } from "next/navigation";
+import { Coupon } from "@/types/coupon";
 const generateOrderId = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
@@ -62,11 +63,36 @@ export const useCheckout = () => {
     ward: "",
     address: "",
   });
-
+  const searchParams = useSearchParams();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isAddressPopupOpen, setIsAddressPopupOpen] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
+  // Fetch mã giảm giá từ API
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const response = await fetchAllCoupons(true, undefined, 1, 100); // Lấy mã đang hoạt động, limit 100
+        setAvailableCoupons(response.data || []);
+      } catch (error) {
+        toast.error("Không thể tải mã giảm giá.");
+        setAvailableCoupons([]);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
+  // Đồng bộ discountCode từ searchParams
+  useEffect(() => {
+    const couponFromUrl = searchParams.get("coupon");
+    if (
+      couponFromUrl &&
+      availableCoupons.some((c) => c.code === couponFromUrl)
+    ) {
+      setDiscountCode(couponFromUrl);
+    }
+  }, [searchParams, availableCoupons]);
 
   // Hàm phân bổ giảm giá cho từng sản phẩm
   const calculateDiscountPerItem = (
@@ -141,7 +167,9 @@ export const useCheckout = () => {
       if (shippingMethod === "standard") {
         newShippingFee = 0;
         if (!isFreeShipping) {
-          toast.success("Đơn hàng của bạn được miễn phí vận chuyển theo phương thức tiêu chuẩn!");
+          toast.success(
+            "Đơn hàng của bạn được miễn phí vận chuyển theo phương thức tiêu chuẩn!"
+          );
           setIsFreeShipping(true);
         }
       } else if (shippingMethod === "express") {
@@ -477,5 +505,6 @@ export const useCheckout = () => {
     setIsAddressPopupOpen,
     handleSelectAddress,
     isFreeShipping,
+    availableCoupons,
   };
 };

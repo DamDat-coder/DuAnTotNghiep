@@ -1,0 +1,60 @@
+name: Deploy to VPS (Windows)
+
+on:
+  push:
+    branches: ["VPS"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH to VPS and deploy
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASS }}
+          port: 22
+          script_stop: true
+          command_timeout: 40m
+          script: |
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "
+              $ErrorActionPreference = 'Stop';
+
+              # === paths (điều chỉnh nếu bạn khác) ===
+              $ROOT = 'C:\DuAnTotNghiep';
+              $BE   = 'C:\DuAnTotNghiep\server-side';
+              $FE   = 'C:\DuAnTotNghiep\client-side';
+
+              if (!(Test-Path $ROOT)) { New-Item -ItemType Directory -Path $ROOT | Out-Null }
+              Set-Location $ROOT
+
+              # Pull code mới nhất từ branch VPS
+              if (!(Test-Path '.git')) {
+                git clone https://github.com/<your_org>/<your_repo>.git .
+              }
+              git fetch origin VPS
+              git checkout VPS
+              git reset --hard origin/VPS
+
+              # === Backend ===
+              Set-Location $BE
+              npm ci --no-audit --no-fund
+              npm run build
+              # startOrReload nếu có ecosystem, fallback nếu chưa có
+              if (Test-Path \"$ROOT\ecosystem.config.js\") {
+                pm2 startOrReload \"$ROOT\ecosystem.config.js\" --only backend
+              } else {
+                pm2 start npm --name backend -- run start:prod
+              }
+
+              # === Frontend ===
+              Set-Location $FE
+              npm ci --no-audit --no-fund
+              npm run build
+              # đảm bảo script start phục vụ đúng cổng (3300)
+              pm2 delete frontend 2>$null
+              pm2 start npm --name frontend -- run start
+
+              pm2 save
+            "

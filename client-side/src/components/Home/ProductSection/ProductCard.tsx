@@ -31,7 +31,7 @@ export default function ProductCard({
         alt={name || "Sản phẩm"}
         width={200}
         height={200}
-        className="w-full h-[16.8125rem] laptop:h-[18.3125rem] object-cover rounded"
+        className="w-auto h-[17rem] laptop:h-[18rem] desktop:[13rem] object-cover rounded"
         draggable={false}
       />
       {discountPercent > 0 && (

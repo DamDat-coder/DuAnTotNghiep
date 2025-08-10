@@ -24,7 +24,6 @@ export default function CartItem({
   isDisabled = false,
   isOutOfStock = false,
 }: CartItemProps) {
-  console.log(item.stock);
   const maxQuantity = item.stock || 0;
 
   const handleQuantityChange = (change: number) => {

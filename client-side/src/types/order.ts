@@ -61,6 +61,7 @@ export interface OrderDetail {
   createdAt?: string;
   updatedAt?: string;
 }
+
 export interface OrderReview {
   _id: string;
   orderCode: string;

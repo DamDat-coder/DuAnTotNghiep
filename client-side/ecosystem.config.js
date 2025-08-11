@@ -2,13 +2,18 @@ module.exports = {
   apps: [
     {
       name: "frontend",
-      script: "npx",
-      args: "next start -p 3300",
       cwd: "C:/DuAnTotNghiep/client-side",
+      script: "./node_modules/next/dist/bin/next",
+      args: "start -p 3300",
       env: {
         NODE_ENV: "production",
+        NEXT_PUBLIC_API_URL: "http://api.styleforyou.online",
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID:
+          "995974862597-d2ab3adri4496s828b088pj94l4b9ofn.apps.googleusercontent.com",
+        NEXT_PUBLIC_DISABLE_FAST_REFRESH: "true",
       },
-      interpreter: "cmd.exe",
+      autorestart: true,
+      max_memory_restart: "600M",
       log_date_format: "YYYY-MM-DD HH:mm:ss",
     },
   ],

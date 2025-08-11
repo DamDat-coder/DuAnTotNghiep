@@ -12,6 +12,7 @@ export interface ICartItem {
   selected?: boolean;
   categoryId: string;
   stock: number;
+  fromBuyNow?: boolean;
 }
 
 export interface CartProps {

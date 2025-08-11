@@ -5,7 +5,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { IProduct } from "@/types/product";
-import { useCartDispatch } from "@/contexts/CartContext";
+import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginPopup from "../Popups/AuthAction/LoginPopup";
@@ -18,7 +18,8 @@ interface BuyNowPopupProps {
 
 const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   const dispatch = useCartDispatch();
-  const { login, user } = useAuth();
+  const { items } = useCart();
+  const { user } = useAuth();
   const firstAvailableVariant = product.variants.find((v) => v.stock > 0);
 
   const [selectedSize, setSelectedSize] = useState(
@@ -72,7 +73,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
 
   const maxQuantity = selectedVariant ? selectedVariant.stock : 0;
 
-  // Tính toán các size khả dụng dựa trên selectedColor
   const availableSizes = selectedColor
     ? product.variants
         .filter((v) => v.color === selectedColor && v.stock > 0)
@@ -85,7 +85,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     }
   }, [maxQuantity, quantity]);
 
-  // Reset selectedSize nếu nó không có trong availableSizes
   useEffect(() => {
     if (selectedSize && !availableSizes.includes(selectedSize)) {
       setSelectedSize("");
@@ -102,12 +101,15 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
         quantity,
         applyCoupon: applyCoupon && couponId ? couponId : null,
       };
-      localStorage.setItem("pendingBuyNow", JSON.stringify(pendingBuyNow));
+      try {
+        localStorage.setItem("pendingBuyNow", JSON.stringify(pendingBuyNow));
+      } catch (error) {
+        console.error("DEBUG: Error saving pendingBuyNow:", error);
+      }
       setIsLoginPopupOpen(true);
       toast.error("Vui lòng đăng nhập để tiếp tục mua hàng!");
       return;
     }
-
     if (!selectedColor) {
       toast.error("Vui lòng chọn màu sắc!");
       return;
@@ -129,32 +131,69 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       return;
     }
 
-    dispatch({ type: "resetSelected" });
+    const existingItem = items.find(
+      (item) =>
+        item.id === product.id &&
+        item.size === selectedSize &&
+        item.color === selectedColor
+    );
 
-    const cartItem = {
-      id: product.id,
-      name: product.name,
-      originPrice:selectedVariant.price,
-      price: discountedPrice,
-      discountPercent: selectedVariant.discountPercent,
-      image: product.images[0] || "",
-      quantity,
-      size: selectedSize,
-      color: selectedColor,
-      liked: false,
-      selected: true,
-      categoryId: product.categoryId,
-      stock: selectedVariant.stock,
-    };
+    try {
+      if (existingItem) {
+        dispatch({
+          type: "toggleSelect",
+          id: product.id,
+          size: selectedSize,
+          color: selectedColor,
+        });
+        dispatch({
+          type: "updateQuantity",
+          id: product.id,
+          size: selectedSize,
+          color: selectedColor,
+          quantity: quantity,
+        });
+      } else {
+        const cartItem = {
+          id: product.id,
+          name: product.name,
+          originPrice: selectedVariant.price,
+          price: discountedPrice,
+          discountPercent: selectedVariant.discountPercent,
+          image: product.images[0] || "",
+          quantity,
+          size: selectedSize,
+          color: selectedColor,
+          liked: false,
+          selected: true,
+          categoryId: product.categoryId,
+          stock: selectedVariant.stock,
+          fromBuyNow: true, // Thêm để nhận diện BuyNow
+        };
+        dispatch({ type: "add", item: cartItem });
+      }
 
-    if (applyCoupon && couponId) {
-      localStorage.setItem("pendingCouponCode", couponId);
+      const recentBuyNow = {
+        id: product.id,
+        size: selectedSize,
+        color: selectedColor,
+        quantity,
+      };
+      localStorage.setItem("recentBuyNow", JSON.stringify(recentBuyNow));
+
+      if (applyCoupon && couponId) {
+        localStorage.setItem("pendingCouponCode", couponId);
+      }
+
+      toast.success("Đã thêm vào giỏ hàng!");
+      setTimeout(() => {
+        window.location.href = "/checkout";
+      }, 500);
+      onClose();
+    } catch (error) {
+      console.error("DEBUG: Error in handleConfirm:", error);
+      toast.error("Có lỗi khi thêm sản phẩm vào giỏ hàng!");
     }
-
-    dispatch({ type: "add", item: cartItem });
-    toast.success("Đã thêm vào giỏ hàng!");
-    window.location.href = "/checkout";
-    onClose();
   };
 
   const handleOpenSizeChart = (e: React.MouseEvent) => {
@@ -181,6 +220,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   };
 
   return (
+    // ...giữ nguyên phần giao diện
     <>
       <AnimatePresence>
         {isOpen && (
@@ -326,9 +366,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                                 v.stock > 0
                             )
                           : size.inStock;
-                        console.log(
-                          `Size: ${size.value}, Color: ${selectedColor}, isAvailable: ${isAvailable}`
-                        );
                         return (
                           <div
                             key={size.value}

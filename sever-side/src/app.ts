@@ -25,8 +25,6 @@ import { errorHandler } from "./middlewares/error.middleware";
 import "./jobs/cron";
 import "./jobs/notifyFreeship.job";
 
-dotenv.config();
-
 const app = express();
 
 /** ---------- Hardening & middlewares cơ bản ---------- */

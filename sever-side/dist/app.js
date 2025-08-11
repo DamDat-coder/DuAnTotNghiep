@@ -9,7 +9,6 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
-const dotenv_1 = __importDefault(require("dotenv"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const xss_clean_1 = __importDefault(require("xss-clean"));
 const hpp_1 = __importDefault(require("hpp"));
@@ -28,7 +27,6 @@ const address_routes_1 = __importDefault(require("./routes/address.routes"));
 const error_middleware_1 = require("./middlewares/error.middleware");
 require("./jobs/cron");
 require("./jobs/notifyFreeship.job");
-dotenv_1.default.config();
 const app = (0, express_1.default)();
 /** ---------- Hardening & middlewares cơ bản ---------- */
 app.set("trust proxy", 1);

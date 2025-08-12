@@ -48,6 +48,7 @@ const defaultAllowed = [
     "https://styleforyou.online",
     "http://www.styleforyou.online",
     "https://www.styleforyou.online",
+    "http://103.106.104.87:3300/",
 ];
 const allowedOrigins = ((_a = process.env.CORS_ORIGINS) !== null && _a !== void 0 ? _a : "")
     .split(",")

@@ -1,9 +1,7 @@
-// app.ts (hoặc index.ts trong sever)
 import express from "express";
 import cors, { CorsOptions } from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 import xss from "xss-clean";
 import hpp from "hpp";
@@ -38,31 +36,29 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-/** ---------- CORS (dev + prod) ---------- 
- * Khuyến nghị set env:
- * CORS_ORIGINS=http://styleforyou.online,https://styleforyou.online,http://www.styleforyou.online,https://www.styleforyou.online,http://localhost:3300
- */
+/** ---------- CORS (dev + prod) ---------- */
+const normalize = (s?: string | null) => (s ? s.replace(/\/+$/, "") : s);
 const defaultAllowed = [
   "http://localhost:3300",
   "http://styleforyou.online",
   "https://styleforyou.online",
   "http://www.styleforyou.online",
   "https://www.styleforyou.online",
-  "http://103.106.104.87:3300/",
-];
+  "http://103.106.104.87:3300", // BỎ dấu / cuối
+].map(normalize);
 
-const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
+const allowedFromEnv = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((s) => s.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  .map(normalize);
 
-const ORIGINS = allowedOrigins.length > 0 ? allowedOrigins : defaultAllowed;
+const ORIGINS = allowedFromEnv.length > 0 ? allowedFromEnv : defaultAllowed;
 
 const corsOptions: CorsOptions = {
   origin(origin, cb) {
-    // Cho phép: request không có Origin (server-to-server, Postman, cron...),
-    // hoặc Origin nằm trong whitelist
-    if (!origin || ORIGINS.includes(origin)) return cb(null, true);
+    const o = normalize(origin);
+    if (!origin || ORIGINS.includes(o!)) return cb(null, true);
     return cb(new Error("Not allowed by CORS"));
   },
   credentials: true,
@@ -70,7 +66,6 @@ const corsOptions: CorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
-// Preflight cho mọi route
 app.options("*", cors(corsOptions));
 
 /** ---------- Rate limit ---------- */
@@ -81,7 +76,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
 });
-// Đừng tính preflight OPTIONS vào rate limit
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") return next();
   return limiter(req, res, next);
@@ -99,7 +93,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/address", addressRoutes);
 
-// Health-check (tuỳ chọn)
+// Health-check
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,

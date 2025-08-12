@@ -1,5 +1,4 @@
-// index.ts
-import 'dotenv/config';              // tự load .env theo cwd
+import 'dotenv/config';
 import app from './app';
 import connectDB from './config/db';
 
@@ -11,6 +10,7 @@ const HOST = process.env.HOST || '127.0.0.1';
     await connectDB();
     app.listen(PORT, HOST, () => {
       console.log(`🚀 Server running at http://${HOST}:${PORT}`);
+      console.log(`🌐 Public API via Nginx: http://api.styleforyou.online (-> /api/*)`);
     });
   } catch (err) {
     console.error('❌ Kết nối MongoDB thất bại:', err);

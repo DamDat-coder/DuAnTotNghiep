@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-// app.ts (hoặc index.ts trong sever)
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -38,28 +37,26 @@ app.use((0, morgan_1.default)("dev"));
 app.use(express_1.default.json({ limit: "10mb" }));
 app.use(express_1.default.urlencoded({ extended: true, limit: "10mb" }));
 app.use((0, cookie_parser_1.default)());
-/** ---------- CORS (dev + prod) ----------
- * Khuyến nghị set env:
- * CORS_ORIGINS=http://styleforyou.online,https://styleforyou.online,http://www.styleforyou.online,https://www.styleforyou.online,http://localhost:3300
- */
+/** ---------- CORS (dev + prod) ---------- */
+const normalize = (s) => (s ? s.replace(/\/+$/, "") : s);
 const defaultAllowed = [
     "http://localhost:3300",
     "http://styleforyou.online",
     "https://styleforyou.online",
     "http://www.styleforyou.online",
     "https://www.styleforyou.online",
-    "http://103.106.104.87:3300/",
-];
-const allowedOrigins = ((_a = process.env.CORS_ORIGINS) !== null && _a !== void 0 ? _a : "")
+    "http://103.106.104.87:3300", // BỎ dấu / cuối
+].map(normalize);
+const allowedFromEnv = ((_a = process.env.CORS_ORIGINS) !== null && _a !== void 0 ? _a : "")
     .split(",")
     .map((s) => s.trim())
-    .filter(Boolean);
-const ORIGINS = allowedOrigins.length > 0 ? allowedOrigins : defaultAllowed;
+    .filter(Boolean)
+    .map(normalize);
+const ORIGINS = allowedFromEnv.length > 0 ? allowedFromEnv : defaultAllowed;
 const corsOptions = {
     origin(origin, cb) {
-        // Cho phép: request không có Origin (server-to-server, Postman, cron...),
-        // hoặc Origin nằm trong whitelist
-        if (!origin || ORIGINS.includes(origin))
+        const o = normalize(origin);
+        if (!origin || ORIGINS.includes(o))
             return cb(null, true);
         return cb(new Error("Not allowed by CORS"));
     },
@@ -68,7 +65,6 @@ const corsOptions = {
     allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use((0, cors_1.default)(corsOptions));
-// Preflight cho mọi route
 app.options("*", (0, cors_1.default)(corsOptions));
 /** ---------- Rate limit ---------- */
 const limiter = (0, express_rate_limit_1.default)({
@@ -78,7 +74,6 @@ const limiter = (0, express_rate_limit_1.default)({
     legacyHeaders: false,
     message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
 });
-// Đừng tính preflight OPTIONS vào rate limit
 app.use((req, res, next) => {
     if (req.method === "OPTIONS")
         return next();
@@ -95,7 +90,7 @@ app.use("/api/payment", payment_routers_1.default);
 app.use("/api/reviews", review_routes_1.default);
 app.use("/api/notifications", notification_routes_1.default);
 app.use("/api/address", address_routes_1.default);
-// Health-check (tuỳ chọn)
+// Health-check
 app.get("/api/health", (_req, res) => {
     res.json({
         ok: true,

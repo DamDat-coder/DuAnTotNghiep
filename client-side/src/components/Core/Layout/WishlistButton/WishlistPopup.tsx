@@ -59,7 +59,10 @@ export default function WishlistPopup({
   const selectedVariant = product.variants.find(
     (v) => v.size === selectedSize && v.color === selectedColor
   );
-
+  const discountedPrice = Math.round(
+    (selectedVariant?.price ?? 0) *
+      (1 - (selectedVariant?.discountPercent ?? 0) / 100)
+  );
   // Hiệu ứng cấm scroll khi mở popup
   useEffect(() => {
     if (isOpen) {
@@ -94,7 +97,7 @@ export default function WishlistPopup({
       color: selectedColor,
       price: selectedVariant.price,
       discountPercent: selectedVariant.discountPercent,
-      discountedPrice: selectedVariant.discountedPrice,
+      discountedPrice: discountedPrice,
       outOfStock: selectedVariant.stock === 0, // đánh dấu hết hàng
     });
     onClose();
@@ -152,12 +155,7 @@ export default function WishlistPopup({
                 </h2>
                 <div className="flex items-center gap-4 mt-2">
                   <p className="text-red-500 font-bold text-lg">
-                    {(
-                      selectedVariant?.discountedPrice ||
-                      product.variants[0]?.discountedPrice ||
-                      0
-                    ).toLocaleString("vi-VN")}
-                    ₫
+                    {discountedPrice.toLocaleString("vi-VN")}₫
                   </p>
                   {selectedVariant && selectedVariant.discountPercent > 0 && (
                     <p className="text-sm text-[#374151] line-through">

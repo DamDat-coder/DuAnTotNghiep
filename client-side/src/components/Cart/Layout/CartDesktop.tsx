@@ -29,8 +29,7 @@ export default function CartDesktop({
   );
   const selectedItemsCount = selectedItems.length;
   const selectedTotalPrice = selectedItems.reduce(
-    (sum, item) =>
-      sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
   const selectedDiscount = selectedItems.reduce(
@@ -55,7 +54,7 @@ export default function CartDesktop({
       return;
     }
 
-     window.location.href = "/checkout";
+    window.location.href = "/checkout";
   };
 
   return (

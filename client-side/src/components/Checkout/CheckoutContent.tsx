@@ -39,8 +39,8 @@ export default function Checkout() {
     isAddressPopupOpen,
     setIsAddressPopupOpen,
     handleSelectAddress,
+    availableCoupons = [], // Thêm default empty array
   } = useCheckout();
-
 
   if (isLoading) {
     return (
@@ -82,6 +82,7 @@ export default function Checkout() {
                 discountCode={discountCode}
                 setDiscountCode={setDiscountCode}
                 handleApplyDiscount={handleApplyDiscount}
+                availableCoupons={availableCoupons}
               />
               <OrderSummary
                 subtotal={subtotal}
@@ -168,7 +169,7 @@ export default function Checkout() {
                     ĐƠN HÀNG ({orderItems.length} SẢN PHẨM)
                   </h1>
                   <span className="text-[1rem] font-bold">
-                    {subtotal.toLocaleString("vi-VN")}₫
+                    {total.toLocaleString("vi-VN")}₫
                   </span>
                 </div>
                 <OrderItems
@@ -181,6 +182,7 @@ export default function Checkout() {
                   discountCode={discountCode}
                   setDiscountCode={setDiscountCode}
                   handleApplyDiscount={handleApplyDiscount}
+                  availableCoupons={availableCoupons}
                 />
                 <OrderSummary
                   subtotal={subtotal}

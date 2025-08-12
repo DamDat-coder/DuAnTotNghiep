@@ -1,9 +1,15 @@
+import { useState } from "react";
+import { useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
-import ProductSection from "../../Home/ProductSection/ProductSection";
 import DesktopImageGalleryWrapper from "../ImageGallery/DesktopImageGalleryWrapper";
 import ProductActions from "../ProductAction/ProductActions";
 import ProductDetailsSection from "../DetailSection/ProductDetailsSection";
 import ProductMainInfo from "../ProductAction/ProductMainInfo";
+import AddToCartPopup from "../../Cart/AddToCart/AddToCartPopup";
+import BuyNowPopup from "../../Core/Layout/BuyNowButton/BuyNowPopup";
+import { Suspense } from "react";
+import toast from "react-hot-toast";
+import ProductSwiper from "@/components/Home/ProductSection/ProductSwiper";
 
 export default function ProductDesktopLayout({
   product,
@@ -16,6 +22,25 @@ export default function ProductDesktopLayout({
   stock: number;
   suggestedProducts: IProduct[];
 }) {
+  const dispatch = useCartDispatch();
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+  const [isBuyNowPopupOpen, setIsBuyNowPopupOpen] = useState(false);
+  const [isAddToCartPopupOpen, setIsAddToCartPopupOpen] = useState(false);
+
+  // Hàm xử lý thêm vào giỏ hàng
+  const handleAddToCart = (selectedProduct: IProduct, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedProduct(selectedProduct);
+    setIsAddToCartPopupOpen(true);
+  };
+
+  // Hàm xử lý mua ngay
+  const handleBuyNow = (selectedProduct: IProduct, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedProduct(selectedProduct);
+    setIsBuyNowPopupOpen(true);
+  };
+
   return (
     <>
       {/* Left Column */}
@@ -28,7 +53,13 @@ export default function ProductDesktopLayout({
         />
         <ProductDetailsSection product={product} />
         <div className="mb-4 mt-9">
-          <ProductSection products={suggestedProducts} />
+          <h2 className="text-xl font-semibold mb-4">Sản phẩm gợi ý</h2>
+          <ProductSwiper
+            products={suggestedProducts}
+            slidesPerView={2.5}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
         </div>
       </div>
 
@@ -37,6 +68,30 @@ export default function ProductDesktopLayout({
         <ProductMainInfo product={product} />
         <ProductActions product={product} sizes={sizes} stock={stock} />
       </div>
+
+      {selectedProduct && (
+        <>
+          <Suspense fallback={null}>
+            <BuyNowPopup
+              product={selectedProduct}
+              isOpen={isBuyNowPopupOpen}
+              onClose={() => {
+                setIsBuyNowPopupOpen(false);
+                setSelectedProduct(null);
+              }}
+            />
+          </Suspense>
+
+          <AddToCartPopup
+            product={selectedProduct}
+            isOpen={isAddToCartPopupOpen}
+            onClose={() => {
+              setIsAddToCartPopupOpen(false);
+              setSelectedProduct(null);
+            }}
+          />
+        </>
+      )}
     </>
   );
 }

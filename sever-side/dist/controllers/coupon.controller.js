@@ -126,8 +126,8 @@ const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         coupon.discountValue = discountValue !== null && discountValue !== void 0 ? discountValue : coupon.discountValue;
         coupon.minOrderAmount = minOrderAmount !== null && minOrderAmount !== void 0 ? minOrderAmount : coupon.minOrderAmount;
         coupon.maxDiscountAmount = maxDiscountAmount !== null && maxDiscountAmount !== void 0 ? maxDiscountAmount : coupon.maxDiscountAmount;
-        coupon.startDate = startDate !== null && startDate !== void 0 ? startDate : coupon.startDate;
-        coupon.endDate = endDate !== null && endDate !== void 0 ? endDate : coupon.endDate;
+        coupon.startDate = startDate === "" || startDate === null ? null : (startDate !== null && startDate !== void 0 ? startDate : coupon.startDate);
+        coupon.endDate = endDate === "" || endDate === null ? null : (endDate !== null && endDate !== void 0 ? endDate : coupon.endDate);
         coupon.usageLimit = usageLimit !== null && usageLimit !== void 0 ? usageLimit : coupon.usageLimit;
         coupon.perUserLimit = perUserLimit !== null && perUserLimit !== void 0 ? perUserLimit : coupon.perUserLimit;
         coupon.is_active = is_active !== null && is_active !== void 0 ? is_active : coupon.is_active;

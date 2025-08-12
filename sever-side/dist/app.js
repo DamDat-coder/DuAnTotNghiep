@@ -25,6 +25,7 @@ const notification_routes_1 = __importDefault(require("./routes/notification.rou
 const address_routes_1 = __importDefault(require("./routes/address.routes"));
 const error_middleware_1 = require("./middlewares/error.middleware");
 require("./jobs/cron");
+const address_routes_1 = __importDefault(require("./routes/address.routes"));
 require("./jobs/notifyFreeship.job");
 const app = (0, express_1.default)();
 /** ---------- Hardening & middlewares cơ bản ---------- */

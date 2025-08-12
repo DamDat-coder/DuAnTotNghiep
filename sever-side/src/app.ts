@@ -44,7 +44,7 @@ const defaultAllowed = [
   "https://styleforyou.online",
   "http://www.styleforyou.online",
   "https://www.styleforyou.online",
-  "http://103.106.104.87:3300", // BỎ dấu / cuối
+  "http://103.106.104.87:3300",
 ].map(normalize);
 
 const allowedFromEnv = (process.env.CORS_ORIGINS ?? "")

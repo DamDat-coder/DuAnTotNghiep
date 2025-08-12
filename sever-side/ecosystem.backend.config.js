@@ -4,7 +4,7 @@ module.exports = {
       name: "backend",
       // ⚠️ SỬA path cho đúng VPS (ví dụ):
       // cwd: "/var/www/DA3/server-side",
-      cwd: "C:/DuAnTotNghiep/server-side",
+      cwd: "C:/DuAnTotNghiep/sever-side",
 
       script: "dist/index.js", // build xong mới có dist/
       // Hoặc: script: "npm", args: "run start:prod"

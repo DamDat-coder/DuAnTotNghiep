@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
@@ -13,6 +11,8 @@ interface ActionButtonsProps {
   selectedVariant: IProduct["variants"][0] | undefined;
   isLiked: boolean;
   setIsLiked: (liked: boolean) => void;
+  setIsBuyNowPopupOpen: (open: boolean) => void;
+  couponId: string | null;
 }
 
 export default function ActionButtons({
@@ -22,6 +22,8 @@ export default function ActionButtons({
   selectedVariant,
   isLiked,
   setIsLiked,
+  setIsBuyNowPopupOpen,
+  couponId,
 }: ActionButtonsProps) {
   const dispatch = useCartDispatch();
 
@@ -38,23 +40,27 @@ export default function ActionButtons({
       toast.error("Sản phẩm này hiện không có sẵn!");
       return;
     }
-    // Kiểm tra categoryId
     if (!product.categoryId) {
       toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
       return;
     }
 
+    const discountedPrice = Math.round(
+      selectedVariant.price * (1 - selectedVariant.discountPercent / 100)
+    );
+
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: selectedVariant.discountedPrice || selectedVariant.price,
+      originPrice: selectedVariant.price,
+      price: discountedPrice,
       discountPercent: selectedVariant.discountPercent,
       image: product.images[0] || "",
       quantity: 1,
       size: selectedSize,
       color: selectedColor,
       liked: isLiked,
-      selected: false,
+      selected: true, // Đồng bộ với BuyNowPopup
       categoryId: product.categoryId,
       stock: selectedVariant.stock,
     };

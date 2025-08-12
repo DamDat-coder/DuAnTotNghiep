@@ -32,33 +32,30 @@ export default function OrderItems({
       {orderItems.map((item) => {
         const displayColor =
           colorMap[item.color] || item.color || "Không xác định";
-        // Giá sau khi áp discountPercent, làm tròn xuống
-        const discountedPrice = Math.floor(
-          item.price * (1 - item.discountPercent / 100) * item.quantity
-        );
+
+        // Giá đã giảm (đã có trong cartItem)
+        const discountedPrice = Math.floor(item.price * item.quantity);
+
         // Giá gốc
-        const originalPrice = item.price * item.quantity;
-        // Tạo itemKey
+        const originalPrice = Math.floor(item.originPrice * item.quantity);
+
+        // Tạo key cho coupon
         const itemKey = `${item.id}-${item.size}-${item.color}`;
-        // Kiểm tra couponDiscount
+
+        // Coupon discount
         const couponDiscount = applicableItemIds.includes(item.id)
           ? Math.floor(discountPerItem[itemKey] || 0)
           : 0;
-        // Giá cuối, làm tròn xuống
-        const finalPrice = Math.floor(discountedPrice - couponDiscount);
 
-        // Debug log chi tiết
-        console.log("DEBUG OrderItems - Item", {
-          itemId: item.id,
-          itemKey,
-          size: item.size,
-          color: item.color,
+        // Giá cuối
+        const finalPrice = Math.max(0, discountedPrice - couponDiscount);
+
+        console.log("DEBUG OrderItems", {
+          id: item.id,
           originalPrice,
           discountedPrice,
           couponDiscount,
           finalPrice,
-          applicableItemIds,
-          discountPerItem,
         });
 
         return (
@@ -85,17 +82,18 @@ export default function OrderItems({
               </div>
               {couponDiscount > 0 && discountCode && (
                 <p className="text-sm text-gray-400 mt-1">
-                  Giảm giá (mã {discountCode}): {couponDiscount.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}₫
+                  Giảm giá (mã {discountCode}):{" "}
+                  {couponDiscount.toLocaleString("vi-VN")}₫
                 </p>
               )}
             </div>
             <div className="text-right">
               <p className="text-sm font-bold">
-                {finalPrice.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}₫
+                {finalPrice.toLocaleString("vi-VN")}₫
               </p>
               {(item.discountPercent > 0 || couponDiscount > 0) && (
                 <p className="text-sm text-[#374151] line-through">
-                  {originalPrice.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}₫
+                  {originalPrice.toLocaleString("vi-VN")}₫
                 </p>
               )}
             </div>

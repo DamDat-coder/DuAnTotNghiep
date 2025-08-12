@@ -17,7 +17,8 @@ interface CartAction {
     | "toggleSelectAll"
     | "clear"
     | "resetSelected"
-    | "restoreSelection";
+    | "restoreSelection"
+    | "updateSelected"
 
   item?: ICartItem;
   id?: string;
@@ -26,6 +27,7 @@ interface CartAction {
   quantity?: number;
   selectAll?: boolean;
   selectedIds?: string[];
+  selected?: boolean;
 }
 
 interface CartContextType {
@@ -37,6 +39,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
+    case "updateSelected":
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.id === action.id &&
+          item.size === action.size &&
+          item.color === action.color
+            ? { ...item, selected: action.selected }
+            : item
+        ),
+      };
     case "add":
       if (!action.item) return state;
       const existingItem = state.items.find(

@@ -81,7 +81,10 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       setSelectedSize("");
     }
   }, [selectedColor, availableSizes, selectedSize]);
-
+  const discountedPrice = Math.round(
+    (selectedVariant?.price ?? 0) *
+      (1 - (selectedVariant?.discountPercent ?? 0) / 100)
+  );
   // Xử lý pendingCart sau khi đăng nhập
   useEffect(() => {
     const accessToken =
@@ -189,7 +192,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: selectedVariant.discountedPrice,
+      price: discountedPrice,
       discountPercent: selectedVariant.discountPercent,
       image: product.images[0] || "",
       quantity,
@@ -278,12 +281,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                     </h2>
                     <div className="flex items-center gap-4 mt-2">
                       <p className="text-red-500 font-bold text-lg">
-                        {(
-                          selectedVariant?.discountedPrice ||
-                          product.variants[0]?.discountedPrice ||
-                          0
-                        ).toLocaleString("vi-VN")}
-                        ₫
+                        {(discountedPrice || 0).toLocaleString("vi-VN")}₫
                       </p>
                       {selectedVariant &&
                         selectedVariant.discountPercent > 0 && (

@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { initiatePayment, createOrder } from "@/services/orderApi";
-import { validateCoupon } from "@/services/couponApi";
+import { fetchAllCoupons, validateCoupon } from "@/services/couponApi";
 import {
   addAddressWhenCheckout,
   setDefaultAddress as setDefaultAddressApi,
@@ -11,8 +11,9 @@ import {
 import { CheckoutFormData, CheckoutErrors } from "@/types/checkout";
 import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
-import { fetchProductCategory } from "@/services/productApi";
-import { IProduct } from "@/types/product";
+import { fetchProductById, fetchProductCategory } from "@/services/productApi";
+import { useSearchParams } from "next/navigation";
+import { Coupon } from "@/types/coupon";
 
 const generateOrderId = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -31,12 +32,7 @@ export const useCheckout = () => {
   const orderItems: ICartItem[] = state.items.filter((item) => item.selected);
 
   const subtotal = useMemo(
-    () =>
-      orderItems.reduce(
-        (sum, item) =>
-          sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-        0
-      ),
+    () => orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [orderItems]
   );
   const [discountCode, setDiscountCode] = useState("");
@@ -68,110 +64,206 @@ export const useCheckout = () => {
     ward: "",
     address: "",
   });
-
+  const searchParams = useSearchParams();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isAddressPopupOpen, setIsAddressPopupOpen] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
 
-  const calculateDiscountPerItem = (
-    items: ICartItem[],
-    discount: number,
-    applicableItemIds: string[]
-  ) => {
-    const result: { [itemKey: string]: number } = {};
-    const applicableItems = items.filter((item) =>
-      applicableItemIds.includes(item.id)
-    );
-    if (applicableItems.length === 0) return result;
-
-    const totalApplicablePrice = applicableItems.reduce(
-      (sum, item) =>
-        sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-      0
-    );
-
-    applicableItems.forEach((item) => {
-      const itemKey = `${item.id}-${item.size}-${item.color}`;
-      const itemPrice =
-        item.price * (1 - item.discountPercent / 100) * item.quantity;
-      result[itemKey] = (itemPrice / totalApplicablePrice) * discount;
-    });
-
-    return result;
-  };
-
-  // Xử lý pendingBuyNow từ localStorage
+  // Fetch mã giảm giá từ API
   useEffect(() => {
-    const handlePendingBuyNow = () => {
-      const pendingBuyNow = localStorage.getItem("pendingBuyNow");
-      if (pendingBuyNow && user) {
-        const {
-          product,
-          selectedSize,
-          selectedColor,
-          quantity,
-          applyCoupon,
-        }: {
-          product: IProduct;
-          selectedSize: string;
-          selectedColor: string;
-          quantity: number;
-          applyCoupon: string | null;
-        } = JSON.parse(pendingBuyNow);
-
-        const selectedVariant = product.variants.find(
-          (v) => v.size === selectedSize && v.color === selectedColor
-        );
-
-        if (!selectedVariant) {
-          toast.error("Không tìm thấy thông tin sản phẩm!");
-          localStorage.removeItem("pendingBuyNow");
-          return;
-        }
-
-        if (selectedVariant.stock < quantity) {
-          toast.error("Sản phẩm không đủ hàng!");
-          localStorage.removeItem("pendingBuyNow");
-          return;
-        }
-
-        if (!product.categoryId) {
-          toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
-          localStorage.removeItem("pendingBuyNow");
-          return;
-        }
-
-        dispatch({ type: "resetSelected" });
-
-        const cartItem: ICartItem = {
-          id: product.id,
-          name: product.name,
-          price: selectedVariant.discountedPrice,
-          discountPercent: selectedVariant.discountPercent,
-          image: product.images[0] || "",
-          quantity,
-          size: selectedSize,
-          color: selectedColor,
-          liked: false,
-          selected: true, // Đặt selected thành true
-          categoryId: product.categoryId,
-          stock: selectedVariant.stock,
-        };
-
-        dispatch({ type: "add", item: cartItem });
-        toast.success("Đã thêm sản phẩm vào giỏ hàng!");
-
-        if (applyCoupon) {
-          localStorage.setItem("pendingCouponCode", applyCoupon);
-        }
-
-        localStorage.removeItem("pendingBuyNow"); // Xóa sau khi thêm vào giỏ hàng
+    const fetchCoupons = async () => {
+      try {
+        const response = await fetchAllCoupons(true, undefined, 1, 100);
+        setAvailableCoupons(response.data || []);
+      } catch (error) {
+        toast.error("Không thể tải mã giảm giá.");
+        setAvailableCoupons([]);
       }
     };
+    fetchCoupons();
+  }, []);
 
-    handlePendingBuyNow();
-  }, [user, dispatch]);
+  // Khôi phục trạng thái từ pendingBuyNow và recentBuyNow
+  useEffect(() => {
+    const recentBuyNow = localStorage.getItem("recentBuyNow");
+    if (recentBuyNow) {
+      try {
+        const buyNowData = JSON.parse(recentBuyNow);
+        const { id, size, color, quantity } = buyNowData;
+        const existingItem = state.items.find(
+          (item) => item.id === id && item.size === size && item.color === color
+        );
+
+        if (existingItem) {
+          if (!existingItem.selected) {
+            dispatch({
+              type: "updateSelected",
+              id,
+              size,
+              color,
+              selected: true,
+            });
+          }
+          dispatch({
+            type: "updateQuantity",
+            id,
+            size,
+            color,
+            quantity,
+          });
+        } else {
+          const fetchProduct = async () => {
+            const product = await fetchProductById(id);
+            if (!product) {
+              console.error("DEBUG: Failed to fetch product data for id:", id);
+              return;
+            }
+            const selectedVariant = product.variants.find(
+              (v: any) => v.size === size && v.color === color
+            );
+            if (!selectedVariant) {
+              console.error(
+                "DEBUG: Invalid variant in recentBuyNow:",
+                buyNowData
+              );
+              return;
+            }
+            const discountedPrice = Math.round(
+              (selectedVariant.price ?? 0) *
+                (1 - (selectedVariant.discountPercent ?? 0) / 100)
+            );
+            dispatch({
+              type: "add",
+              item: {
+                id,
+                name: product.name,
+                originPrice: selectedVariant.price,
+                price: discountedPrice,
+                discountPercent: selectedVariant.discountPercent,
+                image: product.images[0] || "",
+                quantity,
+                size,
+                color,
+                liked: false,
+                selected: true,
+                categoryId: product.categoryId ?? "",
+                stock: selectedVariant.stock,
+                fromBuyNow: true,
+              },
+            });
+          };
+          fetchProduct();
+        }
+        localStorage.removeItem("recentBuyNow");
+      } catch (error) {
+        console.error("DEBUG: Error parsing recentBuyNow:", error);
+        localStorage.removeItem("recentBuyNow");
+      }
+    }
+
+    const pendingBuyNow = localStorage.getItem("pendingBuyNow");
+    if (pendingBuyNow) {
+      try {
+        const buyNowData = JSON.parse(pendingBuyNow);
+        const { id, size, color, quantity, product } = buyNowData;
+        const existingItem = state.items.find(
+          (item) => item.id === id && item.size === size && item.color === color
+        );
+
+        if (existingItem) {
+          if (!existingItem.selected) {
+            dispatch({
+              type: "updateSelected",
+              id,
+              size,
+              color,
+              selected: true,
+            });
+          }
+          dispatch({
+            type: "updateQuantity",
+            id,
+            size,
+            color,
+            quantity,
+          });
+        } else if (product) {
+          const selectedVariant = product.variants.find(
+            (v: any) => v.size === size && v.color === color
+          );
+          if (!selectedVariant) {
+            console.error(
+              "DEBUG: Invalid variant in pendingBuyNow:",
+              buyNowData
+            );
+            return;
+          }
+          const discountedPrice = Math.round(
+            (selectedVariant.price ?? 0) *
+              (1 - (selectedVariant.discountPercent ?? 0) / 100)
+          );
+          const cartItem = {
+            id: product.id,
+            name: product.name,
+            originPrice: selectedVariant.price,
+            price: discountedPrice,
+            discountPercent: selectedVariant.discountPercent,
+            image: product.images[0] || "",
+            quantity,
+            size,
+            color,
+            liked: false,
+            selected: true,
+            categoryId: product.categoryId,
+            stock: selectedVariant.stock,
+            fromBuyNow: true,
+          };
+          dispatch({ type: "add", item: cartItem });
+        }
+        localStorage.removeItem("pendingBuyNow");
+      } catch (error) {
+        console.error("DEBUG: Error parsing pendingBuyNow:", error);
+        localStorage.removeItem("pendingBuyNow");
+      }
+    }
+  }, [state.items, dispatch]);
+
+  // Đồng bộ discountCode từ searchParams
+  useEffect(() => {
+    const couponFromUrl = searchParams.get("coupon");
+    if (
+      couponFromUrl &&
+      availableCoupons.some((c) => c.code === couponFromUrl)
+    ) {
+      setDiscountCode(couponFromUrl);
+    }
+  }, [searchParams, availableCoupons]);
+
+  // Hàm phân bổ giảm giá cho từng sản phẩm
+  const calculateDiscountPerItem = (
+    items: ICartItem[],
+    couponData: {
+      items: {
+        productId: string;
+        isDiscounted: boolean;
+        itemDiscount: number;
+      }[];
+    }
+  ) => {
+    const result: { [itemKey: string]: number } = {};
+    couponData.items.forEach((item) => {
+      if (item.isDiscounted) {
+        const cartItem = items.find((cart) => cart.id === item.productId);
+        if (cartItem) {
+          const itemKey = `${cartItem.id}-${cartItem.size}-${cartItem.color}`;
+          result[itemKey] = item.itemDiscount || 0;
+        }
+      }
+    });
+    return result;
+  };
 
   useEffect(() => {
     if (user && user.addresses) {
@@ -222,7 +314,9 @@ export const useCheckout = () => {
       if (shippingMethod === "standard") {
         newShippingFee = 0;
         if (!isFreeShipping) {
-          toast.success("Đơn hàng của bạn được miễn phí vận chuyển!");
+          toast.success(
+            "Đơn hàng của bạn được miễn phí vận chuyển theo phương thức tiêu chuẩn!"
+          );
           setIsFreeShipping(true);
         }
       } else if (shippingMethod === "express") {
@@ -255,8 +349,8 @@ export const useCheckout = () => {
             id: item.id,
             categoryId:
               item.categoryId || (await fetchProductCategory(item.id)),
-            price: item.price,
-            discountPercent: item.discountPercent,
+            price: item.originPrice || item.price,
+            discountPercent: item.discountPercent || 0,
             quantity: item.quantity,
           }))
         );
@@ -271,6 +365,7 @@ export const useCheckout = () => {
           );
           return;
         }
+
         const response = await validateCoupon(
           savedCouponCode,
           subtotal,
@@ -278,32 +373,15 @@ export const useCheckout = () => {
         );
         if (response.success && response.data) {
           const {
-            discountValue,
-            discountType,
-            applicableTotal,
+            discount: couponDiscount,
             applicableItemIds,
+            items,
           } = response.data;
-          let discountAmount =
-            discountType === "percent"
-              ? applicableTotal * (discountValue / 100)
-              : discountValue;
-
-          if (response.data.maxDiscountAmount) {
-            discountAmount = Math.min(
-              discountAmount,
-              response.data.maxDiscountAmount
-            );
-          }
-
-          setDiscount(discountAmount);
+          setDiscount(couponDiscount);
           setDiscountCode(response.data.code);
           setApplicableItemIds(applicableItemIds);
           setDiscountPerItem(
-            calculateDiscountPerItem(
-              orderItems,
-              discountAmount,
-              applicableItemIds
-            )
+            calculateDiscountPerItem(orderItems, response.data)
           );
           toast.success(
             `Áp dụng mã giảm giá ${response.data.code} thành công cho ${applicableItemIds.length} sản phẩm!`
@@ -312,7 +390,7 @@ export const useCheckout = () => {
           toast.error(response.message || "Mã giảm giá không hợp lệ!");
         }
       } catch (error) {
-        console.error("DEBUG useCheckout - Error applying coupon", { error });
+        console.error("DEBUG: Error applying coupon:", { error });
         toast.error("Có lỗi khi áp dụng mã giảm giá!");
       } finally {
         localStorage.removeItem("pendingCouponCode");
@@ -365,6 +443,7 @@ export const useCheckout = () => {
       setDiscount(0);
       setApplicableItemIds([]);
       setDiscountPerItem({});
+      toast.success("Đã xóa mã giảm giá.");
       return null;
     }
 
@@ -373,8 +452,8 @@ export const useCheckout = () => {
         orderItems.map(async (item) => ({
           id: item.id,
           categoryId: item.categoryId || (await fetchProductCategory(item.id)),
-          price: item.price,
-          discountPercent: item.discountPercent,
+          price: item.originPrice || item.price,
+          discountPercent: item.discountPercent || 0,
           quantity: item.quantity,
         }))
       );
@@ -397,32 +476,13 @@ export const useCheckout = () => {
       );
       if (response.success && response.data) {
         const {
-          discountValue,
-          discountType,
-          applicableTotal,
+          discount: couponDiscount,
           applicableItemIds,
+          items,
         } = response.data;
-        let discountAmount =
-          discountType === "percent"
-            ? applicableTotal * (discountValue / 100)
-            : discountValue;
-
-        if (response.data.maxDiscountAmount) {
-          discountAmount = Math.min(
-            discountAmount,
-            response.data.maxDiscountAmount
-          );
-        }
-
-        setDiscount(discountAmount);
+        setDiscount(couponDiscount);
         setApplicableItemIds(applicableItemIds);
-        setDiscountPerItem(
-          calculateDiscountPerItem(
-            orderItems,
-            discountAmount,
-            applicableItemIds
-          )
-        );
+        setDiscountPerItem(calculateDiscountPerItem(orderItems, response.data));
         toast.success(
           `Áp dụng mã giảm giá ${response.data.code} thành công cho ${applicableItemIds.length} sản phẩm!`
         );
@@ -435,10 +495,7 @@ export const useCheckout = () => {
         return null;
       }
     } catch (error: any) {
-      console.error("DEBUG useCheckout - Error applying coupon", { error });
-      setDiscount(0);
-      setApplicableItemIds([]);
-      setDiscountPerItem({});
+      console.error("DEBUG: Error applying coupon:", { error });
       toast.error("Có lỗi khi áp dụng mã giảm giá!");
       return null;
     }
@@ -537,6 +594,7 @@ export const useCheckout = () => {
             quantity: item.quantity,
             color: item.color,
             size: item.size,
+            price: item.originPrice || item.price,
           })),
           paymentMethod,
           shipping: shippingFee,
@@ -558,8 +616,7 @@ export const useCheckout = () => {
         }
       }
     } catch (error: any) {
-      console.error("Lỗi khi tạo đơn hàng:", error);
-      toast.error(error.message || "Không thể tạo đơn hàng!");
+      toast.error(error.essage || "Không thể tạo đơn hàng!");
     }
   };
 
@@ -591,5 +648,6 @@ export const useCheckout = () => {
     setIsAddressPopupOpen,
     handleSelectAddress,
     isFreeShipping,
+    availableCoupons,
   };
 };

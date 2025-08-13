@@ -3,6 +3,7 @@ export interface ICartItem {
   name: string;
   price: number;
   discountPercent: number;
+  originPrice:number;
   image: string;
   quantity: number;
   size: string;
@@ -11,6 +12,7 @@ export interface ICartItem {
   selected?: boolean;
   categoryId: string;
   stock: number;
+  fromBuyNow?: boolean;
 }
 
 export interface CartProps {

@@ -9,7 +9,7 @@ const colorOptions: ColorOption[] = [
   { value: "Đen", label: "Đen", color: "#000000" },
   { value: "Xám", label: "Xám", color: "#808080" },
   { value: "Đỏ", label: "Đỏ", color: "#FF0000" },
-  { value: "trắng", label: "Trắng", color: "#FFFFFF" },
+  { value: "Trắng", label: "Trắng", color: "#FFFFFF" },
 ];
 
 export default function FilterColor({ selectedColor, setSelectedColor }: FilterColorProps) {
@@ -27,7 +27,7 @@ export default function FilterColor({ selectedColor, setSelectedColor }: FilterC
               className="flex flex-col items-center text-sm cursor-pointer text-center"
             >
               <div
-                className={`w-8 h-8 rounded-full border flex items-center justify-center ${
+                className={`w-8 h-8 rounded-full border border-solid flex items-center justify-center ${
                   color.toLowerCase() === "#ffffff"
                     ? "border-gray-600 border-2"
                     : "border-gray-400"

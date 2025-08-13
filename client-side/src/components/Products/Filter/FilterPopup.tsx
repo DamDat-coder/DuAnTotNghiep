@@ -9,7 +9,6 @@ import FilterColor from "./FilterColor";
 import FilterSize from "./FilterSize";
 import { FilterPopupProps, SortOption } from "@/types/filter";
 
-// Hàm parse filter từ URL query
 function parseFiltersFromSearchParams(searchParams: URLSearchParams) {
   const sort_by = searchParams.get("sort_by");
   const id_cate = searchParams.get("id_cate");
@@ -25,6 +24,12 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams) {
     "price_desc",
     "best_selling",
   ];
+  let decodedColor = color;
+  try {
+    decodedColor = decodeURIComponent(decodeURIComponent(color || ""));
+  } catch (e) {
+    console.error("Error decoding color in FilterPopup:", e);
+  }
 
   return {
     sort_by:
@@ -34,7 +39,7 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams) {
     id_cate: id_cate || null,
     minPrice: minPrice ? Number(minPrice) : null,
     maxPrice: maxPrice ? Number(maxPrice) : null,
-    color: color || null,
+    color: decodedColor || null,
     size: size || null,
   };
 }
@@ -43,10 +48,10 @@ export default function FilterPopup({
   isOpen,
   setIsOpen,
   onApplyFilters,
+  currentFilters,
 }: FilterPopupProps) {
   const searchParams = useSearchParams();
 
-  // Khởi tạo các filter
   const [selectedSort, setSelectedSort] = useState<SortOption | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [minPrice, setMinPrice] = useState<number | null>(null);
@@ -54,38 +59,37 @@ export default function FilterPopup({
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // Cập nhật filter khi mở popup
   useEffect(() => {
     if (isOpen) {
       const parsed = parseFiltersFromSearchParams(searchParams);
-      setSelectedSort(parsed.sort_by);
-      setSelectedCategory(parsed.id_cate);
-      setMinPrice(parsed.minPrice);
-      setMaxPrice(parsed.maxPrice);
-      setSelectedColor(parsed.color);
-      setSelectedSize(parsed.size);
+      console.log("Parsed filters:", parsed);
+      setSelectedSort(parsed.sort_by || currentFilters?.sort_by || null);
+      setSelectedCategory(parsed.id_cate || currentFilters?.id_cate || null);
+      setMinPrice(parsed.minPrice || currentFilters?.minPrice || null);
+      setMaxPrice(parsed.maxPrice || currentFilters?.maxPrice || null);
+      setSelectedColor(parsed.color || currentFilters?.color || null);
+      setSelectedSize(parsed.size || currentFilters?.size || null);
       document.body.classList.add("overflow-hidden");
     }
 
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isOpen, searchParams]);
+  }, [isOpen, searchParams, currentFilters]);
 
-  // Áp dụng bộ lọc
   const handleApply = () => {
-    onApplyFilters({
+    const filters = {
       sort_by: selectedSort || undefined,
       id_cate: selectedCategory || undefined,
       minPrice: minPrice !== null ? minPrice : undefined,
       maxPrice: maxPrice !== null ? maxPrice : undefined,
       color: selectedColor || undefined,
       size: selectedSize || undefined,
-    });
+    };
+    onApplyFilters(filters);
     setIsOpen(false);
   };
 
-  // Xóa bộ lọc
   const clearFilters = () => {
     setSelectedSort(null);
     setSelectedCategory(null);

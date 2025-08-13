@@ -18,7 +18,6 @@ import { SortOption } from "@/types/filter";
 import { NewsProduct } from "@/types/new";
 import { CategoryProduct } from "@/types/category";
 
-// Các giá trị sort hợp lệ
 const VALID_SORT_OPTIONS: SortOption[] = [
   "newest",
   "oldest",
@@ -27,7 +26,7 @@ const VALID_SORT_OPTIONS: SortOption[] = [
   "best_selling",
 ];
 
-export default function ProductsPage() {
+export default function ProductsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -39,7 +38,20 @@ export default function ProductsPage() {
 
   // Đọc và parse query string từ URL
   const filters = useMemo(() => {
-    const getParam = (key: string) => searchParams.get(key) || undefined;
+    const getParam = (key: string) => {
+      const value = searchParams.get(key);
+      if (value && key === "color") {
+        try {
+          // Giải mã hai lần để xử lý double-encoding
+          return decodeURIComponent(decodeURIComponent(value));
+        } catch (e) {
+          console.error(`Error decoding ${key}:`, e);
+          return value;
+        }
+      }
+      return value || undefined;
+    };
+
     return {
       id_cate: getParam("id_cate"),
       color: getParam("color"),
@@ -56,7 +68,6 @@ export default function ProductsPage() {
       coupon: getParam("coupon"),
     };
   }, [searchParams]);
-
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -66,37 +77,45 @@ export default function ProductsPage() {
         let couponProductIds: string[] = [];
         let couponCategoryIds: string[] = [];
 
-        // Nếu có mã coupon thì fetch và lấy danh sách product/category tương ứng
         if (filters.coupon) {
           try {
             const coupon = await fetchCouponByCode(filters.coupon);
-
-            // Lấy danh sách id sản phẩm áp dụng được coupon
             couponProductIds = (coupon.applicableProducts || []).map((p: any) =>
               typeof p === "string" ? p : p._id || p.toString()
             );
-
-            // Lấy danh sách id danh mục áp dụng được coupon
             couponCategoryIds = (coupon.applicableCategories || []).map(
               (c: any) => (typeof c === "string" ? c : c._id)
             );
           } catch {
-            // Trường hợp mã giảm giá sai/hết hạn
             setError("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
             setLoading(false);
             return;
           }
         }
 
-        // Gọi song song cả API sản phẩm & quyền lợi thành viên
+        // Giải mã color trước khi gửi tới fetchProducts
+        const decodedFilters = {
+          ...filters,
+          color: filters.color
+            ? (() => {
+                try {
+                  return decodeURIComponent(decodeURIComponent(filters.color));
+                } catch (e) {
+                  console.error("Error decoding color for fetchProducts:", e);
+                  return filters.color;
+                }
+              })()
+            : undefined,
+        };
+
         const [productsData, memberBenefits] = await Promise.all([
           fetchProducts({
-            id_cate: filters.id_cate,
-            color: filters.color,
-            size: filters.size,
-            minPrice: filters.minPrice,
-            maxPrice: filters.maxPrice,
-            sort_by: filters.sort_by,
+            id_cate: decodedFilters.id_cate,
+            color: decodedFilters.color,
+            size: decodedFilters.size,
+            minPrice: decodedFilters.minPrice,
+            maxPrice: decodedFilters.maxPrice,
+            sort_by: decodedFilters.sort_by,
             is_active: true,
           }),
           fetchMemberBenefits(),
@@ -104,14 +123,11 @@ export default function ProductsPage() {
 
         let filteredProducts = productsData.data;
 
-        // Nếu coupon có lọc theo sản phẩm
         if (couponProductIds.length > 0) {
           filteredProducts = filteredProducts.filter((p) =>
             couponProductIds.includes(p.id)
           );
-        }
-        // Nếu coupon có lọc theo danh mục
-        else if (couponCategoryIds.length > 0) {
+        } else if (couponCategoryIds.length > 0) {
           filteredProducts = filteredProducts.filter(
             (p) => p.categoryId && couponCategoryIds.includes(p.categoryId)
           );
@@ -119,7 +135,6 @@ export default function ProductsPage() {
 
         setProducts(filteredProducts);
 
-        // Lấy danh sách danh mục từ sản phẩm đang có (không trùng lặp)
         const uniqueCategories: CategoryProduct[] = Array.from(
           new Set(
             productsData.data
@@ -133,11 +148,9 @@ export default function ProductsPage() {
           )
         ).map((c) => JSON.parse(c));
 
-        // Sắp xếp danh mục theo tên
         uniqueCategories.sort((a, b) => a._id.localeCompare(b._id));
         setCategories(uniqueCategories);
 
-        // Map quyền lợi thành viên thành dạng news
         const news = memberBenefits.map((item, index) => ({
           ...item,
           img: item.image,
@@ -159,16 +172,23 @@ export default function ProductsPage() {
       }
     };
 
-    setProducts([]); // Clear sản phẩm cũ khi chuyển trang/filter
+    setProducts([]);
     loadData();
   }, [filters]);
 
-  // Cập nhật URL khi người dùng thay đổi bộ lọc
   const handleApplyFilters = (newFilters: Partial<typeof filters>) => {
     const params = new URLSearchParams();
-    Object.entries(newFilters).forEach(([key, val]) => {
-      if (val !== undefined && val !== null) {
-        params.set(key, encodeURIComponent(val.toString()));
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        let decodedValue = value;
+        if (typeof value === "string") {
+          try {
+            decodedValue = decodeURIComponent(decodeURIComponent(value));
+          } catch (e) {
+            console.error(`Error decoding ${key} in handleApplyFilters:`, e);
+          }
+        }
+        params.set(key, decodedValue.toString());
       }
     });
     router.push(
@@ -176,7 +196,6 @@ export default function ProductsPage() {
     );
   };
 
-  // Loading UI
   if (loading) {
     return (
       <div className="py-8">
@@ -195,7 +214,6 @@ export default function ProductsPage() {
     );
   }
 
-  // Error UI
   if (error) {
     return (
       <div className="py-8">

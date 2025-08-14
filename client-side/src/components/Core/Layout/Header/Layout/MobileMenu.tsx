@@ -127,7 +127,7 @@ const GuestMenu = ({
       loading="lazy"
     />
     <p className="text-base text-gray-700">
-      Trở thành thành viên <span className="font-bold">Style for you</span> để
+      Trở thành thành viên <span className="font-bold">Shop For Real</span> để
       có những sản phẩm và giá tốt nhất.
     </p>
     <div className="flex justify-center items-center gap-2">

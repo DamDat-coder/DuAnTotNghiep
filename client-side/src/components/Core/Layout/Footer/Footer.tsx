@@ -32,7 +32,7 @@ export default function Footer() {
 
         {/* Copyright và Social Links */}
         <div className="laptop:pt-12 desktop:pt-12 flex flex-col laptop:flex-row desktop:flex-row justify-between items-center text-left text-black text-[1rem] font-medium">
-          <p>@ 2025 Style For You. All Rights Reserved.</p>
+          <p>@ 2025 Shop For Real. All Rights Reserved.</p>
         </div>
       </div>
     </footer>

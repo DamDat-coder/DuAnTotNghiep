@@ -118,7 +118,7 @@ export default function WishlistPopup({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.7, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-[80%] max-w-full flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg  relative"
+            className="w-[80%] max-w-full flex flex-col laptop:flex-row laptop:gap-8 desktop:flex-row desktop:gap-8 bg-white p-6 rounded-lg relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Nút đóng */}
@@ -142,12 +142,12 @@ export default function WishlistPopup({
               alt={product.name || "Sản phẩm"}
               width={200}
               height={200}
-              className="w-auto h-[70%] object-cover rounded-md"
+              className="w-auto h-[9rem] laptop:h-[70%] desktop:h-[70%] object-cover rounded-md"
               draggable={false}
             />
 
             {/* Thông tin và chọn variant */}
-            <div className="laptop:w-full laptop:flex laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex desktop:flex-col desktop:gap-3">
+            <div className="flex gap-1 flex-col laptop:w-full laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex-col desktop:gap-3">
               {/* Thông tin cơ bản */}
               <div className="flex flex-col gap-3">
                 <h2 className="text-xl font-bold text-black mt-4 truncate">

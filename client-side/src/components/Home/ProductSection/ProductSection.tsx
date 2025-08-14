@@ -45,7 +45,27 @@ export default function ProductSection({
   useEffect(() => {
     setIsClient(true);
   }, []);
+  useEffect(() => {
+    if (isBuyNowPopupOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isBuyNowPopupOpen]);
 
+  useEffect(() => {
+    if (isAddToCartPopupOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isAddToCartPopupOpen]);
   useEffect(() => {
     if (!showLoadMore || !hasMore || loading) return;
 

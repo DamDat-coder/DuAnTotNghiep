@@ -21,11 +21,23 @@ export const footerSections: FooterSection[] = [
     id: "policies",
     title: "Chính sách & Quy định",
     content: [
-      { text: "Điều khoản & Điều kiện", href: "/policies/terms" },
-      { text: "Chính sách thanh toán", href: "/policies/payment" },
-      { text: "Chính sách xác minh thông tin", href: "/policies/verification" },
-      { text: "Câu hỏi thường gặp", href: "/faq" },
-      { text: "Chính sách hủy và hoàn tiền", href: "/policies/refund" },
+      {
+        text: "Điều khoản & Điều kiện",
+        href: "/posts/6884e3e9cd10a3213c943610",
+      },
+      {
+        text: "Chính sách thanh toán",
+        href: "/posts/6884e3e9cd10a3213c943611",
+      },
+      {
+        text: "Chính sách xác minh thông tin",
+        href: "/posts/6884e3e9cd10a3213c943612",
+      },
+      { text: "Câu hỏi thường gặp", href: "/posts/6884e3e9cd10a3213c943613" },
+      {
+        text: "Chính sách hủy và hoàn tiền",
+        href: "/posts/6884e3e9cd10a3213c943614",
+      },
     ],
   },
   {
@@ -36,7 +48,7 @@ export const footerSections: FooterSection[] = [
         icon: <MapPin size={16} />,
         text: "Đ. Tô Ký, Tân Hưng Thuận, Quận 12, HCM",
       },
-      { icon: <Mail size={16} />, text: "style.for.you@gmail.com" },
+      { icon: <Mail size={16} />, text: "shop.for.real@gmail.com" },
       { icon: <Phone size={16} />, text: "0707 654 435" },
     ],
   },
@@ -44,7 +56,7 @@ export const footerSections: FooterSection[] = [
     id: "about_us",
     title: "Về chúng tôi",
     content: [
-      "Với Style For You – nơi bạn tìm thấy phong cách riêng trong từng thiết kế thời trang. Chúng tôi không chỉ bán quần áo, mà còn đồng hành cùng bạn thể hiện cá tính – từ năng động đường phố, thanh lịch công sở đến độc đáo, cá tính. Bộ sưu tập luôn được chọn lọc kỹ lưỡng theo xu hướng mới nhất.",
+      "Với Shop For Real – nơi bạn tìm thấy phong cách riêng trong từng thiết kế thời trang. Chúng tôi không chỉ bán quần áo, mà còn đồng hành cùng bạn thể hiện cá tính – từ năng động đường phố, thanh lịch công sở đến độc đáo, cá tính. Bộ sưu tập luôn được chọn lọc kỹ lưỡng theo xu hướng mới nhất.",
     ],
   },
 ];

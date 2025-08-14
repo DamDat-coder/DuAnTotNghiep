@@ -13,24 +13,18 @@ export default function ProductGrid({
   products,
   onApplyFilters,
 }: ProductGridProps) {
-  // Các state quản lý hiển thị sản phẩm
   const [displayedProducts, setDisplayedProducts] = useState<IProduct[]>(
     products.slice(0, 8)
   );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(products.length > 8);
-
-  // State cho popup "Mua ngay"
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
-
-  // State cho popup bộ lọc
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const observerRef = useRef<HTMLDivElement | null>(null);
 
-  // Danh sách sort hợp lệ
   const VALID_SORT_OPTIONS: SortOption[] = [
     "newest",
     "oldest",
@@ -39,7 +33,7 @@ export default function ProductGrid({
     "best_selling",
   ];
 
-  // Lấy bộ lọc từ query string
+  // Lấy bộ lọc từ query string và giải mã color
   const currentFilters = {
     id_cate: searchParams.get("id_cate") || undefined,
     sort_by: VALID_SORT_OPTIONS.includes(
@@ -53,19 +47,21 @@ export default function ProductGrid({
     maxPrice: searchParams.get("maxPrice")
       ? Number(searchParams.get("maxPrice"))
       : undefined,
-    color: searchParams.get("color") || undefined,
+    color: searchParams.get("color")
+      ? decodeURIComponent(searchParams.get("color")!)
+      : undefined,
     size: searchParams.get("size") || undefined,
   };
 
+  console.log("Current filters in ProductGrid:", currentFilters); // Log để kiểm tra
+
   const PRODUCTS_PER_PAGE = 8;
 
-  // Reset khi products thay đổi
   useEffect(() => {
     setDisplayedProducts(products.slice(0, PRODUCTS_PER_PAGE));
     setHasMore(products.length > PRODUCTS_PER_PAGE);
   }, [products]);
 
-  // Infinite scroll: gọi khi observer nhìn thấy đáy danh sách
   useEffect(() => {
     if (!hasMore || loading) return;
 
@@ -90,7 +86,6 @@ export default function ProductGrid({
     };
   }, [hasMore, loading, displayedProducts]);
 
-  // Hàm load thêm sản phẩm
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
@@ -106,7 +101,6 @@ export default function ProductGrid({
     }, 600);
   };
 
-  // Xử lý khi click "Mua ngay"
   const handleBuyNow = (product: IProduct, e: React.MouseEvent) => {
     e.preventDefault();
     setSelectedProduct(product);
@@ -142,14 +136,12 @@ export default function ProductGrid({
         ))}
       </div>
 
-      {/* Hiển thị nếu không có sản phẩm nào */}
       {products.length === 0 && (
         <div className="col-span-full text-center text-gray-500 py-10 w-full">
           Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
         </div>
       )}
 
-      {/* Vùng trigger load thêm sản phẩm */}
       <div ref={observerRef} className={`h-10 ${!hasMore ? "hidden" : ""}`}>
         {loading && (
           <div className="sk-chase">
@@ -160,7 +152,6 @@ export default function ProductGrid({
         )}
       </div>
 
-      {/* Popup bộ lọc */}
       <Suspense fallback={null}>
         <FilterPopup
           isOpen={isFilterOpen}
@@ -170,7 +161,6 @@ export default function ProductGrid({
         />
       </Suspense>
 
-      {/* Popup mua ngay */}
       {selectedProduct && (
         <BuyNowPopup
           product={selectedProduct}

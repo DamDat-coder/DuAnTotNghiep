@@ -130,6 +130,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
             id: pendingProduct.id,
             name: pendingProduct.name,
             price: pendingVariant.discountedPrice,
+            originPrice: pendingVariant.price,
             discountPercent: pendingVariant.discountPercent,
             image: pendingProduct.images[0] || "",
             quantity,
@@ -193,6 +194,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       id: product.id,
       name: product.name,
       price: discountedPrice,
+      originPrice: selectedVariant.price,
       discountPercent: selectedVariant.discountPercent,
       image: product.images[0] || "",
       quantity,
@@ -241,7 +243,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[50]"
               onClick={onClose}
             >
               <motion.div
@@ -271,12 +273,12 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                   alt={product.name || "Sản phẩm"}
                   width={200}
                   height={200}
-                  className="w-auto h-[70%] object-cover rounded-md"
+                  className="w-auto h-[9rem] laptop:h-[70%] desktop:h-[70%] object-cover rounded-md"
                   draggable={false}
                 />
-                <div className="laptop:w-full laptop:flex laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex desktop:flex-col desktop:gap-3">
+                <div className="flex gap-1 flex-col laptop:w-full laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex-col desktop:gap-3">
                   <div className="flex flex-col gap-3">
-                    <h2 className="text-xl font-bold text-black mt-4 truncate">
+                    <h2 className="text-xl font-bold text-black mt-4">
                       {product.name || "Sản phẩm"}
                     </h2>
                     <div className="flex items-center gap-4 mt-2">
@@ -466,41 +468,36 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
 
       <AnimatePresence>
         {isSizeChartOpen && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999]"
+            onClick={handleCloseSizeChart}
+          >
             <motion.div
-              className="absolute inset-0 bg-black"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.7, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              onClick={handleCloseSizeChart}
-            />
-            <motion.div
-              className="relative bg-white p-4 rounded-[8px]"
-              initial={{ y: "-100vh" }}
-              animate={{ y: 0 }}
-              exit={{ y: "-100vh" }}
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
+              className="bg-white p-4 rounded-lg relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={handleCloseSizeChart}
-                className="absolute top-4 right-4 p-2 text-black hover:text-gray-700"
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold"
                 aria-label="Đóng bảng kích thước"
               >
-                <svg
-                  className="size-6"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <Image
+                  src="/nav/nav_clear.svg"
+                  alt="Close Icon"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+                />
               </button>
               <Image
+                key="size_chart_img"
                 src="/product/product_size_table.png"
                 alt="Bảng kích thước"
                 width={300}
@@ -508,7 +505,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                 className="w-[40vw] h-[40vh] object-contain"
               />
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

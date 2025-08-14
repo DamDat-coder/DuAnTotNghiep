@@ -43,12 +43,8 @@ const defaultAllowed = [
   "https://styleforyou.online",
   "https://styleforyou.online",
   "https://www.styleforyou.online",
-<<<<<<< HEAD
-  "http://103.106.104.87:3300",
-=======
   "https://www.styleforyou.online",
   "https://103.106.104.87:3300",
->>>>>>> 26c33e0f889b1f3595e0a2ba18d8d7b249b66ca8
 ].map(normalize);
 
 const allowedFromEnv = (process.env.CORS_ORIGINS ?? "")

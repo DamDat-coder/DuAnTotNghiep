@@ -258,12 +258,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                 alt={product.name || "Sản phẩm"}
                 width={200}
                 height={200}
-                className="w-auto h-[70%] object-cover rounded-md"
+                className="w-auto h-[9rem] laptop:h-[70%] desktop:h-[70%] object-cover rounded-md"
                 draggable={false}
               />
-              <div className="laptop:w-full laptop:flex laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex desktop:flex-col desktop:gap-3">
+              <div className="flex gap-1 flex-col laptop:w-full laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex-col desktop:gap-3">
                 <div className="flex flex-col gap-3">
-                  <h2 className="text-xl font-bold text-black mt-4 truncate">
+                  <h2 className="text-xl font-bold text-black mt-4">
                     {product.name || "Sản phẩm"}
                   </h2>
                   <div className="flex items-center gap-4 mt-2">

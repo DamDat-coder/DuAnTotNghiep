@@ -2,10 +2,11 @@ import express from "express";
 import cors, { CorsOptions } from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 import xss from "xss-clean";
 import hpp from "hpp";
+import cookieParser from "cookie-parser";
+import compression from "compression";
 
 import userRoutes from "./routes/user.routes";
 import productRoutes from "./routes/product.routes";
@@ -22,75 +23,65 @@ import { errorHandler } from "./middlewares/error.middleware";
 import "./jobs/cron";
 import "./jobs/notifyFreeship.job";
 
-dotenv.config();
-
 const app = express();
 
-/** Rate limit */
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
-});
-app.use(limiter);
-
-/** Hardening */
+/** ---------- Hardening & middlewares cơ bản ---------- */
+app.set("trust proxy", 1);
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(xss());
 app.use(hpp());
-app.set("trust proxy", 1);
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false, // tránh chặn ảnh/static nếu có
-  })
-);
-
-/** Logger & body */
+app.use(compression());
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
 
-/** ========= CORS cấu hình đúng cho dev + prod =========
- * CORS_ORIGINS có dạng danh sách, phân tách bằng dấu phẩy.
- * Ví dụ PRODUCTION:
- * CORS_ORIGINS=http://styleforyou.online,https://styleforyou.online,http://www.styleforyou.online,https://www.styleforyou.online
- * Ví dụ DEVELOPMENT:
- * CORS_ORIGINS=http://localhost:3300
- */
+/** ---------- CORS (dev + prod) ---------- */
+const normalize = (s?: string | null) => (s ? s.replace(/\/+$/, "") : s);
 const defaultAllowed = [
-  "http://localhost:3300",
-  "http://styleforyou.online",
+  "https://localhost:3300",
   "https://styleforyou.online",
-  "http://www.styleforyou.online",
+  "https://styleforyou.online",
   "https://www.styleforyou.online",
-];
+  "https://www.styleforyou.online",
+  "https://103.106.104.87:3300",
+].map(normalize);
 
-const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
+const allowedFromEnv = (process.env.CORS_ORIGINS ?? "")
   .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
+  .map((s) => s.trim())
+  .filter(Boolean)
+  .map(normalize);
 
-const ORIGINS = allowedOrigins.length > 0 ? allowedOrigins : defaultAllowed;
+const ORIGINS = allowedFromEnv.length > 0 ? allowedFromEnv : defaultAllowed;
 
 const corsOptions: CorsOptions = {
-  origin(origin, callback) {
-    // Cho phép:
-    // - Request không có Origin (server-to-server, Postman, cron...)
-    // - Origin nằm trong whitelist
-    if (!origin || ORIGINS.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error("Not allowed by CORS"));
+  origin(origin, cb) {
+    const o = normalize(origin);
+    if (!origin || ORIGINS.includes(o!)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
-// Preflight cho mọi route
 app.options("*", cors(corsOptions));
 
-/** ========= Routes ========= */
+/** ---------- Rate limit ---------- */
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
+});
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return next();
+  return limiter(req, res, next);
+});
+
+/** ---------- Routes ---------- */
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/news", newsRoutes);
@@ -102,10 +93,21 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/address", addressRoutes);
 
-// (tuỳ chọn) endpoint health-check
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
+// Health-check
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    env: process.env.NODE_ENV || "development",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
 
-/** Error handler cuối cùng */
+/** ---------- 404 & Error handler ---------- */
+app.use((_req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
 app.use(errorHandler);
 
 export default app;

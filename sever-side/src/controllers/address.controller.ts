@@ -2,11 +2,14 @@ import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 
+// Đảm bảo lấy đúng đường dẫn tới thư mục 'data' ở cả môi trường dev và production
+const dataDir = path.join(__dirname, "..", "..", "data");
+
 const provinceData = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "../data/province.json"), "utf8")
+  fs.readFileSync(path.join(dataDir, "province.json"), "utf8")
 );
 const wardData = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "../data/ward.json"), "utf8")
+  fs.readFileSync(path.join(dataDir, "ward.json"), "utf8")
 );
 
 // Lấy danh sách tỉnh/thành phố

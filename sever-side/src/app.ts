@@ -39,12 +39,16 @@ app.use(cookieParser());
 /** ---------- CORS (dev + prod) ---------- */
 const normalize = (s?: string | null) => (s ? s.replace(/\/+$/, "") : s);
 const defaultAllowed = [
-  "http://localhost:3300",
-  "http://styleforyou.online",
+  "https://localhost:3300",
   "https://styleforyou.online",
-  "http://www.styleforyou.online",
+  "https://styleforyou.online",
   "https://www.styleforyou.online",
+<<<<<<< HEAD
   "http://103.106.104.87:3300",
+=======
+  "https://www.styleforyou.online",
+  "https://103.106.104.87:3300",
+>>>>>>> 26c33e0f889b1f3595e0a2ba18d8d7b249b66ca8
 ].map(normalize);
 
 const allowedFromEnv = (process.env.CORS_ORIGINS ?? "")

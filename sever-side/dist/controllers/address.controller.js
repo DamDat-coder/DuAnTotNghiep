@@ -6,8 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllWards = exports.getWardsByProvince = exports.getProvinces = void 0;
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const provinceData = JSON.parse(fs_1.default.readFileSync(path_1.default.join(__dirname, "../data/province.json"), "utf8"));
-const wardData = JSON.parse(fs_1.default.readFileSync(path_1.default.join(__dirname, "../data/ward.json"), "utf8"));
+// Đảm bảo lấy đúng đường dẫn tới thư mục 'data' ở cả môi trường dev và production
+const dataDir = path_1.default.join(__dirname, "..", "..", "data");
+const provinceData = JSON.parse(fs_1.default.readFileSync(path_1.default.join(dataDir, "province.json"), "utf8"));
+const wardData = JSON.parse(fs_1.default.readFileSync(path_1.default.join(dataDir, "ward.json"), "utf8"));
 // Lấy danh sách tỉnh/thành phố
 const getProvinces = (req, res) => {
     res.json(Object.values(provinceData));

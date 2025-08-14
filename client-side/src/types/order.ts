@@ -65,4 +65,8 @@ export interface OrderDetail {
 export interface OrderReview {
   _id: string;
   orderCode: string;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 26c33e0f889b1f3595e0a2ba18d8d7b249b66ca8

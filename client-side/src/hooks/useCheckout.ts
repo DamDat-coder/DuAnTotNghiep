@@ -588,7 +588,7 @@ export const useCheckout = () => {
             province: formData.province,
             phone: formData.phone,
           },
-          couponId: couponId || undefined,
+          code: discountCode || null,
           items: orderItems.map((item) => ({
             productId: item.id,
             quantity: item.quantity,

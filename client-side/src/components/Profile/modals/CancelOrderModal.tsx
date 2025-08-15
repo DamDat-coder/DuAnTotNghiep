@@ -25,6 +25,7 @@ export default function ConfirmCancelOrderModal({ onClose, onConfirm }: Props) {
             width={204}
             height={65}
           />
+
         </div>
 
         {/* Icon dấu X */}

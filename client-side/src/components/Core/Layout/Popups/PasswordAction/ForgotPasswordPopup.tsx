@@ -87,7 +87,7 @@ export default function ForgotPasswordPopup({
         </button>
 
         <div className="flex flex-col items-center gap-6">
-          <Image src="/nav/logo.svg" alt="Logo" width={100} height={40} />
+          <Image src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png" alt="Logo" width={100} height={40} />
 
           <h2 className="text-xl font-bold text-center">Quên mật khẩu</h2>
           <form onSubmit={handleSubmit} className="w-full space-y-5">

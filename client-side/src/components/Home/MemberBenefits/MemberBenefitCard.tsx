@@ -15,7 +15,7 @@ export default function MemberBenefitCard({
   isDarkButton = false,
 }: MemberBenefitCardProps) {
   return (
-    <div className="relative w-full rounded overflow-hidden h-[38.4375rem]">
+    <div className="relative w-full rounded overflow-hidden h-[25rem]">
       <Image
         src={`/memberBenefit/${image}`}
         alt={benefit}
@@ -29,8 +29,8 @@ export default function MemberBenefitCard({
         }}
       />
       <div className="absolute inset-0 bg-black/45" />
-      <div className="absolute bottom-[1.5rem] left-[1.5rem] w-[55%] flex flex-col gap-2">
-        <div className="text-[1.5rem] font-heading font-bold text-white flex flex-wrap leading-tight">
+      <div className="absolute bottom-[1.5rem] left-[1.5rem] w-[60%] flex flex-col gap-2">
+        <div className="text-lg laptop:text-[1.5rem] desktop:text-[1.5rem] font-heading font-bold text-white flex flex-wrap leading-tight">
           {benefit}
         </div>
         <Link

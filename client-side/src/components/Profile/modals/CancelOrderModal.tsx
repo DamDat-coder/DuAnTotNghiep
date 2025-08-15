@@ -19,7 +19,12 @@ export default function ConfirmCancelOrderModal({ onClose, onConfirm }: Props) {
 
         {/* Logo */}
         <div className="mb-[40px]">
-          <Image src="/nav/logo.svg" alt="GBOX logo" width={204} height={65} />
+          <Image
+            src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
+            alt="GBOX logo"
+            width={204}
+            height={65}
+          />
         </div>
 
         {/* Icon dấu X */}

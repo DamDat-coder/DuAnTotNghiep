@@ -138,7 +138,7 @@ export default function CartItem({
       </div>
       <div className="text-right">
         <p className="text-sm font-bold">
-          {item.price.toLocaleString("vi-VN")}₫
+          {(item.price * item.quantity).toLocaleString("vi-VN")}₫
         </p>
         {item.discountPercent > 0 && (
           <p className="text-sm text-[#374151] line-through">

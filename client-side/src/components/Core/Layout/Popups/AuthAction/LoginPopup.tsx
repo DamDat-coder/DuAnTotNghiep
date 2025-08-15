@@ -181,10 +181,10 @@ export default function LoginPopup({
            desktop:py-[3rem] desktop:px-[7.5rem] desktop:gap-10"
         >
           <Image
-            src="/nav/logo.svg"
+            src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
             alt="Logo"
-            width={0}
-            height={0}
+            width={50}
+            height={50}
             className="h-16 w-auto"
             draggable={false}
           />

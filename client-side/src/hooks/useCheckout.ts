@@ -581,6 +581,7 @@ export const useCheckout = () => {
         orderId: generateOrderId(),
         totalPrice: total,
         userId: user.id,
+        email: formData.email,
         orderInfo: {
           shippingAddress: {
             street: formData.address,

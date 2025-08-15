@@ -25,7 +25,6 @@ const notification_routes_1 = __importDefault(require("./routes/notification.rou
 const address_routes_1 = __importDefault(require("./routes/address.routes"));
 const error_middleware_1 = require("./middlewares/error.middleware");
 require("./jobs/cron");
-const address_routes_1 = __importDefault(require("./routes/address.routes"));
 require("./jobs/notifyFreeship.job");
 const app = (0, express_1.default)();
 /** ---------- Hardening & middlewares cơ bản ---------- */
@@ -45,12 +44,8 @@ const defaultAllowed = [
     "https://styleforyou.online",
     "https://styleforyou.online",
     "https://www.styleforyou.online",
-<<<<<<< HEAD
-    "http://103.106.104.87:3300", // BỎ dấu / cuối
-=======
     "https://www.styleforyou.online",
     "https://103.106.104.87:3300",
->>>>>>> 26c33e0f889b1f3595e0a2ba18d8d7b249b66ca8
 ].map(normalize);
 const allowedFromEnv = ((_a = process.env.CORS_ORIGINS) !== null && _a !== void 0 ? _a : "")
     .split(",")

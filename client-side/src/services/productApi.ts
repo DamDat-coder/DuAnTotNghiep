@@ -52,16 +52,27 @@ export async function fetchProducts(
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        params.set(key, encodeURIComponent(value.toString()));
+        let finalValue = value;
+        if (typeof value === "string") {
+          try {
+            const decodedValue = decodeURIComponent(value);
+            finalValue =
+              decodedValue === value ? decodeURIComponent(value) : value;
+          } catch (e) {
+            console.error(`Error decoding ${key} in fetchProducts:`, e);
+            finalValue = value;
+          }
+        }
+        params.set(key, finalValue.toString());
       }
     });
 
+    const url = `${API_BASE_URL}/products?${params.toString()}`;
     const response = await fetchWithAuth<{
       success: boolean;
       total: number;
       data: any[];
-    }>(`${API_BASE_URL}/products?${params.toString()}`, { cache: "no-store" });
-    // Loại bỏ sản phẩm trùng lặp dựa trên _id
+    }>(url, { cache: "no-store" });
     const uniqueProducts = Array.from(
       new Map(response.data.map((product) => [product._id, product])).values()
     );

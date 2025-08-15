@@ -171,7 +171,7 @@ export default function ResetPasswordPopup({
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full border px-3 py-2 rounded"
-                autoComplete="new-password"
+                autoComplete="off"
                 onBlur={(e) => validateField(e.target.name, e.target.value)}
               />
               <button
@@ -207,7 +207,7 @@ export default function ResetPasswordPopup({
           <div className="flex items-center gap-2 mt-2">
             <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input
-                type="radio"
+                type="checkbox"
                 name="loginNow"
                 checked={loginNow}
                 onChange={() => setLoginNow(!loginNow)}

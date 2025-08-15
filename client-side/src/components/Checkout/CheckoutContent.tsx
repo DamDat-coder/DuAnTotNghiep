@@ -10,6 +10,7 @@ import ShippingMethod from "@/components/Checkout/Infomation/ShippingMethod";
 import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
 import AddressPopup from "@/components/Checkout/Address/AddressPopup";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
 
 export default function Checkout() {
   const {
@@ -39,8 +40,19 @@ export default function Checkout() {
     isAddressPopupOpen,
     setIsAddressPopupOpen,
     handleSelectAddress,
+    availableCoupons = [],
   } = useCheckout();
 
+  useEffect(() => {
+    if (isAddressPopupOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isAddressPopupOpen]);
 
   if (isLoading) {
     return (
@@ -72,6 +84,14 @@ export default function Checkout() {
             </p>
           ) : (
             <>
+              <div className="flex justify-between items-center">
+                <h1 className="text-lg font-bold">
+                  ĐƠN HÀNG ({orderItems.length} SẢN PHẨM)
+                </h1>
+                <span className="text-[1rem] font-bold">
+                  {total.toLocaleString("vi-VN")}₫
+                </span>
+              </div>
               <OrderItems
                 orderItems={orderItems}
                 applicableItemIds={applicableItemIds}
@@ -82,6 +102,7 @@ export default function Checkout() {
                 discountCode={discountCode}
                 setDiscountCode={setDiscountCode}
                 handleApplyDiscount={handleApplyDiscount}
+                availableCoupons={availableCoupons}
               />
               <OrderSummary
                 subtotal={subtotal}
@@ -168,7 +189,7 @@ export default function Checkout() {
                     ĐƠN HÀNG ({orderItems.length} SẢN PHẨM)
                   </h1>
                   <span className="text-[1rem] font-bold">
-                    {subtotal.toLocaleString("vi-VN")}₫
+                    {total.toLocaleString("vi-VN")}₫
                   </span>
                 </div>
                 <OrderItems
@@ -181,6 +202,7 @@ export default function Checkout() {
                   discountCode={discountCode}
                   setDiscountCode={setDiscountCode}
                   handleApplyDiscount={handleApplyDiscount}
+                  availableCoupons={availableCoupons}
                 />
                 <OrderSummary
                   subtotal={subtotal}
@@ -197,16 +219,16 @@ export default function Checkout() {
               </div>
             </>
           )}
-          {isAddressPopupOpen && (
-            <AddressPopup
-              addresses={addresses}
-              selectedAddress={selectedAddress}
-              onSelect={handleSelectAddress}
-              onClose={() => setIsAddressPopupOpen(false)}
-              isLoading={isLoading}
-            />
-          )}
         </div>
+        {isAddressPopupOpen && (
+          <AddressPopup
+            addresses={addresses}
+            selectedAddress={selectedAddress}
+            onSelect={handleSelectAddress}
+            onClose={() => setIsAddressPopupOpen(false)}
+            isLoading={isLoading}
+          />
+        )}
       </Container>
       <style jsx global>{`
         .react-select__control {

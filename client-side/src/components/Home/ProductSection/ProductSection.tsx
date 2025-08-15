@@ -45,7 +45,27 @@ export default function ProductSection({
   useEffect(() => {
     setIsClient(true);
   }, []);
+  useEffect(() => {
+    if (isBuyNowPopupOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isBuyNowPopupOpen]);
 
+  useEffect(() => {
+    if (isAddToCartPopupOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isAddToCartPopupOpen]);
   useEffect(() => {
     if (!showLoadMore || !hasMore || loading) return;
 
@@ -107,60 +127,45 @@ export default function ProductSection({
         Mới Nhất & Tốt Nhất
       </h1>
 
-      {isClient ? (
-        <>
-          {/* Mobile */}
-          <div className="block tablet:hidden">
-            <ProductSwiper
-              products={displayedProducts}
-              slidesPerView={1.5}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-          </div>
+      {/* Mobile */}
+      <div className="block tablet:hidden">
+        <ProductSwiper
+          products={displayedProducts}
+          slidesPerView={1.5}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+        />
+      </div>
 
-          {/* Tablet */}
-          <div className="hidden tablet:block laptop:hidden">
-            <ProductSwiper
-              products={displayedProducts}
-              slidesPerView={tabletSlidesPerView}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-          </div>
+      {/* Tablet */}
+      <div className="hidden tablet:block laptop:hidden">
+        <ProductSwiper
+          products={displayedProducts}
+          slidesPerView={tabletSlidesPerView}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+        />
+      </div>
 
-          {/* Laptop */}
-          <div className="hidden laptop:block desktop:hidden">
-            <ProductSwiper
-              products={displayedProducts}
-              slidesPerView={laptopSlidesPerView}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-          </div>
+      {/* Laptop */}
+      <div className="hidden laptop:block desktop:hidden">
+        <ProductSwiper
+          products={displayedProducts}
+          slidesPerView={laptopSlidesPerView}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+        />
+      </div>
 
-          {/* Desktop */}
-          <div className="hidden desktop:block">
-            <ProductSwiper
-              products={displayedProducts}
-              slidesPerView={desktopSlidesPerView}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-          </div>
-        </>
-      ) : (
-        <div className="grid grid-cols-1 tablet:grid-cols-2 laptop:grid-cols-3 desktop:grid-cols-4 gap-4">
-          {displayedProducts.map((product, index) => (
-            <ProductCard
-              key={product.id || index}
-              product={product}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-          ))}
-        </div>
-      )}
+      {/* Desktop */}
+      <div className="hidden desktop:block">
+        <ProductSwiper
+          products={displayedProducts}
+          slidesPerView={desktopSlidesPerView}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+        />
+      </div>
 
       {showLoadMore && hasMore && (
         <div ref={observerRef} className="h-10" aria-hidden="true" />

@@ -13,8 +13,7 @@ import RegisterPopup from "../../Popups/AuthAction/RegisterPopup";
 import ForgotPasswordPopup from "../../Popups/PasswordAction/ForgotPasswordPopup";
 import ResetPasswordPopup from "../../Popups/PasswordAction/ResetPasswordPopup";
 import ChangePasswordModal from "@/components/Profile/modals/ChangePasswordModal";
-import { Lock } from "lucide-react";
-import { Package } from "lucide-react";
+import { Lock, Package, ChevronDown, ChevronUp, X } from "lucide-react";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -63,19 +62,13 @@ const NavList = ({
             >
               {item.label}
             </Link>
-            {item.children && item.children.length > 0 && (
-              <Image
-                src="/nav/nav_angle_left.svg"
-                alt="Arrow"
-                width={24}
-                height={24}
-                className={`h-auto w-3 transition-transform ${
-                  expandedCategory === item.href ? "rotate-90" : ""
-                }`}
-                draggable={false}
-                loading="lazy"
-              />
-            )}
+            {item.children &&
+              item.children.length > 0 &&
+              (expandedCategory === item.href ? (
+                <ChevronUp className="w-6 h-6" />
+              ) : (
+                <ChevronDown className="w-6 h-6" />
+              ))}
           </div>
           <AnimatePresence>
             {item.children &&
@@ -116,9 +109,9 @@ const GuestMenu = ({
   setIsLoginOpen: (isOpen: boolean) => void;
   setIsRegisterOpen: (isOpen: boolean) => void;
 }) => (
-  <div className="flex flex-col gap-6 px-4 mt-auto">
+  <div className="flex flex-col gap-6 px-4 items-center">
     <Image
-      src="/nav/logo.svg"
+      src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
       alt="Logo"
       width={120}
       height={40}
@@ -126,7 +119,7 @@ const GuestMenu = ({
       draggable={false}
       loading="lazy"
     />
-    <p className="text-base text-gray-700">
+    <p className="text-base text-gray-700 text-center">
       Trở thành thành viên <span className="font-bold">Shop For Real</span> để
       có những sản phẩm và giá tốt nhất.
     </p>
@@ -272,13 +265,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
   );
 
   const navItems: NavItem[] = [
-    { href: "/about", label: "Về chúng tôi" },
     ...categories.map((cat) => ({
       href: `/products?id_cate=${cat._id}`,
       label: cat.name,
       children: cat.children,
     })),
-    { href: "/contact", label: "Liên hệ" },
+    { href: "/posts", label: "Bài viết" },
+    { href: "/coupons", label: "Giảm giá" },
   ];
 
   useEffect(() => {
@@ -301,19 +294,13 @@ export default function MobileMenu({ isOpen, setIsOpen }: MobileMenuProps) {
         transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         <div className="flex flex-col gap-6 min-h-screen px-6 pt-6">
-          <div className="flex items-center justify-end p-4 border-b-2 border-[#B0B0B0]">
+          <div className="flex items-center justify-end border-b-2 border-[#B0B0B0]">
             <button
               type="button"
               className="text-gray-400 hover:text-black"
               onClick={() => setIsOpen(false)}
             >
-              <Image
-                src="/nav/Union - Copy.svg"
-                alt="Close"
-                width={24}
-                height={24}
-                className="h-6 w-auto"
-              />
+              <X className="text-black w-8 h-8" />
             </button>
           </div>
           {error && <p className="text-lg text-red-500">Lỗi: {error}</p>}

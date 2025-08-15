@@ -176,10 +176,10 @@ export default function RegisterPopup({
         >
           {" "}
           <Image
-            src="/nav/logo.svg"
+            src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
             alt="Logo"
-            width={0}
-            height={0}
+            width={50}
+            height={50}
             className="h-16 w-auto"
             draggable={false}
           />

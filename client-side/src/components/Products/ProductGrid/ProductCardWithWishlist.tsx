@@ -38,13 +38,17 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
 
         {/* Wishlist button */}
         <div className="absolute top-[0.5rem] right-[0.5rem] w-8 h-8 rounded-full flex justify-center items-center cursor-pointer bg-[#D9D9D9]">
-          <WishlistButton product={product} variant="white" borderColor="white" />
+          <WishlistButton
+            product={product}
+            variant="white"
+            borderColor="white"
+          />
         </div>
 
         {/* Thông tin sản phẩm */}
         <div className="content flex flex-col py-4 gap-3">
           <div>
-            <div className="name text-base tablet:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3.5rem]">
+            <div className="name text-base tablet:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3.2rem] tablet:h-[3.8rem]">
               {product.name || "Sản phẩm"}
             </div>
             <div className="category text-base text-[#374151] truncate">
@@ -68,13 +72,13 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
           <div className="flex gap-3 font-heading">
             <Link
               href={`/products/${product.id}`}
-              className="p-3 border-solid border-black border-2 rounded text-base"
+              className="flex items-center justify-center p-2 border border-black border-solid rounded text-sm laptop:text-base desktop:text-base"
             >
               Xem chi tiết
             </Link>
             <button
               onClick={(e) => onBuyNow(product, e)}
-              className="p-3 border-solid border-black border-2 rounded text-white bg-black font-bold text-base"
+              className="flex items-center justify-cente p-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base desktop:text-base"
               aria-label={`Mua ngay sản phẩm ${product.name}`}
             >
               Mua ngay

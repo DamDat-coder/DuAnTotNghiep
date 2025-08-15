@@ -78,15 +78,15 @@ export default function Header() {
             <div className="flex h-16 items-center justify-between relative">
               <Link
                 href="/"
-                className="flex items-center flex-shrink-0"
+                className="flex items-center flex-shrink-0 h-full py-1"
                 aria-label="Trang chủ"
               >
                 <Image
-                  src="/nav/logo.svg"
+                  src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
                   alt="Logo"
                   width={120}
                   height={40}
-                  className="h-auto w-auto"
+                  className="h-full w-auto"
                   draggable={false}
                   priority
                 />

@@ -46,7 +46,7 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
             vnp_TxnRef: transactionCode,
             vnp_OrderInfo: `Thanh toán đơn hàng ${transactionCode}|userId:${userId}`,
             vnp_OrderType: vnpay_1.ProductCode.Other,
-            vnp_ReturnUrl: `http://localhost:3000/api/payment/check-payment-vnpay`,
+            vnp_ReturnUrl: `http://api.styleforyou.online/payment/check-payment-vnpay`,
             vnp_Locale: vnpay_1.VnpLocale.VN,
             vnp_CreateDate: Number((0, moment_1.default)().format("YYYYMMDDHHmmss")),
             vnp_ExpireDate: Number((0, moment_1.default)().add(30, "minutes").format("YYYYMMDDHHmmss")),
@@ -81,7 +81,7 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         };
         yield payment.save();
         const redirect = vnp_ResponseCode === "00" ? "success" : "fail";
-        return res.redirect(`http://localhost:3300/payment/${redirect}?orderId=${vnp_TxnRef}`);
+        return res.redirect(`http://styleforyou.online/payment/${redirect}?orderId=${vnp_TxnRef}`);
     }
     catch (error) {
         return res.status(500).json({ message: "Callback VNPay lỗi!", error });
@@ -114,7 +114,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const app_time = Date.now();
         console.log("App Time:", app_time);
         const embedData = {
-            redirecturl: `http://localhost:3000/api/payment/zalopay-return`,
+            redirecturl: `http://api.styleforyou.online/payment/zalopay-return`,
             userId,
         };
         console.log("Embed Data:", embedData);
@@ -306,17 +306,17 @@ const redirectZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, fu
                 if (updatedPayment && updatedPayment.status !== "pending") {
                     // Giao dịch đã được cập nhật
                     const redirect = updatedPayment.status === "success" ? "success" : "fail";
-                    const redirectUrl = `http://localhost:3300/payment/${redirect}?orderId=${apptransid}`;
+                    const redirectUrl = `http://styleforyou.online/payment/${redirect}?orderId=${apptransid}`;
                     return res.redirect(redirectUrl);
                 }
                 attempts++;
             }
             // Nếu hết số lần thử mà vẫn pending, redirect về trang pending
-            return res.redirect(`http://localhost:3300/payment/pending?orderId=${apptransid}`);
+            return res.redirect(`http://styleforyou.online/payment/pending?orderId=${apptransid}`);
         }
         // Nếu giao dịch đã được xử lý
         const redirect = payment.status === "success" ? "success" : "fail";
-        const redirectUrl = `http://localhost:3300/payment/${redirect}?orderId=${apptransid}`;
+        const redirectUrl = `http://styleforyou.online/payment/${redirect}?orderId=${apptransid}`;
         return res.redirect(redirectUrl);
     }
     catch (error) {

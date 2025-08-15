@@ -46,7 +46,7 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
             vnp_TxnRef: transactionCode,
             vnp_OrderInfo: `Thanh toán đơn hàng ${transactionCode}|userId:${userId}`,
             vnp_OrderType: vnpay_1.ProductCode.Other,
-            vnp_ReturnUrl: `http://localhost:3000/api/payment/check-payment-vnpay`,
+            vnp_ReturnUrl: `http://api.styleforyou.online/payment/check-payment-vnpay`,
             vnp_Locale: vnpay_1.VnpLocale.VN,
             vnp_CreateDate: Number((0, moment_1.default)().format("YYYYMMDDHHmmss")),
             vnp_ExpireDate: Number((0, moment_1.default)().add(30, "minutes").format("YYYYMMDDHHmmss")),
@@ -114,7 +114,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const app_time = Date.now();
         console.log("App Time:", app_time);
         const embedData = {
-            redirecturl: `http://localhost:3000/api/payment/zalopay-return`,
+            redirecturl: `http://api.styleforyou.online/payment/zalopay-return`,
             userId,
         };
         console.log("Embed Data:", embedData);

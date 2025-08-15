@@ -86,7 +86,7 @@ export default function CustomerChart() {
                 labelFormatter={(label) => `Thứ: ${label}`}
               />
               <Bar
-                dataKey="value"
+                dataKey="Số lượng:"
                 radius={[6, 6, 0, 0]}
                 fill="#3B82F6"
                 barSize={24}

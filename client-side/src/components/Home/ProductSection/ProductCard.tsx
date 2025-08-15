@@ -15,11 +15,13 @@ export default function ProductCard({
   onBuyNow,
 }: ProductCardProps) {
   const { name, category, images, variants } = product;
-  const lowestVariant =
-    variants?.reduce((min, v) => (v.price < min.price ? v : min), variants[0]) || {
-      price: 0,
-      discountPercent: 0,
-    };
+  const lowestVariant = variants?.reduce(
+    (min, v) => (v.price < min.price ? v : min),
+    variants[0]
+  ) || {
+    price: 0,
+    discountPercent: 0,
+  };
   const price = lowestVariant.price;
   const discountPercent = lowestVariant.discountPercent;
   const discountPrice = Math.round(price * (1 - discountPercent / 100));
@@ -62,14 +64,14 @@ export default function ProductCard({
         <div className="flex gap-3 font-heading">
           <Link
             href={`/products/${product.id}`}
-            className="p-3 border border-black border-solid rounded text-base"
+            className="flex items-center justify-center p-2 border border-black border-solid rounded text-sm laptop:text-base desktop:text-base"
             aria-label={`Xem chi tiết sản phẩm ${name}`}
           >
             Xem chi tiết
           </Link>
           <button
             onClick={(e) => onBuyNow?.(product, e)}
-            className="p-3 border border-black bg-black text-white rounded font-bold text-base"
+            className="flex items-center justify-cente p-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base desktop:text-base"
             aria-label={`Mua ngay sản phẩm ${name}`}
           >
             Mua ngay

@@ -19,15 +19,15 @@ export default function BannerContent({
 }: BannerContentProps) {
   return (
     <div
-      className={`flex flex-col items-start tablet:items-center justify-evenly gap-3 mt-5 text-${
+      className={`flex flex-col items-center tablet:items-center justify-evenly gap-3 mt-5 text-${
         dark ? "white" : "gray-700"
-      } text-center`}
+      } `}
     >
       <div className="banner_status text-base">{status}</div>
       <div className="banner_name text-[1.5rem] font-bold tablet:text-2xl leading-[1.8125rem] line-clamp-1">
         {name}
       </div>
-      <div className="banner_description desc-text tablet:text-lg">
+      <div className="banner_description desc-text tablet:text-lg text-center">
         {description}
       </div>
       <button

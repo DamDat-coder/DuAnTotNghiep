@@ -147,7 +147,7 @@ export default function ResetPasswordPopup({
 
         <div className="text-center mb-6">
           <Image
-            src="/nav/logo.svg"
+            src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
             alt="Logo"
             width={0}
             height={0}

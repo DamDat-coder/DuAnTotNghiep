@@ -41,10 +41,10 @@ export default function Breadcrumb() {
   }, [pathname]);
 
   return (
-    <nav className="text-base">
-      <ul className="flex items-center gap-2">
-        {/* Trang chủ luôn có */}
-        <li>
+    <nav className="text-base w-full overflow-x-auto">
+      <ul className="flex items-center gap-2 whitespace-nowrap">
+        {/* Trang chủ */}
+        <li className="flex items-center whitespace-nowrap">
           <Link href="/" className="text-[#d1d1d1] hover:underline">
             Trang chủ
           </Link>
@@ -56,7 +56,6 @@ export default function Breadcrumb() {
           const isLast = index === pathSegments.length - 1;
           let label: string;
 
-          // Xử lý label cho đoạn cuối nếu là chi tiết sản phẩm
           if (
             isLast &&
             pathSegments[0] === "products" &&
@@ -71,7 +70,10 @@ export default function Breadcrumb() {
           }
 
           return (
-            <li key={href} className="flex items-center gap-2">
+            <li
+              key={href}
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
               <span className="text-[#d1d1d1]">{">"}</span>
               {isLast ? (
                 <span className="text-black font-bold">{label}</span>

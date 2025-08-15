@@ -14,6 +14,7 @@ import ForgotPasswordPopup from "../../Popups/PasswordAction/ForgotPasswordPopup
 import ResetPasswordPopup from "../../Popups/PasswordAction/ResetPasswordPopup";
 import ChangePasswordModal from "@/components/Profile/modals/ChangePasswordModal";
 import { Lock } from "lucide-react";
+import { Package } from "lucide-react";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -126,7 +127,7 @@ const GuestMenu = ({
       loading="lazy"
     />
     <p className="text-base text-gray-700">
-      Trở thành thành viên <span className="font-bold">Style for you</span> để
+      Trở thành thành viên <span className="font-bold">Shop For Real</span> để
       có những sản phẩm và giá tốt nhất.
     </p>
     <div className="flex justify-center items-center gap-2">
@@ -165,6 +166,7 @@ const UserMenu = ({
   logout: () => void;
   setShowChangePassword: (show: boolean) => void;
 }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const handleOrderClick = () => {
     setActiveTab("Đơn hàng");
     window.history.pushState({}, "", "/profile?tab=order");
@@ -210,18 +212,15 @@ const UserMenu = ({
           <p className="text-lg font-medium font-description">Yêu thích</p>
         </Link>
         <Link
-          href="#"
+          href="/profile?tab=order"
+          onClick={() => {
+            setActiveTab("Đơn hàng");
+            setIsDropdownOpen(false);
+          }}
           className="flex gap-4 items-center"
-          onClick={handleOrderClick}
         >
-          <Image
-            src="/nav/nav_cart.svg"
-            alt="Giỏ hàng"
-            width={24}
-            height={24}
-            className="h-6 w-auto"
-          />
-          <p className="text-lg font-medium font-description">Giỏ hàng</p>
+          <Package size={20} />
+          <p className="text-lg font-medium font-description">Đơn hàng</p>
         </Link>
         <button
           className="flex gap-4 items-center"

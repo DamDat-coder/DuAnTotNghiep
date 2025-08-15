@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
     domains: ["res.cloudinary.com"],
   },
   productionBrowserSourceMaps: false,
+  reactStrictMode: false,
+  compiler: {
+    removeConsole: false,
+  },
 };
 
 export default nextConfig;

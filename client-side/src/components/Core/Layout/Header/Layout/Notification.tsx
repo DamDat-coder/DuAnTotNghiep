@@ -152,7 +152,7 @@ export default function Notification() {
               notifications.map((notification) => {
                 let iconSrc = "/notification/default.svg";
 
-                if (notification.title === "Tin tức mới từ Style For You!") {
+                if (notification.title === "Tin tức mới từ Shop For Real!") {
                   iconSrc = "/public/notification/news.svg";
                 } else if (notification.title === "Sản phẩm mới vừa ra mắt!") {
                   iconSrc = "/notification/products.svg";

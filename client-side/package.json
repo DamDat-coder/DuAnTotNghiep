@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=1024 PORT=3300 next dev --webpack",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=1024 PORT=3300 next dev",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=1024 next build",
     "start": "next start -p 3300",
     "lint": "next lint"
@@ -14,6 +14,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@headlessui/react": "^2.2.7",
     "@mui/material": "^7.2.0",
     "@radix-ui/react-switch": "^1.2.5",
     "@react-oauth/google": "^0.12.2",

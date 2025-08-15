@@ -12,7 +12,6 @@ export async function fetchNotifications(): Promise<NotificationResponse> {
     if (!response.success) {
       throw new Error(response.message || "Lỗi khi lấy thông báo");
     }
-    console.log(response);
     
     return response;
   } catch (error: any) {

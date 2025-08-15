@@ -24,7 +24,6 @@ export default function CartItem({
   isDisabled = false,
   isOutOfStock = false,
 }: CartItemProps) {
-  console.log(item.stock);
   const maxQuantity = item.stock || 0;
 
   const handleQuantityChange = (change: number) => {
@@ -62,7 +61,9 @@ export default function CartItem({
       <div className="flex-1">
         <h3 className="text-sm font-semibold text-[#374151]">
           {item.name}{" "}
-          {isOutOfStock && <span className="text-red-500">(Tạm ngưng bán)</span>}
+          {isOutOfStock && (
+            <span className="text-red-500">(Tạm ngưng bán)</span>
+          )}
         </h3>
         <p className="text-sm text-[#374151]">
           {item.color}/{item.size}
@@ -71,7 +72,7 @@ export default function CartItem({
           <button
             onClick={() => handleQuantityChange(-1)}
             disabled={item.quantity <= 1 || isDisabled}
-            className={`px-3 py-1 border rounded flex justify-center items-center ${
+            className={`w-11 h-10 border rounded flex justify-center items-center ${
               item.quantity <= 1 || isDisabled
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer hover:bg-gray-100"
@@ -79,11 +80,34 @@ export default function CartItem({
           >
             -
           </button>
-          <span>{item.quantity}</span>
+
+          <input
+            type="number"
+            value={item.quantity}
+            onChange={(e) => {
+              const newQuantity = Number(e.target.value);
+              if (isNaN(newQuantity)) return;
+
+              if (newQuantity > maxQuantity) {
+                toast.error(`Số lượng tối đa là ${maxQuantity}!`);
+                return;
+              }
+              if (newQuantity < 1) {
+                toast.error("Số lượng phải lớn hơn 0!");
+                return;
+              }
+              onQuantityChange(item.id, newQuantity - item.quantity);
+            }}
+            disabled={isDisabled}
+            className="w-11 h-10 text-center border rounded"
+            min={1}
+            max={maxQuantity}
+          />
+
           <button
             onClick={() => handleQuantityChange(1)}
             disabled={item.quantity >= maxQuantity || isDisabled}
-            className={`px-3 py-1 border rounded flex justify-center items-center ${
+            className={`w-11 h-10 border rounded flex justify-center items-center ${
               item.quantity >= maxQuantity || isDisabled
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer hover:bg-gray-100"
@@ -91,6 +115,7 @@ export default function CartItem({
           >
             +
           </button>
+
           <div className="flex gap-2">
             <button
               onClick={onToggleLike}
@@ -113,16 +138,11 @@ export default function CartItem({
       </div>
       <div className="text-right">
         <p className="text-sm font-bold">
-          {(
-            item.price *
-            (1 - item.discountPercent / 100) *
-            item.quantity
-          ).toLocaleString("vi-VN")}
-          ₫
+          {item.price.toLocaleString("vi-VN")}₫
         </p>
         {item.discountPercent > 0 && (
           <p className="text-sm text-[#374151] line-through">
-            {(item.price * item.quantity).toLocaleString("vi-VN")}₫
+            {(item.originPrice * item.quantity).toLocaleString("vi-VN")}₫
           </p>
         )}
       </div>

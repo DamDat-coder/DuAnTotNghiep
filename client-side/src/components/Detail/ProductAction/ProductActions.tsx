@@ -1,12 +1,13 @@
-"use client";
-
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { IProduct } from "@/types/product";
 import ColorSelector from "./ColorSelector";
 import SizeSelector from "./SizeSelector";
 import PriceDisplay from "./PriceDisplay";
 import ActionButtons from "./ActionButtons";
 import SizeChartPopup from "./SizeChartPopup";
+import BuyNowPopup from "../../Core/Layout/BuyNowButton/BuyNowPopup";
+import { Suspense } from "react";
 
 interface ProductActionsProps {
   product: IProduct;
@@ -28,6 +29,14 @@ export default function ProductActions({
   );
   const [isLiked, setIsLiked] = useState(false);
   const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
+  const [isBuyNowPopupOpen, setIsBuyNowPopupOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const couponId = searchParams.get("coupon");
+
+  const discountedPrice = Math.round(
+    firstVariant.price * (1 - firstVariant.discountPercent / 100)
+  );
+
   const [selectedVariantPrice, setSelectedVariantPrice] = useState<{
     price: number;
     discountedPrice?: number;
@@ -36,7 +45,7 @@ export default function ProductActions({
     firstVariant
       ? {
           price: firstVariant.price,
-          discountedPrice: firstVariant.discountedPrice || firstVariant.price,
+          discountedPrice: discountedPrice,
           discountPercent: firstVariant.discountPercent,
         }
       : null
@@ -74,9 +83,12 @@ export default function ProductActions({
         (v) => v.color === selectedColor && v.size === selectedSize
       );
       if (variant) {
+        const variantDiscountedPrice = Math.round(
+          variant.price * (1 - variant.discountPercent / 100)
+        );
         setSelectedVariantPrice({
           price: variant.price,
-          discountedPrice: variant.discountedPrice || variant.price,
+          discountedPrice: variantDiscountedPrice,
           discountPercent: variant.discountPercent,
         });
       } else {
@@ -84,9 +96,12 @@ export default function ProductActions({
       }
     } else {
       const lowestVariant = product.variants[0];
+      const lowestDiscountedPrice = Math.round(
+        lowestVariant.price * (1 - lowestVariant.discountPercent / 100)
+      );
       setSelectedVariantPrice({
         price: lowestVariant.price,
-        discountedPrice: lowestVariant.discountedPrice || lowestVariant.price,
+        discountedPrice: lowestDiscountedPrice,
         discountPercent: lowestVariant.discountPercent,
       });
     }
@@ -110,7 +125,7 @@ export default function ProductActions({
   }, [isLiked, product.id]);
 
   useEffect(() => {
-    if (isSizeChartOpen) {
+    if (isSizeChartOpen || isBuyNowPopupOpen) {
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
@@ -118,7 +133,7 @@ export default function ProductActions({
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isSizeChartOpen]);
+  }, [isSizeChartOpen, isBuyNowPopupOpen]);
 
   return (
     <>
@@ -148,11 +163,24 @@ export default function ProductActions({
         selectedVariant={selectedVariant}
         isLiked={isLiked}
         setIsLiked={setIsLiked}
+        setIsBuyNowPopupOpen={setIsBuyNowPopupOpen}
+        couponId={couponId}
       />
       <SizeChartPopup
         isSizeChartOpen={isSizeChartOpen}
         handleCloseSizeChart={() => setIsSizeChartOpen(false)}
       />
+      {isBuyNowPopupOpen && (
+        <Suspense fallback={null}>
+          <BuyNowPopup
+            product={product}
+            isOpen={isBuyNowPopupOpen}
+            onClose={() => {
+              setIsBuyNowPopupOpen(false);
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

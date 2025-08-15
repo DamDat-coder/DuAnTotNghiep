@@ -90,7 +90,7 @@ export default function ResetPasswordPopup({
           const loginSuccess = await login(storedEmail, formData.password);
           if (loginSuccess) {
             toast.success("Đăng nhập thành công với mật khẩu mới!");
-             window.location.href = "/";
+            window.location.href = "/";
           }
         } catch {
           toast.error("Đặt lại mật khẩu thành công, nhưng đăng nhập thất bại.");
@@ -149,9 +149,10 @@ export default function ResetPasswordPopup({
           <Image
             src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoDen_zjms3c.png"
             alt="Logo"
-            width={0}
-            height={0}
+            width={50}
+            height={50}
             className="h-12 w-auto mx-auto"
+            draggable={false}
           />
           <h2 className="text-xl font-bold mt-2">Đặt lại mật khẩu</h2>
           <p className="text-gray-600 text-sm">

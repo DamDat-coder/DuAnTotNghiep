@@ -203,7 +203,7 @@ export const useCheckout = () => {
           const discountedPrice = Math.round(
             (selectedVariant.price ?? 0) *
               (1 - (selectedVariant.discountPercent ?? 0) / 100)
-          );
+            );
           const cartItem = {
             id: product.id,
             name: product.name,
@@ -619,6 +619,7 @@ export const useCheckout = () => {
             phone: formData.phone,
           },
           code: discountCode || null,
+          discountAmount: discount,
           items: orderItems.map((item) => ({
             productId: item.id,
             quantity: item.quantity,

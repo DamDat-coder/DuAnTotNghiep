@@ -39,7 +39,6 @@ app.use(cookieParser());
 /** ---------- CORS (dev + prod) ---------- */
 const normalize = (s?: string | null) => (s ? s.replace(/\/+$/, "") : s);
 const defaultAllowed = [
-  "https://localhost:3300",
   "https://styleforyou.online",
   "https://styleforyou.online",
   "https://www.styleforyou.online",

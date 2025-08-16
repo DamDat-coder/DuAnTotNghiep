@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IOrderItem {
   productId: Types.ObjectId;
@@ -24,8 +24,14 @@ export interface IOrder extends Document {
   totalPrice: number;
   discountAmount?: number;
   shipping: number;
-  status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled' | 'fake';
-  paymentMethod: 'cod' | 'vnpay' | 'zalopay';
+  status:
+    | "pending"
+    | "confirmed"
+    | "shipping"
+    | "delivered"
+    | "cancelled"
+    | "fake";
+  paymentMethod: "cod" | "vnpay" | "zalopay";
   paymentId?: Types.ObjectId | null;
   items: IOrderItem[];
   orderCode: string;
@@ -37,7 +43,7 @@ export interface IOrder extends Document {
 
 const orderItemSchema = new Schema<IOrderItem>(
   {
-    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     name: { type: String, required: true },
     image: { type: String, required: true },
     color: { type: String, required: true },
@@ -68,17 +74,24 @@ const orderSchema = new Schema<IOrder>(
     shipping: { type: Number, default: 0 },
     paymentMethod: {
       type: String,
-      enum: ['cod', 'vnpay', 'zalopay'],
+      enum: ["cod", "vnpay", "zalopay"],
       required: true,
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled', 'fake'],
-      default: 'pending',
+      enum: [
+        "pending",
+        "confirmed",
+        "shipping",
+        "delivered",
+        "cancelled",
+        "fake",
+      ],
+      default: "pending",
     },
     paymentId: {
       type: Schema.Types.ObjectId,
-      ref: 'Payment',
+      ref: "Payment",
       default: null,
     },
     items: { type: [orderItemSchema], required: true },
@@ -89,5 +102,5 @@ const orderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
-const OrderModel = mongoose.model<IOrder>('Order', orderSchema);
+const OrderModel = mongoose.model<IOrder>("Order", orderSchema);
 export default OrderModel;

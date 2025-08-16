@@ -203,7 +203,7 @@ export const useCheckout = () => {
           const discountedPrice = Math.round(
             (selectedVariant.price ?? 0) *
               (1 - (selectedVariant.discountPercent ?? 0) / 100)
-          );
+            );
           const cartItem = {
             id: product.id,
             name: product.name,
@@ -265,6 +265,7 @@ export const useCheckout = () => {
     return result;
   };
 
+  // Đồng bộ formData với user và chọn địa chỉ hiển thị
   useEffect(() => {
     if (user && user.addresses) {
       setFormData((prev) => ({
@@ -307,6 +308,7 @@ export const useCheckout = () => {
     }
   }, [user, selectedAddress]);
 
+  // Xử lý phí vận chuyển và tổng tiền
   useEffect(() => {
     let newShippingFee = shippingMethod === "standard" ? 25000 : 35000;
 
@@ -334,6 +336,7 @@ export const useCheckout = () => {
     setTotal(subtotal - discount + newShippingFee);
   }, [subtotal, discount, shippingMethod, isFreeShipping]);
 
+  // Áp dụng mã giảm giá từ localStorage
   useEffect(() => {
     const savedCouponCode = localStorage.getItem("pendingCouponCode");
     if (!savedCouponCode) return;
@@ -400,6 +403,26 @@ export const useCheckout = () => {
     applyCoupon();
   }, [subtotal, orderItems]);
 
+  // Reset selected khi rời khỏi /checkout
+  useEffect(() => {
+    return () => {
+      // Cleanup khi component unmount (rời khỏi /checkout)
+      console.log("đã rời");
+      orderItems.forEach((item) => {
+        dispatch({
+          type: "updateSelected",
+          id: item.id,
+          size: item.size,
+          color: item.color,
+          selected: false,
+        });
+      });
+      localStorage.removeItem("recentBuyNow");
+      localStorage.removeItem("pendingBuyNow");
+    };
+  }, []); // Không có dependency để chỉ chạy cleanup khi component unmount
+
+  // Xử lý thay đổi phương thức vận chuyển
   const handleShippingChange = (method: string) => {
     setShippingMethod(method);
     let newShippingFee = method === "standard" ? 25000 : 35000;
@@ -419,12 +442,14 @@ export const useCheckout = () => {
     setShippingFee(newShippingFee);
   };
 
+  // Xử lý thay đổi input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  // Xử lý thay đổi select
   const handleSelectChange = (name: string, option: any) => {
     setFormData((prev) => ({ ...prev, [name]: option ? option.value : "" }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -434,10 +459,12 @@ export const useCheckout = () => {
     setSelectedAddress(null);
   };
 
+  // Xử lý thay đổi phương thức thanh toán
   const handlePaymentChange = (method: string) => {
     setPaymentMethod(method);
   };
 
+  // Xử lý áp dụng mã giảm giá
   const handleApplyDiscount = async () => {
     if (!discountCode) {
       setDiscount(0);
@@ -501,6 +528,7 @@ export const useCheckout = () => {
     }
   };
 
+  // Xử lý chọn địa chỉ
   const handleSelectAddress = async (address: Address) => {
     setSelectedAddress(address);
     setIsAddressPopupOpen(false);
@@ -513,6 +541,7 @@ export const useCheckout = () => {
     }));
   };
 
+  // Xử lý submit form
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
@@ -581,6 +610,7 @@ export const useCheckout = () => {
         orderId: generateOrderId(),
         totalPrice: total,
         userId: user.id,
+        email: formData.email,
         orderInfo: {
           shippingAddress: {
             street: formData.address,
@@ -589,6 +619,7 @@ export const useCheckout = () => {
             phone: formData.phone,
           },
           code: discountCode || null,
+          discountAmount: discount,
           items: orderItems.map((item) => ({
             productId: item.id,
             quantity: item.quantity,
@@ -616,7 +647,7 @@ export const useCheckout = () => {
         }
       }
     } catch (error: any) {
-      toast.error(error.essage || "Không thể tạo đơn hàng!");
+      toast.error(error.message || "Không thể tạo đơn hàng!");
     }
   };
 

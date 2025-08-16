@@ -12,7 +12,7 @@ export default function Editor({ value, onChange }: EditorProps) {
 
   return (
     <TinyMCEEditor
-      apiKey="on744m7z5qglz3dljl45py7oqi6k8z476viskro02ueetjrq"
+      apiKey="ucdk0ghvdtzf4wxx5jtjsm0k2rxx1ga7lomiceblhmqn0asx"
       value={value}
       init={{
         height: 500,
@@ -31,32 +31,6 @@ export default function Editor({ value, onChange }: EditorProps) {
           "table",
           "visualblocks",
           "wordcount",
-          "checklist",
-          "mediaembed",
-          "casechange",
-          "formatpainter",
-          "pageembed",
-          "a11ychecker",
-          "tinymcespellchecker",
-          "permanentpen",
-          "powerpaste",
-          "advtable",
-          "advcode",
-          "editimage",
-          "advtemplate",
-          "ai",
-          "mentions",
-          "tinycomments",
-          "tableofcontents",
-          "footnotes",
-          "mergetags",
-          "autocorrect",
-          "typography",
-          "inlinecss",
-          "markdown",
-          "importword",
-          "exportword",
-          "exportpdf",
         ],
         toolbar:
           "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat",

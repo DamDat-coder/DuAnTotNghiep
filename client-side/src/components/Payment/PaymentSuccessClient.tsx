@@ -6,6 +6,7 @@ import { createOrder } from "@/services/orderApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartDispatch } from "@/contexts/CartContext";
 import Container from "@/components/Core/Container";
+import Link from "next/link";
 
 export default function PaymentSuccessClient() {
   const { user } = useAuth();
@@ -20,7 +21,11 @@ export default function PaymentSuccessClient() {
     const userId = localStorage.getItem("pendingUserId");
 
     const createOrderAfterPayment = async (retries = 2) => {
-      if (!paymentId || typeof paymentId !== "string" || paymentId.trim() === "") {
+      if (
+        !paymentId ||
+        typeof paymentId !== "string" ||
+        paymentId.trim() === ""
+      ) {
         console.error("paymentId không hợp lệ:", paymentId);
         toast.error("Không tìm thấy paymentId hợp lệ.");
         window.location.href = "/cart";
@@ -71,6 +76,12 @@ export default function PaymentSuccessClient() {
           Đặt hàng thành công
         </h1>
         <p>Bạn sẽ được chuyển hướng trong giây lát...</p>
+        <Link
+          href="/profile?tab=order"
+          className="text-lg font-medium hover:underline text-blue-600"
+        >
+          Chuyển hướng ngay
+        </Link>
       </div>
     </Container>
   );

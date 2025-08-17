@@ -19,22 +19,28 @@ type HomeData = {
   products: Product[];
   featuredSection: FeaturedSectionType[];
   benefits: Benefit[];
+  newestProducts: Product[]; // Added for newest products
   error: string | null;
 };
 
 // Lấy dữ liệu
 async function getHomeData(): Promise<HomeData> {
   try {
-    const [productsData, featuredSection, benefits] = await Promise.all([
-      fetchProducts({ sort_by: "best_selling", is_active: true }),
-      fetchFeaturedSection(),
-      fetchMemberBenefits(),
-    ]);
+    const [productsData, featuredSection, benefits, newestProductsData] =
+      await Promise.all([
+        fetchProducts({ sort_by: "best_selling", is_active: true }),
+        fetchFeaturedSection(),
+        fetchMemberBenefits(),
+        fetchProducts({ sort_by: "newest", is_active: true, limit: 2 }), // Fetch 2 newest products
+      ]);
 
     return {
       products: Array.isArray(productsData?.data) ? productsData.data : [],
       featuredSection: featuredSection || [],
       benefits: benefits || [],
+      newestProducts: Array.isArray(newestProductsData?.data)
+        ? newestProductsData.data
+        : [],
       error: null,
     };
   } catch (err) {
@@ -45,6 +51,7 @@ async function getHomeData(): Promise<HomeData> {
       products: [],
       featuredSection: [],
       benefits: [],
+      newestProducts: [],
       error: "Có lỗi xảy ra khi tải dữ liệu trang chủ.",
     };
   }
@@ -52,7 +59,12 @@ async function getHomeData(): Promise<HomeData> {
 
 // PAGE COMPONENT
 export default async function Home() {
-  const { products, featuredSection, benefits } = await getHomeData();
+  const { products, featuredSection, benefits, newestProducts } =
+    await getHomeData();
+
+  // Prepare data for top and bottom banners
+  const topBannerProduct = newestProducts[0] || {};
+  const bottomBannerProduct = newestProducts[1] || {};
 
   return (
     <div
@@ -64,12 +76,21 @@ export default async function Home() {
 
       {/* Banner chính */}
       <Banner
+        id={topBannerProduct.id || ""}
         status="Vừa ra mắt"
-        name="Áo khoác Gopcore Basic"
-        description="Chào đón chương tiếp theo của Dynamic Air. Cảm nhận sự khác biệt."
-        image1="/banner/banner_1.png"
-        image2="/banner/banner_2.png"
-        altText="Áo khoác Gopcore Basic mới ra mắt"
+        name={topBannerProduct.name || "Áo khoác Gopcore Basic"}
+        description={
+          topBannerProduct.description ||
+          "Chào đón chương tiếp theo của Dynamic Air. Cảm nhận sự khác biệt."
+        }
+        images={
+          topBannerProduct.images?.length
+            ? topBannerProduct.images
+            : ["/banner/banner_1.png", "/banner/banner_2.png"]
+        }
+        altText={`Banner ${
+          topBannerProduct.name || "Áo khoác Gopcore Basic"
+        } mới ra mắt`}
       />
 
       <Container className="flex flex-col gap-[3.375rem] w-full">
@@ -85,13 +106,25 @@ export default async function Home() {
         {/* Banner phụ (desktop) */}
         <div className="hidden laptop:flex desktop:flex w-full flex-col flex-grow gap-[3.375rem]">
           <Banner
+            id={bottomBannerProduct.id || ""}
             title="Đừng Bỏ Lỡ"
             status="Cảm giác thoải mái"
-            name="MLB - Áo khoác phối mũ unisex Gopcore Basic"
-            description="Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
-            image1="/product/product_sale.png"
-            image2="/banner/banner_2.png"
-            altText="Áo khoác MLB Gopcore Basic khuyến mãi"
+            name={
+              bottomBannerProduct.name ||
+              "MLB - Áo khoác phối mũ unisex Gopcore Basic"
+            }
+            description={
+              bottomBannerProduct.description ||
+              "Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
+            }
+            images={
+              bottomBannerProduct.images?.length
+                ? bottomBannerProduct.images
+                : ["/product/product_sale.png", "/banner/banner_2.png"]
+            }
+            altText={`Banner ${
+              bottomBannerProduct.name || "Áo khoác MLB Gopcore Basic"
+            } khuyến mãi`}
           />
         </div>
       </Container>
@@ -99,13 +132,25 @@ export default async function Home() {
       {/* Banner phụ (mobile) */}
       <div className="flex flex-col tablet:flex laptop:hidden desktop:hidden">
         <Banner
+          id={topBannerProduct.id || ""}
           title="Đừng Bỏ Lỡ"
           status="Cảm giác thoải mái"
-          name="MLB - Áo khoác phối mũ unisex Gopcore Basic"
-          description="Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
-          image1="/product/product_sale.png"
-          image2="/banner/banner_2.png"
-          altText="Áo khoác MLB Gopcore Basic khuyến mãi"
+          name={
+            bottomBannerProduct.name ||
+            "MLB - Áo khoác phối mũ unisex Gopcore Basic"
+          }
+          description={
+            bottomBannerProduct.description ||
+            "Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
+          }
+          images={
+            bottomBannerProduct.images?.length
+              ? bottomBannerProduct.images
+              : ["/product/product_sale.png", "/banner/banner_2.png"]
+          }
+          altText={`Banner ${
+            bottomBannerProduct.name || "Áo khoác MLB Gopcore Basic"
+          } khuyến mãi`}
         />
       </div>
     </div>

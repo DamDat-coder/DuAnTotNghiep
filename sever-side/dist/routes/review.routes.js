@@ -14,4 +14,5 @@ router.post("/", auth_middleware_1.verifyToken, upload.array("images", 3), revie
 router.get("/product/:productId", review_controller_1.getProductReviews);
 router.get("/", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, review_controller_1.getAllReviews);
 router.put("/:id/status", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, review_controller_1.updateReviewStatus);
+router.post("/:id/reply", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, review_controller_1.replyToReview);
 exports.default = router;

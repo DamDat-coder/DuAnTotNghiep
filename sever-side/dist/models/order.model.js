@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const orderItemSchema = new mongoose_1.Schema({
-    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
     name: { type: String, required: true },
     image: { type: String, required: true },
     color: { type: String, required: true },
@@ -58,17 +58,24 @@ const orderSchema = new mongoose_1.Schema({
     shipping: { type: Number, default: 0 },
     paymentMethod: {
         type: String,
-        enum: ['cod', 'vnpay', 'zalopay'],
+        enum: ["cod", "vnpay", "zalopay"],
         required: true,
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled', 'fake'],
-        default: 'pending',
+        enum: [
+            "pending",
+            "confirmed",
+            "shipping",
+            "delivered",
+            "cancelled",
+            "fake",
+        ],
+        default: "pending",
     },
     paymentId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Payment',
+        ref: "Payment",
         default: null,
     },
     items: { type: [orderItemSchema], required: true },
@@ -76,5 +83,5 @@ const orderSchema = new mongoose_1.Schema({
     email: { type: String, default: null },
     couponCode: { type: String, default: null },
 }, { timestamps: true });
-const OrderModel = mongoose_1.default.model('Order', orderSchema);
+const OrderModel = mongoose_1.default.model("Order", orderSchema);
 exports.default = OrderModel;

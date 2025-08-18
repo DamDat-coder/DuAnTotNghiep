@@ -24,7 +24,6 @@ export default function ProductDetailsSection({
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
 
-  // Danh sách gợi ý nhận xét
   const suggestedReviews = [
     "Chất lượng tuyệt vời!",
     "Rất đáng tiền.",
@@ -33,7 +32,6 @@ export default function ProductDetailsSection({
     "Hài lòng với trải nghiệm mua sắm.",
   ];
 
-  // Tính điểm đánh giá trung bình
   const averageRating =
     reviews.length > 0
       ? (
@@ -42,7 +40,6 @@ export default function ProductDetailsSection({
         ).toFixed(1)
       : "0.0";
 
-  // Lấy danh sách đánh giá
   useEffect(() => {
     const loadReviews = async () => {
       try {
@@ -55,12 +52,10 @@ export default function ProductDetailsSection({
     loadReviews();
   }, [product.id]);
 
-  // Xử lý thay đổi section
   const handleSectionClick = (section: string) => {
     setActiveSection(activeSection === section ? "" : section);
   };
 
-  // Xử lý khi gửi đánh giá thành công
   const handleReviewSubmitted = (review: IReview) => {
     setReviews((prev) => [...prev, review]);
     setIsReviewFormOpen(false);
@@ -218,12 +213,28 @@ export default function ProductDetailsSection({
                         <Image
                           key={index}
                           src={img}
-                          alt={`Review image ${index + 1}`}
+                          alt={`Hình ảnh đánh giá ${index + 1}`}
                           width={100}
                           height={100}
                           className="object-cover rounded-md"
                         />
                       ))}
+                    </div>
+                  )}
+                  {/* Hiển thị câu trả lời của Admin nếu có nội dung */}
+                  {review.adminReply && review.adminReply.content && (
+                    <div className="mt-2 p-3 bg-gray-100 rounded-md">
+                      <p className="text-sm font-bold text-black">
+                        Admin trả lời:
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {review.adminReply.content}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(
+                          review.adminReply.createdAt
+                        ).toLocaleDateString("vi-VN")}
+                      </p>
                     </div>
                   )}
                 </div>

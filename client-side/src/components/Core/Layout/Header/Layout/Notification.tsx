@@ -9,18 +9,19 @@ import {
 } from "@/services/notificationApi";
 import { INotification } from "@/types/notification";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Notification() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
+  const [clicked, setClicked] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
   // Lấy thông báo khi mount
   useEffect(() => {
-    if (!user) return; // ✅ Chưa đăng nhập => không gọi API
+    if (!user) return;
 
     async function loadNotifications() {
       try {
@@ -32,18 +33,13 @@ export default function Notification() {
         setNotifications(notificationsWithLink);
         setHasUnread(notificationsWithLink.some((n: any) => !n.is_read));
       } catch (error: any) {
-        // ✅ Nếu lỗi từ token (403), đừng hiện toast
         if (
           error?.status === 403 ||
           error?.message?.includes("Token không hợp lệ")
         ) {
-          console.warn(
-            "Token không hợp lệ hoặc hết hạn, bỏ qua loadNotifications"
-          );
+          console.warn("Token không hợp lệ hoặc hết hạn, bỏ qua loadNotifications");
           return;
         }
-
-        // ✅ Các lỗi khác mới hiện toast
         console.error("Lỗi khi tải thông báo:", error);
         toast.error("Không thể tải thông báo");
       }
@@ -69,6 +65,7 @@ export default function Notification() {
 
   // Xử lý click nút thông báo
   const handleClick = () => {
+    setClicked(true);
     setIsOpen((prev) => {
       const nextOpen = !prev;
       if (nextOpen) {
@@ -91,6 +88,30 @@ export default function Notification() {
     return `${diffDays} ngày trước`;
   };
 
+  // Logic rung: chỉ áp dụng cho /nav/notification_3.svg
+  const shouldShake = (!clicked || hasUnread) && !isOpen;
+
+  // Hiệu ứng động cho /nav/notification_3.svg
+  const bellVariants = {
+    shake: {
+      scale: [1, 1.2, 1],
+      rotate: [0, -10, 10, -10, 0],
+      transition: {
+        duration: 0.6,
+        repeat: Infinity,
+        repeatDelay: 2,
+      },
+    },
+    static: {},
+  };
+
+  // Xác định nguồn hình ảnh
+  const iconSrc = isOpen
+    ? "/nav/notification_3.svg"
+    : hasUnread
+    ? "/nav/notification_3.svg"
+    : "/nav/notification_1.svg";
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -100,18 +121,28 @@ export default function Notification() {
         }`}
       >
         <div className="flex items-center justify-center">
-          <Image
-            src={
-              isOpen
-                ? "/nav/notification_3.svg"
-                : hasUnread
-                ? "/nav/notification_2.svg"
-                : "/nav/notification_1.svg"
-            }
-            alt="notification"
-            width={21}
-            height={21}
-          />
+          {iconSrc === "/nav/notification_3.svg" && shouldShake ? (
+            <motion.div
+              variants={bellVariants}
+              animate="shake"
+            >
+              <Image
+                src={iconSrc}
+                alt="notification"
+                width={21}
+                height={21}
+                className="text-black"
+              />
+            </motion.div>
+          ) : (
+            <Image
+              src={iconSrc}
+              alt="notification"
+              width={21}
+              height={21}
+              className="text-black"
+            />
+          )}
         </div>
       </button>
 
@@ -153,7 +184,7 @@ export default function Notification() {
                 let iconSrc = "/notification/default.svg";
 
                 if (notification.title === "Tin tức mới từ Shop For Real!") {
-                  iconSrc = "/public/notification/news.svg";
+                  iconSrc = "/notification/news.svg";
                 } else if (notification.title === "Sản phẩm mới vừa ra mắt!") {
                   iconSrc = "/notification/products.svg";
                 } else if (

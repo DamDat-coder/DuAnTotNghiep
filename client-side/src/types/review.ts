@@ -13,4 +13,8 @@ export interface IReview {
   images?: string[];
   createdAt: string;
   updatedAt: string;
+  adminReply?: {
+    content: string;
+    createdAt: string;
+  };
 }

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { IProduct } from "@/types/product";
 import AddToCartButton from "../../Cart/AddToCart/AddToCartButton";
+import { ShoppingCartIcon } from "lucide-react";
 
 interface ProductCardProps {
   product: IProduct;
@@ -74,7 +75,10 @@ export default function ProductCard({
             className="flex items-center justify-cente p-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base desktop:text-base"
             aria-label={`Mua ngay sản phẩm ${name}`}
           >
-            Mua ngay
+            <ShoppingCartIcon className="w-4 h-4 laptop:hidden desktop:hidden" />
+            <span className="hidden tablet:inline laptop:inline desktop:inline">
+              Mua ngay
+            </span>
           </button>
         </div>
       </div>

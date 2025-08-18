@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { IReview } from "@/types/review";
-import { updateReviewStatus } from "@/services/reviewApi";
+import { updateReviewStatus, replyToReview } from "@/services/reviewApi";
 import EditReviewModal from "./EditReviewModal";
+import ReplyReviewModal from "./ReplyReviewModal";
 import { toast } from "react-hot-toast";
-
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { Pagination } from "../ui/Panigation";
 
@@ -69,13 +69,13 @@ export default function TableReviewWrapper({
   const [isLoading, setIsLoading] = useState(false);
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [selectedReview, setSelectedReview] = useState<IReview | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showReplyModal, setShowReplyModal] = useState(false);
   const [confirmReviewId, setConfirmReviewId] = useState<string | null>(null);
   const [pendingStatus, setPendingStatus] = useState<
     "approved" | "spam" | null
   >(null);
 
-  // Ref to store dropdown refs for each review
   const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   useEffect(() => {
@@ -89,8 +89,23 @@ export default function TableReviewWrapper({
 
   const handleEdit = (review: IReview) => {
     setSelectedReview(review);
-    setShowModal(true);
+    setShowEditModal(true);
     setActionDropdownId(null);
+  };
+
+  const handleReply = (review: IReview) => {
+    setSelectedReview(review);
+    setShowReplyModal(true);
+    setActionDropdownId(null);
+  };
+
+  const handleReplySave = (updatedReview: IReview) => {
+    setReviews((prev) =>
+      prev.map((r) => (r._id === updatedReview._id ? updatedReview : r))
+    );
+    onUpdate((prev) =>
+      prev.map((r) => (r._id === updatedReview._id ? updatedReview : r))
+    );
   };
 
   const onStatusChange = (reviewId: string, isApproved: boolean) => {
@@ -99,7 +114,6 @@ export default function TableReviewWrapper({
       setConfirmReviewId(reviewId);
       setPendingStatus("spam");
     } else {
-      // Duyệt không cần xác nhận
       updateStatus(reviewId, newStatus);
     }
   };
@@ -125,9 +139,8 @@ export default function TableReviewWrapper({
     }
   };
 
-  // Khóa scroll khi mở EditReviewModal
   useEffect(() => {
-    if (showModal) {
+    if (showEditModal || showReplyModal) {
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
@@ -135,13 +148,13 @@ export default function TableReviewWrapper({
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [showModal]);
+  }, [showEditModal, showReplyModal]);
 
   return (
     <>
       <div className="space-y-4 mt-6">
         <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
-          <table className="min-w-full table-fixed text-[16px] text-left font-description">
+          <table className="min-w-full table-fixed text-[16px] text-left">
             <thead className="bg-[#F8FAFC] text-[#94A3B8]">
               <tr>
                 <th className="w-[180px] px-2 h-[64px] align-middle rounded-tl-[12px] rounded-bl-[12px]">
@@ -179,19 +192,23 @@ export default function TableReviewWrapper({
                     key={review._id}
                     className="border-b text-[#0F172A] h-[64px] font-[500] text-[16px] hover:bg-[#F9FAFB] transition-colors duration-150"
                   >
-                    {/* Người gửi */}
                     <td className="px-5 py-4 whitespace-nowrap overflow-hidden text-ellipsis align-middle">
-                      {Array.isArray(review.userId)
-                        ? review.userId.map((u: any) => u.name).join(", ")
-                        : (review.userId as any)?.name}
+                      {typeof review.userId === "object" &&
+                      review.userId !== null
+                        ? review.userId.name || "Không xác định"
+                        : "Không xác định"}
                     </td>
-                    {/* Nội dung bình luận */}
                     <td className="px-2 w-[330px] align-middle overflow-hidden">
                       <div className="line-clamp-2" title={review.content}>
                         {review.content}
+                        {review.adminReply && review.adminReply.content && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            <strong>Admin trả lời:</strong>{" "}
+                            {review.adminReply.content}
+                          </div>
+                        )}
                       </div>
                     </td>
-                    {/* Sản phẩm */}
                     <td className="px-2 align-middle overflow-hidden">
                       <div
                         className="line-clamp-2"
@@ -216,18 +233,17 @@ export default function TableReviewWrapper({
                           : ""}
                       </div>
                     </td>
-                    {/* Thời gian */}
                     <td className="px-2 align-middle">
-                      {new Date(review.createdAt).toLocaleString("vi-VN")}
+                      {review.createdAt
+                        ? new Date(review.createdAt).toLocaleString("vi-VN")
+                        : "Không xác định"}
                     </td>
-                    {/* Trạng thái */}
                     <td className="px-5 py-4 align-middle">
                       <SimpleSwitch
                         checked={review.status === "approved"}
                         onChange={(value) => onStatusChange(review._id, value)}
                       />
                     </td>
-                    {/* Hành động dropdown */}
                     <td className="w-[56px] px-2 h-[64px] align-middle rounded-tr-[12px] rounded-br-[12px] relative">
                       <div className="flex items-center justify-end h-[64px]">
                         <button
@@ -263,6 +279,12 @@ export default function TableReviewWrapper({
                             >
                               Sửa
                             </button>
+                            <button
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 text-[#2998FF] rounded-b-lg"
+                              onClick={() => handleReply(review)}
+                            >
+                              Trả lời
+                            </button>
                           </div>
                         )}
                       </div>
@@ -292,11 +314,11 @@ export default function TableReviewWrapper({
               )}
             </tbody>
           </table>
-          {showModal && selectedReview && (
+          {showEditModal && selectedReview && (
             <EditReviewModal
               review={selectedReview}
               onClose={() => {
-                setShowModal(false);
+                setShowEditModal(false);
                 setSelectedReview(null);
               }}
               onSave={(updatedReview) => {
@@ -311,6 +333,16 @@ export default function TableReviewWrapper({
                   )
                 );
               }}
+            />
+          )}
+          {showReplyModal && selectedReview && (
+            <ReplyReviewModal
+              review={selectedReview}
+              onClose={() => {
+                setShowReplyModal(false);
+                setSelectedReview(null);
+              }}
+              onSave={handleReplySave}
             />
           )}
         </div>

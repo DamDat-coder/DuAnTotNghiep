@@ -131,6 +131,7 @@ export default function Notification() {
                 alt="notification"
                 width={21}
                 height={21}
+                className="text-black"
               />
             </motion.div>
           ) : (
@@ -139,6 +140,7 @@ export default function Notification() {
               alt="notification"
               width={21}
               height={21}
+              className="text-black"
             />
           )}
         </div>

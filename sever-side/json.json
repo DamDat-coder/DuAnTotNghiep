@@ -1,0 +1,142 @@
+{
+  "success": true,
+  "data": [
+    {
+      "category": { "_id": "684d0a39543e02998d9df028", "name": "Hoodie" },
+      "_id": "684e9a1050367185dae88be0",
+      "name": "MLB - Áo sweatshirt unisex Varsity Sportive Colorblock - Xanh",
+      "slug": "mlb-ao-sweatshirt-unisex-varsity-sportive-colorblock-xanh",
+      "description": "Áo sweatshirt unisex MLB Varsity Sportive Colorblock với thiết kế phối màu năng động, phong cách thể thao. Chất liệu nỉ dày dặn, giữ ấm tốt, phù hợp cho cả nam và nữ.",
+      "image": [
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598397/35_rcizoi.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598398/36_wcald1.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598398/37_gjj8j4.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598399/38_a6bj3q.jpg",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598401/39_y306ba.jpg",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598403/40_axmylk.jpg",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598402/41_mdiibb.jpg"
+      ],
+      "variants": [
+        {
+          "_id": "689ee50d62200e1b1a6e6f9e",
+          "price": 2890000,
+          "color": "Xám",
+          "size": "M",
+          "stock": 15,
+          "discountPercent": 20
+        },
+        {
+          "_id": "689ee50d62200e1b1a6e6f9f",
+          "price": 2950000,
+          "color": "Xám",
+          "size": "L",
+          "stock": 10,
+          "discountPercent": 15
+        },
+        {
+          "_id": "689ee50d62200e1b1a6e6fa0",
+          "price": 2850000,
+          "color": "Đen",
+          "size": "S",
+          "stock": 12,
+          "discountPercent": 25
+        }
+      ],
+      "is_active": true,
+      "salesCount": 400
+    },
+    {
+      "category": {
+        "_id": "684d0a39543e02998d9df029",
+        "name": "Áo khoác bomber"
+      },
+      "_id": "684e9a1050367185dae88be5",
+      "name": "Áo khoác Local Brand Unisex Teelab Classic Varsity AK117",
+      "slug": "teelab-ao-khoac-unisex-classic-varsity-ak117",
+      "description": "Áo khoác Teelab Classic Varsity AK117, phong cách varsity cổ điển, unisex. Chất liệu dày dặn, thiết kế trẻ trung, phù hợp cho phong cách đường phố.",
+      "image": [
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598430/72_hnnyx2.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598433/73_ifpc1u.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598434/74_sfzufm.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598434/75_lgpj05.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598435/76_kvhtuh.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598436/77_vggeu4.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598440/79_l5n4g9.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598441/78_flymvn.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598441/80_pkjlnv.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751598444/81_t0hgeh.webp"
+      ],
+      "variants": [
+        {
+          "_id": "689ee50d62200e1b1a6e6fa1",
+          "price": 600000,
+          "color": "Xám",
+          "size": "S",
+          "stock": 15,
+          "discountPercent": 20
+        },
+        {
+          "_id": "689ee50d62200e1b1a6e6fa2",
+          "price": 610000,
+          "color": "Xám",
+          "size": "M",
+          "stock": 12,
+          "discountPercent": 15
+        },
+        {
+          "_id": "689ee50d62200e1b1a6e6fa3",
+          "price": 620000,
+          "color": "Đen",
+          "size": "L",
+          "stock": 10,
+          "discountPercent": 25
+        }
+      ],
+      "is_active": true,
+      "salesCount": 700
+    },
+    {
+      "category": { "_id": "684d0a39543e02998d9df01f", "name": "Áo polo" },
+      "_id": "684e9a1050367185dae88bee",
+      "name": "Áo Polo Teelab Local Brand Unisex Essentials Line AP001",
+      "slug": "teelab-ao-polo-unisex-essentials-line-ap001",
+      "description": "Áo polo unisex Teelab Essentials Line AP001, thiết kế tối giản, cổ bẻ, phong cách lịch sự nhưng vẫn năng động. Chất liệu cotton thoáng mát, dễ phối đồ.",
+      "image": [
+        "https://res.cloudinary.com/testupload1/image/upload/v1751601708/148_ztmlex.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751601713/149_jym9rp.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751601709/150_nj8vfo.jpg",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751601717/151_wegk2d.jpg",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751601719/152_w4evhx.webp",
+        "https://res.cloudinary.com/testupload1/image/upload/v1751601713/153_ru6tcv.jpg"
+      ],
+      "variants": [
+        {
+          "_id": "689ee50d62200e1b1a6e6fa4",
+          "price": 350000,
+          "color": "Xám",
+          "size": "S",
+          "stock": 12,
+          "discountPercent": 25
+        },
+        {
+          "_id": "689ee50d62200e1b1a6e6fa5",
+          "price": 360000,
+          "color": "Xám",
+          "size": "M",
+          "stock": 10,
+          "discountPercent": 20
+        },
+        {
+          "_id": "689ee50d62200e1b1a6e6fa6",
+          "price": 370000,
+          "color": "Đen",
+          "size": "L",
+          "stock": 8,
+          "discountPercent": 15
+        }
+      ],
+      "is_active": true,
+      "salesCount": 400
+    }
+  ]
+}

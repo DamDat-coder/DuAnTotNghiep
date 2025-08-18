@@ -18,7 +18,7 @@ interface CartAction {
     | "clear"
     | "resetSelected"
     | "restoreSelection"
-    | "updateSelected"
+    | "updateSelected";
 
   item?: ICartItem;
   id?: string;
@@ -98,7 +98,13 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
 
     case "updateQuantity":
-      if (!action.id || !action.size || !action.color || action.quantity === undefined) return state;
+      if (
+        !action.id ||
+        !action.size ||
+        !action.color ||
+        action.quantity === undefined
+      )
+        return state;
       return {
         ...state,
         items: state.items.map((item) =>

@@ -210,6 +210,13 @@ export default function EditNewsModal({
       published_at: payload.published_at?.toISOString(),
     });
 
+    // Nếu muốn log chi tiết FormData, sửa hàm updateNews ở newsApi.ts như sau:
+    const formData = new FormData();
+    // ...append các trường...
+    for (const [key, value] of formData.entries()) {
+      console.log("FormData entry:", key, value);
+    }
+
     try {
       setLoading(true);
       const updated = await updateNews(newsData._id ?? "", payload);
@@ -239,7 +246,7 @@ export default function EditNewsModal({
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
             >
               <Image
-                src="/admin_user/group.svg"
+                src="https://res.cloudinary.com/testupload1/image/upload/v1755272889/group_wnydzc.svg"
                 width={10}
                 height={10}
                 alt="close"

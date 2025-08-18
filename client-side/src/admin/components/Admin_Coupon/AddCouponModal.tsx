@@ -135,7 +135,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
         return;
       }
     }
-    // Bắt buộc nhập ít nhất 1 trong 2 trường ngày
+    //Bắt buộc nhập ít nhất 1 trong 2 trường ngày
     if (!form.startDate && !form.endDate) {
       toast.error("Vui lòng nhập ngày bắt đầu hoặc ngày kết thúc!");
       setIsSubmitting(false);
@@ -172,10 +172,8 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
       maxDiscountAmount: form.maxDiscount
         ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
-      startDate: form.startDate
-        ? new Date(form.startDate).toISOString()
-        : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       usageLimit: form.usage ? parseInt(form.usage, 10) : null,
       is_active: form.is_active,
       applicableCategories: form.category
@@ -321,7 +319,7 @@ export default function AddCouponModal({ onClose }: AddCouponModalProps) {
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
             >
               <Image
-                src="/admin_user/group.svg"
+                src="https://res.cloudinary.com/testupload1/image/upload/v1755272889/group_wnydzc.svg"
                 width={10}
                 height={10}
                 alt="close"

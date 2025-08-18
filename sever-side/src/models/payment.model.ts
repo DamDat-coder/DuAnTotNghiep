@@ -10,7 +10,6 @@ export interface IOrderItem {
 export interface IShippingAddress {
   street: string;
   ward: string;
-  district: string;
   province: string;
   phone: string;
 }
@@ -60,7 +59,6 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
   {
     street: { type: String, required: true },
     ward: { type: String, required: true },
-    district: { type: String, required: true },
     province: { type: String, required: true },
     phone: { type: String, required: true },
   },

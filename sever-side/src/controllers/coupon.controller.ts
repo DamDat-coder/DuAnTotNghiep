@@ -159,8 +159,8 @@ export const updateCoupon = async (req: Request, res: Response) => {
     coupon.discountValue = discountValue ?? coupon.discountValue;
     coupon.minOrderAmount = minOrderAmount ?? coupon.minOrderAmount;
     coupon.maxDiscountAmount = maxDiscountAmount ?? coupon.maxDiscountAmount;
-    coupon.startDate = startDate ?? coupon.startDate;
-    coupon.endDate = endDate ?? coupon.endDate;
+    coupon.startDate = startDate === "" || startDate === null ? null : (startDate ?? coupon.startDate);
+    coupon.endDate = endDate === "" || endDate === null ? null : (endDate ?? coupon.endDate);
     coupon.usageLimit = usageLimit ?? coupon.usageLimit;
     coupon.perUserLimit = perUserLimit ?? coupon.perUserLimit;
     coupon.is_active = is_active ?? coupon.is_active;

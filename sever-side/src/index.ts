@@ -1,20 +1,19 @@
-import app from "./app";
-import connectDB from "./config/db";
-import dotenv from "dotenv";
-import path from "path";
+import 'dotenv/config';
+import app from './app';
+import connectDB from './config/db';
 
-const envPath = path.resolve(__dirname, "../env");
-dotenv.config({ path: envPath });
+const PORT = parseInt(process.env.PORT ?? '3000', 10);
+const HOST = process.env.HOST || '127.0.0.1';
 
-const PORT = process.env.PORT || 3000;
-
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
+(async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 Server running at http://${HOST}:${PORT}`);
+      console.log(`🌐 Public API via Nginx: https://api.styleforyou.online (-> /api/*)`);
     });
-  })
-  .catch((err) => {
-    console.error("❌ Kết nối MongoDB thất bại:", err);
+  } catch (err) {
+    console.error('❌ Kết nối MongoDB thất bại:', err);
     process.exit(1);
-  });
+  }
+})();

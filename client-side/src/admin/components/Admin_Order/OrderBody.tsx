@@ -65,25 +65,30 @@ export default function OrderBody({
     return next ? [next] : STATUS.filter((s) => s.key === currentStatusKey);
   };
 
+  // ✅ Sửa logic: dùng orderCode cho UI, _id/id cho API
   const handleQuickStatusChange = async (
-    orderId: string,
+    uiKey: string,                      // orderCode: để điều khiển UI (đúng như giao diện cũ)
+    apiId: string | undefined,          // _id hoặc id: để gọi API
     oldStatus: IOrder["status"],
     newStatus: IOrder["status"]
   ) => {
     if (oldStatus === newStatus) return;
-    setUpdatingStatusId(orderId);
+    if (!apiId) {
+      toast.error("Không xác định được ID đơn hàng.");
+      return;
+    }
+    setUpdatingStatusId(uiKey);         // UI vẫn dựa trên orderCode
     try {
-      const sendStatus = newStatus as IOrder["status"];
-      await updateOrderStatus(orderId, sendStatus);
+      await updateOrderStatus(apiId, newStatus);
       setOrders((prev) =>
         prev.map((order) =>
-          (order._id === orderId || (order as any).id === orderId)
-            ? { ...order, status: sendStatus }
+          ((order as any)._id === apiId || (order as any).id === apiId)
+            ? { ...order, status: newStatus }
             : order
         )
       );
       toast.success("Cập nhật trạng thái đơn hàng thành công.");
-    } catch (err) {
+    } catch {
       toast.error("Cập nhật trạng thái thất bại.");
     } finally {
       setUpdatingStatusId(null);
@@ -110,8 +115,8 @@ export default function OrderBody({
   return (
     <>
       {orders.map((order, idx) => {
-        const orderId =
-          (order as any)._id?.$oid || order._id || (order as any).id || String(idx);
+        const orderId = (order as any).orderCode; // 🔒 Giữ nguyên để hiển thị & làm key UI
+        const apiId = (order as any)._id || (order as any).id; // ✅ Dùng cho API
         const productList = Array.isArray(order.items)
           ? order.items.map((item) => item.name).filter(Boolean)
           : [];
@@ -161,7 +166,7 @@ export default function OrderBody({
                   style={{
                     background: status?.color ? undefined : "#F5F5F5",
                     color: status?.color ? undefined : "#7c7c7c",
-                    opacity: updatingStatusId === orderId ? 0.7 : 1,
+                    opacity: updatingStatusId === orderId ? 0.7 : 1, // vẫn dựa theo orderCode
                     fontSize: 12,
                     width: "100%",
                     maxWidth: "100%",
@@ -200,7 +205,7 @@ export default function OrderBody({
                           s.key === order.status ? "text-blue-600 bg-gray-50" : ""
                         }`}
                         onClick={() =>
-                          handleQuickStatusChange(orderId, order.status, s.key)
+                          handleQuickStatusChange(orderId, apiId, order.status, s.key)
                         }
                       >
                         {s.label}

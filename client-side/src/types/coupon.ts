@@ -1,6 +1,3 @@
-import { ICategoryNews } from "./category";
-import { ProductReview } from "./product";
-
 // types/coupon.ts
 export interface Coupon {
   _id: string;
@@ -10,8 +7,8 @@ export interface Coupon {
   discountValue: number;
   minOrderAmount: number | null;
   maxDiscountAmount: number | null;
-  startDate: string;
-  endDate: string;
+  startDate: string | null;
+  endDate: string | null;
   usageLimit: number | null;
   usedCount: number;
   is_active: boolean;
@@ -29,4 +26,9 @@ export interface CouponResponse {
   startDate: string;
   endDate: string;
   is_active: boolean;
+}
+
+export interface CouponIsUsed {
+  _id: string;
+  code: string;
 }

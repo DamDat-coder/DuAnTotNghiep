@@ -30,7 +30,7 @@ export default function Banner({
     <FadeInWhenVisible>
       <div className="banner w-full">
         {title && (
-          <h1 className="text-[1.5rem] font-bold laptop:text-[1.5rem] desktop:text-[1.5rem] desktop:font-bold pb-6">
+          <h1 className="px-4 text-[1.5rem] font-bold laptop:text-[1.5rem] desktop:text-[1.5rem] desktop:font-bold pb-6">
             {title}
           </h1>
         )}

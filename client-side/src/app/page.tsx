@@ -26,7 +26,7 @@ type HomeData = {
 async function getHomeData(): Promise<HomeData> {
   try {
     const [productsData, featuredSection, benefits] = await Promise.all([
-      fetchProducts({ sort_by: "newest" }),
+      fetchProducts({ sort_by: "best_selling", is_active: true }),
       fetchFeaturedSection(),
       fetchMemberBenefits(),
     ]);

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { deleteAddress, updateAddress, fetchUser } from "@/services/userApi";
 import toast from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { useAddressData } from "@/hooks/useAddressData";
 
 interface AddressTabProps {
   selectedAddress: Address | null;
@@ -29,6 +30,7 @@ export default function AddressTab({
   const [confirmAddressId, setConfirmAddressId] = useState<string | null>(null);
   const [isDefaultAddress, setIsDefaultAddress] = useState<boolean>(false);
   const [confirmDefaultId, setConfirmDefaultId] = useState<string | null>(null);
+  const { provinces, wards } = useAddressData();
 
   // Sync addresses with user?.addresses when user changes
   useEffect(() => {
@@ -125,7 +127,6 @@ export default function AddressTab({
     const updatedAddressData = {
       street: address.street,
       ward: address.ward,
-      district: address.district,
       province: address.province,
       is_default: true,
     };
@@ -154,6 +155,16 @@ export default function AddressTab({
   const handleEditAddress = (address: Address) => {
     setEditingAddress(address);
     setShowEditAddress(true);
+  };
+
+  // Helper lấy name_with_type
+  const getProvinceWithType = (provinceName: string) => {
+    const province = provinces.find((p) => p.name === provinceName);
+    return province?.name_with_type || provinceName;
+  };
+  const getWardWithType = (wardName: string) => {
+    const ward = wards.find((w) => w.name === wardName);
+    return ward?.name_with_type || wardName;
   };
 
   return (
@@ -191,8 +202,8 @@ export default function AddressTab({
                     className="flex-1 text-sm"
                     onClick={() => handleEditAddress(address)}
                   >
-                    {address.street}, {address.ward}, {address.district},{" "}
-                    {address.province}, Việt Nam
+                    {address.street},{" "}
+                    {getWardWithType(address.ward)}, {getProvinceWithType(address.province)}
                   </div>
                   <div>
                     <button

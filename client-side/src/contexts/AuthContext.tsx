@@ -148,8 +148,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         window.location.href = "/cart";
       } else if (userData.role === "admin") {
         window.location.href = "/admin/dashboard";
-      } else {
-        window.location.href = "/";
       }
 
       return true;

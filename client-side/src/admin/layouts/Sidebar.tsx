@@ -80,7 +80,7 @@ export default function Sidebar() {
       <div className="p-4 flex flex-col gap-12 w-full h-auto">
         <Link href="/admin/dashboard">
           <Image
-            src="/nav/logoWhite.svg"
+            src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoTrang_dl2asd.png"
             alt="Logo Công Ty"
             width={120}
             height={40}

@@ -6,10 +6,14 @@ export interface IReview extends Document {
   productId: Types.ObjectId;
   content: string;
   rating: number;
-  images?: string[]; 
+  images?: string[];
   status: "approved" | "spam";
   createdAt?: Date;
   updatedAt?: Date;
+  adminReply?: {
+    content: string;
+    createdAt: Date;
+  };
 }
 
 const reviewSchema = new Schema<IReview>(
@@ -24,6 +28,10 @@ const reviewSchema = new Schema<IReview>(
       type: String,
       enum: ["approved", "spam"],
       default: "approved",
+    },
+    adminReply: {
+      content: { type: String },
+      createdAt: { type: Date, default: Date.now },
     },
   },
   { timestamps: true }

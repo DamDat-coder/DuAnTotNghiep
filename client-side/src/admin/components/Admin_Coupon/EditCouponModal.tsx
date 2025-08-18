@@ -230,10 +230,8 @@ export default function EditCouponModal({
       maxDiscountAmount: form.maxDiscount
         ? parseInt(form.maxDiscount.replace(/\./g, ""), 10)
         : undefined,
-      startDate: form.startDate
-        ? new Date(form.startDate).toISOString()
-        : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       usageLimit: form.usage ? parseInt(form.usage, 10) : undefined,
       is_active: form.is_active,
       applicableCategories: form.category
@@ -247,6 +245,9 @@ export default function EditCouponModal({
       const result = await updateCoupon(coupon._id, payload);
       toast.success("Cập nhật mã giảm giá thành công!");
       onSave(result);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: any) {
       const errorMessage =
         err.message || "Đã xảy ra lỗi khi cập nhật mã giảm giá.";
@@ -344,7 +345,7 @@ export default function EditCouponModal({
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
             >
               <Image
-                src="/admin_user/group.svg"
+                src="https://res.cloudinary.com/testupload1/image/upload/v1755272889/group_wnydzc.svg"
                 width={10}
                 height={10}
                 alt="close"

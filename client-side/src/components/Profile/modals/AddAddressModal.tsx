@@ -17,16 +17,13 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
   const [formData, setFormData] = useState({
     street: "",
     province: "",
-    district: "",
     ward: "",
     isDefaultAddress: false,
   });
   const {
     provinces,
-    districts,
     wards,
     setProvinceCode,
-    setDistrictCode,
     setWardCode,
   } = useAddressData();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,12 +40,6 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
     if (name === "province") {
       const selectedProvince = provinces.find((p) => p.name === value);
       setProvinceCode(selectedProvince?.code ?? null);
-      setFormData((prev) => ({ ...prev, district: "", ward: "" }));
-      setDistrictCode(null);
-      setWardCode(null);
-    } else if (name === "district") {
-      const selectedDistrict = districts.find((d) => d.name === value);
-      setDistrictCode(selectedDistrict?.code ?? null);
       setFormData((prev) => ({ ...prev, ward: "" }));
       setWardCode(null);
     } else if (name === "ward") {
@@ -68,10 +59,6 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
       toast.error("Vui lòng chọn tỉnh/thành phố.");
       return;
     }
-    if (!formData.district) {
-      toast.error("Vui lòng chọn quận/huyện.");
-      return;
-    }
     if (!formData.ward) {
       toast.error("Vui lòng chọn phường/xã.");
       return;
@@ -83,11 +70,14 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
 
     setIsSubmitting(true);
 
+    // Lấy object để lấy name_with_type
+    const provinceObj = provinces.find((p) => p.name === formData.province);
+    const wardObj = wards.find((w) => w.name === formData.ward);
+
     const addressData = {
       street: formData.street,
-      ward: formData.ward,
-      district: formData.district,
-      province: formData.province,
+      ward: wardObj?.name_with_type || formData.ward,
+      province: provinceObj?.name_with_type || formData.province,
       is_default: formData.isDefaultAddress,
     };
 
@@ -96,10 +86,9 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
       if (result) {
         toast.success("Thêm địa chỉ thành công!");
         onAdd({
-          _id: result.id || new Date().toISOString(), // Sử dụng _id từ API hoặc tạo tạm
+          _id: result.id || new Date().toISOString(),
           street: addressData.street,
           ward: addressData.ward,
-          district: addressData.district,
           province: addressData.province,
           is_default: addressData.is_default,
         });
@@ -115,7 +104,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
   };
 
   const isFormValid =
-    formData.street && formData.province && formData.district && formData.ward;
+    formData.street && formData.province && formData.ward;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
@@ -169,35 +158,10 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
 
           <div className="relative w-[440px] mb-[16px]">
             <select
-              name="district"
-              value={formData.district}
-              onChange={handleChange}
-              disabled={!formData.province}
-              className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
-              required
-            >
-              <option value="">Chọn quận / huyện</option>
-              {districts.map((item) => (
-                <option key={item.code} value={item.name}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <Image
-              src="/profile/Vector (Stroke).svg"
-              alt="Dropdown icon"
-              width={16}
-              height={16}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-            />
-          </div>
-
-          <div className="relative w-[440px] mb-[16px]">
-            <select
               name="ward"
               value={formData.ward}
               onChange={handleChange}
-              disabled={!formData.district}
+              disabled={!formData.province}
               className="w-full h-[47px] px-3 pr-10 border border-gray-300 rounded-[4px] text-sm text-gray-600 appearance-none"
               required
             >

@@ -102,7 +102,6 @@ export async function enableCoupon(id: string): Promise<void> {
   }
 }
 
-// Kiểm tra mã giảm giá
 export async function validateCoupon(
   code: string,
   orderTotal: number,
@@ -124,6 +123,15 @@ export async function validateCoupon(
     maxDiscountAmount?: number;
     applicableItemIds: string[];
     applicableTotal: number;
+    discount: number;
+    finalAmount: number;
+    items: {
+      productId: string;
+      isDiscounted: boolean;
+      itemDiscount: number;
+      priceAfterDiscount: number;
+      totalAfterDiscount: number;
+    }[];
   };
 }> {
   try {
@@ -134,7 +142,7 @@ export async function validateCoupon(
     if (typeof orderTotal !== "number" || orderTotal <= 0) {
       return { success: false, message: "Tổng đơn hàng không hợp lệ." };
     }
-    if (!orderItems || orderItems.length === 0) {
+    if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
       return {
         success: false,
         message: "Không có sản phẩm nào trong đơn hàng.",
@@ -142,134 +150,80 @@ export async function validateCoupon(
     }
     if (
       orderItems.some(
-        (item) => !item.categoryId || item.categoryId.trim() === ""
+        (item) => !item.id || !item.categoryId || item.categoryId.trim() === ""
       )
     ) {
       return {
         success: false,
-        message: "Thiếu thông tin danh mục cho một số sản phẩm.",
+        message: "Thiếu thông tin sản phẩm hoặc danh mục cho một số sản phẩm.",
       };
     }
 
-    const url = `${API_BASE_URL}/coupons?search=${encodeURIComponent(
-      code
-    )}&isActive=true&limit=1`;
-    const response = await fetchWithAuth<{ data: Coupon[] }>(url, {
+    // Chuẩn bị dữ liệu gửi lên backend
+    const payload = {
+      code,
+      items: orderItems.map((item) => ({
+        productId: item.id,
+        price: item.price, // Giá gốc đã được xử lý ở useCheckout
+        quantity: item.quantity,
+      })),
+    };
+
+    // Gọi API apply coupon của backend
+    const response = await fetchWithAuth<{
+      status: string;
+      message?: string;
+      data?: any;
+    }>(`${API_BASE_URL}/coupons/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
       cache: "no-store",
     });
 
-    const coupon = response.data?.find((c) => c.code === code);
-    if (!coupon) {
-      return { success: false, message: "Mã giảm giá không hợp lệ." };
-    }
-
-    const now = new Date();
-    if (
-      !coupon.startDate ||
-      !coupon.endDate ||
-      new Date(coupon.startDate) > now ||
-      new Date(coupon.endDate) < now
-    ) {
-      return { success: false, message: "Mã giảm giá hết hiệu lực." };
-    }
-
-    if (
-      coupon.usageLimit &&
-      coupon.usedCount &&
-      coupon.usedCount >= coupon.usageLimit
-    ) {
-      return { success: false, message: "Mã giảm giá đã hết lượt sử dụng." };
-    }
-
-    if (coupon.minOrderAmount && orderTotal < coupon.minOrderAmount) {
-      return {
-        success: false,
-        message: `Đơn hàng cần tối thiểu ${coupon.minOrderAmount}đ để áp dụng mã.`,
-      };
-    }
-
-    // Kiểm tra các sản phẩm hợp lệ
-    const applicableItems = orderItems.filter((item) => {
-      if (
-        (!coupon.applicableCategories ||
-          coupon.applicableCategories.length === 0) &&
-        (!coupon.applicableProducts || coupon.applicableProducts.length === 0)
-      ) {
-        return true;
-      }
-      // Kiểm tra applicableCategories
-      if (
-        coupon.applicableCategories &&
-        coupon.applicableCategories.length > 0
-      ) {
-        // Xử lý trường hợp applicableCategories là mảng object hoặc mảng string
-        const isCategoryMatch = coupon.applicableCategories.some((category) => {
-          if (typeof category === "string") {
-            return category === item.categoryId;
-          } else if (
-            typeof category === "object" &&
-            category !== null &&
-            "_id" in category &&
-            typeof (category as { _id: string })._id === "string"
-          ) {
-            return (category as { _id: string })._id === item.categoryId;
-          }
-          return false;
-        });
-        return isCategoryMatch;
-      }
-      // Kiểm tra applicableProducts
-      if (coupon.applicableProducts && coupon.applicableProducts.length > 0) {
-        const isProductMatch = coupon.applicableProducts.includes(item.id);
-        return isProductMatch;
-      }
-      return false;
-    });
-    if (applicableItems.length === 0) {
+    if (response.status !== "success" || !response.data) {
       return {
         success: false,
         message:
-          "Mã giảm giá không áp dụng được cho sản phẩm nào trong đơn hàng.",
+          response.message ||
+          "Mã giảm giá không hợp lệ hoặc không áp dụng được.",
       };
     }
 
-    // Kiểm tra giá trị giảm giá
-    if (coupon.discountValue <= 0) {
-      return { success: false, message: "Giá trị giảm giá không hợp lệ." };
-    }
-    if (coupon.discountType === "percent" && coupon.discountValue > 100) {
-      return {
-        success: false,
-        message: "Giá trị giảm giá phần trăm không hợp lệ.",
-      };
-    }
+    const { data } = response;
 
-    // Tính tổng giá trị của các sản phẩm hợp lệ
-    const applicableTotal = applicableItems.reduce(
-      (sum, item) =>
-        sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
-      0
-    );
     return {
       success: true,
       data: {
-        id: coupon._id,
-        discountValue: coupon.discountValue,
-        discountType: coupon.discountType,
-        code: coupon.code,
-        maxDiscountAmount: coupon.maxDiscountAmount ?? undefined,
-        applicableItemIds: applicableItems.map((item) => item.id),
-        applicableTotal,
+        id: data.couponCode,
+        discountValue: data.discountValue || data.discount,
+        discountType: data.discountType || "fixed",
+        code: data.couponCode,
+        maxDiscountAmount: data.maxDiscountAmount,
+        applicableItemIds: data.items
+          .filter((item: any) => item.isDiscounted)
+          .map((item: any) => item.productId),
+        applicableTotal: data.applicableAmount,
+        discount: data.discount,
+        finalAmount: data.finalAmount,
+        items: data.items.map((item: any) => ({
+          productId: item.productId,
+          isDiscounted: item.isDiscounted,
+          itemDiscount: item.itemDiscount,
+          priceAfterDiscount: item.priceAfterDiscount,
+          totalAfterDiscount: item.totalAfterDiscount,
+        })),
       },
     };
   } catch (error: any) {
-    console.error("DEBUG validateCoupon - Error", { error: error.message });
+    console.error("DEBUG validateCoupon - Error:", { error: error.message });
     return {
       success: false,
-      message: error.message || "Không thể kiểm tra mã giảm giá.",
+      message: error.message || "Lỗi hệ thống khi kiểm tra mã giảm giá.",
     };
   }
 }
+
 // Lấy tất cả mã giảm giá
 export async function fetchAllCoupons(
   isActive?: boolean,

@@ -225,7 +225,7 @@ export const updateNews = async (
       formData.append("meta_description", payload.meta_description);
     }
     if (payload.thumbnail) {
-      formData.append("thumbnail", payload.thumbnail);
+      formData.append("images", payload.thumbnail);
     }
 
     // Xử lý published_at và is_published dựa trên status

@@ -9,7 +9,6 @@ export interface IAddress extends Types.Subdocument {
   _id: Types.ObjectId;
   street: string;
   ward: string;
-  district: string;
   province: string;
   is_default: boolean;
 }
@@ -33,7 +32,6 @@ const addressSchema = new Schema<IAddress>(
   {
     street: { type: String, required: false, trim: true },
     ward: { type: String, required: false, trim: true },
-    district: { type: String, required: false, trim: true },
     province: { type: String, required: false, trim: true },
     is_default: { type: Boolean, default: false },
   },

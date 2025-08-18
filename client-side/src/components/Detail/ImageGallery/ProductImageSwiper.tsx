@@ -10,13 +10,16 @@ interface ProductImageSwiperProps {
   productName: string;
 }
 
-export default function ProductImageSwiper({ images, productName }: ProductImageSwiperProps) {
+export default function ProductImageSwiper({
+  images,
+  productName,
+}: ProductImageSwiperProps) {
   return (
     <Swiper spaceBetween={10} slidesPerView={1} loop={true} className="w-full">
       {images.map((image, index) => (
         <SwiperSlide key={index}>
           <Image
-            src={`/product/img/${image}`}
+            src={`${image}`}
             alt={`${productName} - Ảnh ${index + 1}`}
             width={533}
             height={400}

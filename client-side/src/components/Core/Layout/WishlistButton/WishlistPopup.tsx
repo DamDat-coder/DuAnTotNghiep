@@ -149,19 +149,45 @@ export default function WishlistPopup({
             {/* Thông tin và chọn variant */}
             <div className="flex gap-1 flex-col laptop:w-full laptop:flex-col laptop:gap-3 desktop:w-full desktop:flex-col desktop:gap-3">
               {/* Thông tin cơ bản */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 min-h-[90px]">
                 <h2 className="text-xl font-bold text-black mt-4 truncate">
                   {product.name || "Sản phẩm"}
                 </h2>
-                <div className="flex items-center gap-4 mt-2">
-                  <p className="text-red-500 font-bold text-lg">
-                    {discountedPrice.toLocaleString("vi-VN")}₫
-                  </p>
-                  {selectedVariant && selectedVariant.discountPercent > 0 && (
+                <div className="flex items-center gap-4 mt-2 min-h-[32px]">
+                  {!selectedColor || !selectedSize ? (
+                    <p className="text-gray-400 font-semibold text-lg">
+                      Vui lòng chọn màu sắc và size
+                    </p>
+                  ) : !product.is_active ? (
+                    <p className="text-gray-400 font-semibold text-lg">
+                      Sản phẩm ngừng kinh doanh
+                    </p>
+                  ) : selectedVariant?.stock === 0 || discountedPrice === 0 ? (
+                    <p className="text-gray-400 font-semibold text-lg">
+                      Đang cập nhật giá
+                    </p>
+                  ) : (
+                    <p className="text-red-500 font-bold text-lg">
+                      {discountedPrice.toLocaleString("vi-VN")}₫
+                    </p>
+                  )}
+                  {selectedVariant && selectedVariant.discountPercent > 0 && selectedVariant.price > 0 && selectedColor && selectedSize && (
                     <p className="text-sm text-[#374151] line-through">
                       {selectedVariant.price.toLocaleString("vi-VN")}₫
                     </p>
                   )}
+                </div>
+                {/* Badge trạng thái */}
+                <div className="min-h-[20px]">
+                  {!product.is_active ? (
+                    <div className="text-red-500 text-xs font-semibold mt-1">
+                      Ngừng kinh doanh
+                    </div>
+                  ) : selectedVariant?.stock === 0 ? (
+                    <div className="text-yellow-500 text-xs font-semibold mt-1">
+                      Tạm thời hết hàng
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -278,10 +304,21 @@ export default function WishlistPopup({
               {/* Nút xác nhận */}
               <button
                 onClick={handleConfirm}
-                className="w-full bg-black text-white font-bold text-base px-3 py-3 rounded-md hover:bg-gray-800 transition-colors mt-6"
+                className={`w-full font-bold text-base px-3 py-3 rounded-md mt-6 transition-colors
+                  ${!product.is_active
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : selectedVariant?.stock === 0 || discountedPrice === 0
+                    ? "bg-black text-white hover:bg-gray-800"
+                    : "bg-black text-white hover:bg-gray-800"}
+                `}
                 aria-label={`Thêm sản phẩm ${product.name} vào yêu thích`}
+                disabled={!product.is_active}
               >
-                Thêm vào yêu thích
+                {!product.is_active
+                  ? "Sản phẩm ngừng kinh doanh"
+                  : selectedVariant?.stock === 0 || discountedPrice === 0
+                  ? "Nhận thông báo khi mở bán"
+                  : "Thêm vào yêu thích"}
               </button>
             </div>
           </motion.div>

@@ -286,7 +286,7 @@ export default function TableNewWrapper({
                           )
                         : "Chưa xuất bản"}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <span
                         className={`px-2 py-2.5 font-medium rounded-[4px] ${status.color}`}
                       >

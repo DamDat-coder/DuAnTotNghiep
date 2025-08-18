@@ -12,6 +12,7 @@ const storage = multer_1.default.memoryStorage();
 const upload = (0, multer_1.default)({ storage });
 router.get("/admin", auth_middleware_1.verifyToken, auth_middleware_1.verifyAdmin, product_controller_1.getAllProductsAdmin);
 router.get("/", product_controller_1.getAllProducts);
+router.post("/recommend", product_controller_1.recommendProducts);
 router.get("/:id", product_controller_1.getProductById);
 router.get("/slug/:slug", product_controller_1.getProductBySlug);
 router.post("/active-status", product_controller_1.getProductsActiveStatus);

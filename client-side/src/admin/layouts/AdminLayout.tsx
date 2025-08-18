@@ -14,9 +14,22 @@ export default function AdminLayout({
   return (
     <>
       <Sidebar />
-      <div className="ml-[285px] bg-[#F8FAFC] min-h-screen">
+      <div
+        className="
+          bg-[#F8FAFC] min-h-screen overflow-x-hidden
+          ml-[240px] desktop:ml-[285px]
+        "
+      >
         <AdminHeader pageTitle={pageTitle} pageSubtitle={pageSubtitle} />
-        <div className="max-w-[1185px] w-full mx-auto ml-6">{children}</div>
+        <div
+          className="
+          w-full px-6 pb-8
+          laptop:max-w-none
+          desktop:max-w-[1440px] desktop:mx-auto
+        "
+        >
+          {children}
+        </div>
       </div>
     </>
   );

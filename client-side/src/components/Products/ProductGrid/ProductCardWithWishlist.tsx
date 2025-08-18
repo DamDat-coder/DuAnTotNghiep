@@ -5,6 +5,7 @@ import Link from "next/link";
 import { IProduct } from "@/types/product";
 import { getLowestPriceVariant } from "@/utils/product";
 import WishlistButton from "@/components/Core/Layout/WishlistButton/WishlistButton";
+import { ShoppingCartIcon } from "lucide-react";
 
 type Props = {
   product: IProduct;
@@ -78,10 +79,10 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
             </Link>
             <button
               onClick={(e) => onBuyNow(product, e)}
-              className="flex items-center justify-cente p-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base desktop:text-base"
-              aria-label={`Mua ngay sản phẩm ${product.name}`}
+              className="flex items-center justify-center gap-1 px-3 py-2 laptop:px-4 laptop:py-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base"
             >
-              Mua ngay
+              <ShoppingCartIcon className="w-4 h-4 laptop:hidden desktop:hidden" />
+              <span className="hidden tablet:inline laptop:inline desktop:inline">Mua ngay</span>
             </button>
           </div>
         </div>

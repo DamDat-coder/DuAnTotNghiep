@@ -56,6 +56,10 @@ export async function fetchNewUsersThisWeek(): Promise<IUser[]> {
   });
 }
 
+// Helper: xác định đơn thanh toán qua cổng (đã chắc chắn trả tiền)
+const isGatewayPaid = (pm: IOrder['paymentMethod'] | null | undefined): boolean =>
+  pm === 'vnpay' || pm === 'zalopay';
+
 // ----------- HÀM THỐNG KÊ DASHBOARD TRONG NGÀY -----------
 export async function fetchStats() {
   checkClient();
@@ -82,7 +86,7 @@ export async function fetchStats() {
       return created >= startOfDay && created <= endOfDay;
     });
 
-    // Đơn hàng hôm nay
+    // Đơn hàng trong ngày
     const ordersRes = await fetchAllOrders({ limit: 9999 });
     const allOrders: IOrder[] = ordersRes.data || [];
     const newOrders = allOrders.filter((o) => {
@@ -91,11 +95,18 @@ export async function fetchStats() {
       return created >= startOfDay && created <= endOfDay;
     });
 
-    const revenue = newOrders.reduce(
-      (sum, o) => (o.status === "delivered" ? sum + (o.totalPrice || 0) : sum),
+    // Đơn đủ điều kiện tính doanh thu: delivered || (vnpay|zalopay)
+    const eligibleOrders = newOrders.filter(
+      (o) => o.status === "delivered" || isGatewayPaid(o.paymentMethod)
+    );
+
+    // Doanh thu: tổng totalPrice của eligibleOrders
+    const revenue = eligibleOrders.reduce(
+      (sum, o) => sum + (o.totalPrice || 0),
       0
     );
 
+    // Sản phẩm bán ra: chỉ tính từ delivered (đồng bộ tồn kho)
     let sold = 0;
     newOrders.forEach((order) => {
       if (order.status === "delivered" && Array.isArray(order.items)) {
@@ -103,36 +114,21 @@ export async function fetchStats() {
       }
     });
 
-    // Dữ liệu trả về FE
-    const result = [
-      {
-        label: "Khách hàng mới",
-        value: usersToday.length,
-        change: "",
-      },
-      {
-        label: "Đơn hàng",
-        value: newOrders.length,
-        change: "",
-      },
-      {
-        label: "Doanh thu",
-        value: revenue.toLocaleString("vi-VN") + "đ",
-        change: "",
-      },
-      {
-        label: "Sản phẩm bán ra",
-        value: sold.toLocaleString("vi-VN"),
-        change: "",
-      },
+    // Kết quả trả về:
+    // - Đơn hàng: TỔNG mọi đơn trong ngày
+    // - Doanh thu: theo điều kiện ở trên
+    return [
+      { label: "Khách hàng mới", value: usersToday.length, change: "" },
+      { label: "Đơn hàng", value: newOrders.length, change: "" }, // tổng mọi đơn trong ngày
+      { label: "Doanh thu", value: revenue.toLocaleString("vi-VN") + "đ", change: "" },
+      { label: "Sản phẩm bán ra", value: sold.toLocaleString("vi-VN"), change: "" },
     ];
-
-    return result;
   } catch (error) {
     console.error("fetchStats error:", error);
     return [];
   }
 }
+
 
 
 // ----------- BIỂU ĐỒ KHÁCH HÀNG MỚI TRONG TUẦN -----------

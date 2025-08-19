@@ -1,4 +1,5 @@
 "use client";
+
 import { IMemberBenefit } from "@/types/product";
 import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
 import MemberBenefitsSwiper from "./MemberBenefitsSwiper";
@@ -42,7 +43,7 @@ export default function MemberBenefitsBanner({
         </div>
 
         {/* Desktop: Grid */}
-        <div className="hidden laptop:grid laptop:grid-cols-3 laptop:gap-8 desktop:grid desktop:grid-cols-3 desktop:gap-8">
+        <div className="hidden laptop:grid desktop:grid grid-cols-3 gap-8">
           {benefits.map((benefit) => (
             <MemberBenefitCard
               key={benefit.id}

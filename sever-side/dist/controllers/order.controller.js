@@ -16,7 +16,6 @@ exports.calculateRevenue = exports.cancelOrder = exports.updateOrderStatus = exp
 const mongoose_1 = __importDefault(require("mongoose"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
-const product_model_1 = __importDefault(require("../models/product.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
@@ -25,68 +24,26 @@ const generateTransactionCode_1 = require("../utils/generateTransactionCode");
 // Tạo đơn hàng
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { paymentId, order_info } = req.body;
-        let userId;
-        let paymentMethod;
-        let shippingAddress;
-        let items;
-        let shipping = 0;
-        let discountAmount = 0;
-        let email = undefined;
-        let couponCode = null;
-        if (paymentId) {
-            const payment = yield payment_model_1.default.findById(paymentId);
-            if (!payment || !payment.order_info || !payment.userId) {
-                return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
-            }
-            if (payment.status !== 'success') {
-                return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
-            }
-            const existed = yield order_model_1.default.findOne({ paymentId });
-            if (existed) {
-                return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
-            }
-            ({ paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info);
-            discountAmount = payment.discount_amount || 0;
-            userId = payment.userId;
+        const { paymentId } = req.body;
+        if (!paymentId) {
+            return res.status(400).json({ success: false, message: 'Thiếu mã thanh toán (paymentId).' });
         }
-        else {
-            if (!order_info) {
-                return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
-            }
-            ({ paymentMethod, userId, shippingAddress, items, shipping = 0, code: couponCode, email } = order_info);
-            if (paymentMethod !== 'cod') {
-                return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
-            }
+        const payment = yield payment_model_1.default.findById(paymentId);
+        if (!payment || !payment.order_info || !payment.userId) {
+            return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
         }
-        const orderItems = [];
-        let totalPrice = 0;
-        for (const item of items) {
-            const product = yield product_model_1.default.findById(item.product || item.productId);
-            if (!product) {
-                return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm.' });
-            }
-            const variantData = item.variant || item;
-            const variant = product.variants.find(v => v.color === variantData.color && v.size === variantData.size);
-            if (!variant || variant.stock < item.quantity) {
-                return res.status(400).json({ success: false, message: 'Biến thể không hợp lệ hoặc hết hàng.' });
-            }
-            const discountPrice = variant.price * (1 - variant.discountPercent / 100);
-            totalPrice += discountPrice * item.quantity;
-            orderItems.push({
-                productId: product._id,
-                name: product.name,
-                image: product.image[0] || '',
-                color: variantData.color,
-                size: variantData.size,
-                price: discountPrice,
-                quantity: item.quantity,
-            });
-            variant.stock -= item.quantity;
-            product.salesCount += item.quantity;
-            yield product.save();
+        if (payment.status !== 'success') {
+            return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
         }
-        totalPrice = totalPrice - discountAmount + shipping;
+        // Kiểm tra đơn hàng đã tồn tại từ payment này chưa
+        const existed = yield order_model_1.default.findOne({ paymentId });
+        if (existed) {
+            return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
+        }
+        const { paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info;
+        const totalPrice = payment.amount;
+        const discountAmount = payment.discount_amount || 0;
+        const userId = payment.userId;
         const orderCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("4U");
         const order = yield order_model_1.default.create({
             userId,
@@ -95,8 +52,8 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             discountAmount,
             shipping,
             paymentMethod,
-            items: orderItems,
-            paymentId: paymentId || null,
+            items,
+            paymentId,
             orderCode,
             email: email || null,
             couponCode: couponCode || null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,16 +8,20 @@ import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginPopup from "@/components/Core/Layout/Popups/AuthAction/LoginPopup";
+import RegisterPopup from "@/components/Core/Layout/Popups/AuthAction/RegisterPopup";
+import ForgotPasswordPopup from "@/components/Core/Layout/Popups/PasswordAction/ForgotPasswordPopup";
+import ResetPasswordPopup from "@/components/Core/Layout/Popups/PasswordAction/ResetPasswordPopup";
 
+// Định nghĩa kiểu cho các props của các popup
 interface AddToCartPopupProps {
   product: IProduct;
   isOpen: boolean;
   onClose: () => void;
 }
 
+// Component AddToCartPopup
 const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
   const dispatch = useCartDispatch();
-  const { user } = useAuth(); // Lấy thông tin user từ AuthContext
   const firstAvailableVariant = product.variants.find((v) => v.stock > 0);
 
   const [selectedSize, setSelectedSize] = useState<string>(
@@ -28,10 +32,23 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
   );
   const [quantity, setQuantity] = useState<number>(1);
   const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
-  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState<boolean>(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState<boolean>(false);
+  const [isForgotOpen, setIsForgotOpen] = useState<boolean>(false);
+  const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
+  const [resetToken, setResetToken] = useState<string>("");
+  const { user, openLoginWithData, setOpenLoginWithData, registerFormData } =
+    useAuth();
 
   useEffect(() => {
-    if (isOpen || isSizeChartOpen || isLoginPopupOpen) {
+    if (
+      isOpen ||
+      isSizeChartOpen ||
+      isLoginOpen ||
+      isRegisterOpen ||
+      isForgotOpen ||
+      isResetOpen
+    ) {
       document.body.classList.add("overflow-hidden");
     } else {
       document.body.classList.remove("overflow-hidden");
@@ -39,7 +56,14 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
-  }, [isOpen, isSizeChartOpen, isLoginPopupOpen]);
+  }, [
+    isOpen,
+    isSizeChartOpen,
+    isLoginOpen,
+    isRegisterOpen,
+    isForgotOpen,
+    isResetOpen,
+  ]);
 
   const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
     (size) => ({
@@ -81,11 +105,17 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       setSelectedSize("");
     }
   }, [selectedColor, availableSizes, selectedSize]);
+
   const discountedPrice = Math.round(
     (selectedVariant?.price ?? 0) *
       (1 - (selectedVariant?.discountPercent ?? 0) / 100)
   );
-  // Xử lý pendingCart sau khi đăng nhập
+  useEffect(() => {
+    if (openLoginWithData) {
+      setIsLoginOpen(false);
+      setOpenLoginWithData(false);
+    }
+  }, [openLoginWithData, setOpenLoginWithData]);
   useEffect(() => {
     const accessToken =
       typeof window !== "undefined"
@@ -103,7 +133,6 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
             quantity,
           } = pendingCart;
 
-          // Kiểm tra tính hợp lệ của pendingCart
           if (
             !selectedColor ||
             !selectedSize ||
@@ -165,7 +194,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       };
       localStorage.setItem("pendingCart", JSON.stringify(pendingCart));
       localStorage.setItem("redirectToCart", "true");
-      setIsLoginPopupOpen(true);
+      setIsLoginOpen(true);
       toast.error("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
       return;
     }
@@ -221,17 +250,42 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
   };
 
   const handleCloseLoginPopup = () => {
-    setIsLoginPopupOpen(false);
+    setIsLoginOpen(false);
   };
 
   const handleOpenRegister = () => {
-    setIsLoginPopupOpen(false);
-    // Logic để mở RegisterPopup nếu cần
+    setIsLoginOpen(false);
+    setIsRegisterOpen(true);
+  };
+
+  const handleCloseRegister = () => {
+    setIsRegisterOpen(false);
   };
 
   const handleOpenForgotPassword = () => {
-    setIsLoginPopupOpen(false);
-    // Logic để mở ForgotPasswordPopup nếu cần
+    setIsLoginOpen(false);
+    setIsForgotOpen(true);
+  };
+
+  const handleCloseForgotPassword = () => {
+    setIsForgotOpen(false);
+  };
+
+  const handleOpenLogin = () => {
+    setIsRegisterOpen(false);
+    setIsForgotOpen(false);
+    setIsLoginOpen(true);
+  };
+
+  // Giả lập việc nhận token để reset password (cần logic thực tế từ API)
+  const handleOpenResetPassword = () => {
+    setIsForgotOpen(false);
+    setResetToken("sample-token"); // Thay bằng token thực tế từ API
+    setIsResetOpen(true);
+  };
+
+  const handleCloseResetPassword = () => {
+    setIsResetOpen(false);
   };
 
   return (
@@ -383,9 +437,6 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                                   v.stock > 0
                               )
                             : size.inStock;
-                          console.log(
-                            `Size: ${size.value}, Color: ${selectedColor}, isAvailable: ${isAvailable}`
-                          );
                           return (
                             <div
                               key={size.value}
@@ -510,12 +561,55 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {isLoginPopupOpen && (
+        {isLoginOpen && (
           <LoginPopup
-            isOpen={isLoginPopupOpen}
-            onClose={handleCloseLoginPopup}
-            onOpenRegister={handleOpenRegister}
-            onOpenForgotPassword={handleOpenForgotPassword}
+            isOpen={isLoginOpen}
+            onClose={() => setIsLoginOpen(false)}
+            onOpenRegister={() => {
+              setIsLoginOpen(false);
+              setIsRegisterOpen(true);
+            }}
+            initialFormData={registerFormData}
+            onOpenForgotPassword={() => {
+              setIsLoginOpen(false);
+              setIsForgotOpen(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isRegisterOpen && (
+          <RegisterPopup
+            isOpen={isRegisterOpen}
+            onClose={() => setIsRegisterOpen(false)}
+            onOpenLogin={() => {
+              setIsRegisterOpen(false);
+              setIsLoginOpen(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isForgotOpen && (
+          <ForgotPasswordPopup
+            isOpen={isForgotOpen}
+            onClose={() => setIsForgotOpen(false)}
+            onOpenLogin={() => {
+              setIsForgotOpen(false);
+              setIsLoginOpen(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isResetOpen && (
+          <ResetPasswordPopup
+            isOpen={isResetOpen}
+            onClose={() => setIsResetOpen(false)}
+            token={resetToken}
           />
         )}
       </AnimatePresence>

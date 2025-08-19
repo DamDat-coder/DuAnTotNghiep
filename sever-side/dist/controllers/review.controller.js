@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateReviewStatus = exports.getAllReviews = exports.getProductReviews = exports.createReview = void 0;
+exports.replyToReview = exports.updateReviewStatus = exports.getAllReviews = exports.getProductReviews = exports.createReview = void 0;
 const review_model_1 = __importDefault(require("../models/review.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
@@ -102,6 +102,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                     rating,
                     status: reviewStatus,
                     images: imageUrls,
+                    adminReply: null,
                 });
                 return res.status(403).json({
                     success: false,
@@ -124,6 +125,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 rating,
                 status: reviewStatus,
                 images: imageUrls,
+                adminReply: null, // Explicitly set adminReply to null
             });
             return res.status(400).json({
                 success: false,
@@ -141,6 +143,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             rating,
             status: reviewStatus,
             images: imageUrls,
+            adminReply: null, // Explicitly set adminReply to null
         });
         return res.status(201).json({
             success: true,
@@ -154,7 +157,6 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.createReview = createReview;
-// Lấy đánh giá của sản phẩm
 const getProductReviews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const productId = req.params.productId;
@@ -163,7 +165,8 @@ const getProductReviews = (req, res) => __awaiter(void 0, void 0, void 0, functi
             status: "approved",
         })
             .populate("userId", "name")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .select("userId content rating images status createdAt adminReply"); // Thêm adminReply vào select
         res.status(200).json({ success: true, data: reviews });
     }
     catch (error) {
@@ -172,7 +175,6 @@ const getProductReviews = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getProductReviews = getProductReviews;
-// Lấy tất cả đánh giá
 const getAllReviews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { page = "1", limit = "10", search, status } = req.query;
@@ -244,3 +246,56 @@ const updateReviewStatus = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.updateReviewStatus = updateReviewStatus;
+// Trả lời đánh giá (chỉ admin)
+const replyToReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { id } = req.params;
+        const { content } = req.body;
+        const adminId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+        if (!adminId) {
+            return res
+                .status(401)
+                .json({ success: false, message: "Chưa đăng nhập." });
+        }
+        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+            return res
+                .status(400)
+                .json({ success: false, message: "ID đánh giá không hợp lệ." });
+        }
+        if (!content || content.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Nội dung trả lời không được để trống.",
+            });
+        }
+        const review = yield review_model_1.default.findById(id)
+            .populate("userId", "name") // Populate userId để lấy tên người dùng
+            .populate("productId", "name"); // Populate productId để lấy tên sản phẩm
+        if (!review) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy đánh giá." });
+        }
+        // Cập nhật trả lời của admin
+        review.adminReply = {
+            content: content.trim(),
+            createdAt: new Date(),
+        };
+        yield review.save();
+        // Populate lại để đảm bảo dữ liệu đầy đủ
+        const updatedReview = yield review_model_1.default.findById(id)
+            .populate("userId", "name")
+            .populate("productId", "name");
+        return res.status(200).json({
+            success: true,
+            message: "Trả lời đánh giá thành công.",
+            data: updatedReview,
+        });
+    }
+    catch (error) {
+        console.error("Lỗi khi trả lời đánh giá:", error);
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+    }
+});
+exports.replyToReview = replyToReview;

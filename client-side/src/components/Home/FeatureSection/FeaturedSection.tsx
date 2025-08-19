@@ -42,7 +42,7 @@ export default function FeaturedSection({
         </h1>
 
         {/* Mobile/Tablet: Swiper */}
-        <div className="block tablet:px-0 desktop:hidden laptop:hidden overflow-x-hidden">
+        <div className="block tablet:px-0 desktop:hidden laptop:hidden">
           <FeaturedSwiper
             featuredSection={featuredSection}
             categories={categories}
@@ -52,40 +52,46 @@ export default function FeaturedSection({
         </div>
 
         {/* Desktop/Laptop: Grid */}
-        <div className="hidden tablet:hidden desktop:grid laptop:grid desktop:grid-cols-3 laptop:grid-cols-3 gap-4 desktop:gap-8 laptop:gap-8">
+        <div className="hidden tablet:hidden desktop:grid laptop:grid grid-cols-3 gap-6">
           {featuredSection.map((product) => {
             const matchedCategory = product.gender
               ? categories.find((cat) => cat.name === product.gender)
               : null;
+
             const genderLink = matchedCategory
-              ? { href: `/products?id_cate=${matchedCategory._id}`, label: product.gender }
+              ? {
+                  href: `/products?id_cate=${matchedCategory._id}`,
+                  label: product.gender,
+                }
               : { href: "/products", label: "Danh mục" };
 
             return (
               <div
                 key={product.id}
-                className="relative flex flex-col items-start gap-5"
+                className="relative flex flex-col items-start"
                 onMouseEnter={() => setHoveredId(product.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
-                <Image
-                  src={`/featured/${product.banner}`}
-                  alt={`Featured ${product.gender || "Sản phẩm"}`}
-                  width={300}
-                  height={300}
-                  className="w-full h-auto object-cover rounded select-none laptop:object-contain"
-                  draggable="false"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.src = "/fallback.jpg";
-                  }}
-                />
-                <FeaturedCardOverlay
-                  hovered={hoveredId === product.id}
-                  description={product.description}
-                  linkHref={genderLink.href}
-                  linkLabel={genderLink.label}
-                />
+                {/* Dùng aspect ratio thay vì height cứng */}
+                <div className="w-full aspect-[3/4] relative rounded overflow-hidden">
+                  <Image
+                    src={`/featured/${product.banner}`}
+                    alt={`Featured ${product.gender || "Sản phẩm"}`}
+                    fill
+                    className="object-cover"
+                    draggable="false"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.src = "/fallback.jpg";
+                    }}
+                  />
+                  <FeaturedCardOverlay
+                    hovered={hoveredId === product.id}
+                    description={product.description}
+                    linkHref={genderLink.href}
+                    linkLabel={genderLink.label}
+                  />
+                </div>
               </div>
             );
           })}

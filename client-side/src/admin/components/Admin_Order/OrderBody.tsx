@@ -14,6 +14,13 @@ interface OrderBodyProps {
   onEdit?: (order: IOrder) => void;
 }
 
+type PendingChange = {
+  uiKey: string; // orderCode dùng cho UI
+  apiId?: string; // _id/id dùng cho API
+  oldStatus: IOrder["status"];
+  newStatus: IOrder["status"];
+};
+
 export default function OrderBody({
   orders,
   setOrders,
@@ -23,6 +30,7 @@ export default function OrderBody({
   const [actionDropdownId, setActionDropdownId] = useState<string | null>(null);
   const [statusDropdownId, setStatusDropdownId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [confirmData, setConfirmData] = useState<PendingChange | null>(null);
   const actionPopupRef = useRef<HTMLDivElement | null>(null);
   const statusPopupRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
@@ -49,26 +57,23 @@ export default function OrderBody({
   const getStatusInfo = (key: IOrder["status"]) => STATUS.find((s) => s.key === key);
 
   const getAvailableStatus = (currentStatusKey: IOrder["status"]) => {
-    // Nếu là trạng thái cuối cùng, chỉ cho hiện trạng thái hiện tại
     if (["delivered", "cancelled", "fake"].includes(currentStatusKey)) {
       return STATUS.filter((s) => s.key === currentStatusKey);
     }
-    // Nếu đang shipping, cho phép chuyển sang 3 trạng thái đặc biệt
     if (currentStatusKey === "shipping") {
       return STATUS.filter((s) =>
         ["delivered", "cancelled", "fake"].includes(s.key)
       );
     }
-    // Các trạng thái khác: chỉ cho phép chuyển tới trạng thái tiếp theo
     const currentStatusIndex = STATUS.findIndex((s) => s.key === currentStatusKey);
     const next = STATUS[currentStatusIndex + 1];
     return next ? [next] : STATUS.filter((s) => s.key === currentStatusKey);
   };
 
-  // ✅ Sửa logic: dùng orderCode cho UI, _id/id cho API
+  // ✅ Dùng orderCode cho UI, _id/id cho API
   const handleQuickStatusChange = async (
-    uiKey: string,                      // orderCode: để điều khiển UI (đúng như giao diện cũ)
-    apiId: string | undefined,          // _id hoặc id: để gọi API
+    uiKey: string,
+    apiId: string | undefined,
     oldStatus: IOrder["status"],
     newStatus: IOrder["status"]
   ) => {
@@ -77,7 +82,7 @@ export default function OrderBody({
       toast.error("Không xác định được ID đơn hàng.");
       return;
     }
-    setUpdatingStatusId(uiKey);         // UI vẫn dựa trên orderCode
+    setUpdatingStatusId(uiKey);
     try {
       await updateOrderStatus(apiId, newStatus);
       setOrders((prev) =>
@@ -114,9 +119,10 @@ export default function OrderBody({
 
   return (
     <>
-      {orders.map((order, idx) => {
-        const orderId = (order as any).orderCode; // 🔒 Giữ nguyên để hiển thị & làm key UI
-        const apiId = (order as any)._id || (order as any).id; // ✅ Dùng cho API
+      {orders.map((order) => {
+        const orderId = (order as any).orderCode; // dùng cho UI
+        const apiId = (order as any)._id || (order as any).id; // dùng cho API
+
         const productList = Array.isArray(order.items)
           ? order.items.map((item) => item.name).filter(Boolean)
           : [];
@@ -166,7 +172,7 @@ export default function OrderBody({
                   style={{
                     background: status?.color ? undefined : "#F5F5F5",
                     color: status?.color ? undefined : "#7c7c7c",
-                    opacity: updatingStatusId === orderId ? 0.7 : 1, // vẫn dựa theo orderCode
+                    opacity: updatingStatusId === orderId ? 0.7 : 1,
                     fontSize: 12,
                     width: "100%",
                     maxWidth: "100%",
@@ -192,6 +198,7 @@ export default function OrderBody({
                     <path d="M4 6l4 4 4-4" stroke="#888" strokeWidth={2} />
                   </svg>
                 </span>
+
                 {statusDropdownId === orderId && (
                   <div
                     ref={statusPopupRef}
@@ -204,9 +211,16 @@ export default function OrderBody({
                         className={`w-full text-left px-4 py-2 rounded-lg font-medium text-xs hover:bg-gray-100 transition-colors mb-1 ${
                           s.key === order.status ? "text-blue-600 bg-gray-50" : ""
                         }`}
-                        onClick={() =>
-                          handleQuickStatusChange(orderId, apiId, order.status, s.key)
-                        }
+                        onClick={() => {
+                          // 🔔 Mở popup xác nhận thay vì cập nhật ngay
+                          setStatusDropdownId(null);
+                          setConfirmData({
+                            uiKey: orderId,
+                            apiId,
+                            oldStatus: order.status,
+                            newStatus: s.key,
+                          });
+                        }}
                       >
                         {s.label}
                       </button>
@@ -250,6 +264,51 @@ export default function OrderBody({
           </tr>
         );
       })}
+
+      {/* 🔒 Popup xác nhận đổi trạng thái */}
+      {confirmData && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/30 flex items-center justify-center p-4"
+          onClick={() => setConfirmData(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-xl shadow-lg p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold mb-2">Xác nhận cập nhật trạng thái</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Bạn có chắc muốn đổi trạng thái đơn{" "}
+              <span className="font-medium">#{confirmData.uiKey}</span> từ{" "}
+              <b>{getStatusInfo(confirmData.oldStatus)?.label ?? confirmData.oldStatus}</b> sang{" "}
+              <b>{getStatusInfo(confirmData.newStatus)?.label ?? confirmData.newStatus}</b>?
+            </p>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setConfirmData(null)}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Không
+              </button>
+              <button
+                onClick={() => {
+                  handleQuickStatusChange(
+                    confirmData.uiKey,
+                    confirmData.apiId,
+                    confirmData.oldStatus,
+                    confirmData.newStatus
+                  );
+                  setConfirmData(null);
+                }}
+                disabled={updatingStatusId === confirmData.uiKey}
+                className="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                Có, cập nhật
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -2,6 +2,9 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IOrderItem {
   productId: Types.ObjectId | string;
+  name: string;
+  price: number;
+  image: string;
   quantity: number;
   color: string;
   size: string;
@@ -48,6 +51,9 @@ export interface IPayment extends Document {
 const orderItemSchema = new Schema<IOrderItem>(
   {
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    image: { type: String, required: true },
     quantity: { type: Number, required: true },
     color: { type: String, required: true },
     size: { type: String, required: true },

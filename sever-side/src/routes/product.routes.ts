@@ -8,6 +8,7 @@ import {
   updateProduct,
   lockProduct,
   getProductsActiveStatus,
+  recommendProducts
 } from "../controllers/product.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 
@@ -19,6 +20,7 @@ const upload = multer({ storage });
 
 router.get("/admin", verifyToken, verifyAdmin, getAllProductsAdmin);
 router.get("/", getAllProducts);
+router.post("/recommend", recommendProducts);
 router.get("/:id", getProductById);
 router.get("/slug/:slug", getProductBySlug);
 router.post("/active-status", getProductsActiveStatus);

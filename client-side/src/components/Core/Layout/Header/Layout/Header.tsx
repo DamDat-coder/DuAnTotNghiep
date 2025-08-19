@@ -6,7 +6,6 @@ import { useMenu } from "@/contexts/MenuContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import DesktopNav from "../Navigation/DesktopNav";
-import UserDropdown from "./UserDropdown";
 import MobileMenu from "./MobileMenu";
 import LoginPopup from "../../Popups/AuthAction/LoginPopup";
 import RegisterPopup from "../../Popups/AuthAction/RegisterPopup";
@@ -74,7 +73,7 @@ export default function Header() {
           } left-0 right-0 bg-white z-[40] transition-[box-shadow,background-color] duration-300 ease-in-out will-change-transform`}
           aria-label="Main navigation"
         >
-          <div className="w-full mx-auto px-4 max-w-[2560px] laptop:px-8 desktop:px-8">
+          <div className="max-w-full px-4 mx-auto tablet:w-full laptop:w-full desktop:w-full laptop:px-20 desktop:px-20">
             <div className="flex h-16 items-center justify-between relative">
               <Link
                 href="/"

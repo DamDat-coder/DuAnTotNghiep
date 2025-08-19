@@ -3,7 +3,6 @@ import { Types } from "mongoose";
 import mongoose from "mongoose";
 import Coupon from "../models/coupon.model";
 import OrderModel from "../models/order.model";
-import ProductModel from "../models/product.model";
 import PaymentModel from "../models/payment.model";
 import NotificationModel from "../models/notification.model";
 import UserModel, { IUser } from "../models/user.model";
@@ -13,87 +12,33 @@ import { generateUniqueTransactionCode } from "../utils/generateTransactionCode"
 // Tạo đơn hàng
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { paymentId, order_info } = req.body;
+    const { paymentId } = req.body;
 
-    let userId: Types.ObjectId;
-    let paymentMethod: 'cod' | 'vnpay' | 'zalopay';
-    let shippingAddress;
-    let items;
-    let shipping = 0;
-    let discountAmount = 0;
-    let email: string | undefined = undefined;
-    let couponCode: string | null | undefined = null;
-
-    if (paymentId) {
-      const payment = await PaymentModel.findById(paymentId);
-      if (!payment || !payment.order_info || !payment.userId) {
-        return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
-      }
-
-      if (payment.status !== 'success') {
-        return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
-      }
-
-      const existed = await OrderModel.findOne({ paymentId });
-      if (existed) {
-        return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
-      }
-
-      ({ paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info);
-      discountAmount = payment.discount_amount || 0;
-      userId = payment.userId as Types.ObjectId;
-    } else {
-      if (!order_info) {
-        return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
-      }
-
-      ({ paymentMethod, userId, shippingAddress, items, shipping = 0, code: couponCode, email } = order_info);
-
-      if (paymentMethod !== 'cod') {
-        return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
-      }
+    if (!paymentId) {
+      return res.status(400).json({ success: false, message: 'Thiếu mã thanh toán (paymentId).' });
     }
 
-    const orderItems = [];
-    let totalPrice = 0;
-
-    for (const item of items) {
-      const product = await ProductModel.findById(item.product || item.productId);
-      if (!product) {
-        return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm.' });
-      }
-
-      const variantData = item.variant || item;
-
-      const variant = product.variants.find(
-        v => v.color === variantData.color && v.size === variantData.size
-      );
-      if (!variant || variant.stock < item.quantity) {
-        return res.status(400).json({ success: false, message: 'Biến thể không hợp lệ hoặc hết hàng.' });
-      }
-
-      const discountPrice = variant.price * (1 - variant.discountPercent / 100);
-      totalPrice += discountPrice * item.quantity;
-
-      orderItems.push({
-        productId: product._id,
-        name: product.name,
-        image: product.image[0] || '',
-color: variantData.color,
-        size: variantData.size,
-        price: discountPrice,
-        quantity: item.quantity,
-      });
-
-      variant.stock -= item.quantity;
-      product.salesCount += item.quantity;
-      await product.save();
+    const payment = await PaymentModel.findById(paymentId);
+    if (!payment || !payment.order_info || !payment.userId) {
+      return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
     }
 
-    totalPrice = totalPrice - discountAmount + shipping;
+    if (payment.status !== 'success') {
+      return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
+    }
 
+    // Kiểm tra đơn hàng đã tồn tại từ payment này chưa
+    const existed = await OrderModel.findOne({ paymentId });
+    if (existed) {
+      return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
+    }
+
+    const { paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info;
+
+    const totalPrice = payment.amount;
+    const discountAmount = payment.discount_amount || 0;
+    const userId = payment.userId as Types.ObjectId;
     const orderCode = await generateUniqueTransactionCode("4U");
-
     const order = await OrderModel.create({
       userId,
       shippingAddress,
@@ -101,18 +46,20 @@ color: variantData.color,
       discountAmount,
       shipping,
       paymentMethod,
-      items: orderItems,
-      paymentId: paymentId || null,
+      items,
+      paymentId,
       orderCode,
       email: email || null,
       couponCode: couponCode || null,
     });
+
     if (couponCode) {
       await Coupon.updateOne(
         { code: couponCode },
         { $inc: { usedCount: 1 } }
       );
     }
+
     await NotificationModel.create({
       userId,
       title: 'Đơn hàng của bạn đã được tạo thành công!',

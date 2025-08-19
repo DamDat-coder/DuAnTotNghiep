@@ -5,7 +5,6 @@ import "swiper/css";
 import { IMemberBenefit } from "@/types/product";
 import MemberBenefitCard from "./MemberBenefitCard";
 
-
 interface MemberBenefitsSwiperProps {
   benefits: IMemberBenefit[];
   mobileSlidesPerView?: number;
@@ -20,16 +19,11 @@ export default function MemberBenefitsSwiper({
   return (
     <Swiper
       spaceBetween={16}
-      loop={false}
-      grabCursor={true}
+      grabCursor
       className="select-none"
       breakpoints={{
-        0: {
-          slidesPerView: mobileSlidesPerView,
-        },
-        768: {
-          slidesPerView: tabletSlidesPerView,
-        },
+        0: { slidesPerView: mobileSlidesPerView },
+        768: { slidesPerView: tabletSlidesPerView },
       }}
     >
       {benefits.map((benefit) => (

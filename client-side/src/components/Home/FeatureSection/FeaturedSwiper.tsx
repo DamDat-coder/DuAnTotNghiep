@@ -26,15 +26,10 @@ export default function FeaturedSwiper({
   return (
     <Swiper
       spaceBetween={10}
-      loop={false}
-      grabCursor={true}
+      grabCursor
       breakpoints={{
-        0: {
-          slidesPerView: mobileSlidesPerView,
-        },
-        768: {
-          slidesPerView: tabletSlidesPerView,
-        },
+        0: { slidesPerView: mobileSlidesPerView },
+        768: { slidesPerView: tabletSlidesPerView },
       }}
       className="select-none"
     >
@@ -42,6 +37,7 @@ export default function FeaturedSwiper({
         const matchedCategory = product.gender
           ? categories.find((cat) => cat.name === product.gender)
           : null;
+
         const genderLink = matchedCategory
           ? { href: `/products?id_cate=${matchedCategory._id}`, label: product.gender }
           : { href: "/products", label: "Danh mục" };
@@ -49,16 +45,15 @@ export default function FeaturedSwiper({
         return (
           <SwiperSlide key={product.id}>
             <div
-              className="relative w-full h-full"
+              className="relative w-full aspect-[3/4] rounded overflow-hidden"
               onMouseEnter={() => setHoveredId(product.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
               <Image
                 src={`/featured/${product.banner}`}
                 alt={`Featured ${product.gender || "Sản phẩm"}`}
-                width={300}
-                height={300}
-                className="w-full h-auto object-cover rounded select-none"
+                fill
+                className="object-cover"
                 draggable="false"
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;

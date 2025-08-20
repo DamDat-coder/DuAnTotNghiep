@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import mongoose from "mongoose";
+import dayjs from "dayjs";
 import Coupon from "../models/coupon.model";
 import OrderModel from "../models/order.model";
 import PaymentModel from "../models/payment.model";
@@ -15,25 +16,41 @@ export const createOrder = async (req: Request, res: Response) => {
     const { paymentId } = req.body;
 
     if (!paymentId) {
-      return res.status(400).json({ success: false, message: 'Thiếu mã thanh toán (paymentId).' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu mã thanh toán (paymentId)." });
     }
 
     const payment = await PaymentModel.findById(paymentId);
     if (!payment || !payment.order_info || !payment.userId) {
-      return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Thông tin thanh toán không hợp lệ." });
     }
 
-    if (payment.status !== 'success') {
-      return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
+    if (payment.status !== "success" && payment.status !== "paid") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thanh toán chưa hoàn tất." });
     }
 
-    // Kiểm tra đơn hàng đã tồn tại từ payment này chưa
     const existed = await OrderModel.findOne({ paymentId });
     if (existed) {
-      return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
+      return res.status(409).json({
+        success: false,
+        message: "Đơn hàng đã được tạo từ giao dịch này.",
+        data: existed,
+      });
     }
 
-    const { paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info;
+    const {
+      paymentMethod,
+      shippingAddress,
+      items,
+      shipping,
+      code: couponCode,
+      email,
+    } = payment.order_info;
 
     const totalPrice = payment.amount;
     const discountAmount = payment.discount_amount || 0;
@@ -52,37 +69,42 @@ export const createOrder = async (req: Request, res: Response) => {
       email: email || null,
       couponCode: couponCode || null,
     });
-
+    
     if (couponCode) {
-      await Coupon.updateOne(
-        { code: couponCode },
-        { $inc: { usedCount: 1 } }
-      );
+      await Coupon.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
     }
 
+    // Gửi thông báo cho user
     await NotificationModel.create({
       userId,
-      title: 'Đơn hàng của bạn đã được tạo thành công!',
+      title: "Đơn hàng của bạn đã được tạo thành công!",
       message: `Đơn hàng #${order.orderCode} đã được xác nhận.`,
-      type: 'order',
+      type: "order",
       isRead: false,
       link: `/profile?tab=order/${order._id}`,
     });
 
-    const admins = await UserModel.find({ role: 'admin' }).select('_id').lean();
-    const notis = admins.map(admin => ({
+    // Gửi thông báo cho admin
+    const admins = await UserModel.find({ role: "admin" })
+      .select("_id")
+      .lean();
+    const notis = admins.map((admin) => ({
       userId: admin._id,
-      title: 'Có đơn hàng mới!',
+      title: "Có đơn hàng mới!",
       message: `Đơn hàng #${order.orderCode} vừa được tạo.`,
-      type: 'order',
+      type: "order",
       isRead: false,
     }));
     await NotificationModel.insertMany(notis);
 
-    return res.status(201).json({ success: true, message: 'Tạo đơn hàng thành công.', data: order });
+    return res.status(201).json({
+      success: true,
+      message: "Tạo đơn hàng thành công.",
+      data: order,
+    });
   } catch (err) {
-    console.error('Lỗi tạo đơn hàng:', err);
-    return res.status(500).json({ success: false, message: 'Lỗi máy chủ.' });
+    console.error("Lỗi tạo đơn hàng:", err);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
 
@@ -276,8 +298,6 @@ export const cancelOrder = async (req: Request, res: Response) => {
 };
 
 // Tính doanh thu
-import dayjs from "dayjs";
-
 export const calculateRevenue = async (req: Request, res: Response): Promise<void> => {
   try {
     const { range = "today", from, to } = req.query;

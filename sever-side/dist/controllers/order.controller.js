@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateRevenue = exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
+const dayjs_1 = __importDefault(require("dayjs"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
@@ -26,21 +27,30 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         const { paymentId } = req.body;
         if (!paymentId) {
-            return res.status(400).json({ success: false, message: 'Thiếu mã thanh toán (paymentId).' });
+            return res
+                .status(400)
+                .json({ success: false, message: "Thiếu mã thanh toán (paymentId)." });
         }
         const payment = yield payment_model_1.default.findById(paymentId);
         if (!payment || !payment.order_info || !payment.userId) {
-            return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
+            return res
+                .status(400)
+                .json({ success: false, message: "Thông tin thanh toán không hợp lệ." });
         }
-        if (payment.status !== 'success') {
-            return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
+        if (payment.status !== "success" && payment.status !== "paid") {
+            return res
+                .status(400)
+                .json({ success: false, message: "Thanh toán chưa hoàn tất." });
         }
-        // Kiểm tra đơn hàng đã tồn tại từ payment này chưa
         const existed = yield order_model_1.default.findOne({ paymentId });
         if (existed) {
-            return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
+            return res.status(409).json({
+                success: false,
+                message: "Đơn hàng đã được tạo từ giao dịch này.",
+                data: existed,
+            });
         }
-        const { paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info;
+        const { paymentMethod, shippingAddress, items, shipping, code: couponCode, email, } = payment.order_info;
         const totalPrice = payment.amount;
         const discountAmount = payment.discount_amount || 0;
         const userId = payment.userId;
@@ -61,28 +71,36 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (couponCode) {
             yield coupon_model_1.default.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
         }
+        // Gửi thông báo cho user
         yield notification_model_1.default.create({
             userId,
-            title: 'Đơn hàng của bạn đã được tạo thành công!',
+            title: "Đơn hàng của bạn đã được tạo thành công!",
             message: `Đơn hàng #${order.orderCode} đã được xác nhận.`,
-            type: 'order',
+            type: "order",
             isRead: false,
             link: `/profile?tab=order/${order._id}`,
         });
-        const admins = yield user_model_1.default.find({ role: 'admin' }).select('_id').lean();
-        const notis = admins.map(admin => ({
+        // Gửi thông báo cho admin
+        const admins = yield user_model_1.default.find({ role: "admin" })
+            .select("_id")
+            .lean();
+        const notis = admins.map((admin) => ({
             userId: admin._id,
-            title: 'Có đơn hàng mới!',
+            title: "Có đơn hàng mới!",
             message: `Đơn hàng #${order.orderCode} vừa được tạo.`,
-            type: 'order',
+            type: "order",
             isRead: false,
         }));
         yield notification_model_1.default.insertMany(notis);
-        return res.status(201).json({ success: true, message: 'Tạo đơn hàng thành công.', data: order });
+        return res.status(201).json({
+            success: true,
+            message: "Tạo đơn hàng thành công.",
+            data: order,
+        });
     }
     catch (err) {
-        console.error('Lỗi tạo đơn hàng:', err);
-        return res.status(500).json({ success: false, message: 'Lỗi máy chủ.' });
+        console.error("Lỗi tạo đơn hàng:", err);
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
     }
 });
 exports.createOrder = createOrder;
@@ -249,7 +267,6 @@ const cancelOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.cancelOrder = cancelOrder;
 // Tính doanh thu
-const dayjs_1 = __importDefault(require("dayjs"));
 const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { range = "today", from, to } = req.query;

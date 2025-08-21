@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchUser } from "@/services/userApi";
 import { IUser } from "@/types/auth";
+import AdminNotification from "../components/AdminNotification"; // Import the AdminNotification component
 
 interface AdminHeaderProps {
   pageTitle: string;
@@ -75,37 +76,42 @@ export default function AdminHeader({
     <header className="bg-[#F8FAFC] pt-8">
       <div className="flex justify-between items-start w-full max-w-full">
         <div>
-          <h1 className="text-[32px] font-bold leading-tight ml-6">{pageTitle}</h1>
+          <h1 className="text-[32px] font-bold leading-tight ml-6">
+            {pageTitle}
+          </h1>
           <p className="text-sm text-gray-500 mt-1 ml-6">{pageSubtitle}</p>
         </div>
 
-        <div className="w-[333px] h-[77px] flex items-center bg-black text-white rounded-[32px] px-4">
-          <Image
-            src={"/admin/admin_header/admin_header_user_avatar.svg"}
-            alt="Avatar"
-            width={40}
-            height={40}
-            className="rounded-full object-cover"
-          />
-
-          <div className="flex flex-col justify-center leading-tight ml-6">
-            <span className="text-[16px] font-medium">
-              {admin.email.split("@")[0]}
-            </span>
-            <span className="text-[14px] text-gray-300">{admin.email}</span>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="ml-auto p-2 hover:bg-gray-800 rounded-full"
-          >
+        <div className="flex items-center">
+          <AdminNotification />
+          <div className="h-[77px] flex items-center text-black rounded-[32px] px-4">
             <Image
-              src="/admin/admin_header/admin_header_logout.svg"
-              alt="Đăng xuất"
-              width={22}
-              height={22}
+              src={"/admin/admin_header/admin_header_user_avatar.svg"}
+              alt="Avatar"
+              width={40}
+              height={40}
+              className="rounded-full object-cover"
             />
-          </button>
+
+            <div className="flex flex-col justify-center leading-tight ml-6">
+              <span className="text-[16px] font-medium">
+                {admin.email.split("@")[0]}
+              </span>
+              <span className="text-[14px] text-black">{admin.email}</span>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="ml-4 p-2 hover:bg-gray-100 rounded-full"
+            >
+              <Image
+                src="/admin/admin_header/admin_header_logout.svg"
+                alt="Đăng xuất"
+                width={22}
+                height={22}
+              />
+            </button>
+          </div>
         </div>
       </div>
     </header>

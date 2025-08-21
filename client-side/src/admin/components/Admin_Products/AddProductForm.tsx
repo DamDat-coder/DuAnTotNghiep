@@ -43,11 +43,11 @@ function renderCategoryOptions(
   path = ""
 ): React.ReactElement[] {
   return nodes.flatMap((cat) => [
-    <option key={path + (cat._id)} value={cat._id}>
+    <option key={path + cat._id} value={cat._id}>
       {"—".repeat(depth)} {cat.name}
     </option>,
     ...(cat.children
-      ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id))
+      ? renderCategoryOptions(cat.children, depth + 1, path + cat._id)
       : []),
   ]);
 }
@@ -79,6 +79,8 @@ export default function AddProductForm({ onClose, onAdded }: any) {
     stock: "",
   });
 
+  const [showAllImages, setShowAllImages] = useState(false);
+
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -97,15 +99,17 @@ export default function AddProductForm({ onClose, onAdded }: any) {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, files } = e.target as HTMLInputElement;
     if (files && files.length > 0) {
       setFormData((prev) => ({
         ...prev,
-        images: Array.from(files) as File[],
+        images: [...prev.images, ...Array.from(files)],
       }));
-    } else {
+    } else if (name !== "images") {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
@@ -113,7 +117,11 @@ export default function AddProductForm({ onClose, onAdded }: any) {
     }
   };
 
-  const handleVariantTableChange = (idx: number, field: keyof ProductVariant, value: any) => {
+  const handleVariantTableChange = (
+    idx: number,
+    field: keyof ProductVariant,
+    value: any
+  ) => {
     setFormData((prev) => {
       const variants = [...prev.variants];
       variants[idx][field] = value;
@@ -136,7 +144,12 @@ export default function AddProductForm({ onClose, onAdded }: any) {
   };
 
   const handleAddVariant = () => {
-    if (!newVariant.size || !newVariant.color || !newVariant.price || !newVariant.stock) {
+    if (
+      !newVariant.size ||
+      !newVariant.color ||
+      !newVariant.price ||
+      !newVariant.stock
+    ) {
       setError("Vui lòng nhập đầy đủ biến thể mới trước khi thêm!");
       return;
     }
@@ -145,7 +158,13 @@ export default function AddProductForm({ onClose, onAdded }: any) {
       ...prev,
       variants: [...prev.variants, { ...newVariant }],
     }));
-    setNewVariant({ size: "", color: "", price: "", discountPercent: "", stock: "" });
+    setNewVariant({
+      size: "",
+      color: "",
+      price: "",
+      discountPercent: "",
+      stock: "",
+    });
   };
 
   const renderImagesBlock = () => {
@@ -164,6 +183,16 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                 className="object-cover w-full h-full"
                 unoptimized
               />
+
+              <button
+                type="button"
+                className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center bg-white/80 rounded-full text-base hover:bg-gray-200 hover:text-red-500 transition"
+                onClick={() => handleRemoveImage(i)}
+                title="Xóa ảnh"
+                style={{ zIndex: 2 }}
+              >
+                ×
+              </button>
             </div>
           ))
         : [];
@@ -174,7 +203,8 @@ export default function AddProductForm({ onClose, onAdded }: any) {
             ...previews.slice(0, 3),
             <div
               key="more"
-              className="w-[130px] h-[131px] rounded-xl flex items-center justify-center bg-gray-100 text-xl font-semibold border"
+              className="w-[130px] h-[131px] rounded-xl flex items-center justify-center bg-gray-100 text-xl font-semibold border cursor-pointer"
+              onClick={() => setShowAllImages(true)}
             >
               +{previews.length - 3}
             </div>,
@@ -200,10 +230,63 @@ export default function AddProductForm({ onClose, onAdded }: any) {
             onClick={handleImageUploadClick}
             disabled={isSubmitting}
           >
-            <Image src="/admin/upload.png" width={60} height={60} alt="Upload" />
-            <span className="font-medium text-black text-sm mt-2">New Image</span>
+            <Image
+              src="/admin/upload.png"
+              width={60}
+              height={60}
+              alt="Upload"
+            />
+            <span className="font-medium text-black text-sm mt-2">
+              New Image
+            </span>
           </button>
         </div>
+        {/* Popup show all images */}
+        {showAllImages && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+            <div className="bg-white rounded-xl p-6 max-w-2xl w-full relative h-[470px]">
+              <button
+                className="absolute top-2 right-2 text-2xl font-bold"
+                onClick={() => setShowAllImages(false)}
+              >
+                ×
+              </button>
+              <div
+                className="grid gap-4 scroll-hidden"
+                style={{
+                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                  maxHeight: 420,
+                  overflowY: "auto",
+                }}
+              >
+                {formData.images.map((file: File, i: number) => (
+                  <div
+                    key={i}
+                    className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
+                  >
+                    <Image
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      width={130}
+                      height={131}
+                      className="object-cover w-full h-full"
+                      unoptimized
+                    />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center bg-white/80 rounded-full text-base hover:bg-gray-200 hover:text-red-500 transition"
+                      onClick={() => handleRemoveImage(i)}
+                      title="Xóa ảnh"
+                      style={{ zIndex: 2 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -213,16 +296,24 @@ export default function AddProductForm({ onClose, onAdded }: any) {
     e.preventDefault();
     setError(null);
 
-    if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
+    if (!formData.name.trim())
+      return setError("Tên sản phẩm không được để trống.");
     if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
-    if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
-    if (!formData.variants.length) return setError("Phải có ít nhất một biến thể.");
+    if (!formData.description.trim())
+      return setError("Vui lòng nhập mô tả sản phẩm.");
+    if (!formData.variants.length)
+      return setError("Phải có ít nhất một biến thể.");
     for (let v of formData.variants) {
       if (!v.size || !v.color || !v.price || !v.stock)
-        return setError("Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể.");
+        return setError(
+          "Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể."
+        );
       if (Number(v.price) < 0) return setError("Giá không được nhỏ hơn 0.");
       if (Number(v.stock) < 0) return setError("Tồn kho không được nhỏ hơn 0.");
-      if (v.discountPercent && (Number(v.discountPercent) < 0 || Number(v.discountPercent) > 100))
+      if (
+        v.discountPercent &&
+        (Number(v.discountPercent) < 0 || Number(v.discountPercent) > 100)
+      )
         return setError("Phần trăm giảm giá phải từ 0 đến 100.");
     }
     if (formData.images.length === 0) {
@@ -230,8 +321,10 @@ export default function AddProductForm({ onClose, onAdded }: any) {
     } else {
       const validTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let img of formData.images) {
-        if (!validTypes.includes(img.type)) return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
-        if (img.size > 5 * 1024 * 1024) return setError("File ảnh không quá 5MB.");
+        if (!validTypes.includes(img.type))
+          return setError("Chỉ hỗ trợ ảnh jpg, png, webp.");
+        if (img.size > 5 * 1024 * 1024)
+          return setError("File ảnh không quá 5MB.");
       }
     }
 
@@ -259,14 +352,27 @@ export default function AddProductForm({ onClose, onAdded }: any) {
       onClose?.();
     } catch (err: any) {
       if (err.message === "SLUG_EXISTS") {
-        setError("Tên sản phẩm này đã tồn tại! Vui lòng đặt tên khác để tránh trùng đường dẫn (slug).");
-        toast.error("Tên sản phẩm này đã tồn tại! Vui lòng đặt tên khác để tránh trùng đường dẫn (slug).");
+        setError(
+          "Tên sản phẩm này đã tồn tại! Vui lòng đặt tên khác để tránh trùng đường dẫn (slug)."
+        );
+        toast.error(
+          "Tên sản phẩm này đã tồn tại! Vui lòng đặt tên khác để tránh trùng đường dẫn (slug)."
+        );
       } else {
         setError(err.message || "Có lỗi xảy ra khi thêm sản phẩm.");
         toast.error(err.message || "Có lỗi xảy ra khi thêm sản phẩm.");
       }
     }
     setIsSubmitting(false);
+  };
+
+  const handleRemoveImage = (idx: number) => {
+    setFormData((prev) => {
+      const newImages = prev.images.filter((_, i) => i !== idx);
+      // Nếu sau khi xóa mà không còn ảnh nào thì đóng popup
+      if (newImages.length === 0) setShowAllImages(false);
+      return { ...prev, images: newImages };
+    });
   };
 
   return (
@@ -325,7 +431,8 @@ export default function AddProductForm({ onClose, onAdded }: any) {
               Mô tả sản phẩm <span className="text-red-500">*</span>
             </label>
             <p className="mb-2 text-sm text-gray-500">
-              Bao gồm tối thiểu 260 ký tự để giúp người mua dễ hiểu và tìm thấy sản phẩm của bạn hơn
+              Bao gồm tối thiểu 260 ký tự để giúp người mua dễ hiểu và tìm thấy
+              sản phẩm của bạn hơn
             </p>
             <textarea
               name="description"
@@ -359,18 +466,31 @@ export default function AddProductForm({ onClose, onAdded }: any) {
               <table className="min-w-full border text-sm bg-white">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="p-2 border text-center min-w-[90px]">Size</th>
-                    <th className="p-2 border text-center min-w-[90px]">Màu sắc</th>
-                    <th className="p-2 border text-center min-w-[100px]">Giá</th>
-                    <th className="p-2 border text-center min-w-[65px] w-[80px]">Giảm giá (%)</th>
-                    <th className="p-2 border text-center min-w-[65px] w-[80px]">Tồn kho</th>
+                    <th className="p-2 border text-center min-w-[90px]">
+                      Size
+                    </th>
+                    <th className="p-2 border text-center min-w-[90px]">
+                      Màu sắc
+                    </th>
+                    <th className="p-2 border text-center min-w-[100px]">
+                      Giá
+                    </th>
+                    <th className="p-2 border text-center min-w-[65px] w-[80px]">
+                      Giảm giá (%)
+                    </th>
+                    <th className="p-2 border text-center min-w-[65px] w-[80px]">
+                      Tồn kho
+                    </th>
                     <th className="p-2 border text-center min-w-[60px]">Xóa</th>
                   </tr>
                 </thead>
                 <tbody>
                   {formData.variants.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center text-gray-400 py-2">
+                      <td
+                        colSpan={6}
+                        className="text-center text-gray-400 py-2"
+                      >
                         Chưa có biến thể nào
                       </td>
                     </tr>
@@ -381,13 +501,19 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                           <select
                             className="border rounded-lg p-2 w-full text-sm"
                             value={variant.size}
-                            onChange={e =>
-                              handleVariantTableChange(idx, "size", e.target.value)
+                            onChange={(e) =>
+                              handleVariantTableChange(
+                                idx,
+                                "size",
+                                e.target.value
+                              )
                             }
                             disabled={isSubmitting}
                           >
-                            {sizeOptions.map(s => (
-                              <option key={s} value={s}>{s}</option>
+                            {sizeOptions.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -395,13 +521,19 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                           <select
                             className="border rounded-lg p-2 w-full text-sm"
                             value={variant.color}
-                            onChange={e =>
-                              handleVariantTableChange(idx, "color", e.target.value)
+                            onChange={(e) =>
+                              handleVariantTableChange(
+                                idx,
+                                "color",
+                                e.target.value
+                              )
                             }
                             disabled={isSubmitting}
                           >
-                            {colorOptions.map(c => (
-                              <option key={c.value} value={c.value}>{c.label}</option>
+                            {colorOptions.map((c) => (
+                              <option key={c.value} value={c.value}>
+                                {c.label}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -411,8 +543,12 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                             min={0}
                             className="border rounded-lg p-2 w-full text-sm"
                             value={variant.price}
-                            onChange={e =>
-                              handleVariantTableChange(idx, "price", e.target.value)
+                            onChange={(e) =>
+                              handleVariantTableChange(
+                                idx,
+                                "price",
+                                e.target.value
+                              )
                             }
                             placeholder="Giá"
                             disabled={isSubmitting}
@@ -424,8 +560,12 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                             min={0}
                             className="border rounded-lg p-2 w-full text-sm"
                             value={variant.discountPercent || ""}
-                            onChange={e =>
-                              handleVariantTableChange(idx, "discountPercent", e.target.value)
+                            onChange={(e) =>
+                              handleVariantTableChange(
+                                idx,
+                                "discountPercent",
+                                e.target.value
+                              )
                             }
                             placeholder="Giảm"
                             disabled={isSubmitting}
@@ -437,8 +577,12 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                             min={0}
                             className="border rounded-lg p-2 w-full text-sm"
                             value={variant.stock}
-                            onChange={e =>
-                              handleVariantTableChange(idx, "stock", e.target.value)
+                            onChange={(e) =>
+                              handleVariantTableChange(
+                                idx,
+                                "stock",
+                                e.target.value
+                              )
                             }
                             placeholder="Kho"
                             disabled={isSubmitting}
@@ -465,9 +609,11 @@ export default function AddProductForm({ onClose, onAdded }: any) {
             <div className="rounded-lg border border-gray-200 p-4 bg-white w-full max-w-[564px] mt-2 mx-auto">
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div>
-                  <label className="font-semibold block mb-1 text-sm">Sizes</label>
+                  <label className="font-semibold block mb-1 text-sm">
+                    Sizes
+                  </label>
                   <div className="flex gap-2">
-                    {sizeOptions.map(size => (
+                    {sizeOptions.map((size) => (
                       <button
                         key={size}
                         type="button"
@@ -486,51 +632,69 @@ export default function AddProductForm({ onClose, onAdded }: any) {
                   </div>
                 </div>
                 <div>
-                  <label className="font-semibold block mb-1 text-sm">Màu sắc</label>
+                  <label className="font-semibold block mb-1 text-sm">
+                    Màu sắc
+                  </label>
                   <select
                     className="border rounded-lg p-2 w-full text-sm"
                     value={newVariant.color}
-                    onChange={e => handleNewVariantChange("color", e.target.value)}
+                    onChange={(e) =>
+                      handleNewVariantChange("color", e.target.value)
+                    }
                     disabled={isSubmitting}
                   >
                     <option value="">Chọn màu sắc</option>
-                    {colorOptions.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
+                    {colorOptions.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="font-semibold block mb-1 text-sm">Giá</label>
+                  <label className="font-semibold block mb-1 text-sm">
+                    Giá
+                  </label>
                   <input
                     type="number"
                     min={0}
                     className="border rounded-lg p-2 w-full text-sm"
                     value={newVariant.price}
-                    onChange={e => handleNewVariantChange("price", e.target.value)}
+                    onChange={(e) =>
+                      handleNewVariantChange("price", e.target.value)
+                    }
                     placeholder="Giá (đ)"
                     disabled={isSubmitting}
                   />
                 </div>
                 <div>
-                  <label className="font-semibold block mb-1 text-sm">Giảm giá (%)</label>
+                  <label className="font-semibold block mb-1 text-sm">
+                    Giảm giá (%)
+                  </label>
                   <input
                     type="number"
                     min={0}
                     className="border rounded-lg p-2 w-full text-sm"
                     value={newVariant.discountPercent || ""}
-                    onChange={e => handleNewVariantChange("discountPercent", e.target.value)}
+                    onChange={(e) =>
+                      handleNewVariantChange("discountPercent", e.target.value)
+                    }
                     placeholder="Giảm (%)"
                     disabled={isSubmitting}
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="font-semibold block mb-1 text-sm">Số lượng nhập kho</label>
+                  <label className="font-semibold block mb-1 text-sm">
+                    Số lượng nhập kho
+                  </label>
                   <input
                     type="number"
                     min={0}
                     className="border rounded-lg p-2 w-full text-sm"
                     value={newVariant.stock}
-                    onChange={e => handleNewVariantChange("stock", e.target.value)}
+                    onChange={(e) =>
+                      handleNewVariantChange("stock", e.target.value)
+                    }
                     placeholder="Số lượng sản phẩm"
                     disabled={isSubmitting}
                   />
@@ -566,9 +730,24 @@ export default function AddProductForm({ onClose, onAdded }: any) {
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
                   </svg>
                   Đang lưu...
                 </span>

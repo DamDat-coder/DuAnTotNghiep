@@ -51,6 +51,8 @@ export function ProductContent({ id }: { id: string }) {
 
   const stock = product.variants.reduce((sum, v) => sum + v.stock, 0);
 
+  const isOutOfStock = product.variants.every((v) => Number(v.stock) === 0);
+
   return (
     <div className="min-h-screen pb-14">
       <Container>
@@ -62,6 +64,7 @@ export function ProductContent({ id }: { id: string }) {
           sizes={sizes}
           stock={stock}
           suggestedProducts={suggestedProducts}
+          isOutOfStock={isOutOfStock}
         />
 
         {/* Desktop layout */}
@@ -71,6 +74,7 @@ export function ProductContent({ id }: { id: string }) {
             sizes={sizes}
             stock={stock}
             suggestedProducts={suggestedProducts}
+            isOutOfStock={isOutOfStock}
           />
         </div>
       </Container>

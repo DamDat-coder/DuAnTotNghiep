@@ -298,7 +298,7 @@ export const getNewsList = async (req: Request, res: Response): Promise<void> =>
         .find(query)
         .populate("user_id", "name email")
         .populate("category_id", "name")
-        .sort({ published_at: -1 }) 
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum),
       newsModel.countDocuments(query),

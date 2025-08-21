@@ -62,7 +62,6 @@ export default function FilterPopup({
   useEffect(() => {
     if (isOpen) {
       const parsed = parseFiltersFromSearchParams(searchParams);
-      console.log("Parsed filters:", parsed);
       setSelectedSort(parsed.sort_by || currentFilters?.sort_by || null);
       setSelectedCategory(parsed.id_cate || currentFilters?.id_cate || null);
       setMinPrice(parsed.minPrice || currentFilters?.minPrice || null);

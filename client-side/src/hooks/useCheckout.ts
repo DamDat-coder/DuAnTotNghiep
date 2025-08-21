@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
-import { initiatePayment, createOrder } from "@/services/orderApi";
+import { createOrder, initiatePayment } from "@/services/orderApi";
 import { fetchAllCoupons, validateCoupon } from "@/services/couponApi";
 import {
   addAddressWhenCheckout,
@@ -203,7 +203,7 @@ export const useCheckout = () => {
           const discountedPrice = Math.round(
             (selectedVariant.price ?? 0) *
               (1 - (selectedVariant.discountPercent ?? 0) / 100)
-            );
+          );
           const cartItem = {
             id: product.id,
             name: product.name,
@@ -407,7 +407,6 @@ export const useCheckout = () => {
   useEffect(() => {
     return () => {
       // Cleanup khi component unmount (rời khỏi /checkout)
-      console.log("đã rời");
       orderItems.forEach((item) => {
         dispatch({
           type: "updateSelected",
@@ -558,6 +557,7 @@ export const useCheckout = () => {
       return;
     }
 
+    // Kiểm tra formData
     const newErrors: CheckoutErrors = {
       fullName: "",
       email: "",
@@ -606,40 +606,64 @@ export const useCheckout = () => {
       }
 
       const couponId = await handleApplyDiscount();
-      const paymentInfo = {
-        orderId: generateOrderId(),
+      const orderInfo = {
         totalPrice: total,
-        userId: user.id,
-        email: formData.email,
-        orderInfo: {
-          shippingAddress: {
-            street: formData.address,
-            ward: formData.ward,
-            province: formData.province,
-            phone: formData.phone,
-          },
-          code: discountCode || null,
-          discountAmount: discount,
-          items: orderItems.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            color: item.color,
-            size: item.size,
-            price: item.originPrice || item.price,
-          })),
-          paymentMethod,
-          shipping: shippingFee,
+        shippingAddress: {
+          street: formData.address,
+          ward: formData.ward,
+          province: formData.province,
+          phone: formData.phone,
         },
+        code: discountCode || null,
+        discountAmount: discount,
+        items: orderItems.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          originPrice: item.originPrice,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity,
+        })),
+        paymentMethod,
+        shipping: shippingFee,
+        email: formData.email,
       };
 
-      const paymentResponse = await initiatePayment(paymentInfo);
-      if (paymentInfo.orderInfo.paymentMethod === "cod") {
-        localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
-        localStorage.setItem("pendingUserId", user.id);
+      // Log dữ liệu trước khi gửi
+      console.log(
+        "DEBUG: orderInfo before createOrder:",
+        JSON.stringify(orderInfo, null, 2)
+      );
+
+      if (paymentMethod === "cod") {
+        const orderResponse = await createOrder(
+          user.id,
+          orderInfo.items,
+          orderInfo.shippingAddress,
+          total,
+          discount,
+          paymentMethod,
+          shippingFee,
+          formData.email,
+          discountCode || null
+        );
+        localStorage.setItem("paymentMethod", "cod"); // Lưu paymentMethod cho COD
         window.location.href = "/payment/success";
       } else {
+        const paymentInfo = {
+          orderId: generateOrderId(),
+          totalPrice: total,
+          userId: user.id,
+          email: formData.email,
+          orderInfo,
+        };
+        const paymentResponse = await initiatePayment(paymentInfo);
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
+        localStorage.setItem("paymentMethod", paymentMethod); // Lưu paymentMethod
+        localStorage.setItem("orderInfo", JSON.stringify(orderInfo)); // Lưu orderInfo
         if (paymentResponse.paymentUrl) {
           window.location.href = paymentResponse.paymentUrl;
         } else {
@@ -647,6 +671,10 @@ export const useCheckout = () => {
         }
       }
     } catch (error: any) {
+      console.error(
+        "DEBUG: Error in handleSubmit:",
+        JSON.stringify(error, null, 2)
+      );
       toast.error(error.message || "Không thể tạo đơn hàng!");
     }
   };

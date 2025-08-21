@@ -9,8 +9,12 @@ import ShippingForm from "@/components/Checkout/Infomation/ShippingForm";
 import ShippingMethod from "@/components/Checkout/Infomation/ShippingMethod";
 import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
 import AddressPopup from "@/components/Checkout/Address/AddressPopup";
-import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
+import ProductSwiper from "@/components/Home/ProductSection/ProductSwiper";
+import { Toaster, toast } from "react-hot-toast";
+import { useEffect, useState, useMemo } from "react";
+import { recommendProducts } from "@/services/productApi";
+import { IProduct } from "@/types/product";
+import { useCartDispatch } from "@/contexts/CartContext";
 
 export default function Checkout() {
   const {
@@ -42,6 +46,21 @@ export default function Checkout() {
     handleSelectAddress,
     availableCoupons = [],
   } = useCheckout();
+  const dispatch = useCartDispatch();
+  const [suggestedProducts, setSuggestedProducts] = useState<IProduct[]>([]);
+  const [isBuyNowPopupOpen, setIsBuyNowPopupOpen] = useState(false);
+  const [isAddToCartPopupOpen, setIsAddToCartPopupOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+
+  // Memo hóa selectedItemIds
+  const selectedItemIds = useMemo(() => {
+    const ids = [
+      ...new Set(
+        orderItems.filter((item) => item.selected).map((item) => item.id)
+      ),
+    ];
+    return ids;
+  }, [orderItems]);
 
   useEffect(() => {
     if (isAddressPopupOpen) {
@@ -53,6 +72,41 @@ export default function Checkout() {
       document.body.classList.remove("overflow-hidden");
     };
   }, [isAddressPopupOpen]);
+
+  // Fetch gợi ý sản phẩm
+  useEffect(() => {
+    async function fetchSuggestedProducts() {
+      try {
+        const response = await recommendProducts({
+          viewed: selectedItemIds,
+          cart: [],
+        });
+        setSuggestedProducts(response.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
+        toast.error("Không thể tải sản phẩm gợi ý");
+        setSuggestedProducts([]);
+      }
+    }
+
+    if (selectedItemIds.length > 0) {
+      fetchSuggestedProducts();
+    } else {
+      setSuggestedProducts([]);
+    }
+  }, []);
+
+  const handleAddToCart = (product: IProduct, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedProduct(product);
+    setIsAddToCartPopupOpen(true);
+  };
+
+  const handleBuyNow = (product: IProduct, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedProduct(product);
+    setIsBuyNowPopupOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -141,6 +195,25 @@ export default function Checkout() {
                   Xác Nhận Đơn Hàng
                 </button>
               </form>
+              <div className="mb-4 mt-9">
+                {suggestedProducts.length > 0 ? (
+                  <>
+                    <h2 className="text-xl font-semibold mb-4">
+                      Sản phẩm gợi ý
+                    </h2>
+                    <ProductSwiper
+                      products={suggestedProducts}
+                      slidesPerView={2.5}
+                      onAddToCart={handleAddToCart}
+                      onBuyNow={handleBuyNow}
+                    />
+                  </>
+                ) : (
+                  <p className="text-center text-gray-500">
+                    Không có sản phẩm gợi ý.
+                  </p>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -153,7 +226,6 @@ export default function Checkout() {
             </p>
           ) : (
             <>
-              {/* Container trái */}
               <div className="w-2/3 flex flex-col gap-6">
                 <form
                   onSubmit={handleSubmit}
@@ -180,9 +252,26 @@ export default function Checkout() {
                     }
                   />
                 </form>
+                <div className="mb-4 mt-9">
+                  {suggestedProducts.length > 0 ? (
+                    <>
+                      <h2 className="text-xl font-semibold mb-4">
+                        Sản phẩm gợi ý
+                      </h2>
+                      <ProductSwiper
+                        products={suggestedProducts}
+                        slidesPerView={2.5}
+                        onAddToCart={handleAddToCart}
+                        onBuyNow={handleBuyNow}
+                      />
+                    </>
+                  ) : (
+                    <p className="text-center text-gray-500">
+                      Không có sản phẩm gợi ý.
+                    </p>
+                  )}
+                </div>
               </div>
-
-              {/* Container phải */}
               <div className="w-[31.875rem] sticky top-4 self-start">
                 <div className="flex justify-between items-center mb-8">
                   <h1 className="text-lg font-bold">

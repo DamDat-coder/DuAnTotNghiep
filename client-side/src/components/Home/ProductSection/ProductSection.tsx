@@ -5,7 +5,6 @@ import { IProduct } from "@/types/product";
 import { useAuth } from "@/contexts/AuthContext";
 import BuyNowPopup from "../../Core/Layout/BuyNowButton/BuyNowPopup";
 import AddToCartPopup from "../../Cart/AddToCart/AddToCartPopup";
-import ProductCard from "./ProductCard";
 import ProductSwiper from "./ProductSwiper";
 import { Suspense } from "react";
 
@@ -124,7 +123,7 @@ export default function ProductSection({
   return (
     <div role="region" aria-label="Danh sách sản phẩm mới nhất">
       <h1 className="text-[1.5rem] pb-6 font-heading font-bold">
-        Mới Nhất & Tốt Nhất
+        Bán Chạy Nhất
       </h1>
 
       {/* Mobile */}

@@ -53,7 +53,7 @@ export default function EditReviewModal({
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
             >
               <Image
-                src="/admin_user/group.svg"
+                src="https://res.cloudinary.com/testupload1/image/upload/v1755272889/group_wnydzc.svg"
                 width={10}
                 height={10}
                 alt="close"

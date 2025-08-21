@@ -5,6 +5,7 @@ import Link from "next/link";
 import { IProduct } from "@/types/product";
 import { getLowestPriceVariant } from "@/utils/product";
 import WishlistButton from "@/components/Core/Layout/WishlistButton/WishlistButton";
+import { ShoppingCartIcon } from "lucide-react";
 
 type Props = {
   product: IProduct;
@@ -20,14 +21,43 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
     <div className="w-full flex flex-col bg-white relative">
       <div className="product w-full h-auto font-description">
         {/* Ảnh sản phẩm */}
-        <Image
-          src={product.images[0]}
-          alt={product.name || "Sản phẩm"}
-          width={363}
-          height={363}
-          className="w-full h-[16.8125rem] laptop:h-[18.3125rem] desktop:h-[24.0625rem] object-cover"
-          draggable={false}
-        />
+        <div className="relative">
+          {/* Lớp phủ nền đen nếu hết hàng */}
+          {product.variants.every((v) => Number(v.stock) === 0) && (
+            <div className="absolute inset-0 bg-black/80 rounded-xl z-10"></div>
+          )}
+          {/* Ảnh sản phẩm */}
+          <Image
+            src={product.images[0] || "/no-image.png"}
+            alt={product.name}
+            width={300}
+            height={300}
+            className={`object-cover w-full h-[300px] rounded-xl transition-all duration-300 ${
+              product.variants.every((v) => Number(v.stock) === 0)
+                ? "opacity-40 blur-[2px]"
+                : ""
+            }`}
+            draggable={false}
+          />
+          {/* Dòng chữ hết hàng nằm chéo */}
+          {product.variants.every((v) => Number(v.stock) === 0) && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl pointer-events-none z-20">
+              <span
+                className="text-white font-heading text-[32px] font-bold px-6 py-3 rounded-xl select-none"
+                style={{
+                  transform: "rotate(-45deg)",
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  translate: "-50% -50%",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Sản phẩm hết hàng
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Hiển thị tag giảm giá nếu có */}
         {discountPercent > 0 && (
@@ -69,7 +99,7 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
           </div>
 
           {/* Nút hành động: xem chi tiết & mua ngay */}
-          <div className="flex gap-3 font-heading">
+          <div className="flex gap-3 font-heading flex-col-reverse tablet:flex-row">
             <Link
               href={`/products/${product.id}`}
               className="flex items-center justify-center p-2 border border-black border-solid rounded text-sm laptop:text-base desktop:text-base"
@@ -78,10 +108,13 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
             </Link>
             <button
               onClick={(e) => onBuyNow(product, e)}
-              className="flex items-center justify-cente p-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base desktop:text-base"
-              aria-label={`Mua ngay sản phẩm ${product.name}`}
+              className="flex items-center justify-center gap-1 px-3 py-2 laptop:px-4 laptop:py-3 border border-black bg-black text-white rounded font-bold text-sm laptop:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={product.variants.every((v) => Number(v.stock) === 0)}
             >
-              Mua ngay
+              <ShoppingCartIcon className="w-4 h-4 laptop:hidden desktop:hidden" />
+              <span className="hidden tablet:inline laptop:inline desktop:inline">
+                Mua ngay
+              </span>
             </button>
           </div>
         </div>

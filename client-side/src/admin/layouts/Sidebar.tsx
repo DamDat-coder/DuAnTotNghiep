@@ -76,11 +76,17 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="fixed top-0 left-0 h-screen w-[285px] bg-black text-white flex flex-col rounded-r-3xl z-50">
+    <div
+      className="
+        fixed top-0 left-0 h-screen
+        w-[240px] desktop:w-[285px]
+        bg-black text-white flex flex-col rounded-r-3xl z-50
+      "
+    >
       <div className="p-4 flex flex-col gap-12 w-full h-auto">
         <Link href="/admin/dashboard">
           <Image
-            src="/nav/logoWhite.svg"
+            src="https://res.cloudinary.com/testupload1/image/upload/v1755232178/logoTrang_dl2asd.png"
             alt="Logo Công Ty"
             width={120}
             height={40}
@@ -88,28 +94,37 @@ export default function Sidebar() {
         </Link>
         <h1 className="text-[1.5rem] font-bold">MENU</h1>
       </div>
-      <ul className="flex-1 flex flex-col gap-4 p-4">
-        {sidebarItems.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              className={`flex items-center gap-3 p-2 rounded ${
-                isActive(item.href)
-                  ? "bg-[#ECF8FF] py-3 px-3 ml-4 rounded-xl text-black"
-                  : "hover:bg-gray-800"
-              }`}
-            >
-              <Image
-                src={isActive(item.href) ? item.iconActive : item.icon}
-                alt={item.label}
-                width={20}
-                height={20}
-              />
-              <span className="text-lg">{item.label}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <nav
+        className="
+            flex-1
+            laptop:overflow-y-auto        /* bật cuộn dọc ở laptop */
+            desktop:overflow-y-visible    /* desktop giữ nguyên */
+            laptop:pr-2                   /* chừa rãnh cho scrollbar ở laptop */
+          "
+      >
+        <ul className="flex flex-col gap-4 p-4 pb-6 min-h-0">
+          {sidebarItems.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={`flex items-center gap-3 p-2 rounded ${
+                  isActive(item.href)
+                    ? "bg-[#ECF8FF] py-3 px-3 ml-4 rounded-xl text-black"
+                    : "hover:bg-gray-800"
+                }`}
+              >
+                <Image
+                  src={isActive(item.href) ? item.iconActive : item.icon}
+                  alt={item.label}
+                  width={20}
+                  height={20}
+                />
+                <span className="text-lg">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }

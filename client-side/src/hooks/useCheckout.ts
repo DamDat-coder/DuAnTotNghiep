@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
-import { initiatePayment, createOrder } from "@/services/orderApi";
+import { createOrder, initiatePayment } from "@/services/orderApi";
 import { fetchAllCoupons, validateCoupon } from "@/services/couponApi";
 import {
   addAddressWhenCheckout,
@@ -265,6 +265,7 @@ export const useCheckout = () => {
     return result;
   };
 
+  // Đồng bộ formData với user và chọn địa chỉ hiển thị
   useEffect(() => {
     if (user && user.addresses) {
       setFormData((prev) => ({
@@ -307,6 +308,7 @@ export const useCheckout = () => {
     }
   }, [user, selectedAddress]);
 
+  // Xử lý phí vận chuyển và tổng tiền
   useEffect(() => {
     let newShippingFee = shippingMethod === "standard" ? 25000 : 35000;
 
@@ -334,6 +336,7 @@ export const useCheckout = () => {
     setTotal(subtotal - discount + newShippingFee);
   }, [subtotal, discount, shippingMethod, isFreeShipping]);
 
+  // Áp dụng mã giảm giá từ localStorage
   useEffect(() => {
     const savedCouponCode = localStorage.getItem("pendingCouponCode");
     if (!savedCouponCode) return;
@@ -400,6 +403,25 @@ export const useCheckout = () => {
     applyCoupon();
   }, [subtotal, orderItems]);
 
+  // Reset selected khi rời khỏi /checkout
+  useEffect(() => {
+    return () => {
+      // Cleanup khi component unmount (rời khỏi /checkout)
+      orderItems.forEach((item) => {
+        dispatch({
+          type: "updateSelected",
+          id: item.id,
+          size: item.size,
+          color: item.color,
+          selected: false,
+        });
+      });
+      localStorage.removeItem("recentBuyNow");
+      localStorage.removeItem("pendingBuyNow");
+    };
+  }, []); // Không có dependency để chỉ chạy cleanup khi component unmount
+
+  // Xử lý thay đổi phương thức vận chuyển
   const handleShippingChange = (method: string) => {
     setShippingMethod(method);
     let newShippingFee = method === "standard" ? 25000 : 35000;
@@ -419,12 +441,14 @@ export const useCheckout = () => {
     setShippingFee(newShippingFee);
   };
 
+  // Xử lý thay đổi input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  // Xử lý thay đổi select
   const handleSelectChange = (name: string, option: any) => {
     setFormData((prev) => ({ ...prev, [name]: option ? option.value : "" }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -434,10 +458,12 @@ export const useCheckout = () => {
     setSelectedAddress(null);
   };
 
+  // Xử lý thay đổi phương thức thanh toán
   const handlePaymentChange = (method: string) => {
     setPaymentMethod(method);
   };
 
+  // Xử lý áp dụng mã giảm giá
   const handleApplyDiscount = async () => {
     if (!discountCode) {
       setDiscount(0);
@@ -501,6 +527,7 @@ export const useCheckout = () => {
     }
   };
 
+  // Xử lý chọn địa chỉ
   const handleSelectAddress = async (address: Address) => {
     setSelectedAddress(address);
     setIsAddressPopupOpen(false);
@@ -513,6 +540,7 @@ export const useCheckout = () => {
     }));
   };
 
+  // Xử lý submit form
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
@@ -529,6 +557,7 @@ export const useCheckout = () => {
       return;
     }
 
+    // Kiểm tra formData
     const newErrors: CheckoutErrors = {
       fullName: "",
       email: "",
@@ -577,38 +606,64 @@ export const useCheckout = () => {
       }
 
       const couponId = await handleApplyDiscount();
-      const paymentInfo = {
-        orderId: generateOrderId(),
+      const orderInfo = {
         totalPrice: total,
-        userId: user.id,
-        orderInfo: {
-          shippingAddress: {
-            street: formData.address,
-            ward: formData.ward,
-            province: formData.province,
-            phone: formData.phone,
-          },
-          code: discountCode || null,
-          items: orderItems.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            color: item.color,
-            size: item.size,
-            price: item.originPrice || item.price,
-          })),
-          paymentMethod,
-          shipping: shippingFee,
+        shippingAddress: {
+          street: formData.address,
+          ward: formData.ward,
+          province: formData.province,
+          phone: formData.phone,
         },
+        code: discountCode || null,
+        discountAmount: discount,
+        items: orderItems.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          originPrice: item.originPrice,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity,
+        })),
+        paymentMethod,
+        shipping: shippingFee,
+        email: formData.email,
       };
 
-      const paymentResponse = await initiatePayment(paymentInfo);
-      if (paymentInfo.orderInfo.paymentMethod === "cod") {
-        localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
-        localStorage.setItem("pendingUserId", user.id);
+      // Log dữ liệu trước khi gửi
+      console.log(
+        "DEBUG: orderInfo before createOrder:",
+        JSON.stringify(orderInfo, null, 2)
+      );
+
+      if (paymentMethod === "cod") {
+        const orderResponse = await createOrder(
+          user.id,
+          orderInfo.items,
+          orderInfo.shippingAddress,
+          total,
+          discount,
+          paymentMethod,
+          shippingFee,
+          formData.email,
+          discountCode || null
+        );
+        localStorage.setItem("paymentMethod", "cod"); // Lưu paymentMethod cho COD
         window.location.href = "/payment/success";
       } else {
+        const paymentInfo = {
+          orderId: generateOrderId(),
+          totalPrice: total,
+          userId: user.id,
+          email: formData.email,
+          orderInfo,
+        };
+        const paymentResponse = await initiatePayment(paymentInfo);
         localStorage.setItem("pendingPaymentId", paymentResponse.paymentId);
         localStorage.setItem("pendingUserId", user.id);
+        localStorage.setItem("paymentMethod", paymentMethod); // Lưu paymentMethod
+        localStorage.setItem("orderInfo", JSON.stringify(orderInfo)); // Lưu orderInfo
         if (paymentResponse.paymentUrl) {
           window.location.href = paymentResponse.paymentUrl;
         } else {
@@ -616,7 +671,11 @@ export const useCheckout = () => {
         }
       }
     } catch (error: any) {
-      toast.error(error.essage || "Không thể tạo đơn hàng!");
+      console.error(
+        "DEBUG: Error in handleSubmit:",
+        JSON.stringify(error, null, 2)
+      );
+      toast.error(error.message || "Không thể tạo đơn hàng!");
     }
   };
 

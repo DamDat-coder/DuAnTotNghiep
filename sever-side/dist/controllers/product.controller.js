@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductsActiveStatus = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = void 0;
+exports.lockProduct = exports.updateProduct = exports.createProduct = exports.getProductBySlug = exports.getProductsActiveStatus = exports.getProductById = exports.getAllProductsAdmin = exports.getAllProducts = exports.recommendProducts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const category_model_1 = __importDefault(require("../models/category.model"));
@@ -22,6 +22,61 @@ const notification_model_1 = __importDefault(require("../models/notification.mod
 const slugify_1 = __importDefault(require("slugify"));
 const category_util_1 = require("../utils/category.util");
 const string_util_1 = require("../utils/string.util");
+const recommendation_1 = require("../ai/recommendation");
+const recommendProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userBehavior = {
+            viewed: req.body.viewed || [],
+            cart: req.body.cart || [],
+        };
+        const excludedIds = [...userBehavior.viewed, ...userBehavior.cart];
+        const products = yield product_model_1.default
+            .find({
+            is_active: true,
+            _id: { $nin: excludedIds },
+        })
+            .populate("category", "slug name")
+            .select("_id name category")
+            .limit(60)
+            .lean();
+        const aiResult = yield (0, recommendation_1.getOutfitRecommendations)(userBehavior, products);
+        // ✅ lọc ObjectId hợp lệ
+        const validRecommendations = aiResult.recommendations.filter((id) => mongoose_1.default.Types.ObjectId.isValid(id));
+        if (validRecommendations.length === 0) {
+            return res.json({
+                success: true,
+                outfits: {
+                    basic: aiResult.basic_outfit,
+                    layered: aiResult.layered_outfit,
+                },
+                data: [],
+            });
+        }
+        const recommendedProducts = yield product_model_1.default.find({
+            _id: { $in: validRecommendations },
+        });
+        return res.json({
+            success: true,
+            outfits: {
+                basic: aiResult.basic_outfit,
+                layered: aiResult.layered_outfit,
+            },
+            data: recommendedProducts,
+        });
+    }
+    catch (err) {
+        console.error("Recommend Error:", err);
+        // Nếu lỗi là CastError của Mongo thì trả về lỗi gọn gàng
+        if (err.name === "CastError") {
+            return res.status(400).json({
+                status: "error",
+                message: "ID sản phẩm không hợp lệ (ObjectId không đúng định dạng)",
+            });
+        }
+        res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+    }
+});
+exports.recommendProducts = recommendProducts;
 // Lấy tất cả sản phẩm cho người dùng
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

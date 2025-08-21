@@ -63,7 +63,6 @@ export const getNewsList = async (
     });
 
     const url = `${API_BASE_URL}/news?${params}`;
-    console.log("URL gọi API:", url);
 
     const result = (await fetchWithAuth(url, {
       method: "GET",
@@ -161,8 +160,6 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
       formDataEntries[key] =
         value instanceof File ? value.name : value.toString();
     }
-    console.log("FormData entries:", formDataEntries);
-
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
       `${API_BASE_URL}/news`,
       {
@@ -177,8 +174,6 @@ export const createNews = async (payload: NewsPayload): Promise<News> => {
     if (!result.data) {
       throw new Error(result.message || "Không thể tạo tin tức");
     }
-
-    console.log("API response:", result);
 
     return {
       ...result.data,
@@ -250,8 +245,6 @@ export const updateNews = async (
       formDataEntries[key] =
         value instanceof File ? value.name : value.toString();
     }
-    console.log("FormData entries:", formDataEntries);
-
     const result: ApiResponse<News> = await fetchWithAuth<ApiResponse<News>>(
       `${API_BASE_URL}/news/${id}`,
       {
@@ -268,8 +261,6 @@ export const updateNews = async (
         result.message || "Không thể cập nhật tin tức, không có dữ liệu trả về"
       );
     }
-
-    console.log("API response:", result);
 
     return result.data;
   } catch (error: any) {

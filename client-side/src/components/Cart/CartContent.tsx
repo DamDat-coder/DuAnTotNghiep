@@ -6,7 +6,10 @@ import { CartMobile, CartDesktop } from "@/components/Cart";
 import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { IProduct } from "@/types/product";
-import { fetchProducts, fetchProductsActiveStatus } from "@/services/productApi";
+import {
+  fetchProductsActiveStatus,
+  recommendProducts,
+} from "@/services/productApi"; // Thêm recommendProducts
 import { Toaster } from "react-hot-toast";
 
 export default function Cart() {
@@ -38,7 +41,6 @@ export default function Cart() {
           }),
           {} as { [key: string]: boolean }
         );
-        console.log("DEBUG Cart - Products active status", { statusMap, productIds });
         setProductsActiveStatus(statusMap);
 
         // Tự động bỏ chọn sản phẩm is_active: false
@@ -67,10 +69,31 @@ export default function Cart() {
     );
   }, [cart.items, productsActiveStatus]);
 
+  useEffect(() => {
+    async function getSuggestedProducts() {
+      try {
+        // Lấy danh sách ID sản phẩm từ giỏ hàng
+        const cartIds = [...new Set(cart.items.map((item) => item.id))];
+        const userBehavior = {
+          viewed: [],
+          cart: cartIds,
+        };
+        const response = await recommendProducts(userBehavior);
+        setSuggestedProducts(response.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
+        setSuggestedProducts([]);
+      }
+    }
+    getSuggestedProducts();
+  }, [cart.items]);
+
   const totalPrice = useMemo(
     () =>
       cart.items
-        .filter((item) => item.selected && productsActiveStatus[item.id] !== false)
+        .filter(
+          (item) => item.selected && productsActiveStatus[item.id] !== false
+        )
         .reduce(
           (sum, item) =>
             sum + item.price * (1 - item.discountPercent / 100) * item.quantity,
@@ -114,19 +137,6 @@ export default function Cart() {
   const removeItem = (id: string, size: string, color: string) => {
     dispatch({ type: "remove", id, size, color });
   };
-
-  useEffect(() => {
-    async function getSuggestedProducts() {
-      try {
-        const response = await fetchProducts({ is_active: true });
-        setSuggestedProducts(response.data || []);
-      } catch (error) {
-        console.error("Failed to fetch suggested products:", error);
-        setSuggestedProducts([]);
-      }
-    }
-    getSuggestedProducts();
-  }, []);
 
   return (
     <div className="py-8">

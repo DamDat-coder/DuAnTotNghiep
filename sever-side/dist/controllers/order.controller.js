@@ -13,90 +13,112 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateRevenue = exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
-const mongoose_1 = __importDefault(require("mongoose"));
+
+const mongoose_1 = require("mongoose");
+const mongoose_2 = __importDefault(require("mongoose"));
+const dayjs_1 = __importDefault(require("dayjs"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
-const product_model_1 = __importDefault(require("../models/product.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const mailer_1 = require("../utils/mailer");
 const generateTransactionCode_1 = require("../utils/generateTransactionCode");
-// Tạo đơn hàng
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { paymentId, order_info } = req.body;
-        let userId;
-        let paymentMethod;
-        let shippingAddress;
-        let items;
-        let shipping = 0;
-        let discountAmount = 0;
-        let email = undefined;
-        let couponCode = null;
-        if (paymentId) {
+        const { paymentId, userId, items, shippingAddress, totalPrice, discountAmount, paymentMethod, shipping, email, couponCode, } = req.body;
+        // Log toàn bộ body nhận được
+        console.log("DEBUG: Request body in createOrder:", JSON.stringify(req.body, null, 2));
+        // Kiểm tra dữ liệu đầu vào
+        if (!userId ||
+            !items ||
+            !Array.isArray(items) ||
+            !shippingAddress ||
+            !shippingAddress.street ||
+            !shippingAddress.ward ||
+            !shippingAddress.province ||
+            !shippingAddress.phone ||
+            !totalPrice ||
+            !paymentMethod) {
+            console.error("DEBUG: Missing required fields:", {
+                userId: !!userId,
+                items: !!items,
+                isArrayItems: Array.isArray(items),
+                shippingAddress: !!shippingAddress,
+                street: !!(shippingAddress === null || shippingAddress === void 0 ? void 0 : shippingAddress.street),
+                ward: !!(shippingAddress === null || shippingAddress === void 0 ? void 0 : shippingAddress.ward),
+                province: !!(shippingAddress === null || shippingAddress === void 0 ? void 0 : shippingAddress.province),
+                phone: !!(shippingAddress === null || shippingAddress === void 0 ? void 0 : shippingAddress.phone),
+                totalPrice: !!totalPrice,
+                paymentMethod: !!paymentMethod,
+            });
+            return res
+                .status(400)
+                .json({ success: false, message: "Thiếu thông tin cần thiết." });
+        }
+        // Log items từ body
+        console.log("DEBUG: items from body in createOrder:", JSON.stringify(items, null, 2));
+        // Kiểm tra từng item
+        for (const item of items) {
+            if (!item.productId ||
+                !item.name ||
+                !item.image ||
+                !item.price ||
+                !item.color ||
+                !item.size ||
+                !item.quantity) {
+                console.error("DEBUG: Invalid item in createOrder:", item);
+                return res.status(400).json({
+                    success: false,
+                    message: "Thông tin sản phẩm không đầy đủ.",
+                });
+            }
+        }
+        // Kiểm tra Payment nếu không phải COD
+        if (paymentMethod !== "cod" && paymentId) {
             const payment = yield payment_model_1.default.findById(paymentId);
             if (!payment || !payment.order_info || !payment.userId) {
-                return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
+                return res.status(400).json({
+                    success: false,
+                    message: "Thông tin thanh toán không hợp lệ.",
+                });
             }
-            if (payment.status !== 'success') {
-                return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
+            if (payment.status !== "success") {
+                return res
+                    .status(400)
+                    .json({ success: false, message: "Thanh toán chưa hoàn tất." });
             }
+        }
+        // Kiểm tra đơn hàng đã tồn tại (chỉ nếu có paymentId)
+        if (paymentId) {
             const existed = yield order_model_1.default.findOne({ paymentId });
             if (existed) {
-                return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
-            }
-            ({ paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info);
-            discountAmount = payment.discount_amount || 0;
-            userId = payment.userId;
-        }
-        else {
-            if (!order_info) {
-                return res.status(400).json({ success: false, message: 'Thiếu thông tin đơn hàng.' });
-            }
-            ({ paymentMethod, userId, shippingAddress, items, shipping = 0, code: couponCode, email } = order_info);
-            if (paymentMethod !== 'cod') {
-                return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
+                return res.status(409).json({
+                    success: false,
+                    message: "Đơn hàng đã được tạo từ giao dịch này.",
+                });
             }
         }
-        const orderItems = [];
-        let totalPrice = 0;
-        for (const item of items) {
-            const product = yield product_model_1.default.findById(item.product || item.productId);
-            if (!product) {
-                return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm.' });
-            }
-            const variantData = item.variant || item;
-            const variant = product.variants.find(v => v.color === variantData.color && v.size === variantData.size);
-            if (!variant || variant.stock < item.quantity) {
-                return res.status(400).json({ success: false, message: 'Biến thể không hợp lệ hoặc hết hàng.' });
-            }
-            const discountPrice = variant.price * (1 - variant.discountPercent / 100);
-            totalPrice += discountPrice * item.quantity;
-            orderItems.push({
-                productId: product._id,
-                name: product.name,
-                image: product.image[0] || '',
-                color: variantData.color,
-                size: variantData.size,
-                price: discountPrice,
-                quantity: item.quantity,
-            });
-            variant.stock -= item.quantity;
-            product.salesCount += item.quantity;
-            yield product.save();
-        }
-        totalPrice = totalPrice - discountAmount + shipping;
+        // Chuyển đổi productId thành ObjectId
+        const formattedItems = items.map((item) => ({
+            productId: new mongoose_1.Types.ObjectId(item.productId),
+            name: item.name,
+            image: item.image,
+            price: item.price,
+            color: item.color,
+            size: item.size,
+            quantity: item.quantity,
+        }));
         const orderCode = yield (0, generateTransactionCode_1.generateUniqueTransactionCode)("4U");
         const order = yield order_model_1.default.create({
-            userId,
+            userId: new mongoose_1.Types.ObjectId(userId),
             shippingAddress,
             totalPrice,
-            discountAmount,
-            shipping,
+            discountAmount: discountAmount || 0,
+            shipping: shipping || 0,
             paymentMethod,
-            items: orderItems,
-            paymentId: paymentId || null,
+            items: formattedItems,
+            paymentId: paymentId ? new mongoose_1.Types.ObjectId(paymentId) : null,
             orderCode,
             email: email || null,
             couponCode: couponCode || null,
@@ -104,35 +126,43 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (couponCode) {
             yield coupon_model_1.default.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
         }
+        // Gửi thông báo cho user
         yield notification_model_1.default.create({
             userId,
-            title: 'Đơn hàng của bạn đã được tạo thành công!',
+            title: "Đơn hàng của bạn đã được tạo thành công!",
             message: `Đơn hàng #${order.orderCode} đã được xác nhận.`,
-            type: 'order',
+            type: "order",
             isRead: false,
             link: `/profile?tab=order/${order._id}`,
         });
-        const admins = yield user_model_1.default.find({ role: 'admin' }).select('_id').lean();
-        const notis = admins.map(admin => ({
+        // Gửi thông báo cho admin
+        const admins = yield user_model_1.default.find({ role: "admin" })
+            .select("_id")
+            .lean();
+        const notis = admins.map((admin) => ({
             userId: admin._id,
-            title: 'Có đơn hàng mới!',
+            title: "Có đơn hàng mới!",
             message: `Đơn hàng #${order.orderCode} vừa được tạo.`,
-            type: 'order',
+            type: "order",
             isRead: false,
         }));
         yield notification_model_1.default.insertMany(notis);
-        return res.status(201).json({ success: true, message: 'Tạo đơn hàng thành công.', data: order });
+        return res.status(201).json({
+            success: true,
+            message: "Tạo đơn hàng thành công.",
+            data: order,
+        });
     }
     catch (err) {
-        console.error('Lỗi tạo đơn hàng:', err);
-        return res.status(500).json({ success: false, message: 'Lỗi máy chủ.' });
+        console.error("Lỗi tạo đơn hàng:", err);
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
     }
 });
 exports.createOrder = createOrder;
 // Lấy tất cả đơn hàng (Admin)
 const getOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { page = "1", limit = "10", search, status, } = req.query;
+        const { page = "1", limit = "10", search, status } = req.query;
         const pageNum = Math.max(parseInt(page), 1);
         const limitNum = Math.max(parseInt(limit), 1);
         const skip = (pageNum - 1) * limitNum;
@@ -198,7 +228,9 @@ const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             .populate("userId", "name email")
             .populate("paymentId", "amount status paymentMethod");
         if (!order) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy đơn hàng." });
         }
         res.status(200).json({ success: true, data: order });
     }
@@ -207,21 +239,34 @@ const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getOrderById = getOrderById;
-// Cập nhật trạng thái đơn hàng 
+// Cập nhật trạng thái đơn hàng
 const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled", "fake"];
+        const validStatuses = [
+            "pending",
+            "confirmed",
+            "shipping",
+            "delivered",
+            "cancelled",
+            "fake",
+        ];
         if (!validStatuses.includes(status)) {
-            return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ." });
+            return res
+                .status(400)
+                .json({ success: false, message: "Trạng thái không hợp lệ." });
         }
-        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: "ID đơn hàng không hợp lệ." });
+        if (!mongoose_2.default.Types.ObjectId.isValid(id)) {
+            return res
+                .status(400)
+                .json({ success: false, message: "ID đơn hàng không hợp lệ." });
         }
         const order = yield order_model_1.default.findByIdAndUpdate(id, { status }, { new: true }).populate("userId", "name email");
         if (!order || !order.userId) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy đơn hàng." });
         }
         const user = order.userId;
         yield notification_model_1.default.create({
@@ -278,13 +323,22 @@ const cancelOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         const order = yield order_model_1.default.findById(req.params.id);
         if (!order)
-            return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy đơn hàng." });
         if (order.status !== "pending") {
-            return res.status(400).json({ success: false, message: "Chỉ có thể huỷ đơn hàng đang chờ xử lý." });
+            return res.status(400).json({
+                success: false,
+                message: "Chỉ có thể huỷ đơn hàng đang chờ xử lý.",
+            });
         }
         order.status = "cancelled";
         yield order.save();
-        res.status(200).json({ success: true, message: "Huỷ đơn hàng thành công.", data: order });
+        res.status(200).json({
+            success: true,
+            message: "Huỷ đơn hàng thành công.",
+            data: order,
+        });
     }
     catch (err) {
         res.status(500).json({ success: false, message: "Lỗi máy chủ." });
@@ -292,7 +346,6 @@ const cancelOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.cancelOrder = cancelOrder;
 // Tính doanh thu
-const dayjs_1 = __importDefault(require("dayjs"));
 const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { range = "today", from, to } = req.query;
@@ -337,11 +390,8 @@ const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, functio
                 return;
         }
         const match = {
-            $or: [
-                { status: "delivered" },
-                { status: "confirmed" }
-            ],
-            createdAt: { $gte: startDate, $lte: endDate }
+            $or: [{ status: "delivered" }, { status: "confirmed" }],
+            createdAt: { $gte: startDate, $lte: endDate },
         };
         const result = yield order_model_1.default.aggregate([
             { $match: match },
@@ -350,8 +400,8 @@ const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, functio
                     _id: null,
                     totalRevenue: { $sum: "$totalPrice" },
                     totalShippingFee: { $sum: { $ifNull: ["$shippingFee", 0] } },
-                    orderCount: { $sum: 1 }
-                }
+                    orderCount: { $sum: 1 },
+                },
             },
             {
                 $project: {
@@ -359,9 +409,9 @@ const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, functio
                     totalRevenue: 1,
                     totalShippingFee: 1,
                     grandTotal: { $add: ["$totalRevenue", "$totalShippingFee"] },
-                    orderCount: 1
-                }
-            }
+                    orderCount: 1,
+                },
+            },
         ]);
         res.json({
             status: "success",
@@ -369,15 +419,15 @@ const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, functio
                 totalRevenue: 0,
                 totalShippingFee: 0,
                 grandTotal: 0,
-                orderCount: 0
-            }
+                orderCount: 0,
+            },
         });
     }
     catch (error) {
         console.error("Error calculating total revenue:", error);
         res.status(500).json({
             status: "error",
-            message: "Lỗi máy chủ khi tính tổng doanh thu"
+            message: "Lỗi máy chủ khi tính tổng doanh thu",
         });
     }
 });

@@ -43,12 +43,18 @@ function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
     }));
 }
 
-function renderCategoryOptions(nodes: ICategory[], depth = 0, path = ""): React.ReactElement[] {
+function renderCategoryOptions(
+  nodes: ICategory[],
+  depth = 0,
+  path = ""
+): React.ReactElement[] {
   return nodes.flatMap((cat) => [
-    <option key={path + (cat._id)} value={cat._id}>
+    <option key={path + cat._id} value={cat._id}>
       {"—".repeat(depth)} {cat.name}
     </option>,
-    ...(cat.children ? renderCategoryOptions(cat.children, depth + 1, path + (cat._id)) : []),
+    ...(cat.children
+      ? renderCategoryOptions(cat.children, depth + 1, path + cat._id)
+      : []),
   ]);
 }
 
@@ -91,6 +97,8 @@ export default function EditProductForm({
     stock: "",
   });
 
+  const [showAllImages, setShowAllImages] = useState(false);
+
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -109,13 +117,15 @@ export default function EditProductForm({
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, files } = e.target as HTMLInputElement;
     if (files && files.length > 0) {
       setFormData((prev) => ({
         ...prev,
-        images: Array.from(files),
+        images: [...prev.images, ...Array.from(files)],
       }));
     } else {
       setFormData((prev) => ({
@@ -125,7 +135,11 @@ export default function EditProductForm({
     }
   };
 
-  const handleVariantChange = (idx: number, field: keyof ProductVariant, value: any) => {
+  const handleVariantChange = (
+    idx: number,
+    field: keyof ProductVariant,
+    value: any
+  ) => {
     setFormData((prev) => {
       const variants = [...prev.variants];
       variants[idx][field] = value;
@@ -148,7 +162,12 @@ export default function EditProductForm({
   };
 
   const handleAddVariant = () => {
-    if (!newVariant.size || !newVariant.color || !newVariant.price || !newVariant.stock) {
+    if (
+      !newVariant.size ||
+      !newVariant.color ||
+      !newVariant.price ||
+      !newVariant.stock
+    ) {
       setError("Vui lòng nhập đầy đủ biến thể mới trước khi thêm!");
       return;
     }
@@ -157,46 +176,53 @@ export default function EditProductForm({
       ...prev,
       variants: [...prev.variants, { ...newVariant }],
     }));
-    setNewVariant({ size: "", color: "", price: "", discountPercent: "", stock: "" });
+    setNewVariant({
+      size: "",
+      color: "",
+      price: "",
+      discountPercent: "",
+      stock: "",
+    });
   };
 
   const renderImagesBlock = () => {
     const previews =
       formData.images && formData.images.length > 0
-        ? formData.images.map((img, i) =>
-            typeof img === "string" ? (
-              <div
-                key={i}
-                className="w-[130px] h-[131px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
+        ? formData.images.map((img, i) => (
+            <div
+              key={i}
+              className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
+            >
+              <Image
+                src={
+                  typeof img === "string"
+                    ? img.startsWith("http")
+                      ? img
+                      : `/product/img/${img}`
+                    : URL.createObjectURL(img)
+                }
+                alt={
+                  typeof img === "string" ? formData.name : (img as File).name
+                }
+                width={130}
+                height={131}
+                className="object-cover w-full h-full"
+                unoptimized
+                onError={(e: any) => {
+                  e.target.src = "/no-image.png";
+                }}
+              />
+              <button
+                type="button"
+                className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center bg-white/80 rounded-full text-base hover:bg-gray-200 hover:text-red-500 transition"
+                onClick={() => handleRemoveImage(i)}
+                title="Xóa ảnh"
+                style={{ zIndex: 2 }}
               >
-                <Image
-                  src={img.startsWith("http") ? img : `/product/img/${img}`}
-                  alt={formData.name || ""}
-                  width={130}
-                  height={131}
-                  className="object-cover w-full h-full"
-                  onError={(e: any) => {
-                    e.target.src = "/no-image.png";
-                  }}
-                  unoptimized
-                />
-              </div>
-            ) : (
-              <div
-                key={i}
-                className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
-              >
-                <Image
-                  src={URL.createObjectURL(img)}
-                  alt={img.name}
-                  width={130}
-                  height={131}
-                  className="object-cover w-full h-full"
-                  unoptimized
-                />
-              </div>
-            )
-          )
+                ×
+              </button>
+            </div>
+          ))
         : [];
 
     const previewsToShow =
@@ -205,7 +231,8 @@ export default function EditProductForm({
             ...previews.slice(0, 3),
             <div
               key="more"
-              className="w-[130px] h-[131px] rounded-xl flex items-center justify-center bg-gray-100 text-xl font-semibold border"
+              className="w-[130px] h-[131px] rounded-xl flex items-center justify-center bg-gray-100 text-xl font-semibold border cursor-pointer"
+              onClick={() => setShowAllImages(true)}
             >
               +{previews.length - 3}
             </div>,
@@ -231,77 +258,160 @@ export default function EditProductForm({
             onClick={handleImageUploadClick}
             disabled={isSubmitting}
           >
-            <Image src="/admin/upload.png" width={60} height={60} alt="Upload" />
-            <span className="font-medium text-black text-sm mt-2">New Image</span>
+            <Image
+              src="/admin/upload.png"
+              width={60}
+              height={60}
+              alt="Upload"
+            />
+            <span className="font-medium text-black text-sm mt-2">
+              New Image
+            </span>
           </button>
         </div>
+        {/* Popup show all images */}
+        {showAllImages && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+            <div className="bg-white rounded-xl p-6 max-w-2xl w-full relative h-[470px]">
+              <button
+                className="absolute top-2 right-2 text-2xl font-bold"
+                onClick={() => setShowAllImages(false)}
+              >
+                ×
+              </button>
+              <div
+                className="grid gap-4 scroll-hidden"
+                style={{
+                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                  maxHeight: 420,
+                  overflowY: "auto",
+                }}
+              >
+                {formData.images.map((img, i) => (
+                  <div
+                    key={i}
+                    className="w-[130px] h-[130px] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center relative border"
+                  >
+                    <Image
+                      src={
+                        typeof img === "string"
+                          ? img.startsWith("http")
+                            ? img
+                            : `/product/img/${img}`
+                          : URL.createObjectURL(img)
+                      }
+                      alt={
+                        typeof img === "string"
+                          ? formData.name
+                          : (img as File).name
+                      }
+                      width={130}
+                      height={131}
+                      className="object-cover w-full h-full"
+                      unoptimized
+                      onError={(e: any) => {
+                        e.target.src = "/no-image.png";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center bg-white/80 rounded-full text-base hover:bg-gray-200 hover:text-red-500 transition"
+                      onClick={() => handleRemoveImage(i)}
+                      title="Xóa ảnh"
+                      style={{ zIndex: 2 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-  if (!formData.name.trim()) return setError("Tên sản phẩm không được để trống.");
-  if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
-  if (!formData.description.trim()) return setError("Vui lòng nhập mô tả sản phẩm.");
-  if (!formData.variants.length) return setError("Phải có ít nhất một biến thể.");
-  for (let v of formData.variants) {
-    if (!v.size || !v.color || !v.price || !v.stock)
-      return setError("Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể.");
-    if (Number(v.price) < 0) return setError("Giá không được nhỏ hơn 0.");
-    if (Number(v.stock) < 0) return setError("Tồn kho không được nhỏ hơn 0.");
-    if (v.discountPercent && (Number(v.discountPercent) < 0 || Number(v.discountPercent) > 100))
-      return setError("Phần trăm giảm giá phải từ 0 đến 100.");
-  }
-  if (
-    formData.images &&
-    formData.images.length > 0 &&
-    typeof formData.images[0] !== "string"
-  ) {
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    for (let img of formData.images) {
+    if (!formData.name.trim())
+      return setError("Tên sản phẩm không được để trống.");
+    if (!formData.categoryId) return setError("Vui lòng chọn danh mục.");
+    if (!formData.description.trim())
+      return setError("Vui lòng nhập mô tả sản phẩm.");
+    if (!formData.variants.length)
+      return setError("Phải có ít nhất một biến thể.");
+    for (let v of formData.variants) {
+      if (!v.size || !v.color || !v.price || !v.stock)
+        return setError(
+          "Các trường size, màu, giá, tồn kho là bắt buộc cho từng biến thể."
+        );
+      if (Number(v.price) < 0) return setError("Giá không được nhỏ hơn 0.");
+      if (Number(v.stock) < 0) return setError("Tồn kho không được nhỏ hơn 0.");
       if (
-        typeof img !== "string" &&
-        (!validTypes.includes((img as File).type) ||
-          (img as File).size > 5 * 1024 * 1024)
+        v.discountPercent &&
+        (Number(v.discountPercent) < 0 || Number(v.discountPercent) > 100)
       )
-        return setError("Chỉ hỗ trợ ảnh jpg, png, webp và dưới 5MB.");
+        return setError("Phần trăm giảm giá phải từ 0 đến 100.");
     }
-  }
+    if (
+      formData.images &&
+      formData.images.length > 0 &&
+      typeof formData.images[0] !== "string"
+    ) {
+      const validTypes = ["image/jpeg", "image/png", "image/webp"];
+      for (let img of formData.images) {
+        if (
+          typeof img !== "string" &&
+          (!validTypes.includes((img as File).type) ||
+            (img as File).size > 5 * 1024 * 1024)
+        )
+          return setError("Chỉ hỗ trợ ảnh jpg, png, webp và dưới 5MB.");
+      }
+    }
 
-  setIsSubmitting(true);
-  try {
-    const slug = convertToSlug(formData.name);
+    setIsSubmitting(true);
+    try {
+      const slug = convertToSlug(formData.name);
 
-    const newImages = formData.images.filter(img => typeof img !== "string") as File[];
+      const newImages = formData.images.filter(
+        (img) => typeof img !== "string"
+      ) as File[];
 
-    const submitData = {
-      name: formData.name,
-      slug,
-      description: formData.description,
-      categoryId: formData.categoryId,
-      variants: formData.variants.map((v) => ({
-        price: Number(v.price),
-        color: v.color,
-        size: v.size,
-        stock: Number(v.stock),
-        discountPercent: Number(v.discountPercent) || 0,
-      })),
-      images: newImages,
-    };
-    const res = await editProduct(productId, submitData);
-    if (!res) throw new Error("Không thể cập nhật sản phẩm.");
-    toast.success("Cập nhật sản phẩm thành công!");
-    onClose();
-  } catch (err: any) {
-    setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
-    toast.error(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
-  }
-  setIsSubmitting(false);
-};
+      const submitData = {
+        name: formData.name,
+        slug,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        variants: formData.variants.map((v) => ({
+          price: Number(v.price),
+          color: v.color,
+          size: v.size,
+          stock: Number(v.stock),
+          discountPercent: Number(v.discountPercent) || 0,
+        })),
+        images: newImages,
+      };
+      const res = await editProduct(productId, submitData);
+      if (!res) throw new Error("Không thể cập nhật sản phẩm.");
+      toast.success("Cập nhật sản phẩm thành công!");
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
+      toast.error(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm.");
+    }
+    setIsSubmitting(false);
+  };
 
+  const handleRemoveImage = (idx: number) => {
+    setFormData((prev) => {
+      const newImages = prev.images.filter((_, i) => i !== idx);
+      if (newImages.length === 0) setShowAllImages(false);
+      return { ...prev, images: newImages };
+    });
+  };
 
   return (
     <div className="relative w-full h-full max-h-[95vh] flex flex-col overflow-y-auto p-0 rounded-xl max-w-2xl bg-white overflow-x-hidden">
@@ -336,11 +446,14 @@ const handleSubmit = async (e: React.FormEvent) => {
             Image format .jpg .jpeg .png and minimum size 300 × 300px
           </p>
           {renderImagesBlock()}
-          {formData.images && formData.images.length > 0 && typeof formData.images[0] !== "string" && (
-            <p className="mt-1 text-sm text-gray-500">
-              Đã chọn: {(formData.images as File[]).map((f) => f.name).join(", ")}
-            </p>
-          )}
+          {formData.images &&
+            formData.images.length > 0 &&
+            typeof formData.images[0] !== "string" && (
+              <p className="mt-1 text-sm text-gray-500">
+                Đã chọn:{" "}
+                {(formData.images as File[]).map((f) => f.name).join(", ")}
+              </p>
+            )}
         </div>
         {/* Tên sản phẩm */}
         <div>
@@ -363,7 +476,8 @@ const handleSubmit = async (e: React.FormEvent) => {
             Mô tả sản phẩm <span className="text-red-500">*</span>
           </label>
           <p className="mb-2 text-sm text-gray-500">
-            Bao gồm tối thiểu 260 ký tự để giúp người mua dễ hiểu và tìm thấy sản phẩm của bạn hơn
+            Bao gồm tối thiểu 260 ký tự để giúp người mua dễ hiểu và tìm thấy
+            sản phẩm của bạn hơn
           </p>
           <textarea
             name="description"
@@ -398,10 +512,16 @@ const handleSubmit = async (e: React.FormEvent) => {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="p-2 border text-center min-w-[90px]">Size</th>
-                  <th className="p-2 border text-center min-w-[90px]">Màu sắc</th>
+                  <th className="p-2 border text-center min-w-[90px]">
+                    Màu sắc
+                  </th>
                   <th className="p-2 border text-center min-w-[100px]">Giá</th>
-                  <th className="p-2 border text-center min-w-[65px] w-[80px]">Giảm giá (%)</th>
-                  <th className="p-2 border text-center min-w-[65px] w-[80px]">Tồn kho</th>
+                  <th className="p-2 border text-center min-w-[65px] w-[80px]">
+                    Giảm giá (%)
+                  </th>
+                  <th className="p-2 border text-center min-w-[65px] w-[80px]">
+                    Tồn kho
+                  </th>
                   <th className="p-2 border text-center min-w-[60px]">Xóa</th>
                 </tr>
               </thead>
@@ -419,11 +539,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <select
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.size}
-                          onChange={e => handleVariantChange(idx, "size", e.target.value)}
+                          onChange={(e) =>
+                            handleVariantChange(idx, "size", e.target.value)
+                          }
                           disabled={isSubmitting}
                         >
-                          {sizeOptions.map(s => (
-                            <option key={s} value={s}>{s}</option>
+                          {sizeOptions.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -431,11 +555,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <select
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.color}
-                          onChange={e => handleVariantChange(idx, "color", e.target.value)}
+                          onChange={(e) =>
+                            handleVariantChange(idx, "color", e.target.value)
+                          }
                           disabled={isSubmitting}
                         >
-                          {colorOptions.map(c => (
-                            <option key={c.value} value={c.value}>{c.label}</option>
+                          {colorOptions.map((c) => (
+                            <option key={c.value} value={c.value}>
+                              {c.label}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -445,7 +573,9 @@ const handleSubmit = async (e: React.FormEvent) => {
                           min={0}
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.price}
-                          onChange={e => handleVariantChange(idx, "price", e.target.value)}
+                          onChange={(e) =>
+                            handleVariantChange(idx, "price", e.target.value)
+                          }
                           placeholder="Giá"
                           disabled={isSubmitting}
                         />
@@ -456,7 +586,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                           min={0}
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.discountPercent || ""}
-                          onChange={e => handleVariantChange(idx, "discountPercent", e.target.value)}
+                          onChange={(e) =>
+                            handleVariantChange(
+                              idx,
+                              "discountPercent",
+                              e.target.value
+                            )
+                          }
                           placeholder="Giảm"
                           disabled={isSubmitting}
                         />
@@ -467,7 +603,9 @@ const handleSubmit = async (e: React.FormEvent) => {
                           min={0}
                           className="border rounded-lg p-2 w-full text-sm"
                           value={variant.stock}
-                          onChange={e => handleVariantChange(idx, "stock", e.target.value)}
+                          onChange={(e) =>
+                            handleVariantChange(idx, "stock", e.target.value)
+                          }
                           placeholder="Kho"
                           disabled={isSubmitting}
                         />
@@ -493,9 +631,11 @@ const handleSubmit = async (e: React.FormEvent) => {
           <div className="rounded-lg border border-gray-200 p-4 bg-white w-full max-w-[564px] mt-2 mx-auto">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
-                <label className="font-semibold block mb-1 text-sm">Sizes</label>
+                <label className="font-semibold block mb-1 text-sm">
+                  Sizes
+                </label>
                 <div className="flex gap-2">
-                  {sizeOptions.map(size => (
+                  {sizeOptions.map((size) => (
                     <button
                       key={size}
                       type="button"
@@ -514,16 +654,22 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
               </div>
               <div>
-                <label className="font-semibold block mb-1 text-sm">Màu sắc</label>
+                <label className="font-semibold block mb-1 text-sm">
+                  Màu sắc
+                </label>
                 <select
                   className="border rounded-lg p-2 w-full text-sm"
                   value={newVariant.color}
-                  onChange={e => handleNewVariantChange("color", e.target.value)}
+                  onChange={(e) =>
+                    handleNewVariantChange("color", e.target.value)
+                  }
                   disabled={isSubmitting}
                 >
                   <option value="">Chọn màu sắc</option>
-                  {colorOptions.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
+                  {colorOptions.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -534,31 +680,41 @@ const handleSubmit = async (e: React.FormEvent) => {
                   min={0}
                   className="border rounded-lg p-2 w-full text-sm"
                   value={newVariant.price}
-                  onChange={e => handleNewVariantChange("price", e.target.value)}
+                  onChange={(e) =>
+                    handleNewVariantChange("price", e.target.value)
+                  }
                   placeholder="Giá (đ)"
                   disabled={isSubmitting}
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1 text-sm">Giảm giá (%)</label>
+                <label className="font-semibold block mb-1 text-sm">
+                  Giảm giá (%)
+                </label>
                 <input
                   type="number"
                   min={0}
                   className="border rounded-lg p-2 w-full text-sm"
                   value={newVariant.discountPercent || ""}
-                  onChange={e => handleNewVariantChange("discountPercent", e.target.value)}
+                  onChange={(e) =>
+                    handleNewVariantChange("discountPercent", e.target.value)
+                  }
                   placeholder="Giảm (%)"
                   disabled={isSubmitting}
                 />
               </div>
               <div className="col-span-2">
-                <label className="font-semibold block mb-1 text-sm">Số lượng nhập kho</label>
+                <label className="font-semibold block mb-1 text-sm">
+                  Số lượng nhập kho
+                </label>
                 <input
                   type="number"
                   min={0}
                   className="border rounded-lg p-2 w-full text-sm"
                   value={newVariant.stock}
-                  onChange={e => handleNewVariantChange("stock", e.target.value)}
+                  onChange={(e) =>
+                    handleNewVariantChange("stock", e.target.value)
+                  }
                   placeholder="Số lượng sản phẩm"
                   disabled={isSubmitting}
                 />
@@ -586,9 +742,24 @@ const handleSubmit = async (e: React.FormEvent) => {
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  />
                 </svg>
                 Đang lưu...
               </span>

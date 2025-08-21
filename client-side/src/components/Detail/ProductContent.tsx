@@ -5,7 +5,7 @@ import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
 import ProductMobileLayout from "@/components/Detail/Layout/ProductMobileLayout";
-import { fetchProductById, fetchProducts } from "@/services/productApi";
+import { fetchProductById, recommendProducts } from "@/services/productApi"; // Thêm recommendProducts
 import { IProduct } from "@/types/product";
 
 export function ProductContent({ id }: { id: string }) {
@@ -16,14 +16,17 @@ export function ProductContent({ id }: { id: string }) {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Lấy chi tiết sản phẩm
         const prod = await fetchProductById(id);
         if (!prod) throw new Error("Không tìm thấy sản phẩm.");
         setProduct(prod);
 
-        // Gọi fetchProducts với limit = 8
-        const allProducts = await fetchProducts({ is_active: true, limit: 8 });
-        const suggestions = allProducts.data.filter((p) => p.id !== id);
-        setSuggestedProducts(suggestions);
+        const userBehavior = {
+          viewed: [id],
+          cart: [],
+        };
+        const recommendations = await recommendProducts(userBehavior);
+        setSuggestedProducts(recommendations.data);
       } catch (err) {
         setError("Có lỗi xảy ra khi tải dữ liệu.");
       }
@@ -51,6 +54,8 @@ export function ProductContent({ id }: { id: string }) {
 
   const stock = product.variants.reduce((sum, v) => sum + v.stock, 0);
 
+  const isOutOfStock = product.variants.every((v) => Number(v.stock) === 0);
+
   return (
     <div className="min-h-screen pb-14">
       <Container>
@@ -62,6 +67,7 @@ export function ProductContent({ id }: { id: string }) {
           sizes={sizes}
           stock={stock}
           suggestedProducts={suggestedProducts}
+          isOutOfStock={isOutOfStock}
         />
 
         {/* Desktop layout */}
@@ -71,6 +77,7 @@ export function ProductContent({ id }: { id: string }) {
             sizes={sizes}
             stock={stock}
             suggestedProducts={suggestedProducts}
+            isOutOfStock={isOutOfStock}
           />
         </div>
       </Container>

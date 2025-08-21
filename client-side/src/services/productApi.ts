@@ -1,5 +1,5 @@
 import { API_BASE_URL, fetchWithAuth } from "./api";
-import { IProduct } from "../types/product";
+import { IProduct, RecommendResponse } from "../types/product";
 interface ProductQuery {
   id_cate?: string;
   color?: string;
@@ -430,3 +430,29 @@ export const fetchProductCategory = async (
     return "";
   }
 };
+
+export async function recommendProducts(userBehavior: {
+  viewed?: string[];
+  cart?: string[];
+}): Promise<RecommendResponse> {
+  try {
+    const response = await fetchWithAuth<RecommendResponse>(
+      `${API_BASE_URL}/products/recommend`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userBehavior),
+      }
+    );
+    return {
+      success: response.success,
+      outfits: response.outfits,
+      data: response.data.map(mapToIProduct),
+    };
+  } catch (error: any) {
+    console.error("Lỗi khi gọi recommendProducts:", error);
+    throw new Error(error.message || "Không thể lấy gợi ý sản phẩm");
+  }
+}

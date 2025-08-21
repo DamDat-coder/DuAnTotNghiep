@@ -114,6 +114,7 @@ export const createReview = async (
           rating,
           status: reviewStatus,
           images: imageUrls,
+          adminReply: null,
         });
 
         return res.status(403).json({
@@ -137,6 +138,7 @@ export const createReview = async (
         rating,
         status: reviewStatus,
         images: imageUrls,
+        adminReply: null, // Explicitly set adminReply to null
       });
 
       return res.status(400).json({
@@ -156,6 +158,7 @@ export const createReview = async (
       rating,
       status: reviewStatus,
       images: imageUrls,
+      adminReply: null, // Explicitly set adminReply to null
     });
 
     return res.status(201).json({
@@ -169,7 +172,6 @@ export const createReview = async (
   }
 };
 
-// Lấy đánh giá của sản phẩm
 export const getProductReviews = async (req: Request, res: Response) => {
   try {
     const productId = req.params.productId;
@@ -178,7 +180,8 @@ export const getProductReviews = async (req: Request, res: Response) => {
       status: "approved",
     })
       .populate("userId", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .select("userId content rating images status createdAt adminReply"); // Thêm adminReply vào select
 
     res.status(200).json({ success: true, data: reviews });
   } catch (error) {
@@ -187,7 +190,6 @@ export const getProductReviews = async (req: Request, res: Response) => {
   }
 };
 
-// Lấy tất cả đánh giá
 export const getAllReviews = async (req: Request, res: Response) => {
   try {
     const { page = "1", limit = "10", search, status } = req.query;
@@ -267,5 +269,67 @@ export const updateReviewStatus = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái đánh giá:", error);
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });
+  }
+};
+
+// Trả lời đánh giá (chỉ admin)
+export const replyToReview = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    const adminId = req.user?.userId;
+
+    if (!adminId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Chưa đăng nhập." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID đánh giá không hợp lệ." });
+    }
+
+    if (!content || content.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Nội dung trả lời không được để trống.",
+      });
+    }
+
+    const review = await ReviewModel.findById(id)
+      .populate("userId", "name") // Populate userId để lấy tên người dùng
+      .populate("productId", "name"); // Populate productId để lấy tên sản phẩm
+    if (!review) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đánh giá." });
+    }
+
+    // Cập nhật trả lời của admin
+    review.adminReply = {
+      content: content.trim(),
+      createdAt: new Date(),
+    };
+
+    await review.save();
+
+    // Populate lại để đảm bảo dữ liệu đầy đủ
+    const updatedReview = await ReviewModel.findById(id)
+      .populate("userId", "name")
+      .populate("productId", "name");
+
+    return res.status(200).json({
+      success: true,
+      message: "Trả lời đánh giá thành công.",
+      data: updatedReview,
+    });
+  } catch (error) {
+    console.error("Lỗi khi trả lời đánh giá:", error);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };

@@ -9,6 +9,71 @@ import NotificationModel from "../models/notification.model";
 import slugify from "slugify";
 import { getAllChildCategoryIds } from "../utils/category.util";
 import { removeVietnameseTones } from "../utils/string.util";
+import { getOutfitRecommendations } from "../ai/recommendation";
+
+export const recommendProducts = async (req: Request, res: Response) => {
+  try {
+    const userBehavior = {
+      viewed: req.body.viewed || [],
+      cart: req.body.cart || [],
+    };
+
+    const excludedIds = [...userBehavior.viewed, ...userBehavior.cart];
+
+    const products = await productModel
+      .find({
+        is_active: true,
+        _id: { $nin: excludedIds },
+      })
+      .populate("category", "slug name")
+      .select("_id name category")
+      .limit(60)
+      .lean();
+
+    const aiResult = await getOutfitRecommendations(userBehavior, products);
+
+    // ✅ lọc ObjectId hợp lệ
+    const validRecommendations = aiResult.recommendations.filter((id: string) =>
+      mongoose.Types.ObjectId.isValid(id)
+    );
+
+    if (validRecommendations.length === 0) {
+      return res.json({
+        success: true,
+        outfits: {
+          basic: aiResult.basic_outfit,
+          layered: aiResult.layered_outfit,
+        },
+        data: [],
+      });
+    }
+
+    const recommendedProducts = await productModel.find({
+      _id: { $in: validRecommendations },
+    });
+
+    return res.json({
+      success: true,
+      outfits: {
+        basic: aiResult.basic_outfit,
+        layered: aiResult.layered_outfit,
+      },
+      data: recommendedProducts,
+    });
+  } catch (err: any) {
+    console.error("Recommend Error:", err);
+
+    // Nếu lỗi là CastError của Mongo thì trả về lỗi gọn gàng
+    if (err.name === "CastError") {
+      return res.status(400).json({
+        status: "error",
+        message: "ID sản phẩm không hợp lệ (ObjectId không đúng định dạng)",
+      });
+    }
+
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+};
 
 // Lấy tất cả sản phẩm cho người dùng
 export const getAllProducts = async (req: Request, res: Response) => {

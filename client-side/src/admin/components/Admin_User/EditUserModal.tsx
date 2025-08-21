@@ -136,7 +136,7 @@ export default function EditUserModal({
               className="w-10 h-10 bg-[#F8FAFC] rounded-[8px] flex items-center justify-center"
             >
               <Image
-                src="/admin_user/group.svg"
+                src="https://res.cloudinary.com/testupload1/image/upload/v1755272889/group_wnydzc.svg"
                 width={10}
                 height={10}
                 alt="close"
@@ -197,7 +197,9 @@ export default function EditUserModal({
                     className="p-2 border-b last:border-b-0 flex items-center"
                   >
                     <span
-                      className={`flex-1${address.is_default ? " text-green-600" : ""}`}
+                      className={`flex-1${
+                        address.is_default ? " text-green-600" : ""
+                      }`}
                     >
                       {address.street || "Chưa có đường"},{" "}
                       {address.ward || "Chưa có phường/xã"},{" "}

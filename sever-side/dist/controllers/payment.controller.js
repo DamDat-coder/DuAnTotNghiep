@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCodPayment = exports.redirectZaloPayReturn = exports.checkZaloPayReturn = exports.createZaloPayPayment = exports.checkVNPayReturn = exports.createVNPayPayment = void 0;
+exports.redirectZaloPayReturn = exports.checkZaloPayReturn = exports.createZaloPayPayment = exports.checkVNPayReturn = exports.createVNPayPayment = void 0;
 const vnpay_1 = require("vnpay");
 const moment_1 = __importDefault(require("moment"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
@@ -46,7 +46,7 @@ const createVNPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, funct
             vnp_TxnRef: transactionCode,
             vnp_OrderInfo: `Thanh toán đơn hàng ${transactionCode}|userId:${userId}`,
             vnp_OrderType: vnpay_1.ProductCode.Other,
-            vnp_ReturnUrl: `http://api.styleforyou.online/payment/check-payment-vnpay`,
+            vnp_ReturnUrl: `https://api.styleforyou.online/payment/check-payment-vnpay`,
             vnp_Locale: vnpay_1.VnpLocale.VN,
             vnp_CreateDate: Number((0, moment_1.default)().format("YYYYMMDDHHmmss")),
             vnp_ExpireDate: Number((0, moment_1.default)().add(30, "minutes").format("YYYYMMDDHHmmss")),
@@ -81,7 +81,7 @@ const checkVNPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, functio
         };
         yield payment.save();
         const redirect = vnp_ResponseCode === "00" ? "success" : "fail";
-        return res.redirect(`http://styleforyou.online/payment/${redirect}?orderId=${vnp_TxnRef}`);
+        return res.redirect(`https://styleforyou.online/payment/${redirect}?orderId=${vnp_TxnRef}`);
     }
     catch (error) {
         return res.status(500).json({ message: "Callback VNPay lỗi!", error });
@@ -114,7 +114,7 @@ const createZaloPayPayment = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const app_time = Date.now();
         console.log("App Time:", app_time);
         const embedData = {
-            redirecturl: `http://api.styleforyou.online/payment/zalopay-return`,
+            redirecturl: `https://api.styleforyou.online/payment/zalopay-return`,
             userId,
         };
         console.log("Embed Data:", embedData);
@@ -306,17 +306,17 @@ const redirectZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, fu
                 if (updatedPayment && updatedPayment.status !== "pending") {
                     // Giao dịch đã được cập nhật
                     const redirect = updatedPayment.status === "success" ? "success" : "fail";
-                    const redirectUrl = `http://styleforyou.online/payment/${redirect}?orderId=${apptransid}`;
+                    const redirectUrl = `https://styleforyou.online/payment/${redirect}?orderId=${apptransid}`;
                     return res.redirect(redirectUrl);
                 }
                 attempts++;
             }
             // Nếu hết số lần thử mà vẫn pending, redirect về trang pending
-            return res.redirect(`http://styleforyou.online/payment/pending?orderId=${apptransid}`);
+            return res.redirect(`https://styleforyou.online/payment/pending?orderId=${apptransid}`);
         }
         // Nếu giao dịch đã được xử lý
         const redirect = payment.status === "success" ? "success" : "fail";
-        const redirectUrl = `http://styleforyou.online/payment/${redirect}?orderId=${apptransid}`;
+        const redirectUrl = `https://styleforyou.online/payment/${redirect}?orderId=${apptransid}`;
         return res.redirect(redirectUrl);
     }
     catch (error) {
@@ -326,33 +326,3 @@ const redirectZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.redirectZaloPayReturn = redirectZaloPayReturn;
-// COD - Tạo thanh toán
-const createCodPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { orderId, totalPrice, discountAmount, userId, orderInfo } = req.body;
-        if (!userId || !totalPrice || !orderInfo) {
-            return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
-        }
-        const payment = yield payment_model_1.default.create({
-            userId: new mongoose_1.Types.ObjectId(userId),
-            amount: totalPrice,
-            discount_amount: discountAmount || 0,
-            status: "success",
-            transaction_code: orderId,
-            gateway: "cod",
-            transaction_data: {},
-            order_info: orderInfo,
-            couponCode: orderInfo.code || null,
-            paid_at: new Date(),
-        });
-        return res.status(200).json({
-            paymentId: payment._id,
-            message: "Tạo thanh toán COD thành công",
-        });
-    }
-    catch (error) {
-        console.error("Lỗi tạo COD payment:", error);
-        res.status(500).json({ message: "Lỗi server" });
-    }
-});
-exports.createCodPayment = createCodPayment;

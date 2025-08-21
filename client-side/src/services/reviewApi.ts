@@ -130,3 +130,32 @@ export async function fetchProductOrderReviews(
     throw error;
   }
 }
+// Trả lời đánh giá (admin)
+export async function replyToReview(
+  reviewId: string,
+  content: string
+): Promise<{
+  success: boolean;
+  message: string;
+  data?: IReview;
+}> {
+  try {
+    const response = await fetchWithAuth<{
+      success: boolean;
+      message: string;
+      data?: IReview;
+    }>(`${API_BASE_URL}/reviews/${reviewId}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+
+    return response;
+  } catch (error: any) {
+    console.error("Error replying to review:", error);
+    throw {
+      message: error.message || "Không thể gửi câu trả lời.",
+      status: error.status || 500,
+    };
+  }
+}

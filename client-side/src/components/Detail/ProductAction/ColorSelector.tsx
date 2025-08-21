@@ -8,6 +8,7 @@ interface ColorSelectorProps {
   setSelectedColor: (color: string) => void;
   setSelectedSize: (size: string | null) => void;
   availableSizes: string[];
+  disabled?: boolean; 
 }
 
 export default function ColorSelector({
@@ -16,6 +17,7 @@ export default function ColorSelector({
   setSelectedColor,
   setSelectedSize,
   availableSizes,
+  disabled = false, // thêm mặc định
 }: ColorSelectorProps) {
   const handleColorChange = (color: string) => {
     setSelectedColor(color);
@@ -34,14 +36,16 @@ export default function ColorSelector({
           return (
             <div
               key={color.name}
-              onClick={() => handleColorChange(color.name)}
-              className={`w-8 h-8 rounded-full cursor-pointer border-2 relative border-solid border-[#B0B0B0]`}
+              onClick={() => !disabled && handleColorChange(color.name)}
+              className={`w-8 h-8 rounded-full border-2 relative border-solid border-[#B0B0B0] cursor-pointer ${
+                disabled ? "opacity-50 pointer-events-none" : ""
+              }`}
               style={{ backgroundColor: color.hex }}
               aria-label={`Chọn màu ${color.name}`}
               role="button"
-              tabIndex={0}
+              tabIndex={disabled ? -1 : 0}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (!disabled && (e.key === "Enter" || e.key === " ")) {
                   handleColorChange(color.name);
                 }
               }}

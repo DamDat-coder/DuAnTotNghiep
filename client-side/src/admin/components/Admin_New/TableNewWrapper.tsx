@@ -205,7 +205,7 @@ export default function TableNewWrapper({
           <div className="text-center py-4">Đang tải dữ liệu...</div>
         )}
         <div className="overflow-x-auto bg-white rounded-2xl p-4 border">
-          <table className="min-w-full text-[16px] text-left font-description">
+          <table className="min-w-full text-[16px] text-left">
             <thead className="bg-[#F8FAFC] text-[#94A3B8]">
               <tr>
                 <th
@@ -286,7 +286,7 @@ export default function TableNewWrapper({
                           )
                         : "Chưa xuất bản"}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <span
                         className={`px-2 py-2.5 font-medium rounded-[4px] ${status.color}`}
                       >

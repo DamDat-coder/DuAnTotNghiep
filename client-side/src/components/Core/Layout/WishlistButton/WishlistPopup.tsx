@@ -276,6 +276,7 @@ export default function WishlistPopup({
               </div>
 
               {/* Nút xác nhận */}
+              {/* Nút xác nhận */}
               <button
                 onClick={handleConfirm}
                 className="w-full bg-black text-white font-bold text-base px-3 py-3 rounded-md hover:bg-gray-800 transition-colors mt-6"

@@ -50,14 +50,6 @@ export default function OrderItems({
         // Giá cuối
         const finalPrice = Math.max(0, discountedPrice - couponDiscount);
 
-        console.log("DEBUG OrderItems", {
-          id: item.id,
-          originalPrice,
-          discountedPrice,
-          couponDiscount,
-          finalPrice,
-        });
-
         return (
           <div
             key={`${item.id}-${item.size}-${item.color}`}

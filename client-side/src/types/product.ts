@@ -68,4 +68,11 @@ export interface Suggestion {
   id: string;
 }
 
-
+export interface RecommendResponse {
+  success: boolean;
+  outfits: {
+    basic: any[];
+    layered: any[];
+  };
+  data: IProduct[];
+}

@@ -50,14 +50,14 @@ export default function RootLayout({
                   <ActiveTabProvider>
                     <CategoriesProvider>
                       <AddressDataProvider>
-                        {!isAdminRoute && <Header />}
                         <CartProvider>
+                          {!isAdminRoute && <Header />}
                           <WishlistProvider>
                             <main className={mainClassName}>{children}</main>
                             {!isAdminRoute && <ChatBotBox />}
                           </WishlistProvider>
+                          {!isAdminRoute && <Footer />}
                         </CartProvider>
-                        {!isAdminRoute && <Footer />}
                       </AddressDataProvider>
                     </CategoriesProvider>
                   </ActiveTabProvider>

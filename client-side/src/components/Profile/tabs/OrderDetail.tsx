@@ -55,7 +55,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     async function fetchUserData() {
       try {
         const fetchedUser = await fetchUser();
-        console.log("Fetched user:", fetchedUser); // Log để debug
         if (fetchedUser) {
           setUser({
             ...fetchedUser,
@@ -133,7 +132,6 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
           }
         })
       );
-      console.log("Product reviews:", reviewsObj); // Log để debug
       setProductReviews(reviewsObj);
     }
     fetchAllProductReviews();

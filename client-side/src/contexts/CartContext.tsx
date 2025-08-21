@@ -19,7 +19,6 @@ interface CartAction {
     | "resetSelected"
     | "restoreSelection"
     | "updateSelected";
-
   item?: ICartItem;
   id?: string;
   size?: string;
@@ -33,6 +32,7 @@ interface CartAction {
 interface CartContextType {
   items: ICartItem[];
   dispatch: React.Dispatch<CartAction>;
+  cartItemCount: number; // Thêm cartItemCount
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -40,6 +40,15 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case "updateSelected":
+      const targetItem = state.items.find(
+        (item) =>
+          item.id === action.id &&
+          item.size === action.size &&
+          item.color === action.color
+      );
+      if (targetItem && targetItem.selected === action.selected) {
+        return state;
+      }
       return {
         ...state,
         items: state.items.map((item) =>
@@ -165,20 +174,35 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, dispatch] = useReducer(cartReducer, { items: [] }, () => {
     if (typeof window !== "undefined") {
-      const savedCart = localStorage.getItem("cartItems");
-      return savedCart ? { items: JSON.parse(savedCart) } : { items: [] };
+      try {
+        const savedCart = localStorage.getItem("cartItems");
+        return savedCart ? { items: JSON.parse(savedCart) } : { items: [] };
+      } catch (error) {
+        console.error("Lỗi khi đọc cartItems từ localStorage:", error);
+        return { items: [] };
+      }
     }
     return { items: [] };
   });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("cartItems", JSON.stringify(state.items));
+      try {
+        localStorage.setItem("cartItems", JSON.stringify(state.items));
+      } catch (error) {
+        console.error("Lỗi khi lưu cartItems vào localStorage:", error);
+      }
     }
   }, [state.items]);
 
   return (
-    <CartContext.Provider value={{ items: state.items, dispatch }}>
+    <CartContext.Provider
+      value={{
+        items: state.items,
+        dispatch,
+        cartItemCount: state.items.length, // Thêm cartItemCount
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -187,7 +211,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
+    throw new Error("useCart phải được dùng trong CartProvider");
   }
   return context;
 };
@@ -195,7 +219,7 @@ export const useCart = () => {
 export const useCartDispatch = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCartDispatch must be used within a CartProvider");
+    throw new Error("useCartDispatch phải được dùng trong CartProvider");
   }
   return context.dispatch;
 };

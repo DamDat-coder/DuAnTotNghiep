@@ -53,8 +53,6 @@ export default function ProductGrid({
     size: searchParams.get("size") || undefined,
   };
 
-  console.log("Current filters in ProductGrid:", currentFilters); // Log để kiểm tra
-
   const PRODUCTS_PER_PAGE = 8;
 
   const sortedAllProducts = [...products].sort((a, b) => {

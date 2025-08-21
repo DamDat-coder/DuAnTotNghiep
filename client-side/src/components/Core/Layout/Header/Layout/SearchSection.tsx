@@ -3,25 +3,48 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useLookup } from "@/contexts/LookupContext";
-import { fetchProductBySlug } from "@/services/productApi";
+import { fetchProductBySlug, recommendProducts } from "@/services/productApi"; // Thêm recommendProducts
 import { IProduct } from "@/types/product";
 import { motion } from "framer-motion";
 import { debounce } from "lodash";
 import SearchInput from "../LookupMenu/SearchInput";
 import SearchSuggestions from "../LookupMenu/SearchSuggestions";
 import SearchResults from "../LookupMenu/SearchResults";
-import { useSuggestions } from "@/contexts/SuggestionsContext";
+import { useCart } from "@/contexts/CartContext"; // Thêm useCart
 import { convertToSlug } from "@/utils/slugify";
 
 export default function SearchSection() {
   const { isLookupOpen, setIsLookupOpen } = useLookup();
-  const { defaultSuggestions } = useSuggestions(); // ✅ Đã lấy suggestion từ context
+  const cart = useCart();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([]);
+  const [suggestedProducts, setSuggestedProducts] = useState<IProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const lookupButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Gọi API recommendProducts khi searchTerm rỗng
+  useEffect(() => {
+    async function fetchSuggestedProducts() {
+      try {
+        const cartIds = [...new Set(cart.items.map((item) => item.id))];
+        const userBehavior = {
+          viewed: [], // Giữ viewed rỗng
+          cart: cartIds, // Gửi danh sách ID từ giỏ hàng
+        };
+        const response = await recommendProducts(userBehavior);
+        setSuggestedProducts(response.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
+        setSuggestedProducts([]);
+      }
+    }
+
+    if (searchTerm.trim() === "") {
+      fetchSuggestedProducts();
+    }
+  }, []); // Phụ thuộc vào cart.items và searchTerm
 
   const debouncedSearch = debounce(async (term: string) => {
     if (term.trim() === "") {
@@ -30,7 +53,7 @@ export default function SearchSection() {
     }
     try {
       setIsLoading(true);
-      const slug = convertToSlug(term); // ✅ dùng term ở đây, không dùng searchTerm để tránh stale value
+      const slug = convertToSlug(term);
       const result = await fetchProductBySlug(slug, false);
       setFilteredProducts(
         Array.isArray(result) ? result : result ? [result] : []
@@ -71,9 +94,13 @@ export default function SearchSection() {
     setFilteredProducts([]);
   };
 
+  // Cập nhật suggestions dựa trên searchTerm
   const suggestions =
     searchTerm.trim() === ""
-      ? defaultSuggestions
+      ? suggestedProducts.slice(0, 3).map((product) => ({
+          name: product.name,
+          id: product.slug || product.id,
+        }))
       : filteredProducts.slice(0, 3).map((product) => ({
           name: product.name,
           id: product.slug || product.id,

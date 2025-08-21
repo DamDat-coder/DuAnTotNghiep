@@ -19,7 +19,22 @@ export default function PaymentSuccessClient() {
 
     const paymentId = localStorage.getItem("pendingPaymentId");
     const userId = localStorage.getItem("pendingUserId");
+    const paymentMethod = localStorage.getItem("paymentMethod");
 
+    // Nếu là COD, không cần tạo đơn hàng lại
+    if (paymentMethod === "cod") {
+      localStorage.removeItem("pendingPaymentId");
+      localStorage.removeItem("pendingUserId");
+      localStorage.removeItem("paymentMethod");
+      dispatch({ type: "clear" });
+      toast.success("Đơn hàng COD đã được xác nhận!");
+      const timer = setTimeout(() => {
+        window.location.href = "/profile?tab=order";
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+
+    // Xử lý cho thanh toán trực tuyến
     const createOrderAfterPayment = async (retries = 2) => {
       if (
         !paymentId ||
@@ -39,9 +54,28 @@ export default function PaymentSuccessClient() {
       }
 
       try {
-        const orderResponse = await createOrder(paymentId, userId);
+        const orderInfo = JSON.parse(localStorage.getItem("orderInfo") || "{}");
+        const { items, shippingAddress, totalPrice, discountAmount, shipping, email, couponCode } = orderInfo;
+
+        if (!items || !shippingAddress || !totalPrice) {
+          throw new Error("Thiếu thông tin đơn hàng trong localStorage.");
+        }
+
+        const orderResponse = await createOrder(
+          userId,
+          items,
+          shippingAddress,
+          totalPrice,
+          discountAmount || 0,
+          paymentMethod || "vnpay",
+          shipping || 0,
+          email,
+          couponCode
+        );
         localStorage.removeItem("pendingPaymentId");
         localStorage.removeItem("pendingUserId");
+        // localStorage.removeItem("paymentMethod");
+        // localStorage.removeItem("orderInfo");
         dispatch({ type: "clear" });
 
         toast.success("Đơn hàng đã được xác nhận!");
@@ -50,13 +84,13 @@ export default function PaymentSuccessClient() {
         }, 3000);
         return () => clearTimeout(timer);
       } catch (error: any) {
-        console.error("Lỗi khi tạo đơn hàng:", error);
+        console.error("Lỗi khi tạo đơn hàng:", JSON.stringify(error, null, 2));
         if (retries > 0) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
           return createOrderAfterPayment(retries - 1);
         }
         toast.error(error.message || "Không thể tạo đơn hàng!");
-        window.location.href = "/cart";
+        // window.location.href = "/cart";
       }
     };
 

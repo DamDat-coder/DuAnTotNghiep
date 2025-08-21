@@ -10,6 +10,7 @@ interface SizeSelectorProps {
   availableSizes: string[];
   maxQuantity: number;
   setIsSizeChartOpen: (open: boolean) => void;
+  disabled?: boolean; 
 }
 
 export default function SizeSelector({
@@ -20,6 +21,7 @@ export default function SizeSelector({
   availableSizes,
   maxQuantity,
   setIsSizeChartOpen,
+  disabled = false, 
 }: SizeSelectorProps) {
   const handleSizeChange = (size: string) => {
     if (
@@ -66,11 +68,11 @@ export default function SizeSelector({
               className={`px-4 py-2 border rounded-sm text-sm font-medium ${
                 selectedSize === size.value && isAvailable
                   ? "bg-black text-white"
-                  : !isAvailable || !size.inStock
+                  : !isAvailable || !size.inStock || disabled
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
                   : "hover:bg-gray-100"
               }`}
-              disabled={!isAvailable || !size.inStock}
+              disabled={!isAvailable || !size.inStock || disabled}
             >
               Size {size.value}
             </button>

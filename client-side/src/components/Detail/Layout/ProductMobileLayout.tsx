@@ -16,11 +16,13 @@ export default function ProductMobileLayout({
   sizes,
   stock,
   suggestedProducts,
+  isOutOfStock,
 }: {
   product: IProduct;
   sizes: { value: string; inStock: boolean }[];
   stock: number;
   suggestedProducts: IProduct[];
+  isOutOfStock: boolean;
 }) {
   const dispatch = useCartDispatch();
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);

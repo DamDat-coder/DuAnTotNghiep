@@ -336,6 +336,7 @@ export const checkZaloPayReturn = async (req: Request, res: Response) => {
       .json({ return_code: -1, return_message: "Lỗi server", error });
   }
 };
+
 // Redirect người dùng về frontend sau khi thanh toán
 export const redirectZaloPayReturn = async (req: Request, res: Response) => {
   const { apptransid, status } = req.query;

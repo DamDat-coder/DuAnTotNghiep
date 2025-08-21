@@ -55,9 +55,16 @@ export default function ProductGrid({
 
   const PRODUCTS_PER_PAGE = 8;
 
+  const sortedAllProducts = [...products].sort((a, b) => {
+    const aOut = a.variants.every((v) => Number(v.stock) === 0);
+    const bOut = b.variants.every((v) => Number(v.stock) === 0);
+    if (aOut === bOut) return 0;
+    return aOut ? 1 : -1;
+  });
+
   useEffect(() => {
-    setDisplayedProducts(products.slice(0, PRODUCTS_PER_PAGE));
-    setHasMore(products.length > PRODUCTS_PER_PAGE);
+    setDisplayedProducts(sortedAllProducts.slice(0, PRODUCTS_PER_PAGE));
+    setHasMore(sortedAllProducts.length > PRODUCTS_PER_PAGE);
   }, [products]);
 
   useEffect(() => {
@@ -87,14 +94,14 @@ export default function ProductGrid({
   const loadMoreProducts = () => {
     setLoading(true);
     const currentLength = displayedProducts.length;
-    const nextProducts = products.slice(
+    const nextProducts = sortedAllProducts.slice(
       currentLength,
       currentLength + PRODUCTS_PER_PAGE
     );
 
     setTimeout(() => {
       setDisplayedProducts((prev) => [...prev, ...nextProducts]);
-      setHasMore(currentLength + nextProducts.length < products.length);
+      setHasMore(currentLength + nextProducts.length < sortedAllProducts.length);
       setLoading(false);
     }, 600);
   };
@@ -124,7 +131,7 @@ export default function ProductGrid({
       </div>
 
       <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4 desktop:grid-cols-4 laptop:grid-cols-4 pt-2">
-        {displayedProducts.map((product) => (
+        {sortedAllProducts.map((product) => (
           <div key={product.id} className="w-full">
             <ProductCardWithWishlist
               product={product}

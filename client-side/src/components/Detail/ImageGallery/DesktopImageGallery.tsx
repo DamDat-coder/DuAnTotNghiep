@@ -7,11 +7,15 @@ import { motion, AnimatePresence } from "framer-motion";
 interface DesktopImageGalleryProps {
   images: string[];
   productName: string;
+  isOutOfStock?: boolean;
+  isWishlistOpen?: boolean;
 }
 
 export default function DesktopImageGallery({
   images,
   productName,
+  isOutOfStock = false,
+  isWishlistOpen = false,
 }: DesktopImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(images[0] || "");
   const [isZoomed, setIsZoomed] = useState(false);
@@ -40,23 +44,21 @@ export default function DesktopImageGallery({
       {/* Thumbnail column */}
       <div className="flex flex-col gap-2 w-auto max-w-[120px]">
         {images.map((img, index) => (
-          <motion.div
-            key={index}
-            className={`cursor-pointer border-2 rounded-md overflow-hidden ${
-              selectedImage === img ? "border-blue-500" : "border-transparent"
+          <div
+            key={img}
+            className={`cursor-pointer rounded-md overflow-hidden border ${
+              selectedImage === img ? "border-black" : "border-transparent"
             }`}
-            onClick={() => handleThumbnailClick(img)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            onClick={() => setSelectedImage(img)}
           >
             <Image
               src={img}
-              alt={`${productName} - Thumbnail ${index + 1}`}
-              width={100}
-              height={75}
-              className="w-[4rem] h-[4rem] object-cover"
+              alt={`${productName} - Thumbnail`}
+              width={80}
+              height={80}
+              className="object-cover w-[80px] h-[80px]"
             />
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -89,6 +91,13 @@ export default function DesktopImageGallery({
                 transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
               }}
             />
+            {isOutOfStock && !isWishlistOpen && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
+                <span className="text-white text-2xl font-bold select-none">
+                  Sản phẩm hết hàng
+                </span>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

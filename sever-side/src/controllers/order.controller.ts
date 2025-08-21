@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import mongoose from "mongoose";
+import dayjs from "dayjs";
 import Coupon from "../models/coupon.model";
 import OrderModel from "../models/order.model";
 import PaymentModel from "../models/payment.model";
@@ -141,11 +142,12 @@ export const createOrder = async (req: Request, res: Response) => {
       email: email || null,
       couponCode: couponCode || null,
     });
-
+    
     if (couponCode) {
       await Coupon.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
     }
 
+    // Gửi thông báo cho user
     await NotificationModel.create({
       userId,
       title: "Đơn hàng của bạn đã được tạo thành công!",
@@ -155,7 +157,10 @@ export const createOrder = async (req: Request, res: Response) => {
       link: `/profile?tab=order/${order._id}`,
     });
 
-    const admins = await UserModel.find({ role: "admin" }).select("_id").lean();
+    // Gửi thông báo cho admin
+    const admins = await UserModel.find({ role: "admin" })
+      .select("_id")
+      .lean();
     const notis = admins.map((admin) => ({
       userId: admin._id,
       title: "Có đơn hàng mới!",
@@ -171,10 +176,8 @@ export const createOrder = async (req: Request, res: Response) => {
       data: order,
     });
   } catch (err) {
-    console.error("Lỗi tạo đơn hàng:", JSON.stringify(err, null, 2));
-    return res
-      .status(500)
-      .json({ success: false, message: "Lỗi máy chủ.", error: err });
+    console.error("Lỗi tạo đơn hàng:", err);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
 };
 
@@ -390,12 +393,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
 };
 
 // Tính doanh thu
-import dayjs from "dayjs";
-
-export const calculateRevenue = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const calculateRevenue = async (req: Request, res: Response): Promise<void> => {
   try {
     const { range = "today", from, to } = req.query;
 

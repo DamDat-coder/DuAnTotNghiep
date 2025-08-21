@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateRevenue = exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
 const mongoose_1 = require("mongoose");
 const mongoose_2 = __importDefault(require("mongoose"));
+const dayjs_1 = __importDefault(require("dayjs"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
@@ -124,6 +125,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (couponCode) {
             yield coupon_model_1.default.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
         }
+        // Gửi thông báo cho user
         yield notification_model_1.default.create({
             userId,
             title: "Đơn hàng của bạn đã được tạo thành công!",
@@ -132,7 +134,10 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             isRead: false,
             link: `/profile?tab=order/${order._id}`,
         });
-        const admins = yield user_model_1.default.find({ role: "admin" }).select("_id").lean();
+        // Gửi thông báo cho admin
+        const admins = yield user_model_1.default.find({ role: "admin" })
+            .select("_id")
+            .lean();
         const notis = admins.map((admin) => ({
             userId: admin._id,
             title: "Có đơn hàng mới!",
@@ -148,10 +153,8 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
     }
     catch (err) {
-        console.error("Lỗi tạo đơn hàng:", JSON.stringify(err, null, 2));
-        return res
-            .status(500)
-            .json({ success: false, message: "Lỗi máy chủ.", error: err });
+        console.error("Lỗi tạo đơn hàng:", err);
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ." });
     }
 });
 exports.createOrder = createOrder;
@@ -342,7 +345,6 @@ const cancelOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.cancelOrder = cancelOrder;
 // Tính doanh thu
-const dayjs_1 = __importDefault(require("dayjs"));
 const calculateRevenue = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { range = "today", from, to } = req.query;

@@ -386,34 +386,3 @@ export const redirectZaloPayReturn = async (req: Request, res: Response) => {
       .json({ message: "Lỗi khi kiểm tra trạng thái giao dịch", error });
   }
 };
-
-// COD - Tạo thanh toán
-export const createCodPayment = async (req: Request, res: Response) => {
-  try {
-    const { orderId, totalPrice, discountAmount, userId, orderInfo } = req.body;
-
-    if (!userId || !totalPrice || !orderInfo) {
-      return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
-    }
-    const payment = await Payment.create({
-      userId: new Types.ObjectId(userId),
-      amount: totalPrice,
-      discount_amount: discountAmount || 0,
-      status: "success",
-      transaction_code: orderId,
-      gateway: "cod",
-      transaction_data: {},
-      order_info: orderInfo,
-      couponCode: orderInfo.code || null,
-      paid_at: new Date(),
-    });
-
-    return res.status(200).json({
-      paymentId: payment._id,
-      message: "Tạo thanh toán COD thành công",
-    });
-  } catch (error) {
-    console.error("Lỗi tạo COD payment:", error);
-    res.status(500).json({ message: "Lỗi server" });
-  }
-};

@@ -6,95 +6,182 @@ import OrderModel from "../models/order.model";
 import PaymentModel from "../models/payment.model";
 import NotificationModel from "../models/notification.model";
 import UserModel, { IUser } from "../models/user.model";
-import { sendOrderSpamWarningEmail, sendAccountBlockedEmail } from "../utils/mailer";
+import {
+  sendOrderSpamWarningEmail,
+  sendAccountBlockedEmail,
+} from "../utils/mailer";
 import { generateUniqueTransactionCode } from "../utils/generateTransactionCode";
 
-// Tạo đơn hàng
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { paymentId } = req.body;
-
-    if (!paymentId) {
-      return res.status(400).json({ success: false, message: 'Thiếu mã thanh toán (paymentId).' });
-    }
-
-    const payment = await PaymentModel.findById(paymentId);
-    if (!payment || !payment.order_info || !payment.userId) {
-      return res.status(400).json({ success: false, message: 'Thông tin thanh toán không hợp lệ.' });
-    }
-
-    if (payment.status !== 'success') {
-      return res.status(400).json({ success: false, message: 'Thanh toán chưa hoàn tất.' });
-    }
-
-    // Kiểm tra đơn hàng đã tồn tại từ payment này chưa
-    const existed = await OrderModel.findOne({ paymentId });
-    if (existed) {
-      return res.status(409).json({ success: false, message: 'Đơn hàng đã được tạo từ giao dịch này.' });
-    }
-
-    const { paymentMethod, shippingAddress, items, shipping = 0, code: couponCode, email } = payment.order_info;
-
-    const totalPrice = payment.amount;
-    const discountAmount = payment.discount_amount || 0;
-    const userId = payment.userId as Types.ObjectId;
-    const orderCode = await generateUniqueTransactionCode("4U");
-    const order = await OrderModel.create({
+    const {
+      paymentId,
       userId,
+      items,
       shippingAddress,
       totalPrice,
       discountAmount,
-      shipping,
       paymentMethod,
-      items,
-      paymentId,
+      shipping,
+      email,
+      couponCode,
+    } = req.body;
+
+    // Log toàn bộ body nhận được
+    console.log(
+      "DEBUG: Request body in createOrder:",
+      JSON.stringify(req.body, null, 2)
+    );
+
+    // Kiểm tra dữ liệu đầu vào
+    if (
+      !userId ||
+      !items ||
+      !Array.isArray(items) ||
+      !shippingAddress ||
+      !shippingAddress.street ||
+      !shippingAddress.ward ||
+      !shippingAddress.province ||
+      !shippingAddress.phone ||
+      !totalPrice ||
+      !paymentMethod
+    ) {
+      console.error("DEBUG: Missing required fields:", {
+        userId: !!userId,
+        items: !!items,
+        isArrayItems: Array.isArray(items),
+        shippingAddress: !!shippingAddress,
+        street: !!shippingAddress?.street,
+        ward: !!shippingAddress?.ward,
+        province: !!shippingAddress?.province,
+        phone: !!shippingAddress?.phone,
+        totalPrice: !!totalPrice,
+        paymentMethod: !!paymentMethod,
+      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu thông tin cần thiết." });
+    }
+
+    // Log items từ body
+    console.log(
+      "DEBUG: items from body in createOrder:",
+      JSON.stringify(items, null, 2)
+    );
+
+    // Kiểm tra từng item
+    for (const item of items) {
+      if (
+        !item.productId ||
+        !item.name ||
+        !item.image ||
+        !item.price ||
+        !item.color ||
+        !item.size ||
+        !item.quantity
+      ) {
+        console.error("DEBUG: Invalid item in createOrder:", item);
+        return res.status(400).json({
+          success: false,
+          message: "Thông tin sản phẩm không đầy đủ.",
+        });
+      }
+    }
+
+    // Kiểm tra Payment nếu không phải COD
+    if (paymentMethod !== "cod" && paymentId) {
+      const payment = await PaymentModel.findById(paymentId);
+      if (!payment || !payment.order_info || !payment.userId) {
+        return res.status(400).json({
+          success: false,
+          message: "Thông tin thanh toán không hợp lệ.",
+        });
+      }
+      if (payment.status !== "success") {
+        return res
+          .status(400)
+          .json({ success: false, message: "Thanh toán chưa hoàn tất." });
+      }
+    }
+
+    // Kiểm tra đơn hàng đã tồn tại (chỉ nếu có paymentId)
+    if (paymentId) {
+      const existed = await OrderModel.findOne({ paymentId });
+      if (existed) {
+        return res.status(409).json({
+          success: false,
+          message: "Đơn hàng đã được tạo từ giao dịch này.",
+        });
+      }
+    }
+
+    // Chuyển đổi productId thành ObjectId
+    const formattedItems = items.map((item: any) => ({
+      productId: new Types.ObjectId(item.productId),
+      name: item.name,
+      image: item.image,
+      price: item.price,
+      color: item.color,
+      size: item.size,
+      quantity: item.quantity,
+    }));
+
+    const orderCode = await generateUniqueTransactionCode("4U");
+
+    const order = await OrderModel.create({
+      userId: new Types.ObjectId(userId),
+      shippingAddress,
+      totalPrice,
+      discountAmount: discountAmount || 0,
+      shipping: shipping || 0,
+      paymentMethod,
+      items: formattedItems,
+      paymentId: paymentId ? new Types.ObjectId(paymentId) : null,
       orderCode,
       email: email || null,
       couponCode: couponCode || null,
     });
 
     if (couponCode) {
-      await Coupon.updateOne(
-        { code: couponCode },
-        { $inc: { usedCount: 1 } }
-      );
+      await Coupon.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
     }
 
     await NotificationModel.create({
       userId,
-      title: 'Đơn hàng của bạn đã được tạo thành công!',
+      title: "Đơn hàng của bạn đã được tạo thành công!",
       message: `Đơn hàng #${order.orderCode} đã được xác nhận.`,
-      type: 'order',
+      type: "order",
       isRead: false,
       link: `/profile?tab=order/${order._id}`,
     });
 
-    const admins = await UserModel.find({ role: 'admin' }).select('_id').lean();
-    const notis = admins.map(admin => ({
+    const admins = await UserModel.find({ role: "admin" }).select("_id").lean();
+    const notis = admins.map((admin) => ({
       userId: admin._id,
-      title: 'Có đơn hàng mới!',
+      title: "Có đơn hàng mới!",
       message: `Đơn hàng #${order.orderCode} vừa được tạo.`,
-      type: 'order',
+      type: "order",
       isRead: false,
     }));
     await NotificationModel.insertMany(notis);
 
-    return res.status(201).json({ success: true, message: 'Tạo đơn hàng thành công.', data: order });
+    return res.status(201).json({
+      success: true,
+      message: "Tạo đơn hàng thành công.",
+      data: order,
+    });
   } catch (err) {
-    console.error('Lỗi tạo đơn hàng:', err);
-    return res.status(500).json({ success: false, message: 'Lỗi máy chủ.' });
+    console.error("Lỗi tạo đơn hàng:", JSON.stringify(err, null, 2));
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi máy chủ.", error: err });
   }
 };
 
 // Lấy tất cả đơn hàng (Admin)
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const {
-      page = "1",
-      limit = "10",
-      search,
-      status,
-    } = req.query;
+    const { page = "1", limit = "10", search, status } = req.query;
 
     const pageNum = Math.max(parseInt(page as string), 1);
     const limitNum = Math.max(parseInt(limit as string), 1);
@@ -140,7 +227,7 @@ export const getOrders = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Lỗi máy chủ.",
-error: err.message,
+      error: err.message,
     });
   }
 };
@@ -168,7 +255,9 @@ export const getOrderById = async (req: Request, res: Response) => {
       .populate("paymentId", "amount status paymentMethod");
 
     if (!order) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đơn hàng." });
     }
 
     res.status(200).json({ success: true, data: order });
@@ -177,19 +266,30 @@ export const getOrderById = async (req: Request, res: Response) => {
   }
 };
 
-// Cập nhật trạng thái đơn hàng 
+// Cập nhật trạng thái đơn hàng
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled", "fake"];
+    const validStatuses = [
+      "pending",
+      "confirmed",
+      "shipping",
+      "delivered",
+      "cancelled",
+      "fake",
+    ];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Trạng thái không hợp lệ." });
     }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: "ID đơn hàng không hợp lệ." });
+      return res
+        .status(400)
+        .json({ success: false, message: "ID đơn hàng không hợp lệ." });
     }
 
     const order = await OrderModel.findByIdAndUpdate(
@@ -199,7 +299,9 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     ).populate("userId", "name email");
 
     if (!order || !order.userId) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đơn hàng." });
     }
 
     const user = order.userId as unknown as IUser;
@@ -224,7 +326,8 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         await NotificationModel.create({
           userId: user._id,
           title: "Cảnh báo hành vi giả mạo",
-          message: "Đơn hàng của bạn đã bị đánh dấu là giả mạo. Nếu tiếp tục, tài khoản có thể bị khóa.",
+          message:
+            "Đơn hàng của bạn đã bị đánh dấu là giả mạo. Nếu tiếp tục, tài khoản có thể bị khóa.",
           type: "warning",
           isRead: false,
           link: "/profile?tab=order",
@@ -232,12 +335,13 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       }
 
       if (fakeOrderCount >= 3) {
-await UserModel.findByIdAndUpdate(user._id, { is_active: false });
+        await UserModel.findByIdAndUpdate(user._id, { is_active: false });
         await sendAccountBlockedEmail(user.email, user.name);
         await NotificationModel.create({
           userId: user._id,
           title: "Tài khoản bị khóa",
-          message: "Tài khoản của bạn đã bị khóa vì có quá nhiều đơn hàng giả mạo.",
+          message:
+            "Tài khoản của bạn đã bị khóa vì có quá nhiều đơn hàng giả mạo.",
           type: "lock",
           isRead: false,
           link: "/profile",
@@ -260,16 +364,26 @@ await UserModel.findByIdAndUpdate(user._id, { is_active: false });
 export const cancelOrder = async (req: Request, res: Response) => {
   try {
     const order = await OrderModel.findById(req.params.id);
-    if (!order) return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
+    if (!order)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đơn hàng." });
 
     if (order.status !== "pending") {
-      return res.status(400).json({ success: false, message: "Chỉ có thể huỷ đơn hàng đang chờ xử lý." });
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể huỷ đơn hàng đang chờ xử lý.",
+      });
     }
 
     order.status = "cancelled";
     await order.save();
 
-    res.status(200).json({ success: true, message: "Huỷ đơn hàng thành công.", data: order });
+    res.status(200).json({
+      success: true,
+      message: "Huỷ đơn hàng thành công.",
+      data: order,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: "Lỗi máy chủ." });
   }
@@ -278,7 +392,10 @@ export const cancelOrder = async (req: Request, res: Response) => {
 // Tính doanh thu
 import dayjs from "dayjs";
 
-export const calculateRevenue = async (req: Request, res: Response): Promise<void> => {
+export const calculateRevenue = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { range = "today", from, to } = req.query;
 
@@ -325,11 +442,8 @@ export const calculateRevenue = async (req: Request, res: Response): Promise<voi
     }
 
     const match: any = {
-      $or: [
-        { status: "delivered" },
-        { status: "confirmed" }
-      ],
-      createdAt: { $gte: startDate, $lte: endDate }
+      $or: [{ status: "delivered" }, { status: "confirmed" }],
+      createdAt: { $gte: startDate, $lte: endDate },
     };
 
     const result = await OrderModel.aggregate([
@@ -339,8 +453,8 @@ export const calculateRevenue = async (req: Request, res: Response): Promise<voi
           _id: null,
           totalRevenue: { $sum: "$totalPrice" },
           totalShippingFee: { $sum: { $ifNull: ["$shippingFee", 0] } },
-          orderCount: { $sum: 1 }
-        }
+          orderCount: { $sum: 1 },
+        },
       },
       {
         $project: {
@@ -348,9 +462,9 @@ export const calculateRevenue = async (req: Request, res: Response): Promise<voi
           totalRevenue: 1,
           totalShippingFee: 1,
           grandTotal: { $add: ["$totalRevenue", "$totalShippingFee"] },
-          orderCount: 1
-        }
-      }
+          orderCount: 1,
+        },
+      },
     ]);
 
     res.json({
@@ -359,14 +473,14 @@ export const calculateRevenue = async (req: Request, res: Response): Promise<voi
         totalRevenue: 0,
         totalShippingFee: 0,
         grandTotal: 0,
-        orderCount: 0
-      }
+        orderCount: 0,
+      },
     });
   } catch (error) {
     console.error("Error calculating total revenue:", error);
     res.status(500).json({
       status: "error",
-      message: "Lỗi máy chủ khi tính tổng doanh thu"
+      message: "Lỗi máy chủ khi tính tổng doanh thu",
     });
   }
 };

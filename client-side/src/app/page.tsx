@@ -10,7 +10,6 @@ import { fetchMemberBenefits } from "@/services/memberBenefitApi";
 import { Toaster } from "react-hot-toast";
 import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
 
-// Quy định kiểu dữ liệu
 type Product = IProduct;
 type FeaturedSectionType = IFeaturedProducts;
 type Benefit = IMemberBenefit;
@@ -19,11 +18,10 @@ type HomeData = {
   products: Product[];
   featuredSection: FeaturedSectionType[];
   benefits: Benefit[];
-  newestProducts: Product[]; // Added for newest products
+  newestProducts: Product[];
   error: string | null;
 };
 
-// Lấy dữ liệu
 async function getHomeData(): Promise<HomeData> {
   try {
     const [productsData, featuredSection, benefits, newestProductsData] =
@@ -31,7 +29,7 @@ async function getHomeData(): Promise<HomeData> {
         fetchProducts({ sort_by: "best_selling", is_active: true }),
         fetchFeaturedSection(),
         fetchMemberBenefits(),
-        fetchProducts({ sort_by: "newest", is_active: true, limit: 2 }), // Fetch 2 newest products
+        fetchProducts({ sort_by: "newest", is_active: true, limit: 2 }),
       ]);
 
     return {
@@ -57,14 +55,19 @@ async function getHomeData(): Promise<HomeData> {
   }
 }
 
-// PAGE COMPONENT
 export default async function Home() {
   const { products, featuredSection, benefits, newestProducts } =
     await getHomeData();
 
-  // Prepare data for top and bottom banners
   const topBannerProduct = newestProducts[0] || {};
   const bottomBannerProduct = newestProducts[1] || {};
+
+  const topBannerImages = topBannerProduct.images?.length
+    ? topBannerProduct.images.slice(0, 4)
+    : ["/banner/banner_1.png", "/banner/banner_2.png"];
+  const bottomBannerImages = bottomBannerProduct.images?.length
+    ? bottomBannerProduct.images.slice(0, 4)
+    : ["/product/product_sale.png", "/banner/banner_2.png"];
 
   return (
     <div
@@ -83,11 +86,7 @@ export default async function Home() {
           topBannerProduct.description ||
           "Chào đón chương tiếp theo của Dynamic Air. Cảm nhận sự khác biệt."
         }
-        images={
-          topBannerProduct.images?.length
-            ? topBannerProduct.images
-            : ["/banner/banner_1.png", "/banner/banner_2.png"]
-        }
+        images={topBannerImages}
         altText={`Banner ${
           topBannerProduct.name || "Áo khoác Gopcore Basic"
         } mới ra mắt`}
@@ -117,11 +116,7 @@ export default async function Home() {
               bottomBannerProduct.description ||
               "Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
             }
-            images={
-              bottomBannerProduct.images?.length
-                ? bottomBannerProduct.images
-                : ["/product/product_sale.png", "/banner/banner_2.png"]
-            }
+            images={bottomBannerImages} // Sử dụng mảng đã giới hạn
             altText={`Banner ${
               bottomBannerProduct.name || "Áo khoác MLB Gopcore Basic"
             } khuyến mãi`}
@@ -143,11 +138,7 @@ export default async function Home() {
             bottomBannerProduct.description ||
             "Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
           }
-          images={
-            bottomBannerProduct.images?.length
-              ? bottomBannerProduct.images
-              : ["/product/product_sale.png", "/banner/banner_2.png"]
-          }
+          images={bottomBannerImages} // Sử dụng mảng đã giới hạn
           altText={`Banner ${
             bottomBannerProduct.name || "Áo khoác MLB Gopcore Basic"
           } khuyến mãi`}

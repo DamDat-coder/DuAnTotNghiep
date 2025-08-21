@@ -20,6 +20,7 @@ interface ActionButtonsProps {
   setIsLiked: (liked: boolean) => void;
   setIsBuyNowPopupOpen: (open: boolean) => void;
   couponId: string | null;
+  isOutOfStock?: boolean;
 }
 
 export default function ActionButtons({
@@ -31,6 +32,7 @@ export default function ActionButtons({
   setIsLiked,
   setIsBuyNowPopupOpen,
   couponId,
+  isOutOfStock,
 }: ActionButtonsProps) {
   const dispatch = useCartDispatch();
   const { user, openLoginWithData, setOpenLoginWithData, registerFormData } =
@@ -246,7 +248,8 @@ export default function ActionButtons({
           <div className="relative w-[95%]">
             <button
               onClick={handleAddToCart}
-              className="relative z-10 bg-black text-white w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between"
+              className="relative z-10 bg-black text-white w-[95%] px-6 py-2 text-sm font-medium flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isOutOfStock}
             >
               <span>THÊM VÀO GIỎ HÀNG</span>
               <Image
@@ -256,15 +259,17 @@ export default function ActionButtons({
                 height={20}
               />
             </button>
-            <div className="absolute bottom-[-0.3rem] right-[0.875rem] bg-white border-2 border-black w-[95%] border-solid px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
-              <span>THÊM VÀO GIỎ HÀNG</span>
-              <Image
-                src="/product/product_addToCart_angle.svg"
-                alt="Thêm vào giỏ hàng"
-                width={20}
-                height={20}
-              />
-            </div>
+            {!isOutOfStock && (
+              <div className="absolute bottom-[-0.3rem] right-[0.875rem] bg-white border-2 border-black w-[95%] border-solid px-6 py-2 text-sm font-medium flex items-center justify-between z-0">
+                <span>THÊM VÀO GIỎ HÀNG</span>
+                <Image
+                  src="/product/product_addToCart_angle.svg"
+                  alt="Thêm vào giỏ hàng"
+                  width={20}
+                  height={20}
+                />
+              </div>
+            )}
           </div>
           <div className="z-40 w-11 h-11 border-2 border-solid border-black flex justify-center items-center">
             <WishlistButton product={product} variant="black" />

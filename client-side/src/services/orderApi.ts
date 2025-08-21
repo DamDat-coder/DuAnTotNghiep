@@ -13,9 +13,6 @@ export async function initiatePayment(
     let endpoint = "";
 
     switch (paymentInfo.orderInfo.paymentMethod) {
-      case "cod":
-        endpoint = "/payment/create-cod-payment";
-        break;
       case "vnpay":
         endpoint = "/payment/create-vnpay-payment";
         break;
@@ -41,24 +38,77 @@ export async function initiatePayment(
     throw new Error(error.message || "Không thể khởi tạo thanh toán");
   }
 }
-
-// Tạo đơn hàng chính thức
 export async function createOrder(
-  paymentId: string,
-  userId: string
+  userId: string,
+  items: Array<{
+    productId: string;
+    name: string;
+    image: string;
+    price: number;
+    color: string;
+    size: string;
+    quantity: number;
+  }>,
+  shippingAddress: {
+    street: string;
+    ward: string;
+    province: string;
+    phone: string;
+  },
+  totalPrice: number,
+  discountAmount: number,
+  paymentMethod: string,
+  shipping: number,
+  email?: string,
+  couponCode?: string | null
 ): Promise<{ orderId: string }> {
   try {
+    // Log dữ liệu trước khi gửi
+    console.log(
+      "DEBUG: Data sent to createOrder:",
+      JSON.stringify(
+        {
+          paymentId: paymentMethod === "cod" ? null : undefined,
+          userId,
+          items,
+          shippingAddress,
+          totalPrice,
+          discountAmount,
+          paymentMethod,
+          shipping,
+          email,
+          couponCode,
+        },
+        null,
+        2
+      )
+    );
+
     const res = await fetchWithAuth<{ orderId: string }>(
       `${API_BASE_URL}/orders`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId, userId }),
+        body: JSON.stringify({
+          paymentId: paymentMethod === "cod" ? null : undefined,
+          userId,
+          items,
+          shippingAddress,
+          totalPrice,
+          discountAmount,
+          paymentMethod,
+          shipping,
+          email,
+          couponCode,
+        }),
       }
     );
     return res;
   } catch (error: any) {
-    console.error("Error creating order:", error);
+    console.error(
+      "DEBUG: Error creating order:",
+      JSON.stringify(error, null, 2)
+    );
     throw new Error(error.message || "Không thể tạo đơn hàng");
   }
 }
@@ -210,7 +260,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
       },
       totalPrice: order.totalPrice || 0,
       shipping: order.shipping || 0,
-status:
+      status:
         order.status &&
         ["pending", "confirmed", "shipping", "delivered", "cancelled"].includes(
           order.status
@@ -282,19 +332,26 @@ export function getBestSellingProductsFromOrders(
   const now = new Date();
   let start: Date, end: Date;
   if (time === "today") {
-    start = new Date(now); start.setHours(0, 0, 0, 0);
-    end = new Date(now); end.setHours(23, 59, 59, 999);
+    start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(now);
+    end.setHours(23, 59, 59, 999);
   } else if (time === "week") {
     const day = now.getDay();
-    start = new Date(now); start.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); start.setHours(0, 0, 0, 0);
-    end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999);
-  } else { // month
+    start = new Date(now);
+    start.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    start.setHours(0, 0, 0, 0);
+    end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+  } else {
+    // month
     start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   }
 
   // Lọc các order đã giao thành công trong khoảng thời gian này
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order) => {
     if (!order.createdAt) return false;
     const created = new Date(order.createdAt);
     return (

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCodPayment = exports.redirectZaloPayReturn = exports.checkZaloPayReturn = exports.createZaloPayPayment = exports.checkVNPayReturn = exports.createVNPayPayment = void 0;
+exports.redirectZaloPayReturn = exports.checkZaloPayReturn = exports.createZaloPayPayment = exports.checkVNPayReturn = exports.createVNPayPayment = void 0;
 const vnpay_1 = require("vnpay");
 const moment_1 = __importDefault(require("moment"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
@@ -326,33 +326,3 @@ const redirectZaloPayReturn = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.redirectZaloPayReturn = redirectZaloPayReturn;
-// COD - Tạo thanh toán
-const createCodPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { orderId, totalPrice, discountAmount, userId, orderInfo } = req.body;
-        if (!userId || !totalPrice || !orderInfo) {
-            return res.status(400).json({ message: "Thiếu thông tin thanh toán!" });
-        }
-        const payment = yield payment_model_1.default.create({
-            userId: new mongoose_1.Types.ObjectId(userId),
-            amount: totalPrice,
-            discount_amount: discountAmount || 0,
-            status: "success",
-            transaction_code: orderId,
-            gateway: "cod",
-            transaction_data: {},
-            order_info: orderInfo,
-            couponCode: orderInfo.code || null,
-            paid_at: new Date(),
-        });
-        return res.status(200).json({
-            paymentId: payment._id,
-            message: "Tạo thanh toán COD thành công",
-        });
-    }
-    catch (error) {
-        console.error("Lỗi tạo COD payment:", error);
-        res.status(500).json({ message: "Lỗi server" });
-    }
-});
-exports.createCodPayment = createCodPayment;

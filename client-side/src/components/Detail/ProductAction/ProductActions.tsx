@@ -135,6 +135,8 @@ export default function ProductActions({
     };
   }, [isSizeChartOpen, isBuyNowPopupOpen]);
 
+  const isOutOfStock = stock === 0;
+
   return (
     <>
       <div className="flex flex-col gap-9 tablet:py-6 laptop:py-8 laptop:gap-py-8 desktop:py-8 desktop:gap-py-8">
@@ -145,6 +147,7 @@ export default function ProductActions({
           setSelectedColor={setSelectedColor}
           setSelectedSize={setSelectedSize}
           availableSizes={availableSizes}
+          disabled={isOutOfStock}
         />
         <SizeSelector
           sizes={sizes}
@@ -154,6 +157,7 @@ export default function ProductActions({
           availableSizes={availableSizes}
           maxQuantity={maxQuantity}
           setIsSizeChartOpen={setIsSizeChartOpen}
+          disabled={isOutOfStock}
         />
       </div>
       <ActionButtons
@@ -165,6 +169,7 @@ export default function ProductActions({
         setIsLiked={setIsLiked}
         setIsBuyNowPopupOpen={setIsBuyNowPopupOpen}
         couponId={couponId}
+        isOutOfStock={isOutOfStock}
       />
       <SizeChartPopup
         isSizeChartOpen={isSizeChartOpen}

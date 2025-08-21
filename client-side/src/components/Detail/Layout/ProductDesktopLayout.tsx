@@ -16,16 +16,19 @@ export default function ProductDesktopLayout({
   sizes,
   stock,
   suggestedProducts,
+  isOutOfStock,
 }: {
   product: IProduct;
   sizes: { value: string; inStock: boolean }[];
   stock: number;
   suggestedProducts: IProduct[];
+  isOutOfStock: boolean;
 }) {
   const dispatch = useCartDispatch();
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isBuyNowPopupOpen, setIsBuyNowPopupOpen] = useState(false);
   const [isAddToCartPopupOpen, setIsAddToCartPopupOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
 
   // Hàm xử lý thêm vào giỏ hàng
   const handleAddToCart = (selectedProduct: IProduct, e: React.MouseEvent) => {
@@ -50,6 +53,8 @@ export default function ProductDesktopLayout({
             (img): img is string => typeof img === "string"
           )}
           productName={product.name}
+          isOutOfStock={isOutOfStock}
+          isWishlistOpen={isWishlistOpen}
         />
         <ProductDetailsSection product={product} />
         <div className="mb-4 mt-9">

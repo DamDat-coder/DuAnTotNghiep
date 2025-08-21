@@ -15,7 +15,6 @@ import { generateUniqueTransactionCode } from "../utils/generateTransactionCode"
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    // Lấy dữ liệu từ body
     const {
       paymentId,
       userId,
@@ -99,7 +98,7 @@ export const createOrder = async (req: Request, res: Response) => {
           message: "Thông tin thanh toán không hợp lệ.",
         });
       }
-      if (payment.status !== "success" && payment.status !== "paid") {
+      if (payment.status !== "success") {
         return res
           .status(400)
           .json({ success: false, message: "Thanh toán chưa hoàn tất." });
@@ -113,7 +112,6 @@ export const createOrder = async (req: Request, res: Response) => {
         return res.status(409).json({
           success: false,
           message: "Đơn hàng đã được tạo từ giao dịch này.",
-          data: existed,
         });
       }
     }
@@ -144,7 +142,7 @@ export const createOrder = async (req: Request, res: Response) => {
       email: email || null,
       couponCode: couponCode || null,
     });
-
+    
     if (couponCode) {
       await Coupon.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
     }

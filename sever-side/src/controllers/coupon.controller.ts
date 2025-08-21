@@ -79,7 +79,6 @@ export const createCoupon = async (req: Request, res: Response) => {
       startDate,
       endDate,
       usageLimit,
-      perUserLimit,
       is_active,
       applicableCategories,
       applicableProducts,
@@ -100,7 +99,6 @@ export const createCoupon = async (req: Request, res: Response) => {
       startDate,
       endDate,
       usageLimit: usageLimit ?? null,
-      perUserLimit: perUserLimit ?? null,
       usedCount: 0,
       is_active: is_active ?? true,
       applicableCategories: (applicableCategories || []).map(
@@ -142,7 +140,6 @@ export const updateCoupon = async (req: Request, res: Response) => {
       startDate,
       endDate,
       usageLimit,
-      perUserLimit,
       is_active,
       applicableCategories,
       applicableProducts,
@@ -162,7 +159,6 @@ export const updateCoupon = async (req: Request, res: Response) => {
     coupon.startDate = startDate === "" || startDate === null ? null : (startDate ?? coupon.startDate);
     coupon.endDate = endDate === "" || endDate === null ? null : (endDate ?? coupon.endDate);
     coupon.usageLimit = usageLimit ?? coupon.usageLimit;
-    coupon.perUserLimit = perUserLimit ?? coupon.perUserLimit;
     coupon.is_active = is_active ?? coupon.is_active;
 
     if (applicableCategories)

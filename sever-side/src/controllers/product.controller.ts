@@ -11,6 +11,7 @@ import { getAllChildCategoryIds } from "../utils/category.util";
 import { removeVietnameseTones } from "../utils/string.util";
 import { getOutfitRecommendations } from "../ai/recommendation";
 
+// Lấy sản phẩm gợi ý dựa trên hành vi người dùng
 export const recommendProducts = async (req: Request, res: Response) => {
   try {
     const userBehavior = {

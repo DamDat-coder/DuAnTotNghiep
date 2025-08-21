@@ -2,10 +2,10 @@ import { Request, Response } from "express";
 import { Types } from "mongoose";
 import mongoose from "mongoose";
 import dayjs from "dayjs";
-import Coupon from "../models/coupon.model";
 import OrderModel from "../models/order.model";
 import PaymentModel from "../models/payment.model";
 import NotificationModel from "../models/notification.model";
+import ProductModel from "../models/product.model";
 import UserModel, { IUser } from "../models/user.model";
 import { sendOrderSpamWarningEmail, sendAccountBlockedEmail } from "../utils/mailer";
 import { generateUniqueTransactionCode } from "../utils/generateTransactionCode";
@@ -69,9 +69,38 @@ export const createOrder = async (req: Request, res: Response) => {
       email: email || null,
       couponCode: couponCode || null,
     });
-    
-    if (couponCode) {
-      await Coupon.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
+
+    for (const item of items) {
+      const product = await ProductModel.findById(item.productId);
+
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          message: `Sản phẩm ${item.name} không tồn tại.`,
+        });
+      }
+
+      const variant = product.variants.find(
+        (v) => v.color === item.color && v.size === item.size
+      );
+
+      if (!variant) {
+        return res.status(400).json({
+          success: false,
+          message: `Biến thể ${item.color}/${item.size} của sản phẩm ${item.name} không tồn tại.`,
+        });
+      }
+
+      if (variant.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Sản phẩm ${item.name} (${item.color}/${item.size}) không đủ hàng.`,
+        });
+      }
+
+      variant.stock -= item.quantity;
+      product.salesCount += item.quantity; 
+      await product.save();
     }
 
     // Gửi thông báo cho user
@@ -85,9 +114,7 @@ export const createOrder = async (req: Request, res: Response) => {
     });
 
     // Gửi thông báo cho admin
-    const admins = await UserModel.find({ role: "admin" })
-      .select("_id")
-      .lean();
+    const admins = await UserModel.find({ role: "admin" }).select("_id").lean();
     const notis = admins.map((admin) => ({
       userId: admin._id,
       title: "Có đơn hàng mới!",
@@ -226,10 +253,19 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
     const user = order.userId as unknown as IUser;
 
+    const statusMap: Record<string, string> = {
+      pending: "Chờ xác nhận",
+      confirmed: "Đã xác nhận",
+      shipping: "Đang giao",
+      delivered: "Hoàn thành",
+      cancelled: "Đã hủy",
+      fake: "Từ chối nhận hàng",
+    };
+
     await NotificationModel.create({
       userId: user._id,
       title: `Đơn hàng #${order._id} đã được cập nhật`,
-      message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
+      message: `Trạng thái đơn hàng của bạn hiện tại là: ${statusMap[status]}.`,
       type: "order",
       isRead: false,
       link: `/profile?tab=order/${order._id}`,
@@ -254,7 +290,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       }
 
       if (fakeOrderCount >= 3) {
-await UserModel.findByIdAndUpdate(user._id, { is_active: false });
+        await UserModel.findByIdAndUpdate(user._id, { is_active: false });
         await sendAccountBlockedEmail(user.email, user.name);
         await NotificationModel.create({
           userId: user._id,

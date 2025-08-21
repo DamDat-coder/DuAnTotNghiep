@@ -15,10 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateRevenue = exports.cancelOrder = exports.updateOrderStatus = exports.getOrderById = exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const dayjs_1 = __importDefault(require("dayjs"));
-const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const order_model_1 = __importDefault(require("../models/order.model"));
 const payment_model_1 = __importDefault(require("../models/payment.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
+const product_model_1 = __importDefault(require("../models/product.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const mailer_1 = require("../utils/mailer");
 const generateTransactionCode_1 = require("../utils/generateTransactionCode");
@@ -68,8 +68,30 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             email: email || null,
             couponCode: couponCode || null,
         });
-        if (couponCode) {
-            yield coupon_model_1.default.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
+        for (const item of items) {
+            const product = yield product_model_1.default.findById(item.productId);
+            if (!product) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Sản phẩm ${item.name} không tồn tại.`,
+                });
+            }
+            const variant = product.variants.find((v) => v.color === item.color && v.size === item.size);
+            if (!variant) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Biến thể ${item.color}/${item.size} của sản phẩm ${item.name} không tồn tại.`,
+                });
+            }
+            if (variant.stock < item.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Sản phẩm ${item.name} (${item.color}/${item.size}) không đủ hàng.`,
+                });
+            }
+            variant.stock -= item.quantity;
+            product.salesCount += item.quantity;
+            yield product.save();
         }
         // Gửi thông báo cho user
         yield notification_model_1.default.create({
@@ -81,9 +103,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             link: `/profile?tab=order/${order._id}`,
         });
         // Gửi thông báo cho admin
-        const admins = yield user_model_1.default.find({ role: "admin" })
-            .select("_id")
-            .lean();
+        const admins = yield user_model_1.default.find({ role: "admin" }).select("_id").lean();
         const notis = admins.map((admin) => ({
             userId: admin._id,
             title: "Có đơn hàng mới!",
@@ -199,10 +219,18 @@ const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
             return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng." });
         }
         const user = order.userId;
+        const statusMap = {
+            pending: "Chờ xác nhận",
+            confirmed: "Đã xác nhận",
+            shipping: "Đang giao",
+            delivered: "Hoàn thành",
+            cancelled: "Đã hủy",
+            fake: "Từ chối nhận hàng",
+        };
         yield notification_model_1.default.create({
             userId: user._id,
             title: `Đơn hàng #${order._id} đã được cập nhật`,
-            message: `Trạng thái đơn hàng của bạn hiện tại là: ${status}.`,
+            message: `Trạng thái đơn hàng của bạn hiện tại là: ${statusMap[status]}.`,
             type: "order",
             isRead: false,
             link: `/profile?tab=order/${order._id}`,

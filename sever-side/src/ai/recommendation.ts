@@ -1,7 +1,7 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 import mongoose from "mongoose";
-import { mapNameToType } from "../ai/categoryMapping";
+import { mapNameToType, mapTypeToGroup } from "../ai/nameMapping";
 
 const model = new ChatGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -10,12 +10,16 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 export async function getOutfitRecommendations(userBehavior: any, products: any[]) {
-  const productsWithType = products.map((p) => ({
-    _id: String(p._id),
-    name: p.name,
-    category: p.category,
-    type: mapNameToType(p.name),
-  }));
+  const productsWithType = products.map((p) => {
+    const rawType = mapNameToType(p.name);
+    return {
+      _id: String(p._id),
+      name: p.name,
+      category: p.category,
+      rawType,
+      type: mapTypeToGroup(rawType), 
+    };
+  });
 
   const prompt = `
 Bạn là hệ thống gợi ý phối đồ thông minh.
@@ -72,7 +76,6 @@ function sanitizeAIResult(aiResult: any, productsWithType: any[]) {
     const bottomId = pickByType("bottom", basic);
     if (bottomId) basic.push(bottomId);
   }
-  // fallback: nếu không có bottom → vẫn giữ lại top
   basic = filterValid(basic).slice(0, 2);
 
   // layered_outfit
@@ -89,12 +92,11 @@ function sanitizeAIResult(aiResult: any, productsWithType: any[]) {
     const outerId = pickByType("outer", layered);
     if (outerId) layered.push(outerId);
   }
-  // fallback: nếu không có bottom → vẫn cho ra top + outer
   layered = filterValid(layered).slice(0, 3);
 
-  // recommendations
+  // recommendations (luôn đủ 5 sản phẩm)
   let recs = filterValid(aiResult.recommendations || []);
-  if (recs.length < 3) {
+  if (recs.length < 5) {
     const others = productsWithType
       .map((p) => p._id)
       .filter(
@@ -104,12 +106,12 @@ function sanitizeAIResult(aiResult: any, productsWithType: any[]) {
           !basic.includes(id) &&
           !layered.includes(id)
       );
-    recs = [...recs, ...others.slice(0, 3 - recs.length)];
+    recs = [...recs, ...others.slice(0, 5 - recs.length)];
   }
 
   return {
     basic_outfit: basic,
     layered_outfit: layered,
-    recommendations: recs,
+    recommendations: recs.slice(0, 5), // ✅ giới hạn tối đa 5
   };
 }

@@ -13,7 +13,6 @@ const couponSchema = new mongoose_1.Schema({
     endDate: { type: Date, default: null },
     usageLimit: { type: Number, default: null },
     usedCount: { type: Number, default: 0 },
-    perUserLimit: { type: Number, default: null },
     is_active: { type: Boolean, default: true },
     applicableCategories: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'categories', default: [] }],
     applicableProducts: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', default: [] }],

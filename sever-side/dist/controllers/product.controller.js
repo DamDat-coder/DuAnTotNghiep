@@ -23,6 +23,7 @@ const slugify_1 = __importDefault(require("slugify"));
 const category_util_1 = require("../utils/category.util");
 const string_util_1 = require("../utils/string.util");
 const recommendation_1 = require("../ai/recommendation");
+// Lấy sản phẩm gợi ý dựa trên hành vi người dùng
 const recommendProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userBehavior = {

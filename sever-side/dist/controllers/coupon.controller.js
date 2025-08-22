@@ -74,7 +74,7 @@ exports.getCouponById = getCouponById;
 // Tạo coupon mới
 const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, perUserLimit, is_active, applicableCategories, applicableProducts, } = req.body;
+        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
         const existing = yield coupon_model_1.default.findOne({ code });
         if (existing) {
             return res.status(400).json({ message: "Mã giảm giá đã tồn tại" });
@@ -89,7 +89,6 @@ const createCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             startDate,
             endDate,
             usageLimit: usageLimit !== null && usageLimit !== void 0 ? usageLimit : null,
-            perUserLimit: perUserLimit !== null && perUserLimit !== void 0 ? perUserLimit : null,
             usedCount: 0,
             is_active: is_active !== null && is_active !== void 0 ? is_active : true,
             applicableCategories: (applicableCategories || []).map((id) => new mongoose_1.default.Types.ObjectId(id)),
@@ -115,7 +114,7 @@ exports.createCoupon = createCoupon;
 // Cập nhật coupon
 const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, perUserLimit, is_active, applicableCategories, applicableProducts, } = req.body;
+        const { code, description, discountType, discountValue, minOrderAmount, maxDiscountAmount, startDate, endDate, usageLimit, is_active, applicableCategories, applicableProducts, } = req.body;
         const coupon = yield coupon_model_1.default.findById(req.params.id);
         if (!coupon) {
             return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
@@ -129,7 +128,6 @@ const updateCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         coupon.startDate = startDate === "" || startDate === null ? null : (startDate !== null && startDate !== void 0 ? startDate : coupon.startDate);
         coupon.endDate = endDate === "" || endDate === null ? null : (endDate !== null && endDate !== void 0 ? endDate : coupon.endDate);
         coupon.usageLimit = usageLimit !== null && usageLimit !== void 0 ? usageLimit : coupon.usageLimit;
-        coupon.perUserLimit = perUserLimit !== null && perUserLimit !== void 0 ? perUserLimit : coupon.perUserLimit;
         coupon.is_active = is_active !== null && is_active !== void 0 ? is_active : coupon.is_active;
         if (applicableCategories)
             coupon.applicableCategories = applicableCategories.map((id) => new mongoose_1.default.Types.ObjectId(id));

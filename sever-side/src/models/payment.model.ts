@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Types } from "mongoose";
+import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IOrderItem {
   productId: Types.ObjectId | string;
@@ -21,8 +21,8 @@ export interface IOrderInfo {
   shippingAddress: IShippingAddress;
   items: IOrderItem[];
   code?: string;
-  email?: string;
-  paymentMethod: "vnpay" | "zalopay" | "cod";
+  email?: string; 
+  paymentMethod: 'vnpay' | 'zalopay' | 'cod';
   shipping: number;
 }
 
@@ -36,9 +36,9 @@ export interface IPayment extends Document {
   userId: Types.ObjectId;
   amount: number;
   discount_amount?: number;
-  status: "pending" | "canceled" | "success" | "failed" | "paid";
+  status: 'pending' | 'canceled' | 'success' | 'failed' | 'paid';
   transaction_code: string;
-  gateway: "vnpay" | "zalopay" | "cod";
+  gateway: 'vnpay' | 'zalopay' | 'cod';
   transaction_data?: any;
   transaction_summary?: ITransactionSummary;
   paid_at?: Date;
@@ -50,7 +50,7 @@ export interface IPayment extends Document {
 
 const orderItemSchema = new Schema<IOrderItem>(
   {
-    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
     name: { type: String, required: true },
     price: { type: Number, required: true },
     image: { type: String, required: true },
@@ -77,7 +77,7 @@ const orderInfoSchema = new Schema<IOrderInfo>(
     items: { type: [orderItemSchema], required: true },
     paymentMethod: {
       type: String,
-      enum: ["vnpay", "zalopay", "cod"],
+      enum: ['vnpay', 'zalopay', 'cod'],
       required: true,
     },
     shipping: { type: Number, required: true },
@@ -89,18 +89,18 @@ const orderInfoSchema = new Schema<IOrderInfo>(
 
 const paymentSchema = new Schema<IPayment>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
     discount_amount: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "canceled", "success", "failed", "paid"],
-      default: "pending",
+      enum: ['pending', 'canceled', 'success', 'failed', 'paid'],
+      default: 'pending',
     },
     transaction_code: { type: String, required: true, unique: true },
     gateway: {
       type: String,
-      enum: ["vnpay", "zalopay", "cod"],
+      enum: ['vnpay', 'zalopay', 'cod'],
       required: true,
     },
     transaction_data: { type: Schema.Types.Mixed, default: null },
@@ -109,15 +109,16 @@ const paymentSchema = new Schema<IPayment>(
       default: {},
     },
     paid_at: { type: Date, default: null },
-    order_info: { type: orderInfoSchema, default: null },
+    order_info: { type: orderInfoSchema, default: null }, 
     couponCode: { type: String, default: null },
+
   },
   {
     timestamps: {
-      createdAt: "created_at",
-      updatedAt: "updated_at",
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
     },
   }
 );
 
-export default mongoose.model<IPayment>("Payment", paymentSchema);
+export default mongoose.model<IPayment>('Payment', paymentSchema);

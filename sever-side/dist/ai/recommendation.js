@@ -16,7 +16,7 @@ exports.getOutfitRecommendations = getOutfitRecommendations;
 const google_genai_1 = require("@langchain/google-genai");
 const messages_1 = require("@langchain/core/messages");
 const mongoose_1 = __importDefault(require("mongoose"));
-const categoryMapping_1 = require("../ai/categoryMapping");
+const nameMapping_1 = require("../ai/nameMapping");
 const model = new google_genai_1.ChatGoogleGenerativeAI({
     apiKey: process.env.GEMINI_API_KEY,
     model: "gemini-1.5-flash",
@@ -24,12 +24,16 @@ const model = new google_genai_1.ChatGoogleGenerativeAI({
 });
 function getOutfitRecommendations(userBehavior, products) {
     return __awaiter(this, void 0, void 0, function* () {
-        const productsWithType = products.map((p) => ({
-            _id: String(p._id),
-            name: p.name,
-            category: p.category,
-            type: (0, categoryMapping_1.mapNameToType)(p.name),
-        }));
+        const productsWithType = products.map((p) => {
+            const rawType = (0, nameMapping_1.mapNameToType)(p.name);
+            return {
+                _id: String(p._id),
+                name: p.name,
+                category: p.category,
+                rawType,
+                type: (0, nameMapping_1.mapTypeToGroup)(rawType),
+            };
+        });
         const prompt = `
 Bạn là hệ thống gợi ý phối đồ thông minh.
 
@@ -80,7 +84,6 @@ function sanitizeAIResult(aiResult, productsWithType) {
         if (bottomId)
             basic.push(bottomId);
     }
-    // fallback: nếu không có bottom → vẫn giữ lại top
     basic = filterValid(basic).slice(0, 2);
     // layered_outfit
     let layered = filterValid(aiResult.layered_outfit || []);
@@ -99,22 +102,21 @@ function sanitizeAIResult(aiResult, productsWithType) {
         if (outerId)
             layered.push(outerId);
     }
-    // fallback: nếu không có bottom → vẫn cho ra top + outer
     layered = filterValid(layered).slice(0, 3);
-    // recommendations
+    // recommendations (luôn đủ 5 sản phẩm)
     let recs = filterValid(aiResult.recommendations || []);
-    if (recs.length < 3) {
+    if (recs.length < 5) {
         const others = productsWithType
             .map((p) => p._id)
             .filter((id) => mongoose_1.default.Types.ObjectId.isValid(id) &&
             !recs.includes(id) &&
             !basic.includes(id) &&
             !layered.includes(id));
-        recs = [...recs, ...others.slice(0, 3 - recs.length)];
+        recs = [...recs, ...others.slice(0, 5 - recs.length)];
     }
     return {
         basic_outfit: basic,
         layered_outfit: layered,
-        recommendations: recs,
+        recommendations: recs.slice(0, 5), // ✅ giới hạn tối đa 5
     };
 }

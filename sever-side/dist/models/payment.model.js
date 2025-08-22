@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const orderItemSchema = new mongoose_1.Schema({
-    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
     name: { type: String, required: true },
     price: { type: Number, required: true },
     image: { type: String, required: true },
@@ -54,7 +54,7 @@ const orderInfoSchema = new mongoose_1.Schema({
     items: { type: [orderItemSchema], required: true },
     paymentMethod: {
         type: String,
-        enum: ['vnpay', 'zalopay', 'cod'],
+        enum: ["vnpay", "zalopay", "cod"],
         required: true,
     },
     shipping: { type: Number, required: true },
@@ -62,18 +62,18 @@ const orderInfoSchema = new mongoose_1.Schema({
     email: { type: String, default: null },
 }, { _id: false });
 const paymentSchema = new mongoose_1.Schema({
-    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     amount: { type: Number, required: true },
     discount_amount: { type: Number, default: 0 },
     status: {
         type: String,
-        enum: ['pending', 'canceled', 'success', 'failed', 'paid'],
-        default: 'pending',
+        enum: ["pending", "canceled", "success", "failed", "paid"],
+        default: "pending",
     },
     transaction_code: { type: String, required: true, unique: true },
     gateway: {
         type: String,
-        enum: ['vnpay', 'zalopay', 'cod'],
+        enum: ["vnpay", "zalopay", "cod"],
         required: true,
     },
     transaction_data: { type: mongoose_1.Schema.Types.Mixed, default: null },
@@ -86,8 +86,8 @@ const paymentSchema = new mongoose_1.Schema({
     couponCode: { type: String, default: null },
 }, {
     timestamps: {
-        createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        createdAt: "created_at",
+        updatedAt: "updated_at",
     },
 });
-exports.default = mongoose_1.default.model('Payment', paymentSchema);
+exports.default = mongoose_1.default.model("Payment", paymentSchema);

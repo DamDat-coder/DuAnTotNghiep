@@ -37,7 +37,9 @@ export default function Notification() {
           error?.status === 403 ||
           error?.message?.includes("Token không hợp lệ")
         ) {
-          console.warn("Token không hợp lệ hoặc hết hạn, bỏ qua loadNotifications");
+          console.warn(
+            "Token không hợp lệ hoặc hết hạn, bỏ qua loadNotifications"
+          );
           return;
         }
         console.error("Lỗi khi tải thông báo:", error);
@@ -109,7 +111,7 @@ export default function Notification() {
   const iconSrc = isOpen
     ? "/nav/notification_3.svg"
     : hasUnread
-    ? "/nav/notification_3.svg"
+    ? "/nav/notification_2.svg"
     : "/nav/notification_1.svg";
 
   return (
@@ -121,11 +123,8 @@ export default function Notification() {
         }`}
       >
         <div className="flex items-center justify-center">
-          {iconSrc === "/nav/notification_3.svg" && shouldShake ? (
-            <motion.div
-              variants={bellVariants}
-              animate="shake"
-            >
+          {iconSrc === "/nav/notification_2.svg" && shouldShake ? (
+            <motion.div variants={bellVariants} animate="shake">
               <Image
                 src={iconSrc}
                 alt="notification"

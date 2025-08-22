@@ -260,7 +260,7 @@ const getNewsList = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 .find(query)
                 .populate("user_id", "name email")
                 .populate("category_id", "name")
-                .sort({ createdAt: -1 })
+                .sort({ published_at: -1 })
                 .skip(skip)
                 .limit(limitNum),
             news_model_1.default.countDocuments(query),

@@ -186,9 +186,12 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       }
 
       toast.success("Đã thêm vào giỏ hàng!");
-      setTimeout(() => {
-        window.location.href = "/checkout";
-      }, 500);
+      // Kiểm tra nếu đang ở /checkout thì không chuyển hướng
+      if (window.location.pathname !== "/checkout") {
+        setTimeout(() => {
+          window.location.href = "/checkout";
+        }, 500);
+      }
       onClose();
     } catch (error) {
       console.error("DEBUG: Error in handleConfirm:", error);

@@ -12,13 +12,13 @@ export default function SearchSuggestions({ suggestions, onClick }: SearchSugges
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <h2 className="text-[1.125rem] text-[#687176]">Gợi ý hàng đầu</h2>
       <div className="flex flex-col gap-2">
         {suggestions.map((suggestion) => (
           <div
             key={suggestion.id}
-            className="text-sm text-black py-2 px-3 rounded cursor-pointer hover:shadow-lg hover:bg-gray-100 h-[3rem] two-line-clamp"
+            className="text-sm text-black py-2 px-3 rounded cursor-pointer hover:shadow-lg hover:bg-gray-100 h-[3.2rem] two-line-clamp"
             onClick={() => {
               onClick(suggestion);
                window.location.href = `/products/${suggestion.id}`;

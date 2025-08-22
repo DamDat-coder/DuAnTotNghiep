@@ -20,15 +20,17 @@ export default function AdminNotification() {
     async function loadNotifications() {
       try {
         const response = await fetchNotifications();
+        console.log("DEBUG notifications:", response.data);
         // Chỉ lấy thông báo loại đơn hàng
         const orderNotis = response.data
           .filter((n: any) => n.type === "order")
           .map((n: any) => ({
             ...n,
-            link: n.link ?? "", // Ensure 'link' property exists
+            isRead: n.is_read, // mapping để FE dùng isRead
+            link: n.link ?? "",
           }));
         setNotifications(orderNotis);
-        setHasUnread(orderNotis.some((n: any) => !n.is_read));
+        setHasUnread(orderNotis.some((n: any) => !n.isRead));
       } catch (error: any) {
         toast.error("Không thể tải thông báo");
       }
@@ -64,8 +66,17 @@ export default function AdminNotification() {
     return `${diffDays} ngày trước`;
   };
 
-  // Logic rung: chỉ áp dụng cho /nav/notification_3.svg
-  const shouldShake = hasUnread && !isOpen;
+  // Xác định nguồn hình ảnh
+  let iconSrc = "/nav/notification_1.svg";
+  if (isOpen) {
+    iconSrc = "/nav/notification_3.svg";
+  } else if (hasUnread) {
+    iconSrc = "/nav/notification_2.svg";
+  }
+
+  // Hiệu ứng rung chỉ cho notification_2.svg khi có thông báo chưa đọc và popup chưa mở
+  const shouldShake =
+    hasUnread && !isOpen && iconSrc === "/nav/notification_2.svg";
 
   // Hiệu ứng động cho chuông
   const bellVariants = {
@@ -81,13 +92,6 @@ export default function AdminNotification() {
     static: {},
   };
 
-  // Xác định nguồn hình ảnh
-  const iconSrc = isOpen
-    ? "/nav/notification_3.svg"
-    : hasUnread
-    ? "/nav/notification_3.svg"
-    : "/nav/notification_1.svg";
-
   return (
     <div className="relative" ref={ref}>
       <button
@@ -97,7 +101,7 @@ export default function AdminNotification() {
         }`}
       >
         <div className="relative flex items-center justify-center">
-          {iconSrc === "/nav/notification_3.svg" && shouldShake ? (
+          {iconSrc === "/nav/notification_2.svg" && shouldShake ? (
             <motion.div variants={bellVariants} animate="shake">
               <Image
                 src={iconSrc}
@@ -115,9 +119,6 @@ export default function AdminNotification() {
               height={24}
               className="text-black"
             />
-          )}
-          {hasUnread && (
-            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
           )}
         </div>
       </button>

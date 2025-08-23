@@ -46,6 +46,7 @@ export interface OrderDetail {
   shippingAddress: ShippingAddress;
   totalPrice: number;
   shipping: number;
+  discountAmount: number;
   status:
     | "pending"
     | "confirmed"

@@ -259,6 +259,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
         is_default: false,
       },
       totalPrice: order.totalPrice || 0,
+      discountAmount: order.discountAmount || 0,
       shipping: order.shipping || 0,
       status:
         order.status &&
@@ -311,6 +312,7 @@ export async function fetchOrderByIdForUser(id: string): Promise<OrderDetail> {
         is_default: false,
       },
       totalPrice: 0,
+      discountAmount: 0,
       shipping: 0,
       status: "pending",
       paymentMethod: "cod",

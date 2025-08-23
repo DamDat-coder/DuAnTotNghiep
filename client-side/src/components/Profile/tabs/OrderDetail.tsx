@@ -465,7 +465,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
                 {order.shipping.toLocaleString("vi-VN")}₫
               </td>
               <td className="text-center align-middle">
-                {order.couponId ? "Có áp dụng" : "0"}₫
+               - {order.discountAmount.toLocaleString("vi-VN")}₫
               </td>
               <td className="text-center align-middle font-semibold">
                 {order.totalPrice.toLocaleString("vi-VN")}₫

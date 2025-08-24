@@ -547,14 +547,22 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                   className="w-4 h-4"
                 />
               </button>
-              <Image
-                key="size_chart_img"
-                src="/product/product_size_table.png"
-                alt="Bảng kích thước"
-                width={300}
-                height={200}
-                className="w-[40vw] h-[40vh] object-contain"
-              />
+              <div className="flex justify-center items-center">
+                <Image
+                  src="/sizechart/1.png"
+                  alt="Close Icon"
+                  width={500}
+                  height={350}
+                  className="w-[500px] h-[350px]"
+                />
+                <Image
+                  src="/sizechart/2.png"
+                  alt="Close Icon"
+                  width={500}
+                  height={350}
+                  className="w-[500px] h-[350px]"
+                />
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -31,43 +31,31 @@ const recommendProducts = (req, res) => __awaiter(void 0, void 0, void 0, functi
             cart: req.body.cart || [],
         };
         const excludedIds = [...userBehavior.viewed, ...userBehavior.cart];
+        // Lấy tất cả sản phẩm đang active, loại bỏ sản phẩm đã xem/đặt trong cart
         const products = yield product_model_1.default
             .find({
             is_active: true,
             _id: { $nin: excludedIds },
         })
             .populate("category", "slug name")
-            .select("_id name category")
-            .limit(60)
             .lean();
+        // Gọi AI để gợi ý outfit dựa trên sản phẩm còn lại
         const aiResult = yield (0, recommendation_1.getOutfitRecommendations)(userBehavior, products);
-        // ✅ lọc ObjectId hợp lệ
+        // Lọc các ID hợp lệ
         const validRecommendations = aiResult.recommendations.filter((id) => mongoose_1.default.Types.ObjectId.isValid(id));
+        // Nếu không có gợi ý, trả về data rỗng
         if (validRecommendations.length === 0) {
-            return res.json({
-                success: true,
-                outfits: {
-                    basic: aiResult.basic_outfit,
-                    layered: aiResult.layered_outfit,
-                },
-                data: [],
-            });
+            return res.json({ success: true, data: [] });
         }
-        const recommendedProducts = yield product_model_1.default.find({
-            _id: { $in: validRecommendations },
-        });
-        return res.json({
-            success: true,
-            outfits: {
-                basic: aiResult.basic_outfit,
-                layered: aiResult.layered_outfit,
-            },
-            data: recommendedProducts,
-        });
+        // Lấy dữ liệu sản phẩm theo ID do AI gợi ý
+        const recommendedProducts = yield product_model_1.default
+            .find({ _id: { $in: validRecommendations } })
+            .populate("category", "slug name")
+            .lean();
+        return res.json({ success: true, data: recommendedProducts });
     }
     catch (err) {
         console.error("Recommend Error:", err);
-        // Nếu lỗi là CastError của Mongo thì trả về lỗi gọn gàng
         if (err.name === "CastError") {
             return res.status(400).json({
                 status: "error",

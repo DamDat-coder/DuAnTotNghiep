@@ -176,10 +176,12 @@ const applyCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             (coupon.endDate && now > new Date(coupon.endDate))) {
             return res.status(400).json({ status: "error", message: "Mã giảm giá đã hết hạn hoặc chưa bắt đầu" });
         }
+        if (coupon.usageLimit && coupon.usedCount && coupon.usedCount >= coupon.usageLimit) {
+            return res.status(400).json({ status: "error", message: "Mã giảm giá đã hết lượt sử dụng" });
+        }
         const productIds = items.map((item) => item.productId);
-        const products = yield product_model_1.default.find({ _id: { $in: productIds } });
+        const products = yield product_model_1.default.find({ _id: { $in: productIds } }).populate("category");
         let totalAmount = 0;
-        let applicableAmount = 0;
         let itemsWithDiscount = [];
         for (const item of items) {
             const product = products.find(p => p._id.toString() === item.productId);
@@ -187,19 +189,9 @@ const applyCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 continue;
             const itemTotal = item.price * item.quantity;
             totalAmount += itemTotal;
-            let isApplicable = !coupon.applicableProducts ||
-                coupon.applicableProducts.length === 0 ||
-                coupon.applicableProducts.some(id => id.equals(product._id));
-            let itemDiscount = 0;
-            if (isApplicable) {
-                applicableAmount += itemTotal;
-                if (coupon.discountType === "percent") {
-                    itemDiscount = (itemTotal * coupon.discountValue) / 100;
-                }
-                else if (coupon.discountType === "fixed") {
-                    itemDiscount = 0; // phân bổ sau
-                }
-            }
+            // kiểm tra sản phẩm/danh mục có thuộc coupon hay không
+            let isApplicable = (!coupon.applicableProducts || coupon.applicableProducts.length === 0 || coupon.applicableProducts.some(id => id.equals(product._id))) ||
+                (!coupon.applicableCategories || coupon.applicableCategories.length === 0 || coupon.applicableCategories.some(id => id.equals(product.category._id)));
             itemsWithDiscount.push({
                 productId: product._id,
                 name: product.name,
@@ -207,35 +199,45 @@ const applyCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 price: item.price,
                 total: itemTotal,
                 isDiscounted: isApplicable,
-                itemDiscount,
-                priceAfterDiscount: 0, // cập nhật sau
-                totalAfterDiscount: 0 // cập nhật sau
+                itemDiscount: 0,
+                priceAfterDiscount: item.price,
+                totalAfterDiscount: itemTotal
             });
         }
-        // Nếu là fixed, phân bổ giảm giá
-        if (coupon.discountType === "fixed") {
-            const applicableItems = itemsWithDiscount.filter(i => i.isDiscounted);
-            const totalApplicable = applicableItems.reduce((sum, i) => sum + i.total, 0);
-            let remainingDiscount = coupon.discountValue;
-            if (coupon.discountValue > totalApplicable) {
-                remainingDiscount = totalApplicable;
+        // kiểm tra min/max order
+        if (coupon.minOrderAmount && totalAmount < coupon.minOrderAmount) {
+            return res.status(400).json({ status: "error", message: `Đơn hàng phải tối thiểu ${coupon.minOrderAmount} để áp dụng mã này` });
+        }
+        if (coupon.maxOrderAmount && totalAmount > coupon.maxOrderAmount) {
+            return res.status(400).json({ status: "error", message: `Đơn hàng vượt quá mức tối đa ${coupon.maxOrderAmount} để áp dụng mã này` });
+        }
+        // tính giảm giá
+        const applicableItems = itemsWithDiscount.filter(i => i.isDiscounted);
+        let discount = 0;
+        if (coupon.discountType === "percent") {
+            for (const item of applicableItems) {
+                item.itemDiscount = (item.total * coupon.discountValue) / 100;
+                discount += item.itemDiscount;
             }
+            // giới hạn giảm tối đa
+            if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
+                const factor = coupon.maxDiscountAmount / discount;
+                discount = coupon.maxDiscountAmount;
+                for (const item of applicableItems) {
+                    item.itemDiscount = parseFloat((item.itemDiscount * factor).toFixed(2));
+                }
+            }
+        }
+        else if (coupon.discountType === "fixed") {
+            let totalApplicable = applicableItems.reduce((sum, i) => sum + i.total, 0);
+            let remainingDiscount = Math.min(coupon.discountValue, totalApplicable);
             for (const item of applicableItems) {
                 const ratio = item.total / totalApplicable;
                 item.itemDiscount = parseFloat((remainingDiscount * ratio).toFixed(2));
+                discount += item.itemDiscount;
             }
         }
-        // Tính lại tổng discount từ từng item
-        let discount = itemsWithDiscount.reduce((sum, i) => sum + i.itemDiscount, 0);
-        // Nếu là percent thì giới hạn discount nếu vượt quá maxDiscountAmount
-        if (coupon.discountType === "percent" && coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
-            const factor = coupon.maxDiscountAmount / discount;
-            discount = coupon.maxDiscountAmount;
-            for (const item of itemsWithDiscount) {
-                item.itemDiscount = item.isDiscounted ? parseFloat((item.itemDiscount * factor).toFixed(2)) : 0;
-            }
-        }
-        // Cập nhật giá sau giảm
+        // cập nhật giá sau giảm
         for (const item of itemsWithDiscount) {
             const totalAfter = item.total - item.itemDiscount;
             item.totalAfterDiscount = parseFloat(totalAfter.toFixed(2));
@@ -247,7 +249,6 @@ const applyCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Áp dụng mã thành công",
             data: {
                 totalAmount,
-                applicableAmount,
                 discount,
                 finalAmount,
                 couponCode: coupon.code,

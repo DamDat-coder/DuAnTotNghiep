@@ -11,6 +11,4 @@ router.get("/check-payment-vnpay", payment_controller_1.checkVNPayReturn);
 router.post("/create-zalopay-payment", auth_middleware_1.verifyToken, payment_controller_1.createZaloPayPayment);
 router.post("/zalopay-callback", payment_controller_1.checkZaloPayReturn);
 router.get("/zalopay-return", payment_controller_1.redirectZaloPayReturn);
-// Cod
-router.post("/create-cod-payment", auth_middleware_1.verifyToken, payment_controller_1.createCodPayment);
 exports.default = router;

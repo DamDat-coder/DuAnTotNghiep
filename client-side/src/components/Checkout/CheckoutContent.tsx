@@ -9,12 +9,13 @@ import ShippingForm from "@/components/Checkout/Infomation/ShippingForm";
 import ShippingMethod from "@/components/Checkout/Infomation/ShippingMethod";
 import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
 import AddressPopup from "@/components/Checkout/Address/AddressPopup";
-import ProductSwiper from "@/components/Home/ProductSection/ProductSwiper";
 import { Toaster, toast } from "react-hot-toast";
 import { useEffect, useState, useMemo } from "react";
 import { recommendProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
+import ProductSwiperCheckout from "./SuggestedProducts/ProductSwiperCheckout";
+import BuyNowPopup from "../Core/Layout/BuyNowButton/BuyNowPopup";
 
 export default function Checkout() {
   const {
@@ -201,10 +202,9 @@ export default function Checkout() {
                     <h2 className="text-xl font-semibold mb-4">
                       Sản phẩm gợi ý
                     </h2>
-                    <ProductSwiper
+                    <ProductSwiperCheckout
                       products={suggestedProducts}
                       slidesPerView={2.5}
-                      onAddToCart={handleAddToCart}
                       onBuyNow={handleBuyNow}
                     />
                   </>
@@ -258,10 +258,9 @@ export default function Checkout() {
                       <h2 className="text-xl font-semibold mb-4">
                         Sản phẩm gợi ý
                       </h2>
-                      <ProductSwiper
+                      <ProductSwiperCheckout
                         products={suggestedProducts}
                         slidesPerView={2.5}
-                        onAddToCart={handleAddToCart}
                         onBuyNow={handleBuyNow}
                       />
                     </>
@@ -316,6 +315,16 @@ export default function Checkout() {
             onSelect={handleSelectAddress}
             onClose={() => setIsAddressPopupOpen(false)}
             isLoading={isLoading}
+          />
+        )}
+        {isBuyNowPopupOpen && selectedProduct && (
+          <BuyNowPopup
+            product={selectedProduct}
+            isOpen={isBuyNowPopupOpen}
+            onClose={() => {
+              setIsBuyNowPopupOpen(false);
+              setSelectedProduct(null);
+            }}
           />
         )}
       </Container>

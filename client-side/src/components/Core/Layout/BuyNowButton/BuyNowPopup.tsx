@@ -9,6 +9,8 @@ import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginPopup from "../Popups/AuthAction/LoginPopup";
+import { validateCoupon } from "@/services/couponApi";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 
 interface BuyNowPopupProps {
   product: IProduct;
@@ -34,6 +36,24 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   const searchParams = useSearchParams();
   const couponId = searchParams.get("coupon");
   const [applyCoupon, setApplyCoupon] = useState(!!couponId);
+  const [isCouponValid, setIsCouponValid] = useState(true);
+  const [couponErrorMessage, setCouponErrorMessage] = useState("");
+
+  // Di chuyển khai báo selectedVariant lên trước useEffect
+  const selectedVariant = product.variants.find(
+    (v) => v.size === selectedSize && v.color === selectedColor
+  );
+  const discountedPrice = Math.round(
+    (selectedVariant?.price ?? 0) *
+      (1 - (selectedVariant?.discountPercent ?? 0) / 100)
+  );
+  const maxQuantity = selectedVariant ? selectedVariant.stock : 0;
+
+  // Tính tổng giá dựa trên số lượng
+  const totalOriginPrice = selectedVariant
+    ? selectedVariant.price * quantity
+    : 0;
+  const totalDiscountedPrice = discountedPrice * quantity;
 
   useEffect(() => {
     if (isOpen || isSizeChartOpen || isLoginPopupOpen) {
@@ -45,6 +65,63 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       document.body.classList.remove("overflow-hidden");
     };
   }, [isOpen, isSizeChartOpen, isLoginPopupOpen]);
+
+  // Kiểm tra tính hợp lệ của mã giảm giá
+  useEffect(() => {
+    const checkCouponValidity = async () => {
+      if (
+        !couponId ||
+        !applyCoupon ||
+        !selectedVariant ||
+        !product.categoryId
+      ) {
+        setIsCouponValid(true);
+        setCouponErrorMessage("");
+        return;
+      }
+
+      try {
+        console.log(totalDiscountedPrice);
+
+        const totalPrice = totalDiscountedPrice;
+        const response = await validateCoupon(couponId, totalPrice, [
+          {
+            id: product.id,
+            categoryId: product.categoryId,
+            price: selectedVariant.price,
+            discountPercent: selectedVariant.discountPercent || 0,
+            quantity,
+          },
+        ]);
+
+        if (!response.success) {
+          setIsCouponValid(false);
+          setCouponErrorMessage(
+            response.message ||
+              "Không thể áp dụng mã giảm giá vì giá trị đơn hàng không đáp ứng đủ giá trị tối thiểu"
+          );
+        } else {
+          setIsCouponValid(true);
+          setCouponErrorMessage("");
+        }
+      } catch (error) {
+        console.error("Error validating coupon:", error);
+        setIsCouponValid(false);
+        setCouponErrorMessage(
+          "Không thể áp dụng mã giảm giá vì giá trị đơn hàng không đáp ứng đủ giá trị tối thiểu"
+        );
+      }
+    };
+
+    checkCouponValidity();
+  }, [
+    couponId,
+    applyCoupon,
+    selectedVariant,
+    totalDiscountedPrice,
+    product.id,
+    product.categoryId,
+  ]);
 
   const sizes = Array.from(new Set(product.variants.map((v) => v.size))).map(
     (size) => ({
@@ -62,16 +139,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     Đỏ: "#FF0000",
     Xám: "#808080",
   };
-
-  const selectedVariant = product.variants.find(
-    (v) => v.size === selectedSize && v.color === selectedColor
-  );
-  const discountedPrice = Math.round(
-    (selectedVariant?.price ?? 0) *
-      (1 - (selectedVariant?.discountPercent ?? 0) / 100)
-  );
-
-  const maxQuantity = selectedVariant ? selectedVariant.stock : 0;
 
   const availableSizes = selectedColor
     ? product.variants
@@ -99,7 +166,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
         selectedSize,
         selectedColor,
         quantity,
-        applyCoupon: applyCoupon && couponId ? couponId : null,
+        applyCoupon: applyCoupon && couponId && isCouponValid ? couponId : null,
       };
       try {
         localStorage.setItem("pendingBuyNow", JSON.stringify(pendingBuyNow));
@@ -128,6 +195,10 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
     }
     if (!product.categoryId) {
       toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
+      return;
+    }
+    if (applyCoupon && couponId && !isCouponValid) {
+      toast.error(couponErrorMessage);
       return;
     }
 
@@ -168,7 +239,7 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
           selected: true,
           categoryId: product.categoryId,
           stock: selectedVariant.stock,
-          fromBuyNow: true, // Thêm để nhận diện BuyNow
+          fromBuyNow: true,
         };
         dispatch({ type: "add", item: cartItem });
       }
@@ -181,12 +252,11 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
       };
       localStorage.setItem("recentBuyNow", JSON.stringify(recentBuyNow));
 
-      if (applyCoupon && couponId) {
+      if (applyCoupon && couponId && isCouponValid) {
         localStorage.setItem("pendingCouponCode", couponId);
       }
 
       toast.success("Đã thêm vào giỏ hàng!");
-      // Kiểm tra nếu đang ở /checkout thì không chuyển hướng
       if (window.location.pathname !== "/checkout") {
         setTimeout(() => {
           window.location.href = "/checkout";
@@ -223,7 +293,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
   };
 
   return (
-    // ...giữ nguyên phần giao diện
     <>
       <AnimatePresence>
         {isOpen && (
@@ -271,11 +340,11 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-red-500 font-bold text-lg">
-                      {(discountedPrice || 0).toLocaleString("vi-VN")}₫
+                      {totalDiscountedPrice.toLocaleString("vi-VN")}₫
                     </p>
                     {selectedVariant && selectedVariant.discountPercent > 0 && (
                       <p className="text-sm text-[#374151] line-through">
-                        {selectedVariant.price.toLocaleString("vi-VN")}₫
+                        {totalOriginPrice.toLocaleString("vi-VN")}₫
                       </p>
                     )}
                   </div>
@@ -435,20 +504,45 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   </p>
                 )}
                 {couponId && (
-                  <div className="mt-2 flex items-center gap-2 cursor-pointer">
+                  <div className="mt-2 flex items-center gap-2">
                     <input
                       id="applyCoupon"
                       type="checkbox"
-                      checked={applyCoupon}
-                      onChange={() => setApplyCoupon(!applyCoupon)}
-                      className="accent-black cursor-pointer w-[2%] h-full"
+                      checked={applyCoupon && isCouponValid}
+                      onChange={() =>
+                        isCouponValid && setApplyCoupon(!applyCoupon)
+                      }
+                      disabled={!isCouponValid}
+                      className={`accent-black cursor-pointer w-[2%] h-full ${
+                        !isCouponValid ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                      data-tooltip-id="coupon-tooltip"
+                      data-tooltip-content={
+                        !isCouponValid ? couponErrorMessage : undefined
+                      }
                     />
                     <label
                       htmlFor="applyCoupon"
-                      className="text-sm cursor-pointer"
+                      className={`text-sm ${
+                        !isCouponValid
+                          ? "text-gray-500 cursor-not-allowed"
+                          : "cursor-pointer"
+                      }`}
                     >
                       Áp dụng mã giảm giá hiện tại
                     </label>
+                    <ReactTooltip
+                      id="coupon-tooltip"
+                      place="top"
+                      style={{
+                        backgroundColor: "#1F2937",
+                        color: "#FFFFFF",
+                        fontSize: "12px",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        maxWidth: "200px",
+                      }}
+                    />
                   </div>
                 )}
                 <button
@@ -494,6 +588,22 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   className="w-4 h-4"
                 />
               </button>
+              <div className="flex justify-center items-center">
+                <Image
+                  src="/sizechart/1.png"
+                  alt="Close Icon"
+                  width={500}
+                  height={350}
+                  className="w-[500px] h-[350px]"
+                />
+                <Image
+                  src="/sizechart/2.png"
+                  alt="Close Icon"
+                  width={500}
+                  height={350}
+                  className="w-[500px] h-[350px]"
+                />
+              </div>
               <div className="flex justify-center items-center">
                 <Image
                   src="/sizechart/1.png"

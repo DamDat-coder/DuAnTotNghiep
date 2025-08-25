@@ -92,7 +92,7 @@ export default function SearchResults({
               </div>
               <div className="w-2/3">
                 <div className="content flex flex-col gap-2">
-                  <div className="name text-sm text-[#374151] pb-2 h-[2.5rem] two-line-clamp">
+                  <div className="name text-sm text-[#374151] line-clamp-2">
                     {product.name || "Sản phẩm"}
                   </div>
                   <div className="price-container flex items-center gap-2">

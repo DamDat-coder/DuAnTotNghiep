@@ -218,9 +218,9 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
-      <div className="bg-white w-[536px] rounded-lg shadow-lg p-[48px] relative">
+      <div className="bg-white w-[536px] max-w-full mobile:w-full rounded-lg shadow-lg p-[48px] mobile:p-3 max-h-[90vh] mobile:max-h-[90vh] overflow-y-auto relative">
         <div className="flex justify-between items-center mb-[24px]">
-          <h2 className="text-[24px] font-bold text-black leading-[36px]">
+          <h2 className="text-[24px] mobile:text-[18px] font-bold text-black leading-[36px]">
             Thêm địa chỉ
           </h2>
           <button
@@ -245,11 +245,11 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
               placeholder="Địa chỉ"
               value={formData.street}
               onChange={handleChange}
-              className="w-[440px] h-[47px] px-3 border border-gray-300 rounded-[4px] mb-[16px] text-sm"
+              className="w-[440px] mobile:w-full h-[47px] px-3 border border-gray-300 rounded-[4px] mb-[16px] text-sm"
               required
             />
 
-            <div className="relative w-[440px] mb-[16px]">
+            <div className="relative w-[440px] mobile:w-full mb-[16px]">
               <select
                 name="province"
                 value={formData.province}
@@ -273,7 +273,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
               />
             </div>
 
-            <div className="relative w-[440px] mb-[16px]">
+            <div className="relative w-[440px] mobile:w-full mb-[16px]">
               <select
                 name="ward"
                 value={formData.ward}
@@ -298,7 +298,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
               />
             </div>
 
-            <label className="flex items-center w-[440px] mb-[16px]">
+            <label className="flex items-center w-[440px] mobile:w-full mb-[16px]">
               <input
                 type="checkbox"
                 name="isDefaultAddress"
@@ -314,11 +314,11 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
               Đặt làm địa chỉ mặc định
             </label>
 
-            <div className="flex gap-2 w-full">
+            <div className="flex gap-2 w-full flex-col mobile:flex-col mobile:gap-2 laptop:flex-row">
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid}
-                className={`w-[220px] h-[40px] mt-[36px] rounded-[8px] text-sm text-[#F5F5F5] ${
+                className={`w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-[#F5F5F5] ${
                   isSubmitting || !isFormValid
                     ? "bg-gray-400"
                     : "bg-black hover:bg-opacity-90"
@@ -329,7 +329,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
               <button
                 type="button"
                 onClick={() => setShowMap(true)}
-                className="w-[220px] h-[40px] mt-[36px] rounded-[8px] text-sm text-white bg-blue-600 hover:bg-blue-700"
+                className="w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-white bg-blue-600 hover:bg-blue-700"
               >
                 Chọn trên bản đồ
               </button>
@@ -339,7 +339,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
 
         {showMap && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-2xl w-full max-w-[900px] p-4 relative">
+            <div className="bg-white rounded-2xl w-full max-w-[900px] mobile:max-w-full p-4 relative">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold">Chọn vị trí giao hàng</h4>
                 <button
@@ -349,7 +349,7 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
                   Đóng
                 </button>
               </div>
-              <div className="w-full h-[520px] rounded-xl overflow-hidden">
+              <div className="w-full h-[520px] mobile:h-[300px] rounded-xl overflow-hidden">
                 <MapContainer
                   center={mapPosition ?? { lat: 10.7769, lng: 106.7009 }}
                   zoom={14}

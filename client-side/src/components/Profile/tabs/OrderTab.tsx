@@ -68,7 +68,7 @@ export default function Orders({
 
   const getStatusBadge = (status: IOrder["status"]) => {
     const baseStyle =
-      "flex items-center justify-center w-[118px] h-[38px] text-[16px] rounded-[8px] font-medium";
+      "flex items-center justify-center h-[38px] text-[16px] rounded-[8px] font-medium w-[118px] mobile:w-auto mobile:min-w-[100px] mobile:text-[14px]";
     switch (status) {
       case "pending":
         return (
@@ -127,11 +127,11 @@ export default function Orders({
       <Toaster position="top-right" />
       <h1 className="text-xl font-semibold mb-6">ĐƠN HÀNG</h1>
 
-      <div className="flex gap-6 border-b border-[#E0E0E0]">
+      <div className="flex gap-6 border-b border-[#E0E0E0] overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-300">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
-            className={`pb-3 text-[16px] text-black transition-all duration-200 relative
+            className={`pb-3 text-[16px] text-black transition-all duration-200 relative inline-block
               ${
                 selectedStatus === tab.value
                   ? "font-bold border-b-2 border-black"
@@ -157,7 +157,10 @@ export default function Orders({
               className="w-full bg-white rounded-[8px] shadow-custom-order p-6"
             >
               <div className="flex justify-between items-start mb-[16px]">
-                <p className="font-bold text-sm text-black">
+                <p className="font-bold text-sm text-black hidden mobile:block">
+                  MÃ ĐƠN<br />HÀNG: {order.orderCode || order._id}
+                </p>
+                <p className="font-bold text-sm text-black mobile:hidden">
                   MÃ ĐƠN HÀNG: {order.orderCode || order._id}
                 </p>
                 {getStatusBadge(order.status)}

@@ -67,8 +67,8 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
 
   if (hasReviewed && reviewData) {
     return (
-      <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-md w-[400px]">
+      <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50 px-2">
+        <div className="bg-white p-6 rounded-md w-[400px] max-w-full mobile:w-full mobile:p-3 max-h-[90vh] overflow-y-auto">
           <h2 className="text-xl font-semibold mb-4 text-center">
             Bạn đã đánh giá sản phẩm này!
           </h2>
@@ -120,8 +120,8 @@ const ReviewPopup: React.FC<ReviewPopupProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-md w-[400px]">
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50 px-2">
+      <div className="bg-white p-6 rounded-md w-[400px] max-w-full mobile:w-full mobile:p-3 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4 text-center">
           Viết đánh giá
         </h2>

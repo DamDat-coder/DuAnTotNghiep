@@ -90,18 +90,6 @@ export default function ProfileTab() {
               </button>
             </div>
           </div>
-
-          {showPhoneModal && (
-            <PhoneVerifyModal
-              userId={user?.id || ""}
-              onClose={() => setShowPhoneModal(false)}
-              initialPhone={phone}
-              onVerified={(newPhone) => {
-                setPhone(newPhone);
-              }}
-            />
-          )}
-
           <div className="text-right">
             <button
               className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
@@ -117,6 +105,16 @@ export default function ProfileTab() {
 
       {showChangePassword && (
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
+      {showPhoneModal && (
+        <PhoneVerifyModal
+          userId={user?.id || ""}
+          onClose={() => setShowPhoneModal(false)}
+          initialPhone={phone}
+          onVerified={(newPhone) => {
+            setPhone(newPhone);
+          }}
+        />
       )}
     </div>
   );

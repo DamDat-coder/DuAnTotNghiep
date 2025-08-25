@@ -82,8 +82,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
   };
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white w-[536px] h-[400px] rounded-lg shadow-lg px-[48px] pt-[36px] pb-[24px] relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-2">
+      <div className="bg-white w-[536px] max-w-full mobile:w-full h-auto rounded-lg shadow-lg px-[48px] pt-[36px] pb-[24px] mobile:p-3 relative max-h-[90vh] overflow-y-auto">
         {/* Tiêu đề + Nút đóng */}
         <div className="flex items-center justify-between mb-[24px]">
           <h2 className="text-[24px] font-bold text-black leading-[36px]">
@@ -105,7 +105,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} id="change-password-form" noValidate>
-          <div className="w-[440px] relative mb-[20px]">
+          <div className="w-[440px] mobile:w-full relative mb-[20px]">
             <input
               type={showOldPassword ? "text" : "password"}
               name="oldPassword"
@@ -125,7 +125,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
               {showOldPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </button>
           </div>
-          <div className="w-[440px] relative mb-[20px]">
+          <div className="w-[440px] mobile:w-full relative mb-[20px]">
             <input
               type={showPassword ? "text" : "password"}
               name="newPassword"
@@ -154,7 +154,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
               {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </button>
           </div>
-          <div className="w-[440px] relative mb-[20px]">
+          <div className="w-[440px] mobile:w-full relative mb-[20px]">
             <input
               type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
@@ -178,7 +178,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className={`w-[440px] h-[40px] rounded-[8px] text-sm ${
+            className={`w-[440px] mobile:w-full h-[40px] rounded-[8px] text-sm ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-black text-[#F5F5F5] hover:bg-opacity-90"

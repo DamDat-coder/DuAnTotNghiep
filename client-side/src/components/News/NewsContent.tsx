@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -53,11 +53,11 @@ export default function NewsContent() {
       if (res.status === 'success' && Array.isArray(res.data)) {
         setNewsList(res.data);
 
-        // Tag: unique, random tối đa 20 tag
+        // Tag: unique, random tối đa 10 tag
         const allTags = res.data.flatMap((news: News) => news.tags || []);
         const uniqueTags = Array.from(new Set(allTags));
         const shuffled = uniqueTags.sort(() => 0.5 - Math.random());
-        setTags(shuffled.slice(0, 20));
+        setTags(shuffled.slice(0, 10));
 
         // Lọc luôn nếu url có tag
         const tagParam = searchParams.get('tag');
@@ -144,11 +144,11 @@ export default function NewsContent() {
     currentPage * postsPerPage
   );
 
-
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="max-w-[1320px] mx-auto px-2 laptop:px-6">
         <div className="max-w-[350px] mx-auto laptop:max-w-none">{breadcrumb}</div>
+        
         {/* Search input mobile only */}
         <div className="laptop:hidden mt-2 mb-4 max-w-[350px] mx-auto">
           <input
@@ -158,15 +158,24 @@ export default function NewsContent() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <button
-            className="w-full bg-black text-white py-2 rounded text-sm"
-            onClick={handleSearchClick}
-          >
-            Tìm kiếm <span className="ml-1">🔍</span>
-          </button>
+        <button
+          className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center gap-2"
+          onClick={handleSearchClick}
+        >
+          Tìm kiếm
+          <span className="ml-1">
+            <Image
+              src="/posts/search-icon.svg"
+              alt="search"
+              width={20}
+              height={20}
+              className="text-black inline-block"
+            />
+          </span>
+        </button>
         </div>
         <div className="laptop:grid laptop:grid-cols-[300px_1fr] gap-8">
-          {/* Sidebar: ẩn trên mobile, chỉ hiện trên laptop trở lên */}
+          {/* Sidebar */}
           <aside className="hidden laptop:flex flex-col gap-8 border-r pr-8">
             {/* Search input laptop+ only */}
             <div>
@@ -181,9 +190,19 @@ export default function NewsContent() {
                 className="w-full bg-black text-white py-2 rounded text-sm"
                 onClick={handleSearchClick}
               >
-                Tìm kiếm <span className="ml-1">🔍</span>
+                Tìm kiếm
+                <span className="ml-1">
+                  <Image
+                    src="/posts/search-icon.svg"
+                    alt="search"
+                    width={20}
+                    height={20}
+                    className="text-black inline-block"
+                  />
+                </span>
               </button>
             </div>
+
             {/* Tag */}
             <div>
               <div className="mb-2 font-semibold text-base flex items-center justify-between">
@@ -204,6 +223,7 @@ export default function NewsContent() {
                 ))}
               </div>
             </div>
+
             {/* Đã xem gần đây */}
             <div>
               <div className="mb-2 font-semibold text-base">Đã xem gần đây</div>
@@ -231,9 +251,10 @@ export default function NewsContent() {
               </div>
             </div>
           </aside>
+
           {/* Main content */}
           <main>
-            {/* Featured post (ẩn trên mobile, hiện trên laptop) */}
+            {/* Featured post */}
             {featuredPost && (
               <div className="hidden laptop:flex flex-col laptop:flex-row gap-6 mb-8">
                 <Image
@@ -257,9 +278,10 @@ export default function NewsContent() {
                 </div>
               </div>
             )}
-            {/* Lưới các bài còn lại */}
+
+            {/* Grid posts */}
             <div className="grid grid-cols-1 tablet:grid-cols-2 laptop:grid-cols-3 gap-6 justify-items-center laptop:justify-items-stretch">
-              {/* Featured post đầu tiên: render luôn ở mobile (ẩn trên laptop) */}
+              {/* Featured post on mobile */}
               {featuredPost && (
                 <Link
                   href={`/posts/${featuredPost._id}`}
@@ -283,7 +305,8 @@ export default function NewsContent() {
                   </div>
                 </Link>
               )}
-              {/* Các bài còn lại */}
+
+              {/* Other posts */}
               {paginatedResults.map((news) => (
                 <Link key={news._id} href={`/posts/${news._id}`}>
                   <div className="space-y-2 cursor-pointer group max-w-[350px] mx-auto">
@@ -303,10 +326,12 @@ export default function NewsContent() {
                   </div>
                 </Link>
               ))}
+
               {paginatedResults.length === 0 && (
                 <p className="col-span-1 laptop:col-span-3 text-center py-6 text-gray-500">Không tìm thấy bài viết nào.</p>
               )}
             </div>
+
             {/* Pagination */}
             <div className="flex gap-2 justify-center my-10 max-w-[350px] mx-auto">
               {Array.from({ length: totalPages }, (_, idx) => (

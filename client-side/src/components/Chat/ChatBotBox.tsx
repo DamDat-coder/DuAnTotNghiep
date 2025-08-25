@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,11 +26,14 @@ export default function ChatBotBox() {
   }, [messages]);
 
   const sendMessageToRasa = async (message: string) => {
-    const res = await fetch("http://localhost:5005/webhooks/rest/webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sender: "user123", message }),
-    });
+    const res = await fetch(
+      "https://5295b9d2e5e6.ngrok-free.app/webhooks/rest/webhook",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sender: "user123", message }),
+      }
+    );
 
     return res.json();
   };
@@ -51,7 +54,10 @@ export default function ChatBotBox() {
       if (responses.length === 0) {
         setMessages((prev) => [
           ...prev,
-          { sender: "bot", text: "🤖 Xin lỗi, mình chưa hiểu rõ yêu cầu của bạn." },
+          {
+            sender: "bot",
+            text: "🤖 Xin lỗi, mình chưa hiểu rõ yêu cầu của bạn.",
+          },
         ]);
       }
 
@@ -89,7 +95,7 @@ export default function ChatBotBox() {
               ChatBot Tư vấn
               <button
                 onClick={() => setIsOpen(false)}
-                className="hover:text-red-500 text-sm text-white"
+className="hover:text-red-500 text-sm text-white"
               >
                 ✕
               </button>

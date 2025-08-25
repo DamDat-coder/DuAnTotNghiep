@@ -5,6 +5,7 @@ export interface INotification extends Document {
   title: string;
   message: string;
   link?: string; 
+  type?: string;
   is_read: boolean;
   createdAt: Date;
 }
@@ -15,6 +16,7 @@ const NotificationSchema = new Schema<INotification>(
     title: { type: String, required: true },
     message: { type: String, required: true },
     link: { type: String },
+    type: { type: String },
     is_read: { type: Boolean, default: false },
   },
   { timestamps: true }

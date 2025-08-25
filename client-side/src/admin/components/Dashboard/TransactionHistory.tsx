@@ -125,7 +125,7 @@ export default function TransactionHistory() {
                   <div className="mt-1">{renderIcon(t.status)}</div>
                   <div className="flex flex-col">
                     <div>
-                      Payment from{" "}
+                      Đơn hàng chưa xử lý{" "}
                       <span
                         className="text-blue-600 font-medium cursor-pointer hover:underline"
                         onClick={() => router.push(`/admin/order?edit=${t.id}`)}

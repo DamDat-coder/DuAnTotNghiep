@@ -32,7 +32,7 @@ export default function BannerContent({
       <div className="banner_name text-[1.5rem] font-bold tablet:text-2xl leading-[1.8125rem] line-clamp-1">
         {name || "Sản phẩm không xác định"}
       </div>
-      <div className="banner_description text-base tablet:text-lg text-center max-w-[90%]">
+      <div className="banner_description text-base tablet:text-lg text-center max-w-[90%] line-clamp-1">
         {description || "Không có mô tả"}
       </div>
       <Link

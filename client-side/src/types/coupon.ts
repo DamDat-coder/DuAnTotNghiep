@@ -32,3 +32,7 @@ export interface CouponIsUsed {
   _id: string;
   code: string;
 }
+
+export interface HighlightedCoupon extends Coupon {
+  isTop?: boolean;
+}

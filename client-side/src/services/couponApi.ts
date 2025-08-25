@@ -121,6 +121,7 @@ export async function validateCoupon(
     discountType: string;
     code: string;
     maxDiscountAmount?: number;
+    minOrderAmount?: number;
     applicableItemIds: string[];
     applicableTotal: number;
     discount: number;
@@ -164,7 +165,10 @@ export async function validateCoupon(
       code,
       items: orderItems.map((item) => ({
         productId: item.id,
-        price: item.price, // Giá gốc đã được xử lý ở useCheckout
+        price: item.price, // Giá gốc
+        priceAfterDiscount: Math.round(
+          item.price * (1 - (item.discountPercent || 0) / 100)
+        ), // Giá đã giảm
         quantity: item.quantity,
       })),
     };
@@ -200,6 +204,7 @@ export async function validateCoupon(
         discountType: data.discountType || "fixed",
         code: data.couponCode,
         maxDiscountAmount: data.maxDiscountAmount,
+        minOrderAmount: data.minOrderAmount,
         applicableItemIds: data.items
           .filter((item: any) => item.isDiscounted)
           .map((item: any) => item.productId),
@@ -314,5 +319,21 @@ export async function fetchCouponByCode(code: string): Promise<Coupon> {
     throw new Error(
       `Lỗi khi tìm mã giảm giá: ${error.message || "Unknown error"}`
     );
+  }
+}
+
+export async function fetchTopDiscountCoupons(): Promise<Coupon[]> {
+  try {
+    const response = await fetchWithAuth<{ data: Coupon[]; message: string }>(
+      `${API_BASE_URL}/coupons/top-discounts`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    return response.data || [];
+  } catch (error: any) {
+    console.error("Lỗi khi lấy 3 mã giảm giá có giá trị cao nhất:", error);
+    return [];
   }
 }

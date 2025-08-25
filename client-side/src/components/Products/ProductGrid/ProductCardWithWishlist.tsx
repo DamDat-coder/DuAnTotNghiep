@@ -77,8 +77,8 @@ export default function ProductCardWithWishlist({ product, onBuyNow }: Props) {
 
         {/* Thông tin sản phẩm */}
         <div className="content flex flex-col py-4 gap-3">
-          <div>
-            <div className="name text-base tablet:text-lg font-bold text-[#374151] pb-2 two-line-clamp h-[3.2rem] tablet:h-[3.8rem]">
+          <div className="h-[4.5rem] flex flex-col justify-between">
+            <div className="name text-base tablet:text-lg font-bold text-[#374151] line-clamp-2">
               {product.name || "Sản phẩm"}
             </div>
             <div className="category text-base text-[#374151] truncate">

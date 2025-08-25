@@ -18,7 +18,7 @@ export default function SearchSuggestions({ suggestions, onClick }: SearchSugges
         {suggestions.map((suggestion) => (
           <div
             key={suggestion.id}
-            className="text-sm text-black py-2 px-3 rounded cursor-pointer hover:shadow-lg hover:bg-gray-100 h-[3.2rem] two-line-clamp"
+            className="text-sm text-black py-2 px-3 rounded cursor-pointer hover:shadow-lg hover:bg-gray-100 line-clamp-2"
             onClick={() => {
               onClick(suggestion);
                window.location.href = `/products/${suggestion.id}`;

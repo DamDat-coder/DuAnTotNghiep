@@ -5,11 +5,12 @@ import {
   getCouponById,
   updateCoupon,
   hideCoupon,
-  applyCoupon
+  applyCoupon,
+  getTopDiscountCoupons
 } from "../controllers/coupon.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 const router = express.Router();
-
+router.get("/top-discounts", getTopDiscountCoupons);
 router.get("/", getAllCoupons);
 router.get("/:id", getCouponById);
 router.post("/", verifyToken, verifyAdmin, createCoupon);

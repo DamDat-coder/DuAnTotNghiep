@@ -69,7 +69,7 @@ export default function ActionIcons({
           height={24}
           className="h-[1.2rem] w-auto"
         />
-        {isMounted && cartItemCount > 0 && (
+        {user && isMounted && cartItemCount > 0 && (
           <span
             className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
             aria-label={`Có ${cartItemCount} sản phẩm trong giỏ hàng`}

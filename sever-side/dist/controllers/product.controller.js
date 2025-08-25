@@ -71,6 +71,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
     try {
         const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by, limit, } = req.query;
         const filter = {};
+        // Lọc theo danh mục và danh mục con
         if (id_cate && typeof id_cate === "string") {
             const allIds = [id_cate];
             const childIds = yield (0, category_util_1.getAllChildCategoryIds)(id_cate);
@@ -80,10 +81,12 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 .map((id) => new mongoose_1.default.Types.ObjectId(id));
             filter["category._id"] = { $in: validObjectIds };
         }
+        // Lọc theo màu sắc, kích thước
         if (color)
             filter["variants.color"] = color;
         if (size)
             filter["variants.size"] = size;
+        // Lọc theo khoảng giá
         if (minPrice !== undefined || maxPrice !== undefined) {
             const priceFilter = {};
             if (minPrice !== undefined && !isNaN(Number(minPrice))) {
@@ -96,9 +99,11 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 filter["variants.price"] = priceFilter;
             }
         }
+        // Lọc theo trạng thái hoạt động
         if (is_active !== undefined) {
             filter.is_active = is_active === "true";
         }
+        // Sắp xếp sản phẩm
         let sort = {};
         switch (sort_by) {
             case "newest":
@@ -116,6 +121,8 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             case "best_selling":
                 sort = { salesCount: -1 };
                 break;
+            default:
+                sort = { _id: -1 }; // Mặc định: sản phẩm mới thêm trước
         }
         // Thêm limit vào truy vấn
         const limitNumber = limit && !isNaN(Number(limit)) ? Number(limit) : undefined;

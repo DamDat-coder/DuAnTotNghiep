@@ -121,6 +121,7 @@ export async function validateCoupon(
     discountType: string;
     code: string;
     maxDiscountAmount?: number;
+    minOrderAmount?: number;
     applicableItemIds: string[];
     applicableTotal: number;
     discount: number;
@@ -164,7 +165,10 @@ export async function validateCoupon(
       code,
       items: orderItems.map((item) => ({
         productId: item.id,
-        price: item.price, // Giá gốc đã được xử lý ở useCheckout
+        price: item.price, // Giá gốc
+        priceAfterDiscount: Math.round(
+          item.price * (1 - (item.discountPercent || 0) / 100)
+        ), // Giá đã giảm
         quantity: item.quantity,
       })),
     };
@@ -200,6 +204,7 @@ export async function validateCoupon(
         discountType: data.discountType || "fixed",
         code: data.couponCode,
         maxDiscountAmount: data.maxDiscountAmount,
+        minOrderAmount: data.minOrderAmount,
         applicableItemIds: data.items
           .filter((item: any) => item.isDiscounted)
           .map((item: any) => item.productId),

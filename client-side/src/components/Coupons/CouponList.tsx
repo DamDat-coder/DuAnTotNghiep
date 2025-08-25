@@ -7,6 +7,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { Copy, X } from "lucide-react";
 import Container from "../Core/Container";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 
 export default function CouponList() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -115,9 +116,28 @@ export default function CouponList() {
                     <Link
                       href={`/products?coupon=${coupon.code}`}
                       className="text-center border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition p-3"
+                      data-tooltip-id={`tooltip-${coupon._id}`}
+                      data-tooltip-content={
+                        coupon.applicableProducts?.length === 0 &&
+                        coupon.applicableCategories?.length === 0
+                          ? "Mã giảm giá áp dụng cho toàn bộ sản phẩm"
+                          : undefined
+                      }
                     >
                       Xem sản phẩm áp dụng
                     </Link>
+                    <ReactTooltip
+                      id={`tooltip-${coupon._id}`}
+                      place="top"
+                      style={{
+                        backgroundColor: "#1F2937",
+                        color: "#FFFFFF",
+                        fontSize: "12px",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        maxWidth: "200px",
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -222,9 +242,28 @@ export default function CouponList() {
                     href={`/products?coupon=${selectedCoupon.code}`}
                     className="inline-block text-center w-full border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition"
                     onClick={closePopup}
+                    data-tooltip-id={`tooltip-detail-${selectedCoupon._id}`}
+                    data-tooltip-content={
+                      selectedCoupon.applicableProducts?.length === 0 &&
+                      selectedCoupon.applicableCategories?.length === 0
+                        ? "Mã giảm giá áp dụng cho toàn bộ sản phẩm"
+                        : undefined
+                    }
                   >
                     Xem sản phẩm áp dụng
                   </Link>
+                  <ReactTooltip
+                    id={`tooltip-detail-${selectedCoupon._id}`}
+                    place="top"
+                    style={{
+                      backgroundColor: "#1F2937",
+                      color: "#FFFFFF",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      borderRadius: "4px",
+                      maxWidth: "200px",
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -285,9 +324,28 @@ export default function CouponList() {
                   <Link
                     href={`/products?coupon=${coupon.code}`}
                     className="text-center border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition p-3"
+                    data-tooltip-id={`tooltip-${coupon._id}`}
+                    data-tooltip-content={
+                      coupon.applicableProducts?.length === 0 &&
+                      coupon.applicableCategories?.length === 0
+                        ? "Mã giảm giá áp dụng cho toàn bộ sản phẩm"
+                        : undefined
+                    }
                   >
                     Xem sản phẩm áp dụng
                   </Link>
+                  <ReactTooltip
+                    id={`tooltip-${coupon._id}`}
+                    place="top"
+                    style={{
+                      backgroundColor: "#1F2937",
+                      color: "#FFFFFF",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      borderRadius: "4px",
+                      maxWidth: "200px",
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -376,9 +434,28 @@ export default function CouponList() {
             <Link
               href={`/products?coupon=${selectedCoupon.code}`}
               className="inline-block text-center w-full border border-black border-solid py-2 text-sm rounded hover:bg-black hover:text-white transition"
+              data-tooltip-id={`tooltip-detail-${selectedCoupon._id}`}
+              data-tooltip-content={
+                selectedCoupon.applicableProducts?.length === 0 &&
+                selectedCoupon.applicableCategories?.length === 0
+                  ? "Mã giảm giá áp dụng cho toàn bộ sản phẩm"
+                  : undefined
+              }
             >
               Xem sản phẩm áp dụng
             </Link>
+            <ReactTooltip
+              id={`tooltip-detail-${selectedCoupon._id}`}
+              place="top"
+              style={{
+                backgroundColor: "#1F2937",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                padding: "4px 8px",
+                borderRadius: "4px",
+                maxWidth: "200px",
+              }}
+            />
           </div>
         ) : (
           <p className="p-4 text-gray-500 text-sm italic">

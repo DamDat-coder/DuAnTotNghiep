@@ -127,7 +127,10 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
             );
             reviewsObj[product._id] = reviews;
           } catch (error) {
-            console.error(`Lỗi fetch đánh giá cho sản phẩm ${product._id}:`, error);
+            console.error(
+              `Lỗi fetch đánh giá cho sản phẩm ${product._id}:`,
+              error
+            );
             reviewsObj[product._id] = [];
           }
         })
@@ -184,9 +187,7 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
     const reviews = productReviews[productId] || [];
     return reviews.some((review) => {
       const reviewUserId =
-        typeof review.userId === "string"
-          ? review.userId
-          : review.userId?._id;
+        typeof review.userId === "string" ? review.userId : review.userId?._id;
       return (
         reviewUserId === user?._id &&
         (typeof review.orderId === "string"
@@ -295,29 +296,27 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
   // Lấy review của user cho sản phẩm đang mở popup
   const userReview =
     reviewProductId && productReviews[reviewProductId] && user
-      ? productReviews[reviewProductId].find(
-          (r) => {
-            const reviewUserId =
-              typeof r.userId === "string"
-                ? r.userId
-                : r.userId?._id;
-            // So sánh cả userId, productId và orderId
-            return (
-              reviewUserId === user._id &&
-              (typeof r.orderId === "string"
-                ? r.orderId === order._id
-                : r.orderId?._id === order._id)
-            );
-          }
-        )
+      ? productReviews[reviewProductId].find((r) => {
+          const reviewUserId =
+            typeof r.userId === "string" ? r.userId : r.userId?._id;
+          // So sánh cả userId, productId và orderId
+          return (
+            reviewUserId === user._id &&
+            (typeof r.orderId === "string"
+              ? r.orderId === order._id
+              : r.orderId?._id === order._id)
+          );
+        })
       : undefined;
   console.log("User Review:", userReview);
 
   return (
     <>
-      <div className="w-[894px] mx-auto space-y-5">
-        <h1 className="text-xl font-bold border-b pb-2">ĐƠN HÀNG</h1>
-        <div className="flex justify-between items-center text-sm">
+      <div className="w-[894px] mobile:w-full mx-auto space-y-5 mobile:space-y-3 px-0 mobile:px-2">
+        <h1 className="text-xl mobile:text-lg font-bold border-b pb-2">
+          ĐƠN HÀNG
+        </h1>
+        <div className="flex justify-between items-center text-sm mobile:flex-col mobile:items-start mobile:gap-2">
           <button
             onClick={() => setActiveTab?.("Đơn hàng")}
             className="flex items-center gap-2 text-gray-600 font-medium"
@@ -325,73 +324,82 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
             <Image src="/profile/Back.svg" alt="back" width={6} height={10} />
             TRỞ LẠI
           </button>
-          <div className="flex items-center gap-2 font-medium">
-            <span>MÃ ĐƠN HÀNG: {order.orderCode || order._id}</span>
-            <span>|</span>
-            <span>ĐƠN HÀNG {getStatusLabel(order.status)}</span>
+          <div className="flex items-center gap-2 font-medium mobile:flex-col mobile:items-start mobile:gap-0">
+            <span className="mobile:text-sm">
+              MÃ ĐƠN HÀNG: {order.orderCode || order._id}
+            </span>
+            <span className="mobile:hidden">|</span>
+            <span className="mobile:text-sm">
+              ĐƠN HÀNG {getStatusLabel(order.status)}
+            </span>
           </div>
         </div>
 
         {/* Danh sách sản phẩm */}
-        <div className="space-y-6">
+        <div className="space-y-6 mobile:space-y-3">
           {products.map((product, index) => {
             const isReviewed = hasProductReviewed(product._id);
             return (
-              <div key={index} className="flex items-center gap-8 w-full">
-                <div className="w-[94px] h-[94px] relative">
+              <div
+                key={index}
+                className="flex items-center gap-8 w-full mobile:gap-3 mobile:flex-row"
+              >
+                <div className="w-[94px] h-[94px] mobile:w-[100px] mobile:h-[100px] relative">
                   <Image
                     src={product.images[0]}
                     alt={product.name || "Sản phẩm"}
                     fill
                     className="object-cover rounded"
-                    sizes="94px"
+                    sizes="64px"
                   />
                 </div>
-                <div className="flex justify-between items-center w-full">
-                  <div className="space-y-1">
-                    <p className="font-semibold">
-                      {product.name || "Sản phẩm không tên"}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Màu:{" "}
+                <div className="flex w-full flex-col gap-1">
+                  <p className="font-semibold mobile:text-base">
+                    {product.name || "Sản phẩm không tên"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    SL: {product.quantity}{" "}
+                    <span className="ml-4">
                       {Array.isArray(product.variants)
                         ? (product.variants[0] as { color?: string })?.color ||
                           "Chưa xác định"
                         : (product.variants as { color?: string } | undefined)
-                            ?.color || "Chưa xác định"}
-                      , Kích thước:{" "}
+                            ?.color || "Chưa xác định"}{" "}
+                      /{" "}
                       {Array.isArray(product.variants)
                         ? (product.variants[0] as { size?: string })?.size ||
                           "Chưa xác định"
                         : (product.variants as { size?: string } | undefined)
                             ?.size || "Chưa xác định"}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      SL: {product.quantity}
-                    </p>
-                  </div>
-                  <div className="text-[#FF0000] font-semibold text-sm whitespace-nowrap flex flex-col justify-between h-full">
-                    <div className="mb-auto">
+                    </span>
+                  </p>
+                  {order.status === "delivered" ? (
+                    <div className="flex justify-between items-center mt-1 mobile:justify-between mobile:gap-2">
+                      <div className="text-[#FF0000] font-semibold text-base">
+                        {(product.price * product.quantity).toLocaleString(
+                          "vi-VN"
+                        )}
+                        ₫
+                      </div>
+                      <button
+                        onClick={() => handleOpenReview(product._id)}
+                        className={`px-4 py-2 rounded-md mobile:px-3 mobile:py-1 mobile:text-sm ${
+                          isReviewed
+                            ? "bg-gray-400 text-white opacity-50 cursor-default"
+                            : "bg-black text-white"
+                        }`}
+                      >
+                        {isReviewed ? "Đã đánh giá" : "Đánh giá"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-[#FF0000] font-semibold text-base mt-1">
                       {(product.price * product.quantity).toLocaleString(
                         "vi-VN"
                       )}
                       ₫
                     </div>
-                    {order.status === "delivered" && (
-                      <div>
-                        <button
-                          onClick={() => handleOpenReview(product._id)}
-                          className={`px-4 py-2 rounded-md mt-2 ${
-                            isReviewed
-                              ? "bg-gray-400 text-white opacity-50 cursor-default"
-                              : "bg-black text-white"
-                          }`}
-                        >
-                          {isReviewed ? "Đã đánh giá" : "Đánh giá"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             );
@@ -399,10 +407,12 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
         </div>
 
         {/* Địa chỉ nhận hàng */}
-        <div className="text-base mb-6">
-          <h2 className="text-[20px] font-bold mb-[24px]">ĐỊA CHỈ NHẬN HÀNG</h2>
-          <div className="flex justify-between items-start gap-[18px]">
-            <div className="w-[679px] space-y-[12px] leading-relaxed">
+        <div className="text-base mb-6 mobile:text-sm">
+          <h2 className="text-[20px] mobile:text-base font-bold mb-[24px] mobile:mb-2">
+            ĐỊA CHỈ NHẬN HÀNG
+          </h2>
+          <div className="flex justify-between items-start gap-[18px] mobile:flex-col mobile:gap-2">
+            <div className="w-[679px] mobile:w-full space-y-[12px] leading-relaxed">
               <p>
                 <strong>Tên người nhận:</strong> {user.name || "Chưa cập nhật"}
               </p>
@@ -428,51 +438,55 @@ export default function OrderDetail({ order, setActiveTab }: OrderDetailProps) {
                 </p>
               )}
             </div>
-            <div className="text-right whitespace-nowrap font-medium self-center">
+            <div className="text-right whitespace-nowrap font-medium self-center mobile:text-left mobile:mt-2">
               Giao Hàng Nhanh
             </div>
           </div>
         </div>
 
         {/* Bảng tổng kết */}
-        <table className="w-full text-base text-black bg-[#F8FAFC] rounded overflow-hidden">
-          <thead>
-            <tr className="text-gray-500 text-[16px] h-[64px]">
-              <th className="w-[223.5px] text-center align-middle">
-                Tổng giá sản phẩm
-              </th>
-              <th className="w-[223.5px] text-center align-middle">
-                Tiền ship
-              </th>
-              <th className="w-[223.5px] text-center align-middle">Giảm giá</th>
-              <th className="w-[223.5px] text-center align-middle text-black">
-                Tổng tiền
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="h-[64px] text-[15px] font-medium">
-              <td className="text-center align-middle">
-                {order.items
-                  .reduce(
-                    (total, item) => total + item.price * item.quantity,
-                    0
-                  )
-                  .toLocaleString("vi-VN")}
-                ₫
-              </td>
-              <td className="text-center align-middle">
-                {order.shipping.toLocaleString("vi-VN")}₫
-              </td>
-              <td className="text-center align-middle">
-               - {order.discountAmount.toLocaleString("vi-VN")}₫
-              </td>
-              <td className="text-center align-middle font-semibold">
-                {order.totalPrice.toLocaleString("vi-VN")}₫
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px] text-base text-black bg-[#F8FAFC] rounded overflow-hidden mobile:text-sm">
+            <thead>
+              <tr className="text-gray-500 text-[16px] h-[64px] mobile:text-xs mobile:h-[40px]">
+                <th className="w-[223.5px] text-center align-middle">
+                  Tổng giá sản phẩm
+                </th>
+                <th className="w-[223.5px] text-center align-middle">
+                  Tiền ship
+                </th>
+                <th className="w-[223.5px] text-center align-middle">
+                  Giảm giá
+                </th>
+                <th className="w-[223.5px] text-center align-middle text-black">
+                  Tổng tiền
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="h-[64px] text-[15px] font-medium mobile:text-xs mobile:h-[40px]">
+                <td className="text-center align-middle">
+                  {order.items
+                    .reduce(
+                      (total, item) => total + item.price * item.quantity,
+                      0
+                    )
+                    .toLocaleString("vi-VN")}
+                  ₫
+                </td>
+                <td className="text-center align-middle">
+                  {order.shipping.toLocaleString("vi-VN")}₫
+                </td>
+                <td className="text-center align-middle">
+                  - {order.discountAmount.toLocaleString("vi-VN")}₫
+                </td>
+                <td className="text-center align-middle font-semibold">
+                  {order.totalPrice.toLocaleString("vi-VN")}₫
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <ReviewPopup

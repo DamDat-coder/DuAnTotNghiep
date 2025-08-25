@@ -44,7 +44,7 @@ export default function ProductCard({
       )}
       <AddToCartButton onClick={(e) => onAddToCart?.(product, e)} />
       <div className="content flex flex-col py-4 gap-3 font-description">
-        <div>
+        <div className="h-[4rem]">
           <div className="name text-base font-bold text-[#374151] line-clamp-2">
             {name}
           </div>

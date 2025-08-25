@@ -3,7 +3,11 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, useCartDispatch } from "@/contexts/CartContext";
 import { createOrder, initiatePayment } from "@/services/orderApi";
-import { fetchAllCoupons, validateCoupon } from "@/services/couponApi";
+import {
+  fetchAllCoupons,
+  fetchTopDiscountCoupons,
+  validateCoupon,
+} from "@/services/couponApi";
 import {
   addAddressWhenCheckout,
   setDefaultAddress as setDefaultAddressApi,
@@ -13,7 +17,7 @@ import { ICartItem } from "@/types/cart";
 import { Address, IUser } from "@/types/auth";
 import { fetchProductById, fetchProductCategory } from "@/services/productApi";
 import { useSearchParams } from "next/navigation";
-import { Coupon } from "@/types/coupon";
+import { Coupon, HighlightedCoupon } from "@/types/coupon";
 
 const generateOrderId = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -46,8 +50,42 @@ export const useCheckout = () => {
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [total, setTotal] = useState(subtotal - discount + shippingFee);
   const [isFreeShipping, setIsFreeShipping] = useState(false);
-  const [hasShownFreeShippingToast, setHasShownFreeShippingToast] = useState(false);
+  const [hasShownFreeShippingToast, setHasShownFreeShippingToast] =
+    useState(false);
   const [hasAppliedPendingCoupon, setHasAppliedPendingCoupon] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<HighlightedCoupon[]>(
+    []
+  );
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const [allCouponsRes, topCoupons] = await Promise.all([
+          fetchAllCoupons(true, undefined, 1, 100),
+          fetchTopDiscountCoupons(),
+        ]);
+
+        const allCoupons = allCouponsRes.data || [];
+
+        // Gắn cờ isTop cho topCoupons
+        const topCouponsWithFlag: HighlightedCoupon[] = topCoupons.map((c) => ({
+          ...c,
+          isTop: true,
+        }));
+
+        // Lọc trùng
+        const filteredAll: HighlightedCoupon[] = allCoupons.filter(
+          (c) => !topCoupons.some((t) => t._id === c._id)
+        );
+
+        setAvailableCoupons([...topCouponsWithFlag, ...filteredAll]);
+      } catch (error) {
+        console.error("Lỗi khi lấy coupons:", error);
+        setAvailableCoupons([]);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     fullName: "",
@@ -71,7 +109,6 @@ export const useCheckout = () => {
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isAddressPopupOpen, setIsAddressPopupOpen] = useState(false);
-  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
 
   // Fetch mã giảm giá từ API
   useEffect(() => {
@@ -157,7 +194,9 @@ export const useCheckout = () => {
         }
       } catch (error) {
         console.error("DEBUG: Error processing buyNow:", error);
-        toast.error("Không thể thêm sản phẩm vào giỏ hàng!", { id: "buy-now-error" });
+        toast.error("Không thể thêm sản phẩm vào giỏ hàng!", {
+          id: "buy-now-error",
+        });
       }
     };
 
@@ -524,7 +563,9 @@ export const useCheckout = () => {
 
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken || !user || !user.id) {
-      toast.error("Vui lòng đăng nhập trước khi đặt hàng!", { id: "auth-error" });
+      toast.error("Vui lòng đăng nhập trước khi đặt hàng!", {
+        id: "auth-error",
+      });
       window.location.href = "/login";
       return;
     }
@@ -558,7 +599,9 @@ export const useCheckout = () => {
     setErrors(newErrors);
 
     if (Object.values(newErrors).some((error) => error)) {
-      toast.error("Vui lòng điền đầy đủ thông tin giao hàng!", { id: "form-error" });
+      toast.error("Vui lòng điền đầy đủ thông tin giao hàng!", {
+        id: "form-error",
+      });
       return;
     }
 
@@ -644,7 +687,9 @@ export const useCheckout = () => {
         if (paymentResponse.paymentUrl) {
           window.location.href = paymentResponse.paymentUrl;
         } else {
-          toast.error("Không tìm thấy đường dẫn thanh toán!", { id: "payment-error" });
+          toast.error("Không tìm thấy đường dẫn thanh toán!", {
+            id: "payment-error",
+          });
         }
       }
     } catch (error: any) {
@@ -652,7 +697,9 @@ export const useCheckout = () => {
         "DEBUG: Error in handleSubmit:",
         JSON.stringify(error, null, 2)
       );
-      toast.error(error.message || "Không thể tạo đơn hàng!", { id: "submit-error" });
+      toast.error(error.message || "Không thể tạo đơn hàng!", {
+        id: "submit-error",
+      });
     }
   };
 

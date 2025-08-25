@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
-import { Coupon } from "@/types/coupon";
+import { Coupon, HighlightedCoupon } from "@/types/coupon";
 import { motion } from "framer-motion";
 import { X, ChevronsUpDown } from "lucide-react";
 import { Combobox, Transition } from "@headlessui/react";
@@ -10,7 +10,7 @@ interface DiscountCodeProps {
   discountCode: string;
   setDiscountCode: (code: string) => void;
   handleApplyDiscount: () => void;
-  availableCoupons?: Coupon[];
+  availableCoupons?: HighlightedCoupon[];
 }
 
 export default function DiscountCode({
@@ -104,13 +104,21 @@ export default function DiscountCode({
                         }`
                       }
                     >
-                      {coupon.code}
-                      <hr />
-                      {coupon.description && (
-                        <span className="text-gray-500 text-xs">
-                          ({coupon.description})
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-2">
+                          {coupon.code}
+                          {coupon.isTop && (
+                            <span className="text-xs bg-yellow-300 text-black font-semibold px-2 py-0.5 rounded-full">
+                              Hot
+                            </span>
+                          )}
                         </span>
-                      )}
+                        {coupon.description && (
+                          <span className="text-gray-500 text-xs">
+                            {coupon.description}
+                          </span>
+                        )}
+                      </div>
                     </Combobox.Option>
                   ))
                 )}

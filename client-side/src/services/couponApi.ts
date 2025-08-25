@@ -321,3 +321,19 @@ export async function fetchCouponByCode(code: string): Promise<Coupon> {
     );
   }
 }
+
+export async function fetchTopDiscountCoupons(): Promise<Coupon[]> {
+  try {
+    const response = await fetchWithAuth<{ data: Coupon[]; message: string }>(
+      `${API_BASE_URL}/coupons/top-discounts`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    return response.data || [];
+  } catch (error: any) {
+    console.error("Lỗi khi lấy 3 mã giảm giá có giá trị cao nhất:", error);
+    return [];
+  }
+}

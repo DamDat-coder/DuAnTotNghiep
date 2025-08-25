@@ -94,6 +94,14 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         .map((v) => v.size)
     : sizes.map((s) => s.value);
 
+  // Tính giá dựa trên số lượng
+  const discountedPrice = Math.round(
+    (selectedVariant?.price ?? 0) *
+      (1 - (selectedVariant?.discountPercent ?? 0) / 100)
+  );
+  const totalDiscountedPrice = discountedPrice * quantity;
+  const totalOriginalPrice = selectedVariant ? selectedVariant.price * quantity : 0;
+
   useEffect(() => {
     if (quantity > maxQuantity) {
       setQuantity(Math.max(1, maxQuantity));
@@ -106,16 +114,13 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
     }
   }, [selectedColor, availableSizes, selectedSize]);
 
-  const discountedPrice = Math.round(
-    (selectedVariant?.price ?? 0) *
-      (1 - (selectedVariant?.discountPercent ?? 0) / 100)
-  );
   useEffect(() => {
     if (openLoginWithData) {
       setIsLoginOpen(false);
       setOpenLoginWithData(false);
     }
   }, [openLoginWithData, setOpenLoginWithData]);
+
   useEffect(() => {
     const accessToken =
       typeof window !== "undefined"
@@ -158,7 +163,10 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
           const cartItem = {
             id: pendingProduct.id,
             name: pendingProduct.name,
-            price: pendingVariant.discountedPrice,
+            price: Math.round(
+              (pendingVariant.price ?? 0) *
+                (1 - (pendingVariant.discountPercent ?? 0) / 100)
+            ),
             originPrice: pendingVariant.price,
             discountPercent: pendingVariant.discountPercent,
             image: pendingProduct.images[0] || "",
@@ -172,8 +180,10 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
           };
 
           dispatch({ type: "add", item: cartItem });
+          toast.success("Đã thêm sản phẩm từ giỏ hàng tạm thời!", { id: "pending-cart-success" });
+          localStorage.removeItem("pendingCart");
         } catch (error) {
-          toast.error("Không thể thêm sản phẩm từ giỏ hàng tạm thời!");
+          toast.error("Không thể thêm sản phẩm từ giỏ hàng tạm thời!", { id: "pending-cart-error" });
           localStorage.removeItem("pendingCart");
         }
       }
@@ -195,48 +205,48 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
       localStorage.setItem("pendingCart", JSON.stringify(pendingCart));
       localStorage.setItem("redirectToCart", "true");
       setIsLoginOpen(true);
-      toast.error("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!");
+      toast.error("Bạn vui lòng đăng nhập trước khi thêm vào giỏ hàng!", { id: "auth-error" });
       return;
     }
     if (!selectedColor) {
-      toast.error("Vui lòng chọn màu sắc!");
+      toast.error("Vui lòng chọn màu sắc!", { id: "color-error" });
       return;
     }
     if (!selectedSize) {
-      toast.error("Vui lòng chọn kích thước!");
+      toast.error("Vui lòng chọn kích thước!", { id: "size-error" });
       return;
     }
     if (quantity < 1) {
-      toast.error("Số lượng phải lớn hơn 0!");
+      toast.error("Số lượng phải lớn hơn 0!", { id: "quantity-error" });
       return;
     }
     if (!selectedVariant || selectedVariant.stock < quantity) {
-      toast.error("Sản phẩm không đủ hàng!");
+      toast.error("Sản phẩm không đủ hàng!", { id: "stock-error" });
       return;
     }
     if (!product.categoryId) {
-      toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!");
+      toast.error("Không thể thêm sản phẩm do thiếu thông tin danh mục!", { id: "category-error" });
       return;
     }
 
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: discountedPrice,
-      originPrice: selectedVariant.price,
+      price: discountedPrice, // Giá đơn vị sau giảm giá
+      originPrice: selectedVariant.price, // Giá đơn vị gốc
       discountPercent: selectedVariant.discountPercent,
       image: product.images[0] || "",
       quantity,
       size: selectedSize,
       color: selectedColor,
       liked: false,
-      selected: false,
+      selected: false, // Đồng bộ với useCheckout, mặc định không chọn
       categoryId: product.categoryId,
       stock: selectedVariant.stock,
     };
 
     dispatch({ type: "add", item: cartItem });
-    toast.success("Bạn đã thêm vào giỏ hàng thành công!");
+    toast.success("Bạn đã thêm vào giỏ hàng thành công!", { id: "add-to-cart-success" });
     onClose();
   };
 
@@ -277,7 +287,6 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
     setIsLoginOpen(true);
   };
 
-  // Giả lập việc nhận token để reset password (cần logic thực tế từ API)
   const handleOpenResetPassword = () => {
     setIsForgotOpen(false);
     setResetToken("sample-token"); // Thay bằng token thực tế từ API
@@ -337,14 +346,13 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                     </h2>
                     <div className="flex items-center gap-4 mt-2">
                       <p className="text-red-500 font-bold text-lg">
-                        {(discountedPrice || 0).toLocaleString("vi-VN")}₫
+                        {totalDiscountedPrice.toLocaleString("vi-VN")}₫
                       </p>
-                      {selectedVariant &&
-                        selectedVariant.discountPercent > 0 && (
-                          <p className="text-sm text-[#374151] line-through">
-                            {selectedVariant.price.toLocaleString("vi-VN")}₫
-                          </p>
-                        )}
+                      {selectedVariant && selectedVariant.discountPercent > 0 && (
+                        <p className="text-sm text-[#374151] line-through">
+                          {totalOriginalPrice.toLocaleString("vi-VN")}₫
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -480,7 +488,10 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="w-10 h-10 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-100"
+                        disabled={quantity <= 1}
+                        className={`w-10 h-10 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-100 ${
+                          quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                         aria-label="Giảm số lượng"
                       >
                         -
@@ -489,8 +500,11 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
                         {quantity}
                       </span>
                       <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="w-10 h-10 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-100"
+                        onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                        disabled={quantity >= maxQuantity}
+                        className={`w-10 h-10 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-100 ${
+                          quantity >= maxQuantity ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                         aria-label="Tăng số lượng"
                       >
                         +
@@ -550,14 +564,14 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
               <div className="flex justify-center items-center">
                 <Image
                   src="/sizechart/1.png"
-                  alt="Close Icon"
+                  alt="Size Chart 1"
                   width={500}
                   height={350}
                   className="w-[500px] h-[350px]"
                 />
                 <Image
                   src="/sizechart/2.png"
-                  alt="Close Icon"
+                  alt="Size Chart 2"
                   width={500}
                   height={350}
                   className="w-[500px] h-[350px]"
@@ -572,16 +586,10 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         {isLoginOpen && (
           <LoginPopup
             isOpen={isLoginOpen}
-            onClose={() => setIsLoginOpen(false)}
-            onOpenRegister={() => {
-              setIsLoginOpen(false);
-              setIsRegisterOpen(true);
-            }}
+            onClose={handleCloseLoginPopup}
+            onOpenRegister={handleOpenRegister}
             initialFormData={registerFormData}
-            onOpenForgotPassword={() => {
-              setIsLoginOpen(false);
-              setIsForgotOpen(true);
-            }}
+            onOpenForgotPassword={handleOpenForgotPassword}
           />
         )}
       </AnimatePresence>
@@ -590,11 +598,8 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         {isRegisterOpen && (
           <RegisterPopup
             isOpen={isRegisterOpen}
-            onClose={() => setIsRegisterOpen(false)}
-            onOpenLogin={() => {
-              setIsRegisterOpen(false);
-              setIsLoginOpen(true);
-            }}
+            onClose={handleCloseRegister}
+            onOpenLogin={handleOpenLogin}
           />
         )}
       </AnimatePresence>
@@ -603,11 +608,8 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         {isForgotOpen && (
           <ForgotPasswordPopup
             isOpen={isForgotOpen}
-            onClose={() => setIsForgotOpen(false)}
-            onOpenLogin={() => {
-              setIsForgotOpen(false);
-              setIsLoginOpen(true);
-            }}
+            onClose={handleCloseForgotPassword}
+            onOpenLogin={handleOpenLogin}
           />
         )}
       </AnimatePresence>
@@ -616,7 +618,7 @@ const AddToCartPopup = ({ product, isOpen, onClose }: AddToCartPopupProps) => {
         {isResetOpen && (
           <ResetPasswordPopup
             isOpen={isResetOpen}
-            onClose={() => setIsResetOpen(false)}
+            onClose={handleCloseResetPassword}
             token={resetToken}
           />
         )}

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.applyCoupon = exports.hideCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
+exports.getTopDiscountCoupons = exports.applyCoupon = exports.hideCoupon = exports.updateCoupon = exports.createCoupon = exports.getCouponById = exports.getAllCoupons = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const notification_model_1 = __importDefault(require("../models/notification.model"));
@@ -316,3 +316,51 @@ const applyCoupon = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.applyCoupon = applyCoupon;
+const getTopDiscountCoupons = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Lấy ngày hiện tại để kiểm tra mã giảm giá còn hiệu lực
+        const currentDate = new Date();
+        // Lấy tất cả mã giảm giá đang hoạt động và chưa hết hạn
+        const coupons = yield coupon_model_1.default.find({
+            is_active: true,
+            $or: [{ endDate: { $gte: currentDate } }, { endDate: null }],
+        })
+            .populate("applicableCategories", "name")
+            .populate("applicableProducts", "name");
+        // Tính giá trị giảm thực tế để so sánh
+        const couponsWithEffectiveValue = coupons.map((coupon) => {
+            let effectiveDiscountValue = coupon.discountValue;
+            if (coupon.discountType === "percent") {
+                // Giả định giá trị đơn hàng để tính giá trị giảm cho loại phần trăm
+                const assumedOrderValue = 1000000; // Giá trị giả định: 1,000,000 VND
+                effectiveDiscountValue = (coupon.discountValue / 100) * assumedOrderValue;
+                // Nếu có maxDiscountAmount, giới hạn giá trị giảm
+                if (coupon.maxDiscountAmount && effectiveDiscountValue > coupon.maxDiscountAmount) {
+                    effectiveDiscountValue = coupon.maxDiscountAmount;
+                }
+            }
+            return {
+                coupon,
+                effectiveDiscountValue,
+            };
+        });
+        // Sắp xếp theo effectiveDiscountValue giảm dần và lấy 3 mã cao nhất
+        const topCoupons = couponsWithEffectiveValue
+            .sort((a, b) => b.effectiveDiscountValue - a.effectiveDiscountValue)
+            .slice(0, 3)
+            .map((item) => item.coupon);
+        // Trả về kết quả
+        res.status(200).json({
+            data: topCoupons,
+            message: "Lấy thành công 3 mã giảm giá có giá trị cao nhất",
+        });
+    }
+    catch (error) {
+        console.error("Lỗi khi lấy danh sách mã giảm giá cao nhất:", error);
+        res.status(500).json({
+            message: "Lỗi server",
+            error: error.message || error,
+        });
+    }
+});
+exports.getTopDiscountCoupons = getTopDiscountCoupons;

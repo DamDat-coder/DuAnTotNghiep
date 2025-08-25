@@ -391,3 +391,57 @@ export const applyCoupon = async (req: Request, res: Response) => {
       .json({ status: "error", message: "Lỗi server khi áp dụng mã" });
   }
 };
+
+export const getTopDiscountCoupons = async (req: Request, res: Response) => {
+  try {
+    // Lấy ngày hiện tại để kiểm tra mã giảm giá còn hiệu lực
+    const currentDate = new Date();
+
+    // Lấy tất cả mã giảm giá đang hoạt động và chưa hết hạn
+    const coupons = await Coupon.find({
+      is_active: true,
+      $or: [{ endDate: { $gte: currentDate } }, { endDate: null }],
+    })
+      .populate("applicableCategories", "name")
+      .populate("applicableProducts", "name");
+
+    // Tính giá trị giảm thực tế để so sánh
+    const couponsWithEffectiveValue = coupons.map((coupon) => {
+      let effectiveDiscountValue = coupon.discountValue;
+
+      if (coupon.discountType === "percent") {
+        // Giả định giá trị đơn hàng để tính giá trị giảm cho loại phần trăm
+        const assumedOrderValue = 1_000_000; // Giá trị giả định: 1,000,000 VND
+        effectiveDiscountValue = (coupon.discountValue / 100) * assumedOrderValue;
+
+        // Nếu có maxDiscountAmount, giới hạn giá trị giảm
+        if (coupon.maxDiscountAmount && effectiveDiscountValue > coupon.maxDiscountAmount) {
+          effectiveDiscountValue = coupon.maxDiscountAmount;
+        }
+      }
+
+      return {
+        coupon,
+        effectiveDiscountValue,
+      };
+    });
+
+    // Sắp xếp theo effectiveDiscountValue giảm dần và lấy 3 mã cao nhất
+    const topCoupons = couponsWithEffectiveValue
+      .sort((a, b) => b.effectiveDiscountValue - a.effectiveDiscountValue)
+      .slice(0, 3)
+      .map((item) => item.coupon);
+
+    // Trả về kết quả
+    res.status(200).json({
+      data: topCoupons,
+      message: "Lấy thành công 3 mã giảm giá có giá trị cao nhất",
+    });
+  } catch (error: any) {
+    console.error("Lỗi khi lấy danh sách mã giảm giá cao nhất:", error);
+    res.status(500).json({
+      message: "Lỗi server",
+      error: error.message || error,
+    });
+  }
+};

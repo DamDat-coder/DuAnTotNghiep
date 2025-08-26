@@ -8,6 +8,7 @@ import { Types } from "mongoose";
 import mongoose from 'mongoose';
 import { MulterRequest } from "../middlewares/upload.middleware";
 import ProductModel from "../models/product.model"; 
+import News from "../models/news.model";
 
 // Tạo danh mục mới
 export const createCategory = async (req: Request, res: Response) => {
@@ -189,6 +190,90 @@ export const toggleActiveCategory = async (req: Request, res: Response) => {
         });
       }
 
+      const childCategoryCount = await Category.countDocuments({
+        parentId: categoryId,
+      });
+
+      if (childCategoryCount > 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "Không thể khóa vì danh mục đang có danh mục con",
+        });
+      }
+    }
+
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      { is_active },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!updatedCategory) {
+      return res.status(404).json({
+        status: "error",
+        message: "Danh mục không tồn tại",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: `Danh mục đã được ${is_active ? "mở khóa" : "khóa"} thành công`,
+      data: updatedCategory,
+    });
+  } catch (error: any) {
+    console.error("Lỗi khi khóa/mở khóa danh mục:", error);
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
+
+export const toggleActiveCategory = async (req: Request, res: Response) => {
+  try {
+    const categoryId = req.params.id;
+    const { is_active } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "ID danh mục không hợp lệ",
+      });
+    }
+
+    if (typeof is_active !== "boolean") {
+      return res.status(400).json({
+        status: "error",
+        message: "Trạng thái is_active phải là boolean",
+      });
+    }
+
+    if (!is_active) {
+      // ✅ Kiểm tra sản phẩm thuộc danh mục
+      const productCount = await Product.countDocuments({
+        "category._id": new mongoose.Types.ObjectId(categoryId),
+      });
+
+      if (productCount > 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "Không thể khóa vì danh mục đang chứa sản phẩm",
+        });
+      }
+
+      // ✅ Kiểm tra bài viết thuộc danh mục
+      const newsCount = await News.countDocuments({
+        category: new mongoose.Types.ObjectId(categoryId),
+      });
+
+      if (newsCount > 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "Không thể khóa vì danh mục đang chứa bài viết",
+        });
+      }
+
+      // ✅ Kiểm tra danh mục con
       const childCategoryCount = await Category.countDocuments({
         parentId: categoryId,
       });

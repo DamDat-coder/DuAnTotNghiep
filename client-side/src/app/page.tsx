@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
+
 import FeaturedSection from "@/components/Home/FeatureSection/FeaturedSection";
 import ProductSection from "@/components/Home/ProductSection/ProductSection";
 import MemberBenefitsBanner from "@/components/Home/MemberBenefits/MemberBenefitsBanner";
@@ -8,7 +9,7 @@ import { fetchProducts } from "@/services/productApi";
 import { fetchFeaturedSection } from "@/services/featuredSectionApi";
 import { fetchMemberBenefits } from "@/services/memberBenefitApi";
 import { Toaster } from "react-hot-toast";
-import { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
+import type { IProduct, IFeaturedProducts, IMemberBenefit } from "@/types/product";
 
 type Product = IProduct;
 type FeaturedSectionType = IFeaturedProducts;
@@ -59,15 +60,18 @@ export default async function Home() {
   const { products, featuredSection, benefits, newestProducts } =
     await getHomeData();
 
-  const topBannerProduct = newestProducts[0] || {};
-  const bottomBannerProduct = newestProducts[1] || {};
+  const topBannerProduct = newestProducts[0] || ({} as Partial<Product>);
+  const bottomBannerProduct = newestProducts[1] || ({} as Partial<Product>);
 
-  const topBannerImages = topBannerProduct.images?.length
-    ? topBannerProduct.images.slice(0, 4)
-    : ["/banner/banner_1.png", "/banner/banner_2.png"];
-  const bottomBannerImages = bottomBannerProduct.images?.length
-    ? bottomBannerProduct.images.slice(0, 4)
-    : ["/product/product_sale.png", "/banner/banner_2.png"];
+  const topBannerImages: string[] =
+    Array.isArray(topBannerProduct.images) && topBannerProduct.images.length > 0
+      ? topBannerProduct.images.slice(0, 4)
+      : ["/banner/banner_1.png", "/banner/banner_2.png"];
+
+  const bottomBannerImages: string[] =
+    Array.isArray(bottomBannerProduct.images) && bottomBannerProduct.images.length > 0
+      ? bottomBannerProduct.images.slice(0, 4)
+      : ["/product/product_sale.png", "/banner/banner_2.png"];
 
   return (
     <div
@@ -79,7 +83,7 @@ export default async function Home() {
 
       {/* Banner chính */}
       <Banner
-        id={topBannerProduct.id || ""}
+        id={(topBannerProduct as any)?.id || ""}
         status="Vừa ra mắt"
         name={topBannerProduct.name || "Áo khoác Gopcore Basic"}
         description={
@@ -96,7 +100,7 @@ export default async function Home() {
         {/* Khu vực nổi bật */}
         <FeaturedSection featuredSection={featuredSection} />
 
-        {/* Sản phẩm mới */}
+        {/* Sản phẩm bán chạy */}
         <ProductSection products={products} />
 
         {/* Quyền lợi thành viên */}
@@ -105,7 +109,7 @@ export default async function Home() {
         {/* Banner phụ (desktop) */}
         <div className="hidden laptop:flex desktop:flex w-full flex-col flex-grow gap-[3.375rem]">
           <Banner
-            id={bottomBannerProduct.id || ""}
+            id={(bottomBannerProduct as any)?.id || ""}
             title="Đừng Bỏ Lỡ"
             status="Cảm giác thoải mái"
             name={
@@ -116,7 +120,7 @@ export default async function Home() {
               bottomBannerProduct.description ||
               "Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
             }
-            images={bottomBannerImages} // Sử dụng mảng đã giới hạn
+            images={bottomBannerImages}
             altText={`Banner ${
               bottomBannerProduct.name || "Áo khoác MLB Gopcore Basic"
             } khuyến mãi`}
@@ -127,7 +131,7 @@ export default async function Home() {
       {/* Banner phụ (mobile) */}
       <div className="flex flex-col tablet:flex laptop:hidden desktop:hidden">
         <Banner
-          id={topBannerProduct.id || ""}
+          id={(bottomBannerProduct as any)?.id || ""}
           title="Đừng Bỏ Lỡ"
           status="Cảm giác thoải mái"
           name={
@@ -138,7 +142,7 @@ export default async function Home() {
             bottomBannerProduct.description ||
             "Chiếc áo phiên bản mới này mang dáng vẻ cổ điển, thiết kế gọn gàng thoải mái cùng phong cách biểu tượng."
           }
-          images={bottomBannerImages} // Sử dụng mảng đã giới hạn
+          images={bottomBannerImages}
           altText={`Banner ${
             bottomBannerProduct.name || "Áo khoác MLB Gopcore Basic"
           } khuyến mãi`}

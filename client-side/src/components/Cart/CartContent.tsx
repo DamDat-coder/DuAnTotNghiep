@@ -9,7 +9,8 @@ import { IProduct } from "@/types/product";
 import {
   fetchProductsActiveStatus,
   recommendProducts,
-} from "@/services/productApi"; // Thêm recommendProducts
+  fetchProducts,
+} from "@/services/productApi";
 import { Toaster } from "react-hot-toast";
 
 export default function Cart() {
@@ -69,6 +70,7 @@ export default function Cart() {
     );
   }, [cart.items, productsActiveStatus]);
 
+  // Fetch gợi ý sản phẩm
   useEffect(() => {
     async function getSuggestedProducts() {
       try {
@@ -82,7 +84,18 @@ export default function Cart() {
         setSuggestedProducts(response.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        setSuggestedProducts([]);
+        // Fallback: Lấy sản phẩm bán chạy nếu API recommendProducts trả về lỗi
+        try {
+          const fallbackProducts = await fetchProducts({
+            sort_by: "best_selling",
+            is_active: true,
+            limit: 5,
+          });
+          setSuggestedProducts(fallbackProducts.data || []);
+        } catch (fallbackError) {
+          console.error("Lỗi khi lấy sản phẩm bán chạy:", fallbackError);
+          setSuggestedProducts([]);
+        }
       }
     }
     getSuggestedProducts();

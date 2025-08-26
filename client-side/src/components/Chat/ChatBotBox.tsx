@@ -27,7 +27,8 @@ export default function ChatBotBox() {
 
   const sendMessageToRasa = async (message: string) => {
     const res = await fetch(
-      "https://5295b9d2e5e6.ngrok-free.app/webhooks/rest/webhook",
+      "http://localhost:5005/webhooks/rest/webhook",
+      // "https://5295b9d2e5e6.ngrok-free.app/webhooks/rest/webhook",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

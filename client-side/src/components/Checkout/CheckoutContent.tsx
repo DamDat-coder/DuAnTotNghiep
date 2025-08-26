@@ -11,7 +11,7 @@ import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
 import AddressPopup from "@/components/Checkout/Address/AddressPopup";
 import { Toaster, toast } from "react-hot-toast";
 import { useEffect, useState, useMemo } from "react";
-import { recommendProducts } from "@/services/productApi";
+import { recommendProducts, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 import ProductSwiperCheckout from "./SuggestedProducts/ProductSwiperCheckout";
@@ -85,8 +85,19 @@ export default function Checkout() {
         setSuggestedProducts(response.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        toast.error("Không thể tải sản phẩm gợi ý");
-        setSuggestedProducts([]);
+        // Fallback: Lấy sản phẩm bán chạy nếu API recommendProducts trả về lỗi
+        try {
+          const fallbackProducts = await fetchProducts({
+            sort_by: "best_selling",
+            is_active: true,
+            limit: 5,
+          });
+          setSuggestedProducts(fallbackProducts.data || []);
+        } catch (fallbackError) {
+          console.error("Lỗi khi lấy sản phẩm bán chạy:", fallbackError);
+          toast.error("Không thể tải sản phẩm gợi ý");
+          setSuggestedProducts([]);
+        }
       }
     }
 
@@ -95,7 +106,7 @@ export default function Checkout() {
     } else {
       setSuggestedProducts([]);
     }
-  }, []);
+  }, [selectedItemIds]);
 
   const handleAddToCart = (product: IProduct, e: React.MouseEvent) => {
     e.preventDefault();

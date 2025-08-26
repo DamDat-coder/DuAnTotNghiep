@@ -5,7 +5,11 @@ import Container from "@/components/Core/Container";
 import Breadcrumb from "@/components/Core/Layout/Breadcrumb";
 import ProductDesktopLayout from "@/components/Detail/Layout/ProductDesktopLayout";
 import ProductMobileLayout from "@/components/Detail/Layout/ProductMobileLayout";
-import { fetchProductById, recommendProducts } from "@/services/productApi"; // Thêm recommendProducts
+import {
+  fetchProductById,
+  recommendProducts,
+  fetchProducts,
+} from "@/services/productApi";
 import { IProduct } from "@/types/product";
 
 export function ProductContent({ id }: { id: string }) {
@@ -25,10 +29,20 @@ export function ProductContent({ id }: { id: string }) {
           viewed: [id],
           cart: [],
         };
-        const recommendations = await recommendProducts(userBehavior);
-        setSuggestedProducts(recommendations.data);
+        try {
+          const recommendations = await recommendProducts(userBehavior);
+          setSuggestedProducts(recommendations.data);
+        } catch (recommendError) {
+          console.error("Lỗi khi lấy sản phẩm gợi ý:", recommendError);
+          const fallbackProducts = await fetchProducts({
+            sort_by: "best_selling",
+            is_active: true,
+            limit: 5,
+          });
+          setSuggestedProducts(fallbackProducts.data);
+        }
       } catch (err) {
-        setError("Có lỗi xảy ra khi tải dữ liệu.");
+        console.error("Có lỗi xảy ra khi tải dữ liệu:", err);
       }
     }
 

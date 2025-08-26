@@ -1,4 +1,4 @@
-// src/admin/layouts/Sidebar.tsx
+﻿// src/admin/layouts/Sidebar.tsx
 "use client";
 
 import Image from "next/image";
@@ -38,7 +38,7 @@ const sidebarItems: SidebarItem[] = [
     iconActive: "/admin/sidebar/category_active.svg",
   },
   {
-    label: "Quản lý người dùng",
+    label: "Người dùng",
     href: "/admin/users",
     icon: "/admin/sidebar/user.svg",
     iconActive: "/admin/sidebar/user_active.svg",

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { MouseEventHandler } from "react";
 import FadeInWhenVisible from "@/components/Core/Animation/FadeInWhenVisible";
 import BannerContent from "./BannerContent";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,15 +8,25 @@ import { Autoplay, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 
-interface BannerProps {
+export interface BannerProps {
   id: string;
   title?: string;
   status: string;
   name: string;
   description: string;
-  images: string[]; // Array of image URLs
-  altText: string;
+  images?: string[];    // hỗ trợ nhận mảng ảnh từ ngoài
+  altText?: string;     // để optional cho linh hoạt
 }
+
+const DEFAULT_IMAGES = [
+  "https://res.cloudinary.com/testupload1/image/upload/v1756111205/products/bjx7bspaunvmc7vpwinz.webp",
+  "https://res.cloudinary.com/testupload1/image/upload/v1756111207/products/lnmdndsoeh3vtez1kvwa.webp",
+  "https://res.cloudinary.com/testupload1/image/upload/v1756111206/products/nt1sdpx80hlbaravqboq.webp",
+  "https://res.cloudinary.com/testupload1/image/upload/v1756022916/products/jzvb2955irdd5qqaoqyj.webp",
+  "https://res.cloudinary.com/testupload1/image/upload/v1756022915/products/mzra8htvkjryun0mtwpa.webp",
+];
+
+const FALLBACK = "/fallback.jpg";
 
 export default function Banner({
   id,
@@ -28,8 +37,10 @@ export default function Banner({
   images,
   altText,
 }: BannerProps) {
-  // Ensure at least one image to avoid empty swiper
-  const validImages = images.length > 0 ? images : ["/fallback.jpg"];
+  // Ưu tiên ảnh từ props, không có thì dùng mặc định
+  const resolved = (images?.length ? images : DEFAULT_IMAGES).slice(0, 8);
+  const slides = resolved.length > 0 ? resolved : [FALLBACK];
+  const canLoop = slides.length > 1;
 
   return (
     <FadeInWhenVisible>
@@ -40,7 +51,7 @@ export default function Banner({
           </h1>
         )}
 
-        {/* Mobile/Tablet layout */}
+        {/* Mobile/Tablet */}
         <div className="px-4 laptop:hidden desktop:hidden">
           <Swiper
             modules={[Autoplay, Pagination]}
@@ -48,26 +59,28 @@ export default function Banner({
             slidesPerView={1}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
             pagination={{ clickable: true }}
-            loop={true}
+            loop={canLoop}
             className="w-full"
           >
-            {validImages.map((image, index) => (
-              <SwiperSlide key={index}>
+            {slides.map((src, index) => (
+              <SwiperSlide key={`${src}-${index}`}>
                 <Image
-                  src={image}
-                  alt={`${altText} ${index + 1}`}
+                  src={src}
+                  alt={`${altText ?? name} ${index + 1}`}
                   width={672}
                   height={672}
+                  sizes="100vw"
                   className="w-full h-auto tablet:h-[37.5rem] object-cover"
+                  priority={index === 0}
                   onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.src = "/fallback.jpg";
+                    e.currentTarget.src = FALLBACK;
                   }}
                 />
               </SwiperSlide>
             ))}
           </Swiper>
-          {/* Place BannerContent below the swiper for mobile/tablet */}
+
+          {/* Nội dung dưới slider cho mobile/tablet */}
           <BannerContent
             id={id}
             status={status}
@@ -76,7 +89,7 @@ export default function Banner({
           />
         </div>
 
-        {/* Desktop/Laptop layout */}
+        {/* Desktop/Laptop */}
         <div className="hidden laptop:flex desktop:flex w-full">
           <div className="relative w-full">
             <Swiper
@@ -85,26 +98,28 @@ export default function Banner({
               slidesPerView={2}
               autoplay={{ delay: 5000, disableOnInteraction: false }}
               pagination={{ clickable: true }}
-              loop={validImages.length >= 2} // Only loop if enough images
+              loop={canLoop}
               className="w-full"
             >
-              {validImages.map((image, index) => (
-                <SwiperSlide key={index}>
+              {slides.map((src, index) => (
+                <SwiperSlide key={`${src}-${index}`}>
                   <Image
-                    src={image}
-                    alt={`${altText} ${index + 1}`}
+                    src={src}
+                    alt={`${altText ?? name} ${index + 1}`}
                     width={1280}
                     height={800}
+                    sizes="(max-width: 1280px) 100vw, 1280px"
                     className="w-full h-[50rem] object-cover"
+                    priority={index === 0}
                     onError={(e) => {
-                      const target = e.currentTarget as HTMLImageElement;
-                      target.src = "/fallback.jpg";
+                      e.currentTarget.src = FALLBACK;
                     }}
                   />
                 </SwiperSlide>
               ))}
             </Swiper>
-            {/* Place BannerContent in a gradient overlay for desktop/laptop */}
+
+            {/* Overlay nội dung cho desktop/laptop */}
             <div className="absolute bottom-0 z-40 w-full h-[33.33%] bg-gradient-to-b from-transparent to-black flex justify-center items-center">
               <BannerContent
                 id={id}

@@ -80,7 +80,6 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
     const filter: Record<string, any> = {};
 
-    // Lọc theo danh mục và danh mục con
     if (id_cate && typeof id_cate === "string") {
       const allIds = [id_cate];
       const childIds = await getAllChildCategoryIds(id_cate);
@@ -93,11 +92,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
       filter["category._id"] = { $in: validObjectIds };
     }
 
-    // Lọc theo màu sắc, kích thước
     if (color) filter["variants.color"] = color;
     if (size) filter["variants.size"] = size;
 
-    // Lọc theo khoảng giá
     if (minPrice !== undefined || maxPrice !== undefined) {
       const priceFilter: Record<string, number> = {};
       if (minPrice !== undefined && !isNaN(Number(minPrice))) {
@@ -111,14 +108,13 @@ export const getAllProducts = async (req: Request, res: Response) => {
       }
     }
 
-    // Lọc theo trạng thái hoạt động
     if (is_active !== undefined) {
       filter.is_active = is_active === "true";
     }
 
-    // Sắp xếp sản phẩm
     let sort: Record<string, any> = {};
-    switch (sort_by) {
+    let sort_by_clean = typeof sort_by === "string" ? sort_by.trim().toLowerCase() : "";
+    switch (sort_by_clean) {
       case "newest":
         sort = { createdAt: -1 };
         break;
@@ -134,8 +130,6 @@ export const getAllProducts = async (req: Request, res: Response) => {
       case "best_selling":
         sort = { salesCount: -1 };
         break;
-      default:
-        sort = { _id: -1 }; // Mặc định: sản phẩm mới thêm trước
     }
 
     // Thêm limit vào truy vấn

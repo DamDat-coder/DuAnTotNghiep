@@ -1,9 +1,9 @@
 ﻿'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getAllNews } from '@/services/newsApi'; // Đổi lại đúng path nếu cần
+import { getAllNews } from '@/services/newsApi';
 import { News } from '@/types/new';
 
 // Helper để định dạng ngày an toàn
@@ -12,7 +12,7 @@ function formatDateSafe(date?: string | Date) {
   try {
     const d = new Date(date);
     if (isNaN(d.getTime())) return 'Không rõ ngày';
-    return d.toLocaleDateString();
+    return d.toLocaleDateString('vi-VN');
   } catch {
     return 'Không rõ ngày';
   }
@@ -22,7 +22,6 @@ export default function NewsContent() {
   const [newsList, setNewsList] = useState<News[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<News[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
 
@@ -41,67 +40,36 @@ export default function NewsContent() {
     </div>
   );
 
-  // Lấy page hiện tại từ URL
+  // Đồng bộ currentPage từ URL
   useEffect(() => {
     const pageParam = Number(searchParams.get('page') || 1);
     setCurrentPage(pageParam > 0 ? pageParam : 1);
   }, [searchParams]);
 
-  // Lấy danh sách bài viết & tags (unique)
+  // Đồng bộ searchTerm từ URL (?search=...)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    setSearchTerm(urlSearch);
+  }, [searchParams]);
+
+  // Lấy danh sách bài viết & tag duy nhất
   useEffect(() => {
     getAllNews().then((res) => {
-      if (res.status === 'success' && Array.isArray(res.data)) {
+      if (res?.status === 'success' && Array.isArray(res.data)) {
         setNewsList(res.data);
 
-        // Tag: unique, random tối đa 10 tag
-        const allTags = res.data.flatMap((news: News) => news.tags || []);
+        const allTags = res.data.flatMap((n: News) => n.tags || []);
         const uniqueTags = Array.from(new Set(allTags));
         const shuffled = uniqueTags.sort(() => 0.5 - Math.random());
         setTags(shuffled.slice(0, 10));
-
-        // Lọc luôn nếu url có tag
-        const tagParam = searchParams.get('tag');
-        if (tagParam) {
-          setSearchTerm(tagParam);
-          const filtered = res.data.filter(news =>
-            (news.tags || []).some(t =>
-              t.toLowerCase() === tagParam.toLowerCase()
-            )
-          );
-          setSearchResults(filtered);
-        } else {
-          setSearchResults(res.data);
-        }
       } else {
         setNewsList([]);
         setTags([]);
-        setSearchResults([]);
       }
     });
-    // eslint-disable-next-line
-  }, [searchParams]);
+  }, []);
 
-  // Tự động filter khi searchTerm thay đổi (nếu không có tag trên url)
-  useEffect(() => {
-    const tagParam = searchParams.get('tag');
-    if (tagParam) return;
-    if (!searchTerm.trim()) {
-      setSearchResults(newsList);
-      return;
-    }
-    const keyword = searchTerm.toLowerCase();
-    const filtered = newsList.filter(news => {
-      const matchTitle = news.title?.toLowerCase().includes(keyword);
-      const matchSlug = news.slug?.toLowerCase().includes(keyword);
-      const matchTags = (news.tags || []).some(tag =>
-        tag.toLowerCase().includes(keyword)
-      );
-      return matchTitle || matchSlug || matchTags;
-    });
-    setSearchResults(filtered);
-  }, [searchTerm, newsList, searchParams]);
-
-  // Xem gần đây
+  // Xem gần đây (localStorage)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -113,42 +81,80 @@ export default function NewsContent() {
     }
   }, []);
 
-  // Hàm chọn tag
+  // ====== TÍNH TOÁN KẾT QUẢ LỌC ======
+  const filteredResults = useMemo(() => {
+    const cateId = searchParams.get('cate_id') || '';      // ví dụ: 684d0f4f543e02998d9df099
+    const tagParam = searchParams.get('tag') || '';        // ví dụ: "khuyến mãi"
+    const searchKeyword = (searchParams.get('search') || searchTerm || '').toLowerCase().trim();
+
+    let list = Array.isArray(newsList) ? [...newsList] : [];
+
+    // 1) Lọc theo cate_id nếu có
+    if (cateId) {
+      list = list.filter((n) => {
+        // News hiện dùng dạng: n.category_id = {_id, name} (theo code Admin)
+        const id = (n as any)?.category_id?._id || (n as any)?.category_id;
+        return String(id) === String(cateId);
+      });
+    }
+
+    // 2) Lọc theo tag nếu có
+    if (tagParam) {
+      const tagLower = tagParam.toLowerCase();
+      list = list.filter((n) => (n.tags || []).some((t) => t.toLowerCase() === tagLower));
+    }
+
+    // 3) Lọc theo từ khóa search (tiêu đề / slug / tag)
+    if (searchKeyword) {
+      list = list.filter((n) => {
+        const matchTitle = n.title?.toLowerCase().includes(searchKeyword);
+        const matchSlug = n.slug?.toLowerCase().includes(searchKeyword);
+        const matchTags = (n.tags || []).some((t) => t.toLowerCase().includes(searchKeyword));
+        return !!(matchTitle || matchSlug || matchTags);
+      });
+    }
+
+    return list;
+  }, [newsList, searchParams, searchTerm]);
+
+  // Featured + các post còn lại (áp dụng sau khi lọc)
+  const featuredPost = filteredResults[0];
+  const otherPosts = featuredPost ? filteredResults.slice(1) : [];
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(otherPosts.length / postsPerPage));
+  const paginatedResults = useMemo(() => {
+    const start = (currentPage - 1) * postsPerPage;
+    return otherPosts.slice(start, start + postsPerPage);
+  }, [otherPosts, currentPage]);
+
+  // Chọn tag (giữ cate_id, reset page=1)
   const handleTagClick = (tag: string) => {
-    setSearchTerm(tag);
-    router.push(`/posts?tag=${encodeURIComponent(tag)}&page=1`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tag', tag);
+    params.set('page', '1');
+    // giữ cate_id nếu có
+    router.push(`/posts?${params.toString()}`);
   };
 
-  // Nút tìm kiếm
+  // Nút tìm kiếm (giữ cate_id, reset page=1)
   const handleSearchClick = () => {
     const value = searchTerm.trim();
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', '1');
     if (!value) {
-      router.push('/posts');
+      params.delete('search');
     } else {
       params.set('search', value);
-      router.push(`/posts?${params.toString()}`);
     }
+    router.push(`/posts?${params.toString()}`);
   };
-
-  // Featured post
-  const featuredPost = searchResults[0];
-  // Nếu có featured post, các bài còn lại
-  const otherPosts = featuredPost ? searchResults.slice(1) : [];
-
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(otherPosts.length / postsPerPage));
-  const paginatedResults = otherPosts.slice(
-    (currentPage - 1) * postsPerPage,
-    currentPage * postsPerPage
-  );
 
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="max-w-[1320px] mx-auto px-2 laptop:px-6">
         <div className="max-w-[350px] mx-auto laptop:max-w-none">{breadcrumb}</div>
-        
+
         {/* Search input mobile only */}
         <div className="laptop:hidden mt-2 mb-4 max-w-[350px] mx-auto">
           <input
@@ -156,24 +162,28 @@ export default function NewsContent() {
             placeholder="Nhập từ khóa..."
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded mb-2"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearchClick();
+            }}
           />
-        <button
-          className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center gap-2"
-          onClick={handleSearchClick}
-        >
-          Tìm kiếm
-          <span className="ml-1">
-            <Image
-              src="/posts/search-icon.svg"
-              alt="search"
-              width={20}
-              height={20}
-              className="text-black inline-block"
-            />
-          </span>
-        </button>
+          <button
+            className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center gap-2"
+            onClick={handleSearchClick}
+          >
+            Tìm kiếm
+            <span className="ml-1">
+              <Image
+                src="/posts/search-icon.svg"
+                alt="search"
+                width={20}
+                height={20}
+                className="text-black inline-block"
+              />
+            </span>
+          </button>
         </div>
+
         <div className="laptop:grid laptop:grid-cols-[300px_1fr] gap-8">
           {/* Sidebar */}
           <aside className="hidden laptop:flex flex-col gap-8 border-r pr-8">
@@ -184,7 +194,10 @@ export default function NewsContent() {
                 placeholder="Nhập từ khóa..."
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded mb-2"
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearchClick();
+                }}
               />
               <button
                 className="w-full bg-black text-white py-2 rounded text-sm"
@@ -328,7 +341,9 @@ export default function NewsContent() {
               ))}
 
               {paginatedResults.length === 0 && (
-                <p className="col-span-1 laptop:col-span-3 text-center py-6 text-gray-500">Không tìm thấy bài viết nào.</p>
+                <p className="col-span-1 laptop:col-span-3 text-center py-6 text-gray-500">
+                  Không tìm thấy bài viết nào.
+                </p>
               )}
             </div>
 
@@ -339,7 +354,7 @@ export default function NewsContent() {
                   key={idx}
                   onClick={() => {
                     const params = new URLSearchParams(searchParams.toString());
-                    params.set('page', (idx + 1).toString());
+                    params.set('page', String(idx + 1));
                     router.push(`/posts?${params.toString()}`);
                   }}
                   className={`w-8 h-8 flex items-center justify-center rounded-full border text-base font-medium

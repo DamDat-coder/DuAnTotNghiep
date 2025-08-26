@@ -99,7 +99,8 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             filter.is_active = is_active === "true";
         }
         let sort = {};
-        switch (sort_by) {
+        let sort_by_clean = typeof sort_by === "string" ? sort_by.trim().toLowerCase() : "";
+        switch (sort_by_clean) {
             case "newest":
                 sort = { createdAt: -1 };
                 break;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { recommendProducts } from "@/services/productApi";
+import { recommendProducts, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { useCart } from "@/contexts/CartContext";
 
@@ -37,7 +37,20 @@ export function useSuggestedProducts() {
         prevCartIdsRef.current = cartIds;
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        setSuggestedProducts([]);
+        // Fallback: Lấy sản phẩm bán chạy nếu API recommendProducts trả về lỗi
+        try {
+                    const fallbackProducts = await fetchProducts({
+            sort_by: "best_selling",
+            is_active: true,
+            limit: 5,
+          });
+          cache.current[cartIdsKey] = fallbackProducts.data || [];
+          setSuggestedProducts(fallbackProducts.data || []);
+          prevCartIdsRef.current = cartIds;
+        } catch (fallbackError) {
+          console.error("Lỗi khi lấy sản phẩm bán chạy:", fallbackError);
+          setSuggestedProducts([]);
+        }
       }
     }
 

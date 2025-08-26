@@ -64,7 +64,6 @@ export const recommendProducts = async (req: Request, res: Response) => {
   }
 };
 
-// Lấy tất cả sản phẩm cho người dùng
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const {

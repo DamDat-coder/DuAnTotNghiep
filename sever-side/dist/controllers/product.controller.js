@@ -66,7 +66,6 @@ const recommendProducts = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.recommendProducts = recommendProducts;
-// Lấy tất cả sản phẩm cho người dùng
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id_cate, color, size, minPrice, maxPrice, is_active, sort_by, limit, } = req.query;

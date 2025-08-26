@@ -95,7 +95,10 @@ const productSchema: Schema<IProduct> = new Schema(
       default: 0,
     },
   },
-  { versionKey: false }
+  { 
+    versionKey: false,
+    timestamps: true,
+  },
 );
 
 productSchema.index({ name: 1, 'category._id': 1 });

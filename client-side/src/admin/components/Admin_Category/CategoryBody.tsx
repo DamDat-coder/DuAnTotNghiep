@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { ICategory } from "@/types/category";
@@ -17,15 +17,6 @@ interface CategoryBodyProps {
 function paginate<T>(array: T[], page: number, perPage: number): T[] {
   const start = (page - 1) * perPage;
   return array.slice(start, start + perPage);
-}
-
-function filterOutBaiViet(nodes: ICategory[]): ICategory[] {
-  return nodes
-    .filter((cat) => cat.name?.trim().toLowerCase() !== "bài viết")
-    .map((cat) => ({
-      ...cat,
-      children: cat.children ? filterOutBaiViet(cat.children) : [],
-    }));
 }
 
 const CategoryBody: React.FC<CategoryBodyProps> = ({
@@ -108,7 +99,7 @@ const CategoryBody: React.FC<CategoryBodyProps> = ({
     }
   };
 
-  const filteredCategories = filterOutBaiViet(localCategories);
+  const filteredCategories = localCategories;
 
   const renderTreeRows = (nodes: ICategory[], depth = 0, parentKey = "") =>
     nodes.map((cat) => {

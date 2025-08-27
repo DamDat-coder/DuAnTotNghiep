@@ -234,13 +234,11 @@ export async function fetchAllCoupons(
   isActive?: boolean,
   search?: string,
   page: number = 1,
-  limit: number = 10
 ): Promise<{
   data: Coupon[];
   pagination: {
     total: number;
     page: number;
-    limit: number;
     totalPages: number;
   };
 }> {
@@ -250,7 +248,6 @@ export async function fetchAllCoupons(
       queryParams.append("isActive", String(isActive));
     if (search) queryParams.append("search", search);
     queryParams.append("page", String(page));
-    queryParams.append("limit", String(limit));
 
     const response = await fetchWithAuth<{
       data: Coupon[];

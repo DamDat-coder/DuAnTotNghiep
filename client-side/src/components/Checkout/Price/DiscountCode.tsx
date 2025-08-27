@@ -22,14 +22,10 @@ export default function DiscountCode({
   const [openDetails, setOpenDetails] = useState(false);
   const [query, setQuery] = useState("");
 
-  // Lấy 3 coupons đầu tiên
-  const topThreeCoupons = availableCoupons.slice(0, 3);
-
-  // Lọc coupons dựa trên query
   const filteredCoupons =
     query === ""
-      ? topThreeCoupons
-      : topThreeCoupons.filter((coupon) =>
+      ? availableCoupons
+      : availableCoupons.filter((coupon) =>
           coupon.code.toLowerCase().includes(query.toLowerCase())
         );
 
@@ -103,14 +99,23 @@ export default function DiscountCode({
                       key={coupon.code}
                       value={coupon.code}
                       className={({ active }) =>
-                        `relative cursor-pointer select-none py-2 pl-4 pr-4 rounded-md mb-1 last:mb-0 border border-gray-200 ${
-                          active ? "bg-gray-200" : "text-gray-900"
-                        }`
+                        `relative cursor-pointer select-none py-2 pl-4 pr-4 rounded-md mb-1 last:mb-0 border
+    ${
+      coupon.isTop
+        ? "border-yellow-400 bg-yellow-50" // ✨ Style nổi bật cho top 3
+        : "border-gray-200"
+    }
+    ${active ? "bg-gray-200" : "text-gray-900"}`
                       }
                     >
                       <div className="flex flex-col">
                         <span className="flex items-center gap-2">
                           {coupon.code}
+                          {coupon.isTop && (
+                            <span className="ml-2 text-[10px] bg-yellow-400 text-white font-bold px-2 py-0.5 rounded">
+                              Giá trị giảm cao nhất
+                            </span>
+                          )}
                         </span>
                         {coupon.description && (
                           <span className="text-gray-500 text-xs">

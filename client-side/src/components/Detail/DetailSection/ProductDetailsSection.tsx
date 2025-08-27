@@ -126,13 +126,22 @@ export default function ProductDetailsSection({
           className="overflow-hidden mt-2 text-left text-sm text-[#B0B0B0]"
         >
           <div className="pb-4">
-            <Image
-              src="/product/product_size_table.png"
-              alt="Bảng kích thước"
-              width={300}
-              height={200}
-              style={{ width: "auto", height: "auto" }}
-            />
+            <div className="flex justify-center items-center">
+              <Image
+                src="/sizechart/1.png"
+                alt="Close Icon"
+                width={500}
+                height={350}
+                className="w-[350px] h-[250px]"
+              />
+              <Image
+                src="/sizechart/2.png"
+                alt="Close Icon"
+                width={500}
+                height={350}
+                className="w-[350px] h-[250px]"
+              />
+            </div>
           </div>
         </motion.div>
       </div>

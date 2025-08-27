@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
-import { Coupon, HighlightedCoupon } from "@/types/coupon";
+import { HighlightedCoupon } from "@/types/coupon";
 import { motion } from "framer-motion";
 import { X, ChevronsUpDown } from "lucide-react";
 import { Combobox, Transition } from "@headlessui/react";
@@ -99,17 +99,21 @@ export default function DiscountCode({
                       key={coupon.code}
                       value={coupon.code}
                       className={({ active }) =>
-                        `relative cursor-pointer select-none py-2 pl-4 pr-4 ${
-                          active ? "bg-gray-200" : "text-gray-900"
-                        }`
+                        `relative cursor-pointer select-none py-2 pl-4 pr-4 mb-1 last:mb-0 border
+                          ${
+                            coupon.isTop
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200"
+                          }
+                          ${active ? "bg-gray-200" : "text-gray-900"}`
                       }
                     >
-                      <div className="flex flex-col">
+                      <div className="flex flex-col gap-2">
                         <span className="flex items-center gap-2">
                           {coupon.code}
                           {coupon.isTop && (
-                            <span className="text-xs bg-yellow-300 text-black font-semibold px-2 py-0.5 rounded-full">
-                              Hot
+                            <span className="ml-2 text-[10px] bg-yellow-400 text-white font-bold px-2 py-0.5 rounded">
+                              Giá trị giảm cao nhất
                             </span>
                           )}
                         </span>
@@ -118,6 +122,14 @@ export default function DiscountCode({
                             {coupon.description}
                           </span>
                         )}
+                        <div className="flex gap-2">
+                          <span className="text-gray-500 text-xs font-bold">
+                            Giá được giảm:
+                          </span>
+                          <span className="text-gray-500 text-xs">
+                            {coupon.discountAmount.toLocaleString("vi-VN") + "₫"}
+                          </span>
+                        </div>
                       </div>
                     </Combobox.Option>
                   ))
@@ -162,7 +174,8 @@ export default function DiscountCode({
                   {selectedCoupon.usageLimit !== null &&
                   selectedCoupon.usageLimit !== undefined
                     ? `${
-                        selectedCoupon.usageLimit - selectedCoupon.usedCount
+                        selectedCoupon.usageLimit -
+                        (selectedCoupon.usedCount || 0)
                       }/${selectedCoupon.usageLimit}`
                     : "Không giới hạn"}
                 </p>

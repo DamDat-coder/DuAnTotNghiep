@@ -49,7 +49,7 @@ export default function ProductCardCheckout({
         <ShoppingCartIcon className="w-4 h-4" />
       </button>
       <div className="content flex flex-col py-4 gap-3 font-description">
-        <div>
+        <div className="h-[4.25rem] flex flex-col justify-between">
           <div className="name text-base font-bold text-[#374151] pb-2 line-clamp-2">
             {name}
           </div>

@@ -49,7 +49,7 @@ export default function MemberBenefitsBanner({
               key={benefit.id}
               image={benefit.image}
               benefit={benefit.benefit}
-              linkHref="/products?id_cate=684d09e4543e02998d9df018"
+              linkHref={benefit.link}
             />
           ))}
         </div>

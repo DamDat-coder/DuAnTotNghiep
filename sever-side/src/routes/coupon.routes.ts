@@ -6,7 +6,8 @@ import {
   updateCoupon,
   hideCoupon,
   applyCoupon,
-  getTopDiscountCoupons
+  getTopDiscountCoupons,
+  suggestCoupons
 } from "../controllers/coupon.controller";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.middleware";
 const router = express.Router();
@@ -17,5 +18,6 @@ router.post("/", verifyToken, verifyAdmin, createCoupon);
 router.put("/:id", verifyToken, verifyAdmin, updateCoupon);
 router.put("/hide/:id", verifyToken, verifyAdmin, hideCoupon);
 router.post("/apply", verifyToken, applyCoupon);
+router.post("/suggest", suggestCoupons);
 
 export default router;

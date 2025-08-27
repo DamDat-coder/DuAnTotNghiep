@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Container from "@/components/Core/Container";
 import { CartMobile, CartDesktop } from "@/components/Cart";
 import ProductSection from "@/components/Home/ProductSection/ProductSection";
@@ -13,7 +13,14 @@ import {
 } from "@/services/productApi";
 import { Toaster } from "react-hot-toast";
 
-export default function Cart() {
+// Định nghĩa kiểu RecommendResponse
+interface RecommendResponse {
+  success: boolean;
+  outfits?: any[];
+  data: IProduct[];
+}
+
+export default function CartContent() {
   const cart = useCart();
   const dispatch = useCartDispatch();
   const [suggestedProducts, setSuggestedProducts] = useState<IProduct[]>([]);
@@ -22,6 +29,8 @@ export default function Cart() {
   const [productsActiveStatus, setProductsActiveStatus] = useState<{
     [key: string]: boolean;
   }>({});
+  const [isSuggestedLoading, setIsSuggestedLoading] = useState(true);
+  const cache = useRef<{ [key: string]: IProduct[] }>({});
 
   useEffect(() => {
     setIsClient(true);
@@ -70,32 +79,68 @@ export default function Cart() {
     );
   }, [cart.items, productsActiveStatus]);
 
-  // Fetch gợi ý sản phẩm
+  // Fetch gợi ý sản phẩm (fallback logic giống ProductContent)
   useEffect(() => {
     async function getSuggestedProducts() {
+      if (cart.items.length === 0) {
+        setSuggestedProducts([]);
+        setIsSuggestedLoading(false);
+        return;
+      }
+
+      const cacheKey = `cart_${cart.items
+        .map((i) => i.id)
+        .sort()
+        .join("_")}`;
+
+      if (cache.current[cacheKey]) {
+        setSuggestedProducts(cache.current[cacheKey]);
+        setIsSuggestedLoading(false);
+        return;
+      }
+
       try {
-        // Lấy danh sách ID sản phẩm từ giỏ hàng
+        // Bước 1: fallback nhanh bằng fetchProducts
+        const fallbackProducts = await fetchProducts({
+          sort_by: "best_selling",
+          is_active: true,
+          limit: 5,
+        });
+        cache.current[cacheKey] = fallbackProducts.data || [];
+        setSuggestedProducts(fallbackProducts.data || []);
+        setIsSuggestedLoading(false);
+
+        // Bước 2: gọi recommendProducts với timeout
         const cartIds = [...new Set(cart.items.map((item) => item.id))];
         const userBehavior = {
           viewed: [],
           cart: cartIds,
         };
-        const response = await recommendProducts(userBehavior);
-        setSuggestedProducts(response.data || []);
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error("Timeout: recommendProducts quá lâu")),
+            10000
+          );
+        });
+
+        const recommendPromise = recommendProducts(userBehavior);
+        const response = (await Promise.race([
+          recommendPromise,
+          timeoutPromise,
+        ])) as unknown as RecommendResponse;
+
+        if (response && response.success && response.data.length > 0) {
+          cache.current[cacheKey] = response.data;
+          setSuggestedProducts(response.data);
+        }
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        // Fallback: Lấy sản phẩm bán chạy nếu API recommendProducts trả về lỗi
-        try {
-          const fallbackProducts = await fetchProducts({
-            sort_by: "best_selling",
-            is_active: true,
-            limit: 5,
-          });
-          setSuggestedProducts(fallbackProducts.data || []);
-        } catch (fallbackError) {
-          console.error("Lỗi khi lấy sản phẩm bán chạy:", fallbackError);
+        if (!cache.current[cacheKey]) {
           setSuggestedProducts([]);
         }
+      } finally {
+        setIsSuggestedLoading(false);
       }
     }
     getSuggestedProducts();
@@ -188,7 +233,16 @@ export default function Cart() {
                 productsActiveStatus={productsActiveStatus}
               />
               <div className="mb-4 mt-9">
-                {suggestedProducts.length > 0 ? (
+                {isSuggestedLoading ? (
+                  <div className="sk-chase" role="status" aria-label="Đang tải">
+                    <div className="sk-chase-dot"></div>
+                    <div className="sk-chase-dot"></div>
+                    <div className="sk-chase-dot"></div>
+                    <div className="sk-chase-dot"></div>
+                    <div className="sk-chase-dot"></div>
+                    <div className="sk-chase-dot"></div>
+                  </div>
+                ) : suggestedProducts.length > 0 ? (
                   <ProductSection
                     products={suggestedProducts}
                     desktopSlidesPerView={3.5}

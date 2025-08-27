@@ -37,20 +37,15 @@ export default function SearchSection() {
   const lookupButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    console.log("Cart items:", items);
     const cartIds = [...new Set(items.map((item) => item.id))];
-    console.log("Cart IDs:", cartIds);
     const cartIdsKey = cartIds.join(",");
-    console.log("Cart IDs Key:", cartIdsKey);
 
     if (cartIdsKey === prevCartIdsRef.current.join(",")) {
-      console.log("Cart IDs không thay đổi, bỏ qua gọi API");
       setIsSuggestedLoading(false);
       return;
     }
 
     if (cache.current[cartIdsKey]) {
-      console.log("Lấy từ cache:", cache.current[cartIdsKey]);
       setSuggestedProducts(cache.current[cartIdsKey]);
       prevCartIdsRef.current = cartIds;
       setIsSuggestedLoading(false);
@@ -63,14 +58,11 @@ export default function SearchSection() {
         setIsSuggestedLoading(true);
         setSuggestedError(null);
 
-        // Bước 1: Gọi fetchProducts trước (nhanh hơn)
-        console.log("Gọi fetchProducts (fallback)");
         const fallbackProducts = await fetchProducts({
           sort_by: "best_selling",
           is_active: true,
           limit: 5,
         });
-        console.log("Kết quả từ fetchProducts:", fallbackProducts.data);
         cache.current[cartIdsKey] = fallbackProducts.data || [];
         setSuggestedProducts(fallbackProducts.data || []);
         prevCartIdsRef.current = cartIds;
@@ -81,7 +73,6 @@ export default function SearchSection() {
           viewed: [],
           cart: cartIds,
         };
-        console.log("Gửi yêu cầu recommendProducts với:", userBehavior);
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error("Timeout: recommendProducts quá lâu")), 10000);
@@ -92,7 +83,6 @@ export default function SearchSection() {
 
         // Chỉ cập nhật nếu recommendProducts trả về dữ liệu hợp lệ
         if (response && response.success && response.data && response.data.length > 0) {
-          console.log("Kết quả từ recommendProducts:", response.data);
           cache.current[cartIdsKey] = response.data;
           setSuggestedProducts(response.data);
         } else {
@@ -138,7 +128,6 @@ export default function SearchSection() {
   }, [searchTerm]);
 
   useEffect(() => {
-    console.log("isLookupOpen thay đổi:", isLookupOpen); // Debug isLookupOpen
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
@@ -161,11 +150,6 @@ export default function SearchSection() {
     setFilteredProducts([]);
   };
 
-  // Log để debug trước khi render
-  console.log("isSuggestedLoading:", isSuggestedLoading);
-  console.log("isLoading:", isLoading);
-  console.log("suggestedProducts:", suggestedProducts);
-  console.log("isLookupOpen:", isLookupOpen);
 
   const suggestions =
     searchTerm.trim() === ""
@@ -177,7 +161,6 @@ export default function SearchSection() {
           name: product.name,
           id: product.slug || product.id,
         }));
-  console.log("suggestions:", suggestions);
 
   return (
     <div className="w-6 h-6 relative">

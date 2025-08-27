@@ -10,7 +10,7 @@ import ShippingMethod from "@/components/Checkout/Infomation/ShippingMethod";
 import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
 import AddressPopup from "@/components/Checkout/Address/AddressPopup";
 import { Toaster, toast } from "react-hot-toast";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { recommendProducts, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
@@ -50,18 +50,72 @@ export default function Checkout() {
   const dispatch = useCartDispatch();
   const [suggestedProducts, setSuggestedProducts] = useState<IProduct[]>([]);
   const [isBuyNowPopupOpen, setIsBuyNowPopupOpen] = useState(false);
-  const [isAddToCartPopupOpen, setIsAddToCartPopupOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
 
   // Memo hóa selectedItemIds
   const selectedItemIds = useMemo(() => {
-    const ids = [
+    return [
       ...new Set(
         orderItems.filter((item) => item.selected).map((item) => item.id)
       ),
     ];
-    return ids;
   }, [orderItems]);
+
+  const hasFetchedRecommend = useRef(false);
+
+  useEffect(() => {
+    if (hasFetchedRecommend.current) return;
+    hasFetchedRecommend.current = true;
+
+    async function fetchSuggestedProducts() {
+      try {
+        // Fallback trước để hiển thị nhanh
+        const fallbackProducts = await fetchProducts({
+          sort_by: "best_selling",
+          is_active: true,
+          limit: 5,
+        });
+        console.log("🔥 fallbackProducts:", fallbackProducts);
+        setSuggestedProducts(fallbackProducts.data || []);
+
+        // Sau đó gọi recommendProducts với timeout
+        if (selectedItemIds.length > 0) {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error("Timeout recommendProducts")),
+              10000
+            )
+          );
+          const recommendPromise = recommendProducts({
+            viewed: selectedItemIds,
+            cart: [],
+          });
+
+          const response = (await Promise.race([
+            recommendPromise,
+            timeoutPromise,
+          ])) as {
+            success: boolean;
+            data?: IProduct[];
+          };
+
+          if (
+            response &&
+            response.success &&
+            response.data &&
+            response.data.length > 0
+          ) {
+            setSuggestedProducts(response.data);
+          }
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
+        toast.error("Không thể tải sản phẩm gợi ý");
+      }
+    }
+
+    fetchSuggestedProducts();
+  }, [selectedItemIds]);
 
   useEffect(() => {
     if (isAddressPopupOpen) {
@@ -73,46 +127,6 @@ export default function Checkout() {
       document.body.classList.remove("overflow-hidden");
     };
   }, [isAddressPopupOpen]);
-
-  // Fetch gợi ý sản phẩm
-  useEffect(() => {
-    async function fetchSuggestedProducts() {
-      try {
-        const response = await recommendProducts({
-          viewed: selectedItemIds,
-          cart: [],
-        });
-        setSuggestedProducts(response.data || []);
-      } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        // Fallback: Lấy sản phẩm bán chạy nếu API recommendProducts trả về lỗi
-        try {
-          const fallbackProducts = await fetchProducts({
-            sort_by: "best_selling",
-            is_active: true,
-            limit: 5,
-          });
-          setSuggestedProducts(fallbackProducts.data || []);
-        } catch (fallbackError) {
-          console.error("Lỗi khi lấy sản phẩm bán chạy:", fallbackError);
-          toast.error("Không thể tải sản phẩm gợi ý");
-          setSuggestedProducts([]);
-        }
-      }
-    }
-
-    if (selectedItemIds.length > 0) {
-      fetchSuggestedProducts();
-    } else {
-      setSuggestedProducts([]);
-    }
-  }, [selectedItemIds]);
-
-  const handleAddToCart = (product: IProduct, e: React.MouseEvent) => {
-    e.preventDefault();
-    setSelectedProduct(product);
-    setIsAddToCartPopupOpen(true);
-  };
 
   const handleBuyNow = (product: IProduct, e: React.MouseEvent) => {
     e.preventDefault();

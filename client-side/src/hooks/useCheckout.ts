@@ -22,7 +22,6 @@ const generateOrderId = () => {
   return result;
 };
 
-// Tách hàm ánh xạ coupons
 const mapToHighlightedCoupon = (
   coupon: any,
   index: number
@@ -135,26 +134,16 @@ export const useCheckout = () => {
           setIsLoading(false);
         }
       },
-      300 // Giảm thời gian debounce từ 1000ms xuống 300ms
+      300
     ),
     []
   );
 
+  // Nhóm 1: Xử lý dữ liệu ban đầu (buy now, coupon từ URL, user và addresses)
   useEffect(() => {
-    if (couponItems.length) {
-      fetchSuggestedCoupons(couponItems);
-    } else {
-      setAvailableCoupons([]);
-      setIsLoading(false);
-    }
-    return () => fetchSuggestedCoupons.cancel();
-  }, [couponItems, fetchSuggestedCoupons]);
-
-  useEffect(() => {
+    // Xử lý recentBuyNow và pendingBuyNow
     const recentBuyNow = localStorage.getItem("recentBuyNow");
     const pendingBuyNow = localStorage.getItem("pendingBuyNow");
-
-    if (!recentBuyNow && !pendingBuyNow) return;
 
     const processBuyNow = async (buyNowData: any) => {
       try {
@@ -220,16 +209,14 @@ export const useCheckout = () => {
         localStorage.removeItem("pendingBuyNow");
       }
     }
-  }, [dispatch, items]);
 
-  useEffect(() => {
+    // Xử lý coupon từ URL
     const couponFromUrl = searchParams.get("coupon");
     if (couponFromUrl && availableCoupons.some((c) => c.code === couponFromUrl)) {
       setDiscountCode(couponFromUrl);
     }
-  }, [searchParams, availableCoupons]);
 
-  useEffect(() => {
+    // Xử lý thông tin user và addresses
     if (user && user.addresses) {
       setFormData((prev) => ({
         ...prev,
@@ -260,9 +247,19 @@ export const useCheckout = () => {
       setDefaultAddress(null);
       setSelectedAddress(null);
     }
-    setIsLoading(false);
-  }, [user, selectedAddress]);
 
+    // Xử lý suggested coupons
+    if (couponItems.length) {
+      fetchSuggestedCoupons(couponItems);
+    } else {
+      setAvailableCoupons([]);
+      setIsLoading(false);
+    }
+
+    return () => fetchSuggestedCoupons.cancel();
+  }, [user, items, dispatch, searchParams, couponItems, fetchSuggestedCoupons, selectedAddress]);
+
+  // Nhóm 2: Xử lý pendingCouponCode
   useEffect(() => {
     const savedCouponCode = localStorage.getItem("pendingCouponCode");
     if (!savedCouponCode || hasAppliedPendingCoupon) return;
@@ -312,25 +309,9 @@ export const useCheckout = () => {
     };
 
     applyCoupon();
-  }, [orderItems, subtotal]);
+  }, [orderItems, subtotal, hasAppliedPendingCoupon]);
 
-  const calculateDiscountPerItem = (
-    items: ICartItem[],
-    couponData: { items: { productId: string; isDiscounted: boolean; itemDiscount: number }[] }
-  ) => {
-    const result: { [itemKey: string]: number } = {};
-    couponData.items.forEach((item) => {
-      if (item.isDiscounted) {
-        const cartItem = items.find((cart) => cart.id === item.productId);
-        if (cartItem) {
-          const itemKey = `${cartItem.id}-${cartItem.size}-${cartItem.color}`;
-          result[itemKey] = item.itemDiscount || 0;
-        }
-      }
-    });
-    return result;
-  };
-
+  // Nhóm 3: Xử lý phí vận chuyển
   useEffect(() => {
     const newShippingFee = shippingMethod === "standard" ? 25000 : 35000;
     let updatedShippingFee = newShippingFee;
@@ -355,6 +336,7 @@ export const useCheckout = () => {
     setShippingFee(updatedShippingFee);
   }, [subtotal, shippingMethod, isFreeShipping, hasShownFreeShippingToast]);
 
+  // Nhóm 4: Cleanup khi unmount
   useEffect(() => {
     return () => {
       items.forEach((item) => {
@@ -373,6 +355,23 @@ export const useCheckout = () => {
       localStorage.removeItem("pendingCouponCode");
     };
   }, [dispatch, items]);
+
+  const calculateDiscountPerItem = (
+    items: ICartItem[],
+    couponData: { items: { productId: string; isDiscounted: boolean; itemDiscount: number }[] }
+  ) => {
+    const result: { [itemKey: string]: number } = {};
+    couponData.items.forEach((item) => {
+      if (item.isDiscounted) {
+        const cartItem = items.find((cart) => cart.id === item.productId);
+        if (cartItem) {
+          const itemKey = `${cartItem.id}-${cartItem.size}-${cartItem.color}`;
+          result[itemKey] = item.itemDiscount || 0;
+        }
+      }
+    });
+    return result;
+  };
 
   const handleShippingChange = (method: string) => {
     setShippingMethod(method);

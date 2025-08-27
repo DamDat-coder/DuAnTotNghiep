@@ -110,7 +110,6 @@ export default function Checkout() {
         }
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        toast.error("Không thể tải sản phẩm gợi ý");
       }
     }
 

@@ -45,7 +45,6 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
-  console.log("Cart reducer called with action:", action);
   switch (action.type) {
     case "updateSelected":
       const targetItem = state.items.find(

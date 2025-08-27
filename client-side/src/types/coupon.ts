@@ -33,6 +33,42 @@ export interface CouponIsUsed {
   code: string;
 }
 
-export interface HighlightedCoupon extends Coupon {
+export interface HighlightedCoupon {
+  _id: string;
+  code: string;
+  description: string;
+  discountType: "percent" | "fixed";
+  discountValue: number;
+  discountAmount: number;
   isTop?: boolean;
+  is_active: boolean;
+  minOrderAmount?: number | null;
+  maxDiscountAmount?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  usageLimit?: number | null;
+  usedCount?: number;
+  applicableCategories?: string[];
+  applicableProducts?: string[];
+}
+
+export interface SuggestCouponItem {
+  productId: string;
+  price: number;
+  quantity: number;
+}
+
+export interface SuggestedCoupon {
+  code: string;
+  description: string;
+  discountType: string;
+  discountValue: number;
+  discountAmount: number;
+}
+
+export interface SuggestCouponsResponse {
+  success: boolean;
+  totalAmount?: number;
+  coupons?: SuggestedCoupon[];
+  message?: string;
 }

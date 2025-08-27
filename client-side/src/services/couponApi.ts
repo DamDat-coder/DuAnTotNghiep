@@ -1,4 +1,4 @@
-import { Coupon, CouponResponse } from "@/types/coupon";
+import { Coupon, CouponResponse, SuggestCouponItem, SuggestCouponsResponse } from "@/types/coupon";
 import { API_BASE_URL, fetchWithAuth } from "./api";
 
 export async function fetchCoupons(
@@ -335,5 +335,67 @@ export async function fetchTopDiscountCoupons(): Promise<Coupon[]> {
   } catch (error: any) {
     console.error("Lỗi khi lấy 3 mã giảm giá có giá trị cao nhất:", error);
     return [];
+  }
+}
+
+export async function suggestCoupons(
+  items: SuggestCouponItem[]
+): Promise<SuggestCouponsResponse> {
+  try {
+    // Kiểm tra đầu vào
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return {
+        success: false,
+        message: "Danh sách sản phẩm không hợp lệ.",
+      };
+    }
+
+    if (items.some((item) => !item.productId || item.price <= 0 || item.quantity <= 0)) {
+      return {
+        success: false,
+        message: "Thông tin sản phẩm không hợp lệ.",
+      };
+    }
+
+    // Chuẩn bị payload
+    const payload = {
+      items: items.map((item) => ({
+        productId: item.productId,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+    };
+
+    // Gọi API /coupons/suggest
+    const response = await fetchWithAuth<SuggestCouponsResponse>(
+      `${API_BASE_URL}/coupons/suggest`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      }
+    );
+    console.log(response);
+    
+    // Kiểm tra phản hồi từ API
+    if (!response.success) {
+      return {
+        success: false,
+        message: response.message || "Không thể gợi ý mã giảm giá.",
+      };
+    }
+
+    return {
+      success: true,
+      totalAmount: response.totalAmount || 0,
+      coupons: response.coupons || [],
+    };
+  } catch (error: any) {
+    console.error("Lỗi khi gợi ý mã giảm giá:", error);
+    return {
+      success: false,
+      message: error.message || "Lỗi hệ thống khi gợi ý mã giảm giá.",
+    };
   }
 }

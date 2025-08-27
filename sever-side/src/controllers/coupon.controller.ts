@@ -445,3 +445,112 @@ export const getTopDiscountCoupons = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const suggestCoupons = async (req: Request, res: Response) => {
+  try {
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Danh sách sản phẩm không hợp lệ",
+      });
+    }
+
+    // lấy danh sách id sp từ FE
+    const productIds = items.map((i: any) => i.productId);
+    const products = await Product.find({ _id: { $in: productIds } });
+
+    // map để dễ tìm product info
+    const productMap = new Map(
+      products.map((p) => [p._id.toString(), p])
+    );
+
+    // tổng tiền đơn hàng (dùng price * quantity FE gửi lên)
+    const totalAmount = items.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    );
+
+    const now = new Date();
+    const coupons = await Coupon.find({ is_active: true });
+
+    const validCoupons = coupons
+      .map((coupon) => {
+        // 1. check thời gian hiệu lực
+        if (coupon.startDate && coupon.startDate > now) return null;
+        if (coupon.endDate && coupon.endDate < now) return null;
+
+        // 2. check usage limit
+        if (coupon.usageLimit && coupon.usedCount && coupon.usedCount >= coupon.usageLimit) {
+          return null;
+        }
+
+        // 3. check min/max order
+        if (coupon.minOrderAmount && totalAmount < coupon.minOrderAmount) return null;
+        if (coupon.maxOrderAmount && totalAmount > coupon.maxOrderAmount) return null;
+
+        // 4. Tính giá trị đơn hàng áp dụng cho coupon (theo product/category nếu có)
+        let applicableAmount = 0;
+        for (const item of items) {
+          const prod = productMap.get(item.productId);
+          if (!prod) continue;
+
+          const inApplicableProducts =
+            coupon.applicableProducts &&
+            coupon.applicableProducts.length > 0 &&
+            coupon.applicableProducts.some((id) => id.equals(prod._id));
+
+          const inApplicableCategories =
+            coupon.applicableCategories &&
+            coupon.applicableCategories.length > 0 &&
+            coupon.applicableCategories.some((id) => id.equals(prod.category._id));
+
+          if (
+            (coupon.applicableProducts?.length && inApplicableProducts) ||
+            (coupon.applicableCategories?.length && inApplicableCategories) ||
+            (!coupon.applicableProducts?.length && !coupon.applicableCategories?.length)
+          ) {
+            applicableAmount += item.price * item.quantity;
+          }
+        }
+
+        if (applicableAmount <= 0) return null;
+
+        // 5. Tính giảm giá
+        let discountAmount = 0;
+        if (coupon.discountType === "percent") {
+          discountAmount = (applicableAmount * coupon.discountValue) / 100;
+          if (coupon.maxDiscountAmount) {
+            discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
+          }
+        } else if (coupon.discountType === "fixed") {
+discountAmount = coupon.discountValue;
+        }
+
+        if (discountAmount <= 0) return null;
+
+        return {
+          code: coupon.code,
+          description: coupon.description,
+          discountType: coupon.discountType,
+          discountValue: coupon.discountValue,
+          discountAmount,
+        };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => b!.discountAmount - a!.discountAmount);
+
+    return res.status(200).json({
+      success: true,
+      totalAmount,
+      coupons: validCoupons,
+    });
+  } catch (error) {
+    console.error("Error suggestCoupons:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi gợi ý mã giảm giá",
+    });
+  }
+};

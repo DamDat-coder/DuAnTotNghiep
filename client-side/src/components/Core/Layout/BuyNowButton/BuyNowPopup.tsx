@@ -604,22 +604,6 @@ const BuyNowPopup = ({ product, isOpen, onClose }: BuyNowPopupProps) => {
                   className="w-[500px] h-[350px]"
                 />
               </div>
-              <div className="flex justify-center items-center">
-                <Image
-                  src="/sizechart/1.png"
-                  alt="Close Icon"
-                  width={500}
-                  height={350}
-                  className="w-[500px] h-[350px]"
-                />
-                <Image
-                  src="/sizechart/2.png"
-                  alt="Close Icon"
-                  width={500}
-                  height={350}
-                  className="w-[500px] h-[350px]"
-                />
-              </div>
             </motion.div>
           </motion.div>
         )}

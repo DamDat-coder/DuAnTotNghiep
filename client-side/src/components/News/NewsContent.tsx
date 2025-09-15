@@ -1,27 +1,27 @@
-﻿'use client';
-import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { getAllNews } from '@/services/newsApi'; // Đổi lại đúng path nếu cần
-import { News } from '@/types/new';
+﻿"use client";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { getAllNews } from "@/services/newsApi"; // Đổi lại đúng path nếu cần
+import { News } from "@/types/new";
 
 // Helper để định dạng ngày an toàn
 function formatDateSafe(date?: string | Date) {
-  if (!date) return 'Không rõ ngày';
+  if (!date) return "Không rõ ngày";
   try {
     const d = new Date(date);
-    if (isNaN(d.getTime())) return 'Không rõ ngày';
+    if (isNaN(d.getTime())) return "Không rõ ngày";
     return d.toLocaleDateString();
   } catch {
-    return 'Không rõ ngày';
+    return "Không rõ ngày";
   }
 }
 
 export default function NewsContent() {
   const [newsList, setNewsList] = useState<News[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<News[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
@@ -34,7 +34,9 @@ export default function NewsContent() {
   const breadcrumb = (
     <div className="mb-4 mt-2 flex justify-center laptop:justify-start">
       <span className="text-xs text-gray-400">
-        <Link href="/" className="hover:underline">Trang chủ</Link>
+        <Link href="/" className="hover:underline">
+          Trang chủ
+        </Link>
         <span className="mx-1">›</span>
         <span className="text-black">Tin tức</span>
       </span>
@@ -43,14 +45,14 @@ export default function NewsContent() {
 
   // Lấy page hiện tại từ URL
   useEffect(() => {
-    const pageParam = Number(searchParams.get('page') || 1);
+    const pageParam = Number(searchParams.get("page") || 1);
     setCurrentPage(pageParam > 0 ? pageParam : 1);
   }, [searchParams]);
 
   // Lấy danh sách bài viết & tags (unique)
   useEffect(() => {
     getAllNews().then((res) => {
-      if (res.status === 'success' && Array.isArray(res.data)) {
+      if (res.status === "success" && Array.isArray(res.data)) {
         setNewsList(res.data);
 
         // Tag: unique, random tối đa 10 tag
@@ -60,12 +62,12 @@ export default function NewsContent() {
         setTags(shuffled.slice(0, 10));
 
         // Lọc luôn nếu url có tag
-        const tagParam = searchParams.get('tag');
+        const tagParam = searchParams.get("tag");
         if (tagParam) {
           setSearchTerm(tagParam);
-          const filtered = res.data.filter(news =>
-            (news.tags || []).some(t =>
-              t.toLowerCase() === tagParam.toLowerCase()
+          const filtered = res.data.filter((news) =>
+            (news.tags || []).some(
+              (t) => t.toLowerCase() === tagParam.toLowerCase()
             )
           );
           setSearchResults(filtered);
@@ -83,17 +85,17 @@ export default function NewsContent() {
 
   // Tự động filter khi searchTerm thay đổi (nếu không có tag trên url)
   useEffect(() => {
-    const tagParam = searchParams.get('tag');
+    const tagParam = searchParams.get("tag");
     if (tagParam) return;
     if (!searchTerm.trim()) {
       setSearchResults(newsList);
       return;
     }
     const keyword = searchTerm.toLowerCase();
-    const filtered = newsList.filter(news => {
+    const filtered = newsList.filter((news) => {
       const matchTitle = news.title?.toLowerCase().includes(keyword);
       const matchSlug = news.slug?.toLowerCase().includes(keyword);
-      const matchTags = (news.tags || []).some(tag =>
+      const matchTags = (news.tags || []).some((tag) =>
         tag.toLowerCase().includes(keyword)
       );
       return matchTitle || matchSlug || matchTags;
@@ -103,9 +105,9 @@ export default function NewsContent() {
 
   // Xem gần đây
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        const recent = JSON.parse(localStorage.getItem('recentPosts') || '[]');
+        const recent = JSON.parse(localStorage.getItem("recentPosts") || "[]");
         setRecentPosts(Array.isArray(recent) ? recent.slice(0, 5) : []);
       } catch {
         setRecentPosts([]);
@@ -123,11 +125,11 @@ export default function NewsContent() {
   const handleSearchClick = () => {
     const value = searchTerm.trim();
     const params = new URLSearchParams(searchParams.toString());
-    params.set('page', '1');
+    params.set("page", "1");
     if (!value) {
-      router.push('/posts');
+      router.push("/posts");
     } else {
-      params.set('search', value);
+      params.set("search", value);
       router.push(`/posts?${params.toString()}`);
     }
   };
@@ -147,8 +149,10 @@ export default function NewsContent() {
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="max-w-[1320px] mx-auto px-2 laptop:px-6">
-        <div className="max-w-[350px] mx-auto laptop:max-w-none">{breadcrumb}</div>
-        
+        <div className="max-w-[350px] mx-auto laptop:max-w-none">
+          {breadcrumb}
+        </div>
+
         {/* Search input mobile only */}
         <div className="laptop:hidden mt-2 mb-4 max-w-[350px] mx-auto">
           <input
@@ -156,23 +160,24 @@ export default function NewsContent() {
             placeholder="Nhập từ khóa..."
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded mb-2"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-        <button
-          className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center gap-2"
-          onClick={handleSearchClick}
-        >
-          Tìm kiếm
-          <span className="ml-1">
-            <Image
-              src="/posts/search-icon.svg"
-              alt="search"
-              width={20}
-              height={20}
-              className="text-black inline-block"
-            />
-          </span>
-        </button>
+          <button
+            className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center"
+            onClick={handleSearchClick}
+          >
+            <span className="flex items-center">
+              Tìm kiếm
+              <span className="ml-1 flex items-center">
+                <Image
+                  src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/icon_buees1.svg"
+                  alt="Search"
+                  width={16}
+                  height={16}
+                />
+              </span>
+            </span>
+          </button>
         </div>
         <div className="laptop:grid laptop:grid-cols-[300px_1fr] gap-8">
           {/* Sidebar */}
@@ -184,21 +189,22 @@ export default function NewsContent() {
                 placeholder="Nhập từ khóa..."
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded mb-2"
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <button
-                className="w-full bg-black text-white py-2 rounded text-sm"
+                className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center"
                 onClick={handleSearchClick}
               >
-                Tìm kiếm
-                <span className="ml-1">
-                  <Image
-                    src="/posts/search-icon.svg"
-                    alt="search"
-                    width={20}
-                    height={20}
-                    className="text-black inline-block"
-                  />
+                <span className="flex items-center">
+                  Tìm kiếm
+                  <span className="ml-1 flex items-center">
+                    <Image
+                      src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/icon_buees1.svg"
+                      alt="Search"
+                      width={16}
+                      height={16}
+                    />
+                  </span>
                 </span>
               </button>
             </div>
@@ -208,7 +214,12 @@ export default function NewsContent() {
               <div className="mb-2 font-semibold text-base flex items-center justify-between">
                 Từ khóa tìm kiếm
                 <span className="text-xl text-gray-400 ml-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17v2h6v-2zm0-6v2h12v-2zm0-6v2h18V5z"></path></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M3 17v2h6v-2zm0-6v2h12v-2zm0-6v2h18V5z"
+                    ></path>
+                  </svg>
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -235,15 +246,19 @@ export default function NewsContent() {
                   <Link key={item._id || idx} href={`/posts/${item._id}`}>
                     <div className="flex gap-2 items-start cursor-pointer group">
                       <Image
-                        src={item.thumbnail || '/default.jpg'}
+                        src={item.thumbnail || "/default.jpg"}
                         alt={item.title}
                         width={56}
                         height={40}
                         className="w-14 h-10 rounded object-cover flex-shrink-0 group-hover:scale-105 transition"
                       />
                       <div className="flex flex-col">
-                        <span className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-blue-700">{item.title}</span>
-                        <span className="text-xs text-gray-400">{formatDateSafe(item.published_at || item.createdAt)}</span>
+                        <span className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-blue-700">
+                          {item.title}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {formatDateSafe(item.published_at || item.createdAt)}
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -258,7 +273,7 @@ export default function NewsContent() {
             {featuredPost && (
               <div className="hidden laptop:flex flex-col laptop:flex-row gap-6 mb-8">
                 <Image
-                  src={featuredPost.thumbnail || '/default.jpg'}
+                  src={featuredPost.thumbnail || "/default.jpg"}
                   alt={featuredPost.title}
                   width={350}
                   height={220}
@@ -266,7 +281,9 @@ export default function NewsContent() {
                   priority
                 />
                 <div className="flex flex-col justify-center gap-2">
-                  <h2 className="text-xl laptop:text-2xl font-bold leading-tight mb-2">{featuredPost.title}</h2>
+                  <h2 className="text-xl laptop:text-2xl font-bold leading-tight mb-2">
+                    {featuredPost.title}
+                  </h2>
                   <p className="text-gray-700 text-base laptop:text-base line-clamp-3 mb-2">
                     {featuredPost.meta_description}
                   </p>
@@ -289,7 +306,7 @@ export default function NewsContent() {
                 >
                   <div className="space-y-2 cursor-pointer group max-w-[350px] mx-auto">
                     <Image
-                      src={featuredPost.thumbnail || '/default.jpg'}
+                      src={featuredPost.thumbnail || "/default.jpg"}
                       alt={featuredPost.title}
                       width={350}
                       height={310}
@@ -300,7 +317,9 @@ export default function NewsContent() {
                       {featuredPost.title}
                     </h3>
                     <p className="text-xs text-gray-500 text-center">
-                      {formatDateSafe(featuredPost.published_at || featuredPost.createdAt)}
+                      {formatDateSafe(
+                        featuredPost.published_at || featuredPost.createdAt
+                      )}
                     </p>
                   </div>
                 </Link>
@@ -311,7 +330,7 @@ export default function NewsContent() {
                 <Link key={news._id} href={`/posts/${news._id}`}>
                   <div className="space-y-2 cursor-pointer group max-w-[350px] mx-auto">
                     <Image
-                      src={news.thumbnail || '/default.jpg'}
+                      src={news.thumbnail || "/default.jpg"}
                       alt={news.title}
                       width={350}
                       height={310}
@@ -328,7 +347,9 @@ export default function NewsContent() {
               ))}
 
               {paginatedResults.length === 0 && (
-                <p className="col-span-1 laptop:col-span-3 text-center py-6 text-gray-500">Không tìm thấy bài viết nào.</p>
+                <p className="col-span-1 laptop:col-span-3 text-center py-6 text-gray-500">
+                  Không tìm thấy bài viết nào.
+                </p>
               )}
             </div>
 
@@ -339,13 +360,15 @@ export default function NewsContent() {
                   key={idx}
                   onClick={() => {
                     const params = new URLSearchParams(searchParams.toString());
-                    params.set('page', (idx + 1).toString());
+                    params.set("page", (idx + 1).toString());
                     router.push(`/posts?${params.toString()}`);
                   }}
                   className={`w-8 h-8 flex items-center justify-center rounded-full border text-base font-medium
-                    ${currentPage === idx + 1
-                      ? 'bg-black text-white'
-                      : 'bg-white text-black hover:bg-gray-200'}`}
+                    ${
+                      currentPage === idx + 1
+                        ? "bg-black text-white"
+                        : "bg-white text-black hover:bg-gray-200"
+                    }`}
                 >
                   {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                 </button>

@@ -8,8 +8,6 @@ import { Address } from "@/types/auth";
 import { ClipLoader } from "react-spinners";
 import { useAddressData } from "@/hooks/useAddressData";
 import dynamic from "next/dynamic";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 // Chống SSR cho react-leaflet
 const MapContainer = dynamic(
@@ -41,17 +39,6 @@ const LocationPicker = dynamic(
   },
   { ssr: false }
 );
-
-// Fix icon Marker khi build
-const defaultIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-L.Marker.prototype.options.icon = defaultIcon;
 
 interface Props {
   address: Address;
@@ -277,6 +264,25 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
     }
   }, [wards, wardRawFromMap]);
 
+  // Thêm useEffect để set default icon chỉ trên client
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("leaflet").then((L) => {
+        const defaultIcon = new L.Icon({
+          iconUrl:
+            "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+          iconRetinaUrl:
+            "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+          shadowUrl:
+            "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        });
+        L.Marker.prototype.options.icon = defaultIcon;
+      });
+    }
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-2">
       <div className="bg-white w-[536px] max-w-full mobile:w-full rounded-lg shadow-lg p-[48px] mobile:p-3 max-h-[90vh] mobile:max-h-[90vh] overflow-y-auto relative">
@@ -378,6 +384,13 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
 
             <div className="flex gap-2 w-full flex-col mobile:flex-col mobile:gap-2 laptop:flex-row">
               <button
+                type="button"
+                onClick={() => setShowMap(true)}
+                className="w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Chọn trên bản đồ
+              </button>
+              <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid}
                 className={`w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-[#F5F5F5] ${
@@ -387,13 +400,6 @@ export default function EditAddressModal({ address, onClose, onEdit }: Props) {
                 }`}
               >
                 {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMap(true)}
-                className="w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Chọn trên bản đồ
               </button>
             </div>
           </form>

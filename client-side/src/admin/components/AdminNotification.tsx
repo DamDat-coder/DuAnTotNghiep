@@ -154,18 +154,18 @@ export default function AdminNotification() {
               </li>
             ) : (
               notifications.map((notification) => (
-                <li
-                  key={notification._id}
-                  className={`flex gap-2 px-4 py-3 cursor-pointer ${
-                    !notification.is_read ? "bg-[#ECF8FF]" : ""
-                  }`}
-                >
-                  <Image
-                    src="/notification/orders.svg"
-                    alt="icon"
-                    width={20}
-                    height={20}
-                  />
+                <a key={notification._id} href={notification.link}>
+                  <li
+                    className={`flex gap-2 px-4 py-3 cursor-pointer ${
+                      !notification.is_read ? "bg-[#ECF8FF]" : ""
+                    }`}
+                  >
+                <Image
+                  src="/notification/orders.svg"
+                  alt="icon"
+                  width={20}
+                  height={20}
+                />
                   <div>
                     <p className="font-bold text-sm">{notification.title}</p>
                     <p className="text-sm text-gray-600">
@@ -176,6 +176,7 @@ export default function AdminNotification() {
                     </p>
                   </div>
                 </li>
+                </a>
               ))
             )}
           </ul>

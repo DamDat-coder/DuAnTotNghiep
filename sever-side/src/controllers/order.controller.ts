@@ -12,6 +12,7 @@ import {
   sendAccountBlockedEmail,
 } from "../utils/mailer";
 import { generateUniqueTransactionCode } from "../utils/generateTransactionCode";
+import { link } from "fs";
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
@@ -142,7 +143,7 @@ export const createOrder = async (req: Request, res: Response) => {
       email: email || null,
       couponCode: couponCode || null,
     });
-    
+
     if (couponCode) {
       await Coupon.updateOne({ code: couponCode }, { $inc: { usedCount: 1 } });
     }
@@ -158,13 +159,12 @@ export const createOrder = async (req: Request, res: Response) => {
     });
 
     // Gửi thông báo cho admin
-    const admins = await UserModel.find({ role: "admin" })
-      .select("_id")
-      .lean();
+    const admins = await UserModel.find({ role: "admin" }).select("_id").lean();
     const notis = admins.map((admin) => ({
       userId: admin._id,
       title: "Có đơn hàng mới!",
       message: `Đơn hàng #${order.orderCode} vừa được tạo.`,
+      link: `/admin/order?edit=${order._id}`,
       type: "order",
       isRead: false,
     }));
@@ -393,7 +393,10 @@ export const cancelOrder = async (req: Request, res: Response) => {
 };
 
 // Tính doanh thu
-export const calculateRevenue = async (req: Request, res: Response): Promise<void> => {
+export const calculateRevenue = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { range = "today", from, to } = req.query;
 

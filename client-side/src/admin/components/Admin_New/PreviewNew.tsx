@@ -45,10 +45,35 @@ export default function PreviewNew({
             </h1>
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-4">
-              <span>🕓 {timeStr}</span>
-              <span>📅 {dateStr}</span>
-              <span>👤 {author}</span>
-              {category && <span>📂 {category}</span>}
+              <span className="flex items-center">
+                <Image
+                  src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/calendar_yboj1s.svg"
+                  alt="Calendar"
+                  width={16}
+                  height={16}
+                />
+                <span className="ml-1">{dateStr}</span>
+              </span>
+              <span className="flex items-center">
+                <Image
+                  src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/user_fntody.svg"
+                  alt="Name"
+                  width={16}
+                  height={16}
+                />
+                <span className="ml-1">{author}</span>
+              </span>
+              {category && (
+                <span className="flex items-center">
+                  <Image
+                    src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/folder_icon.svg"
+                    alt="Category"
+                    width={16}
+                    height={16}
+                  />
+                  <span className="ml-1">{category}</span>
+                </span>
+              )}
             </div>
             {/* Article image */}
             {image && (

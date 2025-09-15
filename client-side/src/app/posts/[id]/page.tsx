@@ -1,20 +1,20 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { getNewsDetail, getAllNews } from '@/services/newsApi';
-import { News } from '@/types/new';
+"use client";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { getNewsDetail, getAllNews } from "@/services/newsApi";
+import { News } from "@/types/new";
 
 // Helper định dạng ngày an toàn
 function formatDateSafe(date?: string | Date) {
-  if (!date) return 'Không rõ ngày';
+  if (!date) return "Không rõ ngày";
   try {
     const d = new Date(date);
-    if (isNaN(d.getTime())) return 'Không rõ ngày';
+    if (isNaN(d.getTime())) return "Không rõ ngày";
     return d.toLocaleDateString();
   } catch {
-    return 'Không rõ ngày';
+    return "Không rõ ngày";
   }
 }
 
@@ -23,18 +23,24 @@ export default function ArticleDetailPage() {
   const [article, setArticle] = useState<News | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   // Breadcrumb
   const breadcrumb = (
     <div className="mb-4 pt-3">
       <span className="text-xs text-[#C2C2C2]">
-        <Link href="/" className="hover:underline text-[#C2C2C2]">Trang chủ</Link>
-        <span className="mx-1">{'>'}</span>
-        <Link href="/posts" className="hover:underline text-[#C2C2C2]">Tin tức</Link>
-        <span className="mx-1">{'>'}</span>
-        <span className="text-[#C2C2C2]">{article?.title?.slice(0, 60) || '...'}</span>
+        <Link href="/" className="hover:underline text-[#C2C2C2]">
+          Trang chủ
+        </Link>
+        <span className="mx-1">{">"}</span>
+        <Link href="/posts" className="hover:underline text-[#C2C2C2]">
+          Tin tức
+        </Link>
+        <span className="mx-1">{">"}</span>
+        <span className="text-[#C2C2C2]">
+          {article?.title?.slice(0, 60) || "..."}
+        </span>
       </span>
     </div>
   );
@@ -42,11 +48,13 @@ export default function ArticleDetailPage() {
   // Lưu vào recentPosts (localStorage)
   useEffect(() => {
     if (article && article._id) {
-      const localKey = 'recentPosts';
+      const localKey = "recentPosts";
       let recent: any[] = [];
       try {
-        recent = JSON.parse(localStorage.getItem(localKey) || '[]');
-      } catch { recent = []; }
+        recent = JSON.parse(localStorage.getItem(localKey) || "[]");
+      } catch {
+        recent = [];
+      }
       const filtered = recent.filter((item: any) => item._id !== article._id);
       const newRecent = [
         {
@@ -54,9 +62,9 @@ export default function ArticleDetailPage() {
           title: article.title,
           thumbnail: article.thumbnail,
           published_at: article.published_at,
-          createdAt: article.createdAt
+          createdAt: article.createdAt,
         },
-        ...filtered
+        ...filtered,
       ].slice(0, 5);
       localStorage.setItem(localKey, JSON.stringify(newRecent));
       setRecentPosts(newRecent);
@@ -65,9 +73,9 @@ export default function ArticleDetailPage() {
 
   // Lấy recentPosts từ localStorage lần đầu
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        const recent = JSON.parse(localStorage.getItem('recentPosts') || '[]');
+        const recent = JSON.parse(localStorage.getItem("recentPosts") || "[]");
         setRecentPosts(Array.isArray(recent) ? recent : []);
       } catch {
         setRecentPosts([]);
@@ -78,7 +86,7 @@ export default function ArticleDetailPage() {
   // Lấy tag hệ thống random 20 tag
   useEffect(() => {
     getAllNews().then((res) => {
-      if (res.status === 'success' && Array.isArray(res.data)) {
+      if (res.status === "success" && Array.isArray(res.data)) {
         const allTags = res.data.flatMap((news: News) => news.tags || []);
         const uniqueTags = Array.from(new Set(allTags));
         const shuffled = uniqueTags.sort(() => 0.5 - Math.random());
@@ -109,18 +117,19 @@ export default function ArticleDetailPage() {
   const handleSearchClick = () => {
     const value = searchTerm.trim();
     if (!value) {
-      router.push('/posts');
+      router.push("/posts");
     } else {
       router.push(`/posts?search=${encodeURIComponent(value)}`);
     }
   };
 
-  if (!article) return <p className="text-center py-10">Đang tải bài viết...</p>;
+  if (!article)
+    return <p className="text-center py-10">Đang tải bài viết...</p>;
 
   const authorName =
-    typeof article.user_id === 'object' && article.user_id !== null
+    typeof article.user_id === "object" && article.user_id !== null
       ? article.user_id.name
-      : 'Ẩn danh';
+      : "Ẩn danh";
 
   const publishDate = article.published_at || article.createdAt;
 
@@ -138,13 +147,23 @@ export default function ArticleDetailPage() {
                 placeholder="Nhập từ khóa..."
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded mb-2"
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <button
-                className="w-full bg-black text-white py-2 rounded text-sm"
+                className="w-full bg-black text-white py-2 rounded text-sm flex items-center justify-center"
                 onClick={handleSearchClick}
               >
-                Tìm kiếm <span className="ml-1">🔍</span>
+                <span className="flex items-center">
+                  Tìm kiếm
+                  <span className="ml-1 flex items-center">
+                    <Image
+                      src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/icon_buees1.svg"
+                      alt="Search"
+                      width={16}
+                      height={16}
+                    />
+                  </span>
+                </span>
               </button>
             </div>
             {/* Tag hệ thống */}
@@ -152,7 +171,12 @@ export default function ArticleDetailPage() {
               <div className="mb-2 font-semibold text-base flex items-center justify-between">
                 Từ khóa tìm kiếm
                 <span className="text-xl text-gray-400 ml-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17v2h6v-2zm0-6v2h12v-2zm0-6v2h18V5z"></path></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M3 17v2h6v-2zm0-6v2h12v-2zm0-6v2h18V5z"
+                    ></path>
+                  </svg>
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -171,7 +195,20 @@ export default function ArticleDetailPage() {
             <div>
               <div className="mb-2 font-semibold text-base flex items-center gap-2">
                 Đã xem gần đây
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="#C2C2C2" strokeWidth="2" d="M1 12S5.636 4 12 4s11 8 11 8-4.636 8-11 8S1 12 1 12Z"/><circle cx="12" cy="12" r="3" stroke="#C2C2C2" strokeWidth="2"/></svg>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                  <path
+                    stroke="#C2C2C2"
+                    strokeWidth="2"
+                    d="M1 12S5.636 4 12 4s11 8 11 8-4.636 8-11 8S1 12 1 12Z"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="#C2C2C2"
+                    strokeWidth="2"
+                  />
+                </svg>
               </div>
               <div className="flex flex-col gap-4">
                 {recentPosts.length === 0 && (
@@ -181,14 +218,16 @@ export default function ArticleDetailPage() {
                   <Link key={item._id || idx} href={`/posts/${item._id}`}>
                     <div className="flex gap-2 items-start cursor-pointer group">
                       <Image
-                        src={item.thumbnail || '/default.jpg'}
+                        src={item.thumbnail || "/default.jpg"}
                         alt={item.title}
                         width={56}
                         height={40}
                         className="w-14 h-10 rounded object-cover flex-shrink-0 group-hover:scale-105 transition"
                       />
                       <div className="flex flex-col">
-                        <span className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-blue-700">{item.title}</span>
+                        <span className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-blue-700">
+                          {item.title}
+                        </span>
                         <span className="text-xs text-gray-400">
                           {formatDateSafe(item.published_at || item.createdAt)}
                         </span>
@@ -205,19 +244,37 @@ export default function ArticleDetailPage() {
           <main className="flex-1 min-w-0">
             {/* Title */}
             <h1 className="text-2xl laptop:text-3xl font-bold mb-3 leading-tight">
-              {article.title || 'Không có tiêu đề'}
+              {article.title || "Không có tiêu đề"}
             </h1>
 
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-4">
-              <span>📅 {formatDateSafe(publishDate)}</span>
-              <span>👤 {authorName}</span>
+              <span className="flex items-center">
+                <Image
+                  src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/calendar_yboj1s.svg"
+                  alt="Calendar"
+                  width={16}
+                  height={16}
+                />
+                <span className="ml-1">{formatDateSafe(publishDate)}</span>
+              </span>
+              <span className="flex items-center">
+                <Image
+                  src="https://res.cloudinary.com/testupload1/image/upload/v1756300632/user_fntody.svg"
+                  alt="Name"
+                  width={16}
+                  height={16}
+                />
+                <span className="ml-1">{authorName}</span>
+              </span>
             </div>
 
             {/* Nội dung bài viết */}
             <article
               className="prose max-w-none text-base"
-              dangerouslySetInnerHTML={{ __html: article.content || '<p>Không có nội dung.</p>' }}
+              dangerouslySetInnerHTML={{
+                __html: article.content || "<p>Không có nội dung.</p>",
+              }}
             />
 
             {/* Tags ở cuối bài, click để search */}
@@ -227,7 +284,7 @@ export default function ArticleDetailPage() {
                   key={idx}
                   className="px-3 py-1 bg-gray-100 rounded text-xs cursor-pointer hover:bg-black hover:text-white transition"
                   onClick={() => handleTagClick(tag)}
-                  style={{ userSelect: 'none' }}
+                  style={{ userSelect: "none" }}
                 >
                   #{tag}
                 </span>

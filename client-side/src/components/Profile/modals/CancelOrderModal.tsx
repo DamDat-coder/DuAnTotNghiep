@@ -48,7 +48,7 @@ export default function ConfirmCancelOrderModal({ onClose, onConfirm }: Props) {
         </p>
 
         {/* Nút hành động */}
-        <div className="flex gap-[24px] flex-col mobile:flex-col laptop:flex-row w-full mt-4">
+        <div className="flex flex-col laptop:flex-row gap-[24px] w-full mt-4 mb-4 justify-center items-center">
           <button
             onClick={onClose}
             className="w-[149px] mobile:w-full h-[49px] border border-black rounded hover:bg-gray-100"

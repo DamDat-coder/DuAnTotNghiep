@@ -1,8 +1,7 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
-import L from "leaflet";
 import { addAddress } from "@/services/userApi";
 import { useAddressData } from "@/hooks/useAddressData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,22 +39,6 @@ const LocationPicker = dynamic(
   { ssr: false }
 );
 
-// Fix icon Marker khi build
-const defaultIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-L.Marker.prototype.options.icon = defaultIcon;
-
-interface Props {
-  onClose: () => void;
-  onAdd?: (newAddress: any) => void;
-}
-
 type Form = {
   street: string;
   ward: string;
@@ -63,8 +46,19 @@ type Form = {
   isDefaultAddress: boolean;
 };
 
+type Props = {
+  onClose: () => void;
+  onAdd?: (address: any) => void;
+};
+
 export default function AddAddressModal({ onClose, onAdd }: Props) {
-  const { provinces, wards, setProvinceCode, setWardCode, isLoadingAllAddress } = useAddressData();
+  const {
+    provinces,
+    wards,
+    setProvinceCode,
+    setWardCode,
+    isLoadingAllAddress,
+  } = useAddressData();
   const { user } = useAuth();
 
   const [formData, setFormData] = useState<Form>({
@@ -75,7 +69,10 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
   });
 
   const [showMap, setShowMap] = useState(false);
-  const [mapPosition, setMapPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapPosition, setMapPosition] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wardRawFromMap, setWardRawFromMap] = useState<string>("");
 
@@ -143,7 +140,9 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
       return;
     }
 
-    const { street, provinceRaw, wardRaw } = normalizeFromNominatim(result.address);
+    const { street, provinceRaw, wardRaw } = normalizeFromNominatim(
+      result.address
+    );
 
     const provinceObj =
       provinces.find(
@@ -215,6 +214,26 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    // Chỉ chạy trên client
+    if (typeof window !== "undefined") {
+      // Import leaflet và set default icon
+      import("leaflet").then((L) => {
+        const defaultIcon = new L.Icon({
+          iconUrl:
+            "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+          iconRetinaUrl:
+            "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+          shadowUrl:
+            "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        });
+        L.Marker.prototype.options.icon = defaultIcon;
+      });
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
@@ -316,6 +335,13 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
 
             <div className="flex gap-2 w-full flex-col mobile:flex-col mobile:gap-2 laptop:flex-row">
               <button
+                type="button"
+                onClick={() => setShowMap(true)}
+                className="w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Chọn trên bản đồ
+              </button>
+              <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid}
                 className={`w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-[#F5F5F5] ${
@@ -325,13 +351,6 @@ export default function AddAddressModal({ onClose, onAdd }: Props) {
                 }`}
               >
                 {isSubmitting ? "Đang lưu..." : "Thêm địa chỉ"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMap(true)}
-                className="w-[220px] mobile:w-full h-[40px] mt-[8px] rounded-[8px] text-sm text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Chọn trên bản đồ
               </button>
             </div>
           </form>

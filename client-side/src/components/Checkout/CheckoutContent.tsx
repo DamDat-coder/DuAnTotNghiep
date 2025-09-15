@@ -10,8 +10,8 @@ import ShippingMethod from "@/components/Checkout/Infomation/ShippingMethod";
 import PaymentMethod from "@/components/Checkout/Infomation/PaymentMethod";
 import AddressPopup from "@/components/Checkout/Address/AddressPopup";
 import { Toaster, toast } from "react-hot-toast";
-import { useEffect, useState, useMemo } from "react";
-import { recommendProducts } from "@/services/productApi";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { recommendProducts, fetchProducts } from "@/services/productApi";
 import { IProduct } from "@/types/product";
 import { useCartDispatch } from "@/contexts/CartContext";
 import ProductSwiperCheckout from "./SuggestedProducts/ProductSwiperCheckout";
@@ -63,19 +63,14 @@ export default function Checkout() {
     return ids;
   }, [orderItems]);
 
-  useEffect(() => {
-    if (isAddressPopupOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
-  }, [isAddressPopupOpen]);
 
-  // Fetch gợi ý sản phẩm
+  // Đảm bảo chỉ gọi 1 lần duy nhất
+  const hasFetchedRecommend = useRef(false);
+
   useEffect(() => {
+    if (hasFetchedRecommend.current) return;
+    hasFetchedRecommend.current = true;
+
     async function fetchSuggestedProducts() {
       try {
         const response = await recommendProducts({
@@ -84,9 +79,17 @@ export default function Checkout() {
         });
         setSuggestedProducts(response.data || []);
       } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm gợi ý:", error);
-        toast.error("Không thể tải sản phẩm gợi ý");
-        setSuggestedProducts([]);
+        try {
+          const fallbackProducts = await fetchProducts({
+            sort_by: "best_selling",
+            is_active: true,
+            limit: 5,
+          });
+          setSuggestedProducts(fallbackProducts.data || []);
+        } catch (fallbackError) {
+          toast.error("Không thể tải sản phẩm gợi ý");
+          setSuggestedProducts([]);
+        }
       }
     }
 
@@ -97,11 +100,16 @@ export default function Checkout() {
     }
   }, []);
 
-  const handleAddToCart = (product: IProduct, e: React.MouseEvent) => {
-    e.preventDefault();
-    setSelectedProduct(product);
-    setIsAddToCartPopupOpen(true);
-  };
+  useEffect(() => {
+    if (isAddressPopupOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isAddressPopupOpen]);
 
   const handleBuyNow = (product: IProduct, e: React.MouseEvent) => {
     e.preventDefault();

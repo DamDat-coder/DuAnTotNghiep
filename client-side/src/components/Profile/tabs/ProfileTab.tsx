@@ -2,16 +2,15 @@
 import { useEffect, useState } from "react";
 import ChangePasswordModal from "../modals/ChangePasswordModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAddressData } from "@/hooks/useAddressData";
 import PhoneVerifyModal from "../modals/PhoneVerifyModal";
-import { updateUser, addAddress, updateAddress } from "@/services/userApi";
+import { updateUser } from "@/services/userApi";
+import toast from "react-hot-toast";
 
 export default function ProfileTab() {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phone, setPhone] = useState("");
-  const { user, setUser } = useAuth();
+  const { user, setUser, refreshUser } = useAuth(); // Thêm refreshUser
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [addresses, setAddresses] = useState(user?.addresses || []);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   useEffect(() => {
@@ -30,17 +29,16 @@ export default function ProfileTab() {
 
   const handleSave = async () => {
     try {
-      // Cập nhật thông tin người dùng
       const updatedUser = await updateUser(user?.id || "", {
         name,
         phone,
       });
-
-      alert("Cập nhật thành công!");
-      setUser(updatedUser);
+      setUser(updatedUser);      // Cập nhật tạm để UI phản ứng nhanh
+      await refreshUser();       // Đồng bộ lại user từ server
+      toast.success("Cập nhật thành công!");
     } catch (error) {
       console.error("Cập nhật người dùng thất bại:", error);
-      alert("Có lỗi xảy ra khi cập nhật.");
+      toast.error("Có lỗi xảy ra khi cập nhật.");
     }
   };
 
